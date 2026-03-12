@@ -433,23 +433,94 @@ function populateFilters(){
   if(DB.cities.length)DS.city=DB.cities[0];
 }
 
-// ── CHART DEFAULTS ──
-Chart.defaults.font.family='Inter,sans-serif';Chart.defaults.font.size=11;Chart.defaults.color='#6f6e6b';
-const TT={backgroundColor:'#fff',borderColor:'#ebebea',borderWidth:1,titleFont:{size:12,weight:'600'},bodyFont:{size:11},padding:10,cornerRadius:8,titleColor:'#111',bodyColor:'#6f6e6b'};
-const GRID={grid:{color:'#f0f0ef'},border:{display:false}};
-const XGRID={grid:{display:false},border:{display:false}};
+// ── CHART DEFAULTS — clean, thin, reference-style ──
+Chart.defaults.font.family='Inter,sans-serif';
+Chart.defaults.font.size=11;
+Chart.defaults.color='#9a9896';
+
+// Tooltip — crisp white card
+const TT={
+  backgroundColor:'#fff',borderColor:'#e8e6e3',borderWidth:1,
+  titleFont:{size:12,weight:'600'},bodyFont:{size:11},
+  padding:{top:10,bottom:10,left:14,right:14},
+  cornerRadius:8,titleColor:'#111',bodyColor:'#6f6e6b',
+  displayColors:true,boxWidth:8,boxHeight:8,usePointStyle:true
+};
+
+// Grid — ultra-light horizontal only
+const YAX={
+  grid:{color:'#f2f1ee',drawBorder:false},
+  border:{display:false,dash:[0]},
+  ticks:{color:'#b0aea8',padding:8,callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v>=1000?(v/1000).toFixed(1)+'k':v}
+};
+const XAX={grid:{display:false},border:{display:false},ticks:{color:'#b0aea8',padding:6}};
 
 function mk(id,type,data,opts={}){
   const c=document.getElementById(id);if(!c)return;if(c._ch)c._ch.destroy();
-  c._ch=new Chart(c,{type,data,options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},...opts}});
+  c._ch=new Chart(c,{type,data,options:{responsive:true,maintainAspectRatio:false,animation:{duration:600,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:TT},...opts}});
   return c._ch;
 }
+
+// Vertical bar — thin columns, flat fill, no border radius (like reference)
 function vbar(id,labels,vals,cols){
-  const bg=cols.map(c=>c+'18'),bc=cols;
-  mk(id,'bar',{labels,datasets:[{data:vals,backgroundColor:bg,borderColor:bc,borderWidth:1.5,borderRadius:6,borderSkipped:false}]},{scales:{y:{...GRID,ticks:{callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}},x:{...XGRID}}});
+  mk(id,'bar',{
+    labels,
+    datasets:[{
+      data:vals,
+      backgroundColor:cols.map(c=>c+'22'),
+      borderColor:cols,
+      borderWidth:1.5,
+      borderRadius:3,
+      borderSkipped:false,
+      barPercentage:.55,
+      categoryPercentage:.7
+    }]
+  },{scales:{y:{...YAX},x:{...XAX}}});
 }
+
+// Horizontal bar — thin rows
 function hbar(id,labels,vals,col){
-  mk(id,'bar',{labels,datasets:[{data:vals,backgroundColor:col+'18',borderColor:col,borderWidth:1.5,borderRadius:5,borderSkipped:false}]},{indexAxis:'y',scales:{x:{...GRID,ticks:{callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}},y:{...XGRID,ticks:{font:{size:10}}}}});
+  mk(id,'bar',{
+    labels,
+    datasets:[{
+      data:vals,
+      backgroundColor:col+'20',
+      borderColor:col,
+      borderWidth:1.5,
+      borderRadius:3,
+      borderSkipped:false,
+      barPercentage:.6,
+      categoryPercentage:.75
+    }]
+  },{
+    indexAxis:'y',
+    scales:{
+      x:{...YAX,ticks:{...YAX.ticks,padding:6}},
+      y:{...XAX,ticks:{color:'#9a9896',font:{size:10},padding:4}}
+    }
+  });
+}
+
+// Area/line — filled, smooth, thin line, NO dots except on hover
+function area(id,labels,datasets_cfg){
+  const ds=datasets_cfg.map(d=>({
+    label:d.label||'',
+    data:d.data,
+    borderColor:d.color,
+    backgroundColor:d.fill!==false?d.color+'14':'transparent',
+    borderWidth:1.5,
+    tension:.45,
+    pointRadius:0,
+    pointHoverRadius:4,
+    pointHoverBackgroundColor:d.color,
+    pointHoverBorderColor:'#fff',
+    pointHoverBorderWidth:2,
+    fill:d.fill!==false
+  }));
+  mk(id,'line',{labels,datasets:ds},{
+    interaction:{mode:'index',intersect:false},
+    scales:{y:{...YAX},x:{...XAX}}
+  });
 }
 
 function renderOverview(){
@@ -468,16 +539,20 @@ function renderOverview(){
   vbar('c-or',DB.cities,DB.cities.map(c=>{const r=cal.find(d=>d.city===c&&d.asset_class==='Offices'&&d.listing_type==='Rent');return r?r.med:null;}),cc);
   vbar('c-as2',DB.cities,DB.cities.map(c=>{const r=cal.find(d=>d.city===c&&d.asset_class==='Apartments'&&d.listing_type==='Sale');return r?r.med:null;}),cc);
 
-  const lgnd={display:true,position:'right',labels:{color:'#6f6e6b',padding:10,font:{size:10},usePointStyle:true,pointStyleWidth:8}};
-  mk('c-cp','doughnut',{labels:cs.map(c=>c.city),datasets:[{data:cs.map(c=>c.count),backgroundColor:DB.cities.map(c=>gc(c)),borderWidth:2,borderColor:'#fff',hoverOffset:4}]},{plugins:{legend:lgnd,tooltip:TT}});
+  const lgnd={display:true,position:'right',labels:{color:'#9a9896',padding:10,font:{size:10},usePointStyle:true,pointStyleWidth:8}};
+  mk('c-cp','doughnut',{labels:cs.map(c=>c.city),datasets:[{data:cs.map(c=>c.count),backgroundColor:DB.cities.map(c=>gc(c)),borderWidth:2,borderColor:'#fff',hoverOffset:6}]},{plugins:{legend:lgnd,tooltip:TT}});
   const ac={};DB.raw.forEach(r=>{if(r.asset_class)ac[r.asset_class]=(ac[r.asset_class]||0)+1;});
   const ak=Object.keys(ac).sort((a,b)=>ac[b]-ac[a]);
-  mk('c-ap','doughnut',{labels:ak,datasets:[{data:ak.map(k=>ac[k]),backgroundColor:CP.map(c=>c),borderWidth:2,borderColor:'#fff',hoverOffset:4}]},{plugins:{legend:lgnd,tooltip:TT}});
+  mk('c-ap','doughnut',{labels:ak,datasets:[{data:ak.map(k=>ac[k]),backgroundColor:CP.map(c=>c),borderWidth:2,borderColor:'#fff',hoverOffset:6}]},{plugins:{legend:lgnd,tooltip:TT}});
 
+  // Rent vs Sale — grouped thin bars
   mk('c-rvs','bar',{labels:cs.map(c=>c.city),datasets:[
-    {label:'Rent',data:cs.map(c=>c.rent),backgroundColor:'#1a1a1a15',borderColor:'#1a1a1a',borderWidth:1.5,borderRadius:5,borderSkipped:false,stack:'s'},
-    {label:'Sale',data:cs.map(c=>c.sale),backgroundColor:'#b8933f20',borderColor:'#b8933f',borderWidth:1.5,borderRadius:5,borderSkipped:false,stack:'s'}
-  ]},{plugins:{legend:{display:true,labels:{color:'#6f6e6b',padding:14,usePointStyle:true,font:{size:11}}},tooltip:TT},scales:{y:{stacked:true,...GRID},x:{stacked:true,...XGRID}}});
+    {label:'Rent',data:cs.map(c=>c.rent),backgroundColor:'#1a1a1a18',borderColor:'#1a1a1a',borderWidth:1.5,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8},
+    {label:'Sale',data:cs.map(c=>c.sale),backgroundColor:'#b8933f18',borderColor:'#b8933f',borderWidth:1.5,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8}
+  ]},{
+    plugins:{legend:{display:true,labels:{color:'#9a9896',padding:14,usePointStyle:true,font:{size:11}}},tooltip:{...TT,mode:'index'}},
+    scales:{y:{...YAX},x:{...XAX}}
+  });
 
   const ats=DB.assets.filter(a=>a!=='Farms');
   hbar('c-ar',ats,ats.map(a=>{const r=cal.filter(d=>d.asset_class===a&&d.listing_type==='Rent');return r.length?Math.round(r.reduce((s,x)=>s+x.med,0)/r.length):null;}),'#1a1a1a');
@@ -485,7 +560,6 @@ function renderOverview(){
 
 function initMap(){
   leafMap=L.map('the-map',{zoomControl:true}).setView([32.5,-6],6);
-  // Dark map tiles
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© CartoDB',maxZoom:19}).addTo(leafMap);
   RM();
 }
@@ -511,7 +585,7 @@ function RM(){
       .bindPopup(`<div style="font-family:Inter,sans-serif;font-size:12px;line-height:1.8;"><b style="font-size:13px;color:#111;">${e.district}</b><br/><span style="color:#888;">${e.city}</span><br/><b style="color:#b8933f;font-size:15px;">${e.avg.toLocaleString()}</b> <span style="color:#aaa;font-size:10px;">${unit}</span></div>`);
     m.addTo(leafMap);mapM.push(m);
   });
-  DB.cities.forEach(c=>{const base=CC[c];if(!base)return;const s=DB.agg.cs.find(x=>x.city===c);L.circleMarker(base,{radius:8,fillColor:'#fff',color:'#333',weight:1.5,fillOpacity:.9}).bindPopup(`<b>${c}</b>`).addTo(leafMap);});
+  DB.cities.forEach(c=>{const base=CC[c];if(!base)return;L.circleMarker(base,{radius:8,fillColor:'#fff',color:'#333',weight:1.5,fillOpacity:.9}).bindPopup(`<b>${c}</b>`).addTo(leafMap);});
   const sorted=[...entries].sort((a,b)=>b.avg-a.avg);
   document.getElementById('map-tb').innerHTML=sorted.slice(0,50).map((e,i)=>`<tr><td class="d">${i+1}</td><td>${e.district}</td><td class="d">${e.city}</td><td><span class="tag ${MS.lt==='Rent'?'tag-r':MS.lt==='Sale'?'tag-s':''}">${MS.lt==='All'?'—':MS.lt}</span></td><td class="v">${e.avg.toLocaleString()}</td></tr>`).join('');
   document.getElementById('map-sub').textContent=`${entries.length} districts`;
@@ -522,18 +596,29 @@ function RC(){
   document.getElementById('c-sub').textContent=`Median DH/m²${lt==='Rent'?'/mo':''} · ${lt}`;
   document.getElementById('hm-sub').textContent=`Median DH/m² · ${lt}`;
   const ats=DB.assets.filter(a=>a!=='Farms');
-  mk('c-cg','bar',{labels:ats,datasets:DB.cities.map(city=>({label:city,data:ats.map(at=>{const r=DB.agg.cal.find(d=>d.city===city&&d.asset_class===at&&d.listing_type===lt);return r?r.med:null;}),backgroundColor:gc(city)+'18',borderColor:gc(city),borderWidth:1.5,borderRadius:5,borderSkipped:false}))},{plugins:{legend:{display:true,labels:{color:'#6f6e6b',padding:12,usePointStyle:true,font:{size:11}}},tooltip:TT},scales:{y:{...GRID,ticks:{callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}},x:{...XGRID,ticks:{font:{size:10}}}}});
+
+  // Grouped thin bars — one series per city
+  mk('c-cg','bar',{labels:ats,datasets:DB.cities.map(city=>({
+    label:city,
+    data:ats.map(at=>{const r=DB.agg.cal.find(d=>d.city===city&&d.asset_class===at&&d.listing_type===lt);return r?r.med:null;}),
+    backgroundColor:gc(city)+'20',borderColor:gc(city),borderWidth:1.5,
+    borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.85
+  }))},{
+    plugins:{legend:{display:true,labels:{color:'#9a9896',padding:12,usePointStyle:true,font:{size:11}}},tooltip:{...TT,mode:'index'}},
+    scales:{y:{...YAX},x:{...XAX,ticks:{font:{size:10}}}}
+  });
 
   const cols=[`130px`,...DB.cities.map(()=>'1fr')].join(' ');
   let h=`<div style="display:grid;grid-template-columns:${cols};gap:3px;min-width:420px;padding:2px 0;"><div></div>`;
   DB.cities.forEach(c=>h+=`<div style="font-size:9px;font-weight:600;color:var(--text3);text-align:center;padding:5px 2px;letter-spacing:.06em;text-transform:uppercase;">${c}</div>`);
   ats.forEach(at=>{
     const vals=DB.cities.map(c=>{const r=DB.agg.cal.find(d=>d.city===c&&d.asset_class===at&&d.listing_type===lt);return r?r.med:null;});
-    const nn=vals.filter(v=>v!==null);const mn=Math.min(...nn),mx=Math.max(...nn);
+    const nn=vals.filter(v=>v!==null);const mn2=Math.min(...nn),mx2=Math.max(...nn);
     h+=`<div style="font-size:10px;font-weight:500;color:var(--text2);display:flex;align-items:center;padding:2px 4px;">${at.length>14?at.slice(0,13)+'…':at}</div>`;
-    vals.forEach(v=>{if(v===null){h+=`<div class="hmc" style="background:var(--surface2);color:var(--text3);">—</div>`;return;}const t=nn.length>1?(v-mn)/(mx-mn+1):0.5;const bg=t<.33?'rgba(184,147,63,.1)':t<.66?'rgba(184,147,63,.2)':'rgba(184,147,63,.35)';const col=t<.33?'#8b6e2e':t<.66?'#7a5c1e':'#4a3810';h+=`<div class="hmc" style="background:${bg};color:${col};">${v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}</div>`;});
+    vals.forEach(v=>{if(v===null){h+=`<div class="hmc" style="background:var(--surface2);color:var(--text3);">—</div>`;return;}const t=nn.length>1?(v-mn2)/(mx2-mn2+1):0.5;const bg=t<.33?'rgba(184,147,63,.08)':t<.66?'rgba(184,147,63,.18)':'rgba(184,147,63,.32)';const col=t<.33?'#9a7a3a':t<.66?'#7a5c1e':'#4a3810';h+=`<div class="hmc" style="background:${bg};color:${col};">${v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}</div>`;});
   });
   h+='</div>';document.getElementById('heatmap').innerHTML=h;
+
   vbar('c-cv',DB.cities,DB.agg.cs.map(c=>c.count),DB.cities.map(c=>gc(c)));
   const offr=DB.cities.map(c=>{const r=DB.agg.cal.find(d=>d.city===c&&d.asset_class==='Offices'&&d.listing_type==='Rent');return{city:c,v:r?r.med:0};}).sort((a,b)=>b.v-a.v);
   hbar('c-cr',offr.map(r=>r.city),offr.map(r=>r.v),'#b8933f');
@@ -558,9 +643,26 @@ function RA(){
   const ats=DB.assets.filter(a=>a!=='Farms');
   const rv=ats.map(a=>{const r=DB.agg.cal.filter(d=>d.asset_class===a&&d.listing_type==='Rent');return r.length?Math.round(r.reduce((s,x)=>s+x.med,0)/r.length):null;});
   const sv=ats.map(a=>{const r=DB.agg.cal.filter(d=>d.asset_class===a&&d.listing_type==='Sale');return r.length?Math.round(r.reduce((s,x)=>s+x.med,0)/r.length):null;});
-  mk('c-aas','bar',{labels:ats,datasets:[{label:'Rent',data:rv,backgroundColor:'#1a1a1a15',borderColor:'#1a1a1a',borderWidth:1.5,borderRadius:5,borderSkipped:false},{label:'Sale',data:sv,backgroundColor:'#b8933f20',borderColor:'#b8933f',borderWidth:1.5,borderRadius:5,borderSkipped:false}]},{plugins:{legend:{display:true,labels:{color:'#6f6e6b',padding:14,usePointStyle:true}},tooltip:TT},scales:{y:{...GRID,ticks:{callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}},x:{...XGRID}}});
-  const mAC=(id,lt)=>mk(id,'bar',{labels:ats,datasets:DB.cities.map(city=>({label:city,data:ats.map(at=>{const r=DB.agg.cal.find(d=>d.city===city&&d.asset_class===at&&d.listing_type===lt);return r?r.med:null;}),backgroundColor:gc(city)+'18',borderColor:gc(city),borderWidth:1.5,borderRadius:4,borderSkipped:false}))},{plugins:{legend:{display:true,labels:{color:'#6f6e6b',padding:10,font:{size:10},usePointStyle:true}},tooltip:TT},scales:{y:{...GRID,ticks:{callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}},x:{...XGRID,ticks:{font:{size:9}}}}});
+
+  mk('c-aas','bar',{labels:ats,datasets:[
+    {label:'Rent',data:rv,backgroundColor:'#1a1a1a18',borderColor:'#1a1a1a',borderWidth:1.5,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8},
+    {label:'Sale',data:sv,backgroundColor:'#b8933f18',borderColor:'#b8933f',borderWidth:1.5,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8}
+  ]},{
+    plugins:{legend:{display:true,labels:{color:'#9a9896',padding:14,usePointStyle:true}},tooltip:{...TT,mode:'index'}},
+    scales:{y:{...YAX},x:{...XAX}}
+  });
+
+  const mAC=(id,lt)=>mk(id,'bar',{labels:ats,datasets:DB.cities.map(city=>({
+    label:city,
+    data:ats.map(at=>{const r=DB.agg.cal.find(d=>d.city===city&&d.asset_class===at&&d.listing_type===lt);return r?r.med:null;}),
+    backgroundColor:gc(city)+'1a',borderColor:gc(city),borderWidth:1.5,
+    borderRadius:3,borderSkipped:false,barPercentage:.45,categoryPercentage:.85
+  }))},{
+    plugins:{legend:{display:true,labels:{color:'#9a9896',padding:10,font:{size:10},usePointStyle:true}},tooltip:{...TT,mode:'index'}},
+    scales:{y:{...YAX},x:{...XAX,ticks:{font:{size:9}}}}
+  });
   mAC('c-acr','Rent');mAC('c-acs','Sale');
+
   const sm={};DB.agg.cal.forEach(d=>{const k=d.asset_class+'|'+d.listing_type;if(!sm[k])sm[k]={asset_class:d.asset_class,listing_type:d.listing_type,prices:[],count:0,cities:new Set()};sm[k].prices.push(d.med);sm[k].count+=d.count;sm[k].cities.add(d.city);});
   document.getElementById('a-tb').innerHTML=Object.values(sm).map(s=>({...s,avg:Math.round(s.prices.reduce((a,b)=>a+b,0)/s.prices.length),nc:s.cities.size})).sort((a,b)=>a.asset_class.localeCompare(b.asset_class)||a.listing_type.localeCompare(b.listing_type)).map(r=>`<tr><td>${r.asset_class}</td><td><span class="tag ${r.listing_type==='Rent'?'tag-r':'tag-s'}">${r.listing_type}</span></td><td class="v">${r.avg.toLocaleString()}</td><td class="d">${r.nc}</td></tr>`).join('');
 }
@@ -579,8 +681,33 @@ function RTC(){
   const asset=document.getElementById('ta')?.value||'Offices',lt=TS.lt,periods=DB.periods;
   const ts=DB.agg.ts.filter(d=>d.asset_class===asset&&d.listing_type===lt);
   document.getElementById('t-sub').textContent=`${asset} · ${lt} · Median DH/m²`;
-  mk('c-ta','line',{labels:periods,datasets:DB.cities.map(city=>({label:city,data:periods.map(p=>{const r=ts.find(d=>d.city===city&&d.period===p);return r?r.med:null;}),borderColor:gc(city),backgroundColor:'transparent',tension:.4,pointRadius:4,pointHoverRadius:6,fill:false,borderWidth:2}))},{plugins:{legend:{display:true,labels:{color:'#6f6e6b',padding:14,usePointStyle:true}},tooltip:TT},scales:{y:{...GRID,ticks:{callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}},x:{...XGRID}}});
-  DB.cities.forEach(city=>{const id='ct-'+city.replace(/\s/g,'_');if(!document.getElementById(id))return;mk(id,'line',{labels:periods,datasets:[{data:periods.map(p=>{const r=ts.find(d=>d.city===city&&d.period===p);return r?r.med:null;}),borderColor:gc(city),backgroundColor:gc(city)+'10',tension:.4,pointRadius:3,fill:true,borderWidth:2}]},{plugins:{legend:{display:false},tooltip:TT},scales:{y:{...GRID,ticks:{callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}},x:{...XGRID,ticks:{font:{size:9}}}}});});
+
+  // Multi-city: thin lines, no fill, dots only on hover
+  const ds=DB.cities.map(city=>({
+    label:city,
+    data:periods.map(p=>{const r=ts.find(d=>d.city===city&&d.period===p);return r?r.med:null;}),
+    borderColor:gc(city),backgroundColor:'transparent',
+    borderWidth:1.5,tension:.4,
+    pointRadius:0,pointHoverRadius:4,
+    pointHoverBackgroundColor:gc(city),pointHoverBorderColor:'#fff',pointHoverBorderWidth:2,
+    fill:false,spanGaps:true
+  }));
+  mk('c-ta','line',{labels:periods,datasets:ds},{
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:true,labels:{color:'#9a9896',padding:14,usePointStyle:true}},tooltip:TT},
+    scales:{y:{...YAX},x:{...XAX}}
+  });
+
+  // Per-city: area fill, single color
+  DB.cities.forEach(city=>{
+    const id='ct-'+city.replace(/\s/g,'_');
+    if(!document.getElementById(id))return;
+    const col=gc(city);
+    area(id,periods,[{
+      data:periods.map(p=>{const r=ts.find(d=>d.city===city&&d.period===p);return r?r.med:null;}),
+      color:col,fill:true
+    }]);
+  });
 }
 
 function RE(){
