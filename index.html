@@ -799,6 +799,8 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 window.addEventListener('load', async function() {
   const { data } = await sb.auth.getSession();
   if (data?.session?.user) updateNavLoggedIn(data.session.user);
+  // If redirected from dashboard auth gate, open login
+  if (window.location.hash === '#login') go('login');
 });
 
 // Listen for auth state changes
