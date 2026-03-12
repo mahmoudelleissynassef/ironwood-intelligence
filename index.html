@@ -304,7 +304,7 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
       <div class="dropdown" id="dd">
         <a onclick="go('properties')">Properties</a>
         <a onclick="go('analytics')">Analytics</a>
-        <a onclick="go('dashboard')">Dashboard</a>
+        <a onclick="goDashboard()">Dashboard</a>
         <a onclick="go('subscription')">Pricing</a>
       </div>
     </div>
@@ -313,7 +313,7 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
     <button class="btn-join" id="nav-register-btn" onclick="go('register')">Join Now</button>
     <button class="btn-login" id="nav-login-btn" onclick="go('login')">Sign In</button>
     <button class="btn-login" id="nav-signout-btn" style="display:none;" onclick="doSignOut()">Sign Out</button>
-    <span id="nav-user-name" style="display:none;font-size:13px;font-weight:600;color:#111;margin-right:4px;"></span>
+    <span id="nav-user-name" style="display:none;font-size:13px;font-weight:600;color:#111;margin-right:4px;cursor:pointer;padding:7px 14px;border:1.5px solid #e0e0e0;border-radius:20px;" onclick="go('account')">👤 <span id="nav-user-label"></span> ▾</span>
   </div>
   </div>
 </nav>
@@ -534,6 +534,135 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
   <div class="footer-slot"></div>
 </div>
 
+<!-- ═══ ACCOUNT ═══ -->
+<div id="page-account" class="page">
+  <div style="max-width:760px;margin:0 auto;padding:48px 24px;">
+
+    <!-- Header -->
+    <div style="margin-bottom:32px;">
+      <h1 style="font-size:26px;font-weight:800;color:#111;">My Account</h1>
+      <p style="font-size:14px;color:#666;margin-top:4px;">Manage your profile, subscription and billing details.</p>
+    </div>
+
+    <!-- Profile card -->
+    <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:28px;margin-bottom:18px;">
+      <div style="display:flex;align-items:center;gap:18px;margin-bottom:24px;">
+        <div style="width:56px;height:56px;border-radius:50%;background:#111;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:700;" id="acc-avatar">—</div>
+        <div>
+          <div style="font-size:17px;font-weight:700;color:#111;" id="acc-name">—</div>
+          <div style="font-size:13px;color:#888;" id="acc-email">—</div>
+        </div>
+        <div style="margin-left:auto;">
+          <span id="acc-plan-badge" style="padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;">Free Trial</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div style="background:#f8f8f8;border-radius:10px;padding:16px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#999;margin-bottom:6px;">Member Since</div>
+          <div style="font-size:14px;font-weight:600;color:#111;" id="acc-since">—</div>
+        </div>
+        <div style="background:#f8f8f8;border-radius:10px;padding:16px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#999;margin-bottom:6px;">Account Status</div>
+          <div style="font-size:14px;font-weight:600;color:#16a34a;">Active</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Current Plan -->
+    <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:28px;margin-bottom:18px;">
+      <div style="font-size:15px;font-weight:700;color:#111;margin-bottom:18px;">Current Subscription</div>
+      <div id="acc-plan-detail" style="background:#f8f8f8;border-radius:10px;padding:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:#111;" id="acc-plan-name">Free Trial</div>
+            <div style="font-size:13px;color:#888;margin-top:3px;">7-day trial — full access to all features</div>
+          </div>
+          <div style="font-size:22px;font-weight:800;color:#111;">$0<span style="font-size:13px;font-weight:400;color:#888;">/mo</span></div>
+        </div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e5e5;font-size:13px;color:#666;">
+          Upgrade to a paid plan to keep access after your trial ends.
+        </div>
+      </div>
+    </div>
+
+    <!-- Upgrade Plans -->
+    <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:28px;margin-bottom:18px;">
+      <div style="font-size:15px;font-weight:700;color:#111;margin-bottom:18px;">Upgrade Your Plan</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+
+        <div style="border:1.5px solid #e5e5e5;border-radius:12px;padding:20px;">
+          <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">Basic</div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">Essential market data</div>
+          <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:14px;">$99<span style="font-size:12px;font-weight:400;color:#888;">/mo</span></div>
+          <ul style="font-size:12px;color:#555;line-height:2;list-style:none;padding:0;margin-bottom:16px;">
+            <li>✓ Property listings</li>
+            <li>✓ Basic analytics</li>
+            <li>✓ Monthly reports</li>
+            <li>✓ 50 views/month</li>
+          </ul>
+          <button onclick="go('subscription')" style="width:100%;padding:9px;border:1.5px solid #111;border-radius:20px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;">Select Basic</button>
+        </div>
+
+        <div style="border:2px solid #111;border-radius:12px;padding:20px;position:relative;">
+          <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.06em;">MOST POPULAR</div>
+          <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">Professional</div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">Advanced analytics</div>
+          <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:14px;">$299<span style="font-size:12px;font-weight:400;color:#888;">/mo</span></div>
+          <ul style="font-size:12px;color:#555;line-height:2;list-style:none;padding:0;margin-bottom:16px;">
+            <li>✓ Everything in Basic</li>
+            <li>✓ Real-time data</li>
+            <li>✓ Unlimited views</li>
+            <li>✓ API access</li>
+          </ul>
+          <button onclick="go('subscription')" style="width:100%;padding:9px;border:none;border-radius:20px;background:#111;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">Select Professional</button>
+        </div>
+
+        <div style="border:1.5px solid #e5e5e5;border-radius:12px;padding:20px;">
+          <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">Enterprise</div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">Full solution</div>
+          <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:14px;">$999<span style="font-size:12px;font-weight:400;color:#888;">/mo</span></div>
+          <ul style="font-size:12px;color:#555;line-height:2;list-style:none;padding:0;margin-bottom:16px;">
+            <li>✓ Multi-user accounts</li>
+            <li>✓ White-label</li>
+            <li>✓ Dedicated manager</li>
+            <li>✓ SLA guarantee</li>
+          </ul>
+          <button onclick="go('subscription')" style="width:100%;padding:9px;border:1.5px solid #111;border-radius:20px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;">Select Enterprise</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:28px;margin-bottom:18px;">
+      <div style="font-size:15px;font-weight:700;color:#111;margin-bottom:18px;">Account Settings</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:#f8f8f8;border-radius:10px;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#111;">Email Address</div>
+            <div style="font-size:12px;color:#888;margin-top:2px;" id="acc-email-setting">—</div>
+          </div>
+          <button style="padding:6px 14px;border:1.5px solid #ccc;border-radius:20px;background:#fff;font-size:12px;cursor:pointer;font-weight:600;">Change</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:#f8f8f8;border-radius:10px;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#111;">Password</div>
+            <div style="font-size:12px;color:#888;margin-top:2px;">Last changed: never</div>
+          </div>
+          <button onclick="go('forgot-password')" style="padding:6px 14px;border:1.5px solid #ccc;border-radius:20px;background:#fff;font-size:12px;cursor:pointer;font-weight:600;">Reset Password</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sign out -->
+    <div style="text-align:center;padding:8px 0 32px;">
+      <button onclick="doSignOut()" style="padding:10px 28px;border:1.5px solid #ff4444;border-radius:20px;background:#fff;color:#cc0000;font-size:13px;font-weight:600;cursor:pointer;">Sign Out</button>
+    </div>
+
+  </div>
+  <div class="footer-slot"></div>
+</div>
+
 <!-- ═══ LOGIN ═══ -->
 <div id="page-login" class="page">
   <div class="auth-pg">
@@ -718,11 +847,32 @@ sb.auth.onAuthStateChange((event, session) => {
 
 function updateNavLoggedIn(user) {
   const name = user.user_metadata?.full_name || user.email.split('@')[0];
-  document.getElementById('nav-user-name').textContent = '👤 ' + name;
-  document.getElementById('nav-user-name').style.display = 'inline';
-  document.getElementById('nav-signout-btn').style.display = 'inline-block';
+  document.getElementById('nav-user-label').textContent = name;
+  document.getElementById('nav-user-name').style.display = 'inline-flex';
+  document.getElementById('nav-signout-btn').style.display = 'none';
   document.getElementById('nav-login-btn').style.display = 'none';
   document.getElementById('nav-register-btn').style.display = 'none';
+  // Populate account page
+  const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  const since = new Date(user.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const el = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+  el('acc-avatar', initials);
+  el('acc-name', name);
+  el('acc-email', user.email);
+  el('acc-email-setting', user.email);
+  el('acc-since', since);
+}
+
+function goDashboard() {
+  closeDD();
+  // If logged in, open the real dashboard in a new tab
+  sb.auth.getSession().then(({ data }) => {
+    if (data?.session?.user) {
+      window.open('/dashboard.html', '_blank');
+    } else {
+      go('login');
+    }
+  });
 }
 
 function updateNavLoggedOut() {
