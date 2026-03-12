@@ -517,10 +517,7 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
           <li><span class="ck">✓</span>10 export credits / month</li>
           <li><span class="ck">✓</span>Email support</li>
         </ul>
-        <button class="btn-sub btn-sub-o" onclick="go('register')">Get Started</button>
-      </div>
-
-      <!-- PROFESSIONAL -->
+        <button class="btn-sub btn-sub-o" onclick="goStripe('basic')">Get Started</button>
       <div class="plan feat">
         <div class="pop-badge">⭐ Most Popular</div>
         <div class="pln-name">Professional</div>
@@ -542,7 +539,7 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
           <li><span class="ck">✓</span>Limited API access</li>
           <li><span class="ck">✓</span>Priority support</li>
         </ul>
-        <button class="btn-sub btn-sub-d" onclick="go('register')">Get Started</button>
+        <button class="btn-sub btn-sub-d" onclick="goStripe('professional')">Get Started</button>
       </div>
 
       <!-- ENTERPRISE -->
@@ -1084,6 +1081,14 @@ function toggleBilling(){
   document.getElementById('p-pro').textContent=isAnnual?'$4,790':'$499';
   document.getElementById('pp-pro').textContent=isAnnual?'/year':'/month';
   document.getElementById('pa-pro').innerHTML=isAnnual?'<strong>You save $1,198</strong> vs monthly':'<strong>$4,790/year</strong> with annual billing';
+}
+
+const STRIPE_LINKS={
+  basic:{monthly:'https://buy.stripe.com/test_8x228t0En0uUa4OciW4F202',annual:'https://buy.stripe.com/test_00weVf0EncdCgtc0Ae4F203'},
+  professional:{monthly:'https://buy.stripe.com/test_9B600l86PcdC2Cm1Ei4F200',annual:'https://buy.stripe.com/test_9B65kF72L6Tifp8er44F201'}
+};
+function goStripe(plan){
+  window.open(STRIPE_LINKS[plan][isAnnual?'annual':'monthly'],'_blank');
 }
 </script>
 </body>
