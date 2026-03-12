@@ -6,6 +6,7 @@
 <title>Ironwood Intelligence</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:14px;}
@@ -309,8 +310,11 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
     </div>
   </div>
   <div class="nav-actions">
-    <button class="btn-join" onclick="go('register')">Join</button>
-    <button class="btn-login" onclick="go('login')">Login</button>
+    <button class="btn-join" id="nav-register-btn" onclick="go('register')">Join Now</button>
+    <button class="btn-login" id="nav-login-btn" onclick="go('login')">Sign In</button>
+    <button class="btn-login" id="nav-signout-btn" style="display:none;" onclick="doSignOut()">Sign Out</button>
+    <span id="nav-user-name" style="display:none;font-size:13px;font-weight:600;color:#111;margin-right:4px;"></span>
+  </div>
   </div>
 </nav>
 
@@ -536,9 +540,11 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
     <div class="auth-box">
       <h2>Sign in to your account</h2>
       <div style="height:20px;"></div>
-      <div class="fg-auth"><label>Email address</label><input type="email"/></div>
-      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password"/><span class="pw-eye">👁</span></div></div>
-      <button class="btn-submit">Sign in</button>
+      <div id="login-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+      <div id="login-success" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+      <div class="fg-auth"><label>Email address</label><input type="email" id="login-email" placeholder="you@example.com"/></div>
+      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password" id="login-password" placeholder="Your password"/><span class="pw-eye" onclick="togglePw('login-password',this)">👁</span></div></div>
+      <button class="btn-submit" id="login-btn" onclick="doLogin()">Sign in</button>
       <div class="auth-sw">Not a member? <a onclick="go('register')">Join now</a></div>
     </div>
   </div>
@@ -549,15 +555,17 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
 <div id="page-register" class="page">
   <div class="auth-pg">
     <div class="auth-box">
-      <div class="auth-logo">RE</div>
+      <div class="auth-logo">IW</div>
       <h2>Create your account</h2>
       <p class="auth-sub">Or <a onclick="go('login')">sign in to your existing account</a></p>
-      <div class="fg-auth"><label>Full Name</label><input type="text" placeholder="Enter your full name"/></div>
-      <div class="fg-auth"><label>Email address</label><input type="email" placeholder="Enter your email"/></div>
-      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password" placeholder="Create a password"/><span class="pw-eye">👁</span></div></div>
-      <div class="fg-auth"><label>Confirm Password</label><div class="pw"><input type="password" placeholder="Confirm your password"/><span class="pw-eye">👁</span></div></div>
-      <div class="chk-row"><input type="checkbox"/><label>I agree to the <a>Terms of Service</a> and <a>Privacy Policy</a></label></div>
-      <button class="btn-submit">Create account</button>
+      <div id="reg-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+      <div id="reg-success" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+      <div class="fg-auth"><label>Full Name</label><input type="text" id="reg-name" placeholder="Enter your full name"/></div>
+      <div class="fg-auth"><label>Email address</label><input type="email" id="reg-email" placeholder="Enter your email"/></div>
+      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password" id="reg-password" placeholder="Create a password (min 8 chars)"/><span class="pw-eye" onclick="togglePw('reg-password',this)">👁</span></div></div>
+      <div class="fg-auth"><label>Confirm Password</label><div class="pw"><input type="password" id="reg-confirm" placeholder="Confirm your password"/><span class="pw-eye" onclick="togglePw('reg-confirm',this)">👁</span></div></div>
+      <div class="chk-row"><input type="checkbox" id="reg-terms"/><label>I agree to the <a>Terms of Service</a> and <a>Privacy Policy</a></label></div>
+      <button class="btn-submit" id="reg-btn" onclick="doRegister()">Create account</button>
       <div class="ftrial"><div class="ft-t">Free Trial Included</div><p>Get 7 days of free access to all premium features when you create your account.</p></div>
     </div>
   </div>
@@ -576,7 +584,7 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
     <div>
       <h2>Get in Touch</h2>
       <p class="ci-desc">We're here to answer your questions and provide support. Reach out to us anytime!</p>
-      <div class="ci-item"><div class="ci-icon">✉️</div><div><div class="ci-lbl">Email</div><div class="ci-val">business@ironwoodintelligence.com</div></div></div>
+      <div class="ci-item"><div class="ci-icon">✉️</div><div><div class="ci-lbl">Email</div><div class="ci-val"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fa988f8993949f8989ba938895948d95959e93948e9f9696939d9f94999fd4999597">[email&#160;protected]</a></div></div></div>
       <div class="ci-item"><div class="ci-icon">📞</div><div><div class="ci-lbl">Phone</div><div class="ci-val">+971 50 123 4567</div></div></div>
       <div class="ci-item"><div class="ci-icon">📍</div><div><div class="ci-lbl">Office</div><div class="ci-val">Meydan Free Zone, Dubai, UAE</div></div></div>
     </div>
@@ -626,7 +634,7 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
   </footer>
 </template>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 var mapDone = false;
 
 function go(name) {
@@ -669,16 +677,124 @@ function initMap() {
   }
 }
 
+// ═══ SUPABASE AUTH ═══
+const SB_URL = 'https://ujhqkirhfmumvvnfvgnz.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+// Check session on load and update nav
+window.addEventListener('load', async function() {
+  const { data } = await sb.auth.getSession();
+  if (data?.session?.user) updateNavLoggedIn(data.session.user);
+});
+
+// Listen for auth state changes
+sb.auth.onAuthStateChange((event, session) => {
+  if (session?.user) updateNavLoggedIn(session.user);
+  else updateNavLoggedOut();
+});
+
+function updateNavLoggedIn(user) {
+  const name = user.user_metadata?.full_name || user.email.split('@')[0];
+  document.getElementById('nav-user-name').textContent = '👤 ' + name;
+  document.getElementById('nav-user-name').style.display = 'inline';
+  document.getElementById('nav-signout-btn').style.display = 'inline-block';
+  document.getElementById('nav-login-btn').style.display = 'none';
+  document.getElementById('nav-register-btn').style.display = 'none';
+}
+
+function updateNavLoggedOut() {
+  document.getElementById('nav-user-name').style.display = 'none';
+  document.getElementById('nav-signout-btn').style.display = 'none';
+  document.getElementById('nav-login-btn').style.display = 'inline-block';
+  document.getElementById('nav-register-btn').style.display = 'inline-block';
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  const okEl = document.getElementById('login-success');
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+
+  if (!email || !password) { showAuthMsg('login-error', 'Please enter your email and password.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = 'Sign in';
+
+  if (error) {
+    showAuthMsg('login-error', error.message === 'Invalid login credentials' ? 'Incorrect email or password.' : error.message);
+    return;
+  }
+
+  showAuthMsg('login-success', '✅ Signed in successfully! Redirecting...');
+  setTimeout(() => go('home'), 1200);
+}
+
+async function doRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const confirm = document.getElementById('reg-confirm').value;
+  const terms = document.getElementById('reg-terms').checked;
+  const btn = document.getElementById('reg-btn');
+
+  document.getElementById('reg-error').style.display = 'none';
+  document.getElementById('reg-success').style.display = 'none';
+
+  if (!name) { showAuthMsg('reg-error', 'Please enter your full name.'); return; }
+  if (!email) { showAuthMsg('reg-error', 'Please enter your email address.'); return; }
+  if (password.length < 8) { showAuthMsg('reg-error', 'Password must be at least 8 characters.'); return; }
+  if (password !== confirm) { showAuthMsg('reg-error', 'Passwords do not match.'); return; }
+  if (!terms) { showAuthMsg('reg-error', 'Please agree to the Terms of Service to continue.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Creating account...';
+  const { data, error } = await sb.auth.signUp({
+    email, password,
+    options: { data: { full_name: name } }
+  });
+  btn.disabled = false; btn.textContent = 'Create account';
+
+  if (error) { showAuthMsg('reg-error', error.message); return; }
+
+  showAuthMsg('reg-success', '✅ Account created! Please check your email to confirm your account, then sign in.');
+  document.getElementById('reg-name').value = '';
+  document.getElementById('reg-email').value = '';
+  document.getElementById('reg-password').value = '';
+  document.getElementById('reg-confirm').value = '';
+  document.getElementById('reg-terms').checked = false;
+}
+
+async function doSignOut() {
+  await sb.auth.signOut();
+  updateNavLoggedOut();
+  go('home');
+}
+
+function showAuthMsg(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function togglePw(inputId, eyeEl) {
+  const input = document.getElementById(inputId);
+  if (input.type === 'password') { input.type = 'text'; eyeEl.textContent = '🙈'; }
+  else { input.type = 'password'; eyeEl.textContent = '👁'; }
+}
+// ═══ END AUTH ═══
+
 function toggleDD(e) {
   e.stopPropagation();
   document.getElementById('dd').classList.toggle('open');
 }
-function closeDD() { document.getElementById('dd').classList.remove('open'); }
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.nav-more')) closeDD();
-});
-
-go('home');
+function closeDD() {
+  var dd = document.getElementById('dd');
+  if (dd) dd.classList.remove('open');
+}
+document.addEventListener('click', closeDD);
 </script>
 </body>
 </html>
