@@ -461,16 +461,15 @@ function mk(id,type,data,opts={}){
   return c._ch;
 }
 
-// Vertical bar — thin columns, flat fill, no border radius (like reference)
+// Vertical bar — fully filled, solid color
 function vbar(id,labels,vals,cols){
   mk(id,'bar',{
     labels,
     datasets:[{
       data:vals,
-      backgroundColor:cols.map(c=>c+'22'),
-      borderColor:cols,
-      borderWidth:1.5,
-      borderRadius:3,
+      backgroundColor:cols,
+      borderWidth:0,
+      borderRadius:4,
       borderSkipped:false,
       barPercentage:.55,
       categoryPercentage:.7
@@ -478,16 +477,15 @@ function vbar(id,labels,vals,cols){
   },{scales:{y:{...YAX},x:{...XAX}}});
 }
 
-// Horizontal bar — thin rows
+// Horizontal bar — fully filled
 function hbar(id,labels,vals,col){
   mk(id,'bar',{
     labels,
     datasets:[{
       data:vals,
-      backgroundColor:col+'20',
-      borderColor:col,
-      borderWidth:1.5,
-      borderRadius:3,
+      backgroundColor:col,
+      borderWidth:0,
+      borderRadius:4,
       borderSkipped:false,
       barPercentage:.6,
       categoryPercentage:.75
@@ -547,8 +545,8 @@ function renderOverview(){
 
   // Rent vs Sale — grouped thin bars
   mk('c-rvs','bar',{labels:cs.map(c=>c.city),datasets:[
-    {label:'Rent',data:cs.map(c=>c.rent),backgroundColor:'#1a1a1a18',borderColor:'#1a1a1a',borderWidth:1.5,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8},
-    {label:'Sale',data:cs.map(c=>c.sale),backgroundColor:'#b8933f18',borderColor:'#b8933f',borderWidth:1.5,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8}
+    {label:'Rent',data:cs.map(c=>c.rent),backgroundColor:'#1a1a1a',borderWidth:0,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8},
+    {label:'Sale',data:cs.map(c=>c.sale),backgroundColor:'#b8933f',borderWidth:0,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8}
   ]},{
     plugins:{legend:{display:true,labels:{color:'#9a9896',padding:14,usePointStyle:true,font:{size:11}}},tooltip:{...TT,mode:'index'}},
     scales:{y:{...YAX},x:{...XAX}}
@@ -601,7 +599,7 @@ function RC(){
   mk('c-cg','bar',{labels:ats,datasets:DB.cities.map(city=>({
     label:city,
     data:ats.map(at=>{const r=DB.agg.cal.find(d=>d.city===city&&d.asset_class===at&&d.listing_type===lt);return r?r.med:null;}),
-    backgroundColor:gc(city)+'20',borderColor:gc(city),borderWidth:1.5,
+    backgroundColor:gc(city),borderWidth:0,
     borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.85
   }))},{
     plugins:{legend:{display:true,labels:{color:'#9a9896',padding:12,usePointStyle:true,font:{size:11}}},tooltip:{...TT,mode:'index'}},
@@ -645,8 +643,8 @@ function RA(){
   const sv=ats.map(a=>{const r=DB.agg.cal.filter(d=>d.asset_class===a&&d.listing_type==='Sale');return r.length?Math.round(r.reduce((s,x)=>s+x.med,0)/r.length):null;});
 
   mk('c-aas','bar',{labels:ats,datasets:[
-    {label:'Rent',data:rv,backgroundColor:'#1a1a1a18',borderColor:'#1a1a1a',borderWidth:1.5,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8},
-    {label:'Sale',data:sv,backgroundColor:'#b8933f18',borderColor:'#b8933f',borderWidth:1.5,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8}
+    {label:'Rent',data:rv,backgroundColor:'#1a1a1a',borderWidth:0,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8},
+    {label:'Sale',data:sv,backgroundColor:'#b8933f',borderWidth:0,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8}
   ]},{
     plugins:{legend:{display:true,labels:{color:'#9a9896',padding:14,usePointStyle:true}},tooltip:{...TT,mode:'index'}},
     scales:{y:{...YAX},x:{...XAX}}
@@ -655,7 +653,7 @@ function RA(){
   const mAC=(id,lt)=>mk(id,'bar',{labels:ats,datasets:DB.cities.map(city=>({
     label:city,
     data:ats.map(at=>{const r=DB.agg.cal.find(d=>d.city===city&&d.asset_class===at&&d.listing_type===lt);return r?r.med:null;}),
-    backgroundColor:gc(city)+'1a',borderColor:gc(city),borderWidth:1.5,
+    backgroundColor:gc(city),borderWidth:0,
     borderRadius:3,borderSkipped:false,barPercentage:.45,categoryPercentage:.85
   }))},{
     plugins:{legend:{display:true,labels:{color:'#9a9896',padding:10,font:{size:10},usePointStyle:true}},tooltip:{...TT,mode:'index'}},
