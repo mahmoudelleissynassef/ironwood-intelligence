@@ -193,31 +193,51 @@ svg.linechart{position:absolute;top:0;left:0;width:100%;height:100%;overflow:vis
 .btn-ws{padding:9px 20px;border:none;background:#fff;color:#111;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;}
 
 /* ── SUBSCRIPTION ── */
-.sub-pg{padding:50px 40px;background:#f5f5f5;}
-.sub-pg h1{font-size:32px;font-weight:800;text-align:center;margin-bottom:10px;}
-.sub-desc{font-size:15px;color:#555;text-align:center;max-width:560px;margin:0 auto 40px;}
-.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:960px;margin:0 auto 40px;}
-.plan{background:#fff;border-radius:12px;padding:32px;border:1.5px solid #e5e5e5;position:relative;}
-.plan.feat{border-color:#111;border-width:2px;}
-.pop-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:4px 16px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
-.pln-name{font-size:20px;font-weight:800;margin-bottom:4px;}
-.pln-tag{font-size:13px;color:#777;margin-bottom:20px;}
-.pln-price{display:flex;align-items:baseline;gap:4px;margin-bottom:24px;}
-.pln-price .amt{font-size:40px;font-weight:900;}
-.pln-price .per{font-size:14px;color:#888;}
-.pln-feats{list-style:none;margin-bottom:28px;}
-.pln-feats li{font-size:13px;color:#444;padding:6px 0;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f5f5f5;}
-.pln-feats li:last-child{border-bottom:none;}
-.pln-feats li::before{content:'✓';color:#16a34a;font-weight:700;}
-.btn-sub{width:100%;padding:11px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:none;}
-.btn-sub-o{background:#f5f5f5;color:#333;}
+.sub-pg{padding:60px 24px 80px;background:#f7f7f6;}
+.sub-hd{text-align:center;max-width:600px;margin:0 auto 48px;}
+.sub-hd h1{font-size:34px;font-weight:800;letter-spacing:-.02em;color:#111;margin-bottom:10px;}
+.sub-hd p{font-size:15px;color:#666;line-height:1.6;}
+/* billing toggle */
+.bill-toggle{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:22px;}
+.bill-toggle span{font-size:13px;font-weight:600;color:#888;}
+.bill-toggle span.on{color:#111;}
+.toggle-wrap{position:relative;width:44px;height:24px;background:#ddd;border-radius:12px;cursor:pointer;transition:background .2s;}
+.toggle-wrap.active{background:#111;}
+.toggle-knob{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+.toggle-wrap.active .toggle-knob{transform:translateX(20px);}
+.save-badge{display:inline-block;background:#dcfce7;color:#16a34a;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:4px;}
+/* plans grid */
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1020px;margin:0 auto 60px;}
+.plan{background:#fff;border-radius:14px;padding:32px 28px;border:1.5px solid #e5e5e5;position:relative;display:flex;flex-direction:column;}
+.plan.feat{border-color:#111;border-width:2px;box-shadow:0 8px 40px rgba(0,0,0,.1);}
+.pop-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;letter-spacing:.04em;}
+.pln-name{font-size:18px;font-weight:800;color:#111;margin-bottom:4px;}
+.pln-tag{font-size:12.5px;color:#777;margin-bottom:20px;line-height:1.5;}
+.pln-price{margin-bottom:6px;}
+.pln-amt{font-size:38px;font-weight:900;color:#111;letter-spacing:-.03em;line-height:1;}
+.pln-per{font-size:13px;color:#888;margin-left:2px;}
+.pln-annual{font-size:11.5px;color:#888;margin-top:5px;margin-bottom:20px;min-height:18px;}
+.pln-annual strong{color:#16a34a;}
+.pln-div{height:1px;background:#f0f0f0;margin-bottom:20px;}
+.pln-feats{list-style:none;margin-bottom:28px;flex:1;}
+.pln-feats li{font-size:12.5px;color:#444;padding:5px 0;display:flex;align-items:flex-start;gap:9px;line-height:1.4;}
+.pln-feats li .ck{color:#16a34a;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px;}
+.pln-feats li.inherit .ck{color:#aaa;}
+.btn-sub{width:100%;padding:12px;border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;border:none;transition:opacity .15s;}
+.btn-sub:hover{opacity:.88;}
+.btn-sub-o{background:#f3f3f2;color:#333;}
 .btn-sub-d{background:#111;color:#fff;}
-.why-box{background:#fff;border-radius:12px;padding:40px;max-width:960px;margin:0 auto;}
-.why-box h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:32px;}
+.btn-sub-e{background:transparent;color:#111;border:1.5px solid #111;}
+/* enterprise note */
+.ent-note{font-size:11.5px;color:#888;text-align:center;margin-top:10px;line-height:1.5;}
+/* why section */
+.why-box{background:#fff;border-radius:14px;padding:44px;max-width:1020px;margin:0 auto;}
+.why-box h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:32px;letter-spacing:-.01em;}
 .why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center;}
 .wi-badge{display:inline-flex;width:44px;height:44px;background:#111;color:#fff;border-radius:8px;align-items:center;justify-content:center;font-size:13px;font-weight:800;margin-bottom:10px;}
-.why-item h4{font-size:14px;font-weight:700;margin-bottom:5px;}
+.why-item h4{font-size:14px;font-weight:700;margin-bottom:5px;color:#111;}
 .why-item p{font-size:12px;color:#777;}
+@media(max-width:800px){.plans{grid-template-columns:1fr;max-width:480px;}.why-grid{grid-template-columns:1fr 1fr;}}
 
 /* ── DASHBOARD LOCKED ── */
 .dlocked{min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px;background:#f5f5f5;}
@@ -465,25 +485,108 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
 <!-- ═══ SUBSCRIPTION ═══ -->
 <div id="page-subscription" class="page">
   <div class="sub-pg">
-    <h1>Choose Your Plan</h1>
-    <p class="sub-desc">Get access to comprehensive African real estate market data, analytics, and insights tailored to your investment needs.</p>
-    <div class="plans">
-      <div class="plan"><div class="pln-name">Basic</div><div class="pln-tag">Essential market data for small investors</div><div class="pln-price"><span class="amt">$99</span><span class="per">/month</span></div><ul class="pln-feats"><li>Access to property listings</li><li>Basic market analytics</li><li>Monthly market reports</li><li>Email support</li><li>Up to 50 property views/month</li></ul><button class="btn-sub btn-sub-o">Subscribe to Basic</button></div>
-      <div class="plan feat"><div class="pop-badge">⭐ Most Popular</div><div class="pln-name">Professional</div><div class="pln-tag">Advanced analytics for serious investors</div><div class="pln-price"><span class="amt">$299</span><span class="per">/month</span></div><ul class="pln-feats"><li>Everything in Basic</li><li>Advanced market analytics</li><li>Real-time data updates</li><li>Transaction history access</li><li>Unlimited property views</li><li>Priority support</li><li>Custom reports</li><li>API access</li></ul><button class="btn-sub btn-sub-d">Subscribe to Professional</button></div>
-      <div class="plan"><div class="pln-name">Enterprise</div><div class="pln-tag">Complete solution for large organizations</div><div class="pln-price"><span class="amt">$999</span><span class="per">/month</span></div><ul class="pln-feats"><li>Everything in Professional</li><li>Multi-user accounts</li><li>White-label solutions</li><li>Dedicated account manager</li><li>Custom integrations</li><li>Advanced security features</li><li>Training &amp; onboarding</li><li>SLA guarantee</li></ul><button class="btn-sub btn-sub-o">Subscribe to Enterprise</button></div>
+    <div class="sub-hd">
+      <h1>Simple, Transparent Pricing</h1>
+      <p>Professional-grade African real estate intelligence — from independent analysts to institutional teams.</p>
+      <div class="bill-toggle">
+        <span class="on" id="lbl-monthly">Monthly</span>
+        <div class="toggle-wrap" id="bill-tog" onclick="toggleBilling()"><div class="toggle-knob"></div></div>
+        <span id="lbl-annual">Annual <span class="save-badge">Save 20%</span></span>
+      </div>
     </div>
+
+    <div class="plans">
+
+      <!-- BASIC -->
+      <div class="plan">
+        <div class="pln-name">Basic</div>
+        <div class="pln-tag">Essential market intelligence for independent professionals and small teams</div>
+        <div class="pln-price">
+          <span class="pln-amt" id="p-basic">$99</span><span class="pln-per" id="pp-basic">/month</span>
+        </div>
+        <div class="pln-annual" id="pa-basic"></div>
+        <div class="pln-div"></div>
+        <ul class="pln-feats">
+          <li><span class="ck">✓</span>Access to core market intelligence dashboards</li>
+          <li><span class="ck">✓</span>Country-level real estate indicators</li>
+          <li><span class="ck">✓</span>Key macroeconomic and sector indicators</li>
+          <li><span class="ck">✓</span>Aggregated development pipeline insights</li>
+          <li><span class="ck">✓</span>Up to 3 years of historical data</li>
+          <li><span class="ck">✓</span>Quarterly market intelligence briefs</li>
+          <li><span class="ck">✓</span>Interactive charts and maps</li>
+          <li><span class="ck">✓</span>10 export credits / month</li>
+          <li><span class="ck">✓</span>Email support</li>
+        </ul>
+        <button class="btn-sub btn-sub-o" onclick="go('register')">Get Started</button>
+      </div>
+
+      <!-- PROFESSIONAL -->
+      <div class="plan feat">
+        <div class="pop-badge">⭐ Most Popular</div>
+        <div class="pln-name">Professional</div>
+        <div class="pln-tag">Advanced analytics and deeper datasets for investors, developers, and advisory firms</div>
+        <div class="pln-price">
+          <span class="pln-amt" id="p-pro">$499</span><span class="pln-per" id="pp-pro">/month</span>
+        </div>
+        <div class="pln-annual" id="pa-pro"></div>
+        <div class="pln-div"></div>
+        <ul class="pln-feats">
+          <li class="inherit"><span class="ck">✓</span>Everything in Basic</li>
+          <li><span class="ck">✓</span>City-level datasets and indicators</li>
+          <li><span class="ck">✓</span>Extended historical database (10+ years)</li>
+          <li><span class="ck">✓</span>Monthly market intelligence updates</li>
+          <li><span class="ck">✓</span>Development pipeline tracking by project phase</li>
+          <li><span class="ck">✓</span>Transaction and pricing trend analysis</li>
+          <li><span class="ck">✓</span>Advanced analytics and benchmarking tools</li>
+          <li><span class="ck">✓</span>100 export credits / month</li>
+          <li><span class="ck">✓</span>Limited API access</li>
+          <li><span class="ck">✓</span>Priority support</li>
+        </ul>
+        <button class="btn-sub btn-sub-d" onclick="go('register')">Get Started</button>
+      </div>
+
+      <!-- ENTERPRISE -->
+      <div class="plan">
+        <div class="pln-name">Enterprise</div>
+        <div class="pln-tag">Institutional-grade market intelligence with full data access and integrations</div>
+        <div class="pln-price">
+          <span class="pln-amt" style="font-size:26px;line-height:1.2;">Starting at<br/>$25,000</span>
+        </div>
+        <div class="pln-annual" style="color:#888;">/year · custom contract</div>
+        <div class="pln-div"></div>
+        <ul class="pln-feats">
+          <li class="inherit"><span class="ck">✓</span>Everything in Professional</li>
+          <li><span class="ck">✓</span>Asset-level datasets and granular intelligence</li>
+          <li><span class="ck">✓</span>Full historical database access</li>
+          <li><span class="ck">✓</span>Unlimited exports and data extraction tools</li>
+          <li><span class="ck">✓</span>Full API access</li>
+          <li><span class="ck">✓</span>Custom integrations and data feeds</li>
+          <li><span class="ck">✓</span>Multi-user accounts and organization workspaces</li>
+          <li><span class="ck">✓</span>Custom datasets and tailored research support</li>
+          <li><span class="ck">✓</span>White-label reporting capabilities</li>
+          <li><span class="ck">✓</span>Dedicated account manager</li>
+          <li><span class="ck">✓</span>Training and onboarding</li>
+          <li><span class="ck">✓</span>Service Level Agreement (SLA)</li>
+        </ul>
+        <button class="btn-sub btn-sub-e" onclick="go('contact')">Contact Sales</button>
+        <div class="ent-note">Enterprise pricing is negotiated based on scope,<br/>team size, and data requirements.</div>
+      </div>
+
+    </div>
+
     <div class="why-box">
-      <h2>Why Choose Our Platform?</h2>
+      <h2>Why Ironwood Intelligence?</h2>
       <div class="why-grid">
-        <div class="why-item"><div class="wi-badge">+35</div><h4>Countries Covered</h4><p>Comprehensive data across major African markets</p></div>
-        <div class="why-item"><div class="wi-badge">24/7</div><h4>Real-time Updates</h4><p>Live market data and instant notifications</p></div>
-        <div class="why-item"><div class="wi-badge">API</div><h4>Developer Friendly</h4><p>RESTful API for custom integrations</p></div>
-        <div class="why-item"><div class="wi-badge">99%</div><h4>Uptime Guarantee</h4><p>Reliable platform you can depend on</p></div>
+        <div class="why-item"><div class="wi-badge">35+</div><h4>Countries Tracked</h4><p>Comprehensive coverage across African markets</p></div>
+        <div class="why-item"><div class="wi-badge">↻</div><h4>Regular Updates</h4><p>Fresh data delivered on a consistent cadence</p></div>
+        <div class="why-item"><div class="wi-badge">API</div><h4>API Access</h4><p>Integrate market data directly into your workflow</p></div>
+        <div class="why-item"><div class="wi-badge">✦</div><h4>Expert Coverage</h4><p>Built by analysts who understand African real estate</p></div>
       </div>
     </div>
   </div>
   <div class="footer-slot"></div>
 </div>
+
 
 <!-- ═══ DASHBOARD ═══ -->
 <div id="page-dashboard" class="page">
@@ -554,13 +657,14 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
 
         <div style="border:1.5px solid #e5e5e5;border-radius:12px;padding:20px;">
           <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">Basic</div>
-          <div style="font-size:11px;color:#888;margin-bottom:14px;">Essential market data</div>
-          <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:14px;">$99<span style="font-size:12px;font-weight:400;color:#888;">/mo</span></div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">Independent professionals &amp; small teams</div>
+          <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:2px;">$99<span style="font-size:12px;font-weight:400;color:#888;">/mo</span></div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">or $950/year</div>
           <ul style="font-size:12px;color:#555;line-height:2;list-style:none;padding:0;margin-bottom:16px;">
-            <li>✓ Property listings</li>
-            <li>✓ Basic analytics</li>
-            <li>✓ Monthly reports</li>
-            <li>✓ 50 views/month</li>
+            <li>✓ Core market intelligence dashboards</li>
+            <li>✓ Country-level indicators</li>
+            <li>✓ 3 years historical data</li>
+            <li>✓ 10 export credits/month</li>
           </ul>
           <button onclick="go('subscription')" style="width:100%;padding:9px;border:1.5px solid #111;border-radius:20px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;">Select Basic</button>
         </div>
@@ -568,28 +672,30 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
         <div style="border:2px solid #111;border-radius:12px;padding:20px;position:relative;">
           <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.06em;">MOST POPULAR</div>
           <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">Professional</div>
-          <div style="font-size:11px;color:#888;margin-bottom:14px;">Advanced analytics</div>
-          <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:14px;">$299<span style="font-size:12px;font-weight:400;color:#888;">/mo</span></div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">Investors, developers &amp; advisory firms</div>
+          <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:2px;">$499<span style="font-size:12px;font-weight:400;color:#888;">/mo</span></div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">or $4,790/year</div>
           <ul style="font-size:12px;color:#555;line-height:2;list-style:none;padding:0;margin-bottom:16px;">
-            <li>✓ Everything in Basic</li>
-            <li>✓ Real-time data</li>
-            <li>✓ Unlimited views</li>
-            <li>✓ API access</li>
+            <li>✓ City-level datasets &amp; indicators</li>
+            <li>✓ 10+ years historical data</li>
+            <li>✓ Pricing trend analysis</li>
+            <li>✓ 100 export credits/month</li>
           </ul>
           <button onclick="go('subscription')" style="width:100%;padding:9px;border:none;border-radius:20px;background:#111;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">Select Professional</button>
         </div>
 
         <div style="border:1.5px solid #e5e5e5;border-radius:12px;padding:20px;">
           <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">Enterprise</div>
-          <div style="font-size:11px;color:#888;margin-bottom:14px;">Full solution</div>
-          <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:14px;">$999<span style="font-size:12px;font-weight:400;color:#888;">/mo</span></div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">Institutional clients &amp; large organizations</div>
+          <div style="font-size:19px;font-weight:800;color:#111;margin-bottom:2px;">From $25,000</div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">/year · custom contract</div>
           <ul style="font-size:12px;color:#555;line-height:2;list-style:none;padding:0;margin-bottom:16px;">
-            <li>✓ Multi-user accounts</li>
-            <li>✓ White-label</li>
-            <li>✓ Dedicated manager</li>
-            <li>✓ SLA guarantee</li>
+            <li>✓ Asset-level granular data</li>
+            <li>✓ Full API + custom integrations</li>
+            <li>✓ Dedicated account manager</li>
+            <li>✓ White-label &amp; SLA</li>
           </ul>
-          <button onclick="go('subscription')" style="width:100%;padding:9px;border:1.5px solid #111;border-radius:20px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;">Select Enterprise</button>
+          <button onclick="go('contact')" style="width:100%;padding:9px;border:1.5px solid #111;border-radius:20px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;">Contact Sales</button>
         </div>
 
       </div>
@@ -960,6 +1066,25 @@ function togglePw(inputId, eyeEl) {
 
 function closeDD() {}
 document.addEventListener('click', closeDD);
+
+// Billing toggle
+var isAnnual=false;
+function toggleBilling(){
+  isAnnual=!isAnnual;
+  var tog=document.getElementById('bill-tog');
+  var lm=document.getElementById('lbl-monthly');
+  var la=document.getElementById('lbl-annual');
+  if(isAnnual){tog.classList.add('active');lm.classList.remove('on');la.classList.add('on');}
+  else{tog.classList.remove('active');lm.classList.add('on');la.classList.remove('on');}
+  // Basic: $99/mo → $950/yr (~$79/mo)
+  document.getElementById('p-basic').textContent=isAnnual?'$950':'$99';
+  document.getElementById('pp-basic').textContent=isAnnual?'/year':'/month';
+  document.getElementById('pa-basic').innerHTML=isAnnual?'<strong>You save $238</strong> vs monthly':'<strong>$950/year</strong> with annual billing';
+  // Pro: $499/mo → $4,790/yr (~$399/mo)
+  document.getElementById('p-pro').textContent=isAnnual?'$4,790':'$499';
+  document.getElementById('pp-pro').textContent=isAnnual?'/year':'/month';
+  document.getElementById('pa-pro').innerHTML=isAnnual?'<strong>You save $1,198</strong> vs monthly':'<strong>$4,790/year</strong> with annual billing';
+}
 </script>
 </body>
 </html>
