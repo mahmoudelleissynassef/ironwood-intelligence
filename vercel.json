@@ -1,9 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/",
+      "destination": "/admin/index.html",
+      "has": [{ "type": "host", "value": "admin.ironwoodintelligence.com" }]
+    },
+    {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "admin.ironwoodintelligence.com" }],
-      "destination": "/admin/index.html"
+      "destination": "/admin/index.html",
+      "has": [{ "type": "host", "value": "admin.ironwoodintelligence.com" }]
     }
   ]
 }
