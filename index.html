@@ -3,1139 +3,1508 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Ironwood Intelligence</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<title>Ironwood Intelligence — Institutional Real Estate Data for Africa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:14px;}
+:root{
+  --ink:#0d0d0d;
+  --ink2:#2a2a2a;
+  --ink3:#5a5a5a;
+  --ink4:#8a8a8a;
+  --rule:#e2e2df;
+  --surface:#f9f9f7;
+  --surface2:#f2f2ef;
+  --white:#ffffff;
+  --gold:#b8933f;
+  --gold2:#d4a84f;
+  --gold-pale:#f9f4eb;
+  --serif:'DM Serif Display',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{font-family:var(--sans);background:var(--white);color:var(--ink);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;}
 a{text-decoration:none;color:inherit;cursor:pointer;}
-
-/* ── NAV ── */
-nav{background:#fff;border-bottom:1px solid #e5e5e5;padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;}
-.nav-logo{font-size:15px;font-weight:700;letter-spacing:.04em;color:#111;cursor:pointer;}
-.nav-links{display:flex;align-items:center;gap:28px;}
-.nav-links>a{font-size:14px;color:#444;}
-.nav-links>a:hover{color:#111;}
-/* dropdown */
-.nav-more{position:relative;}
-.nav-more-btn{display:flex;align-items:center;gap:4px;font-size:14px;color:#444;background:none;border:none;font-family:inherit;cursor:pointer;padding:0;}
-.nav-more-btn:hover{color:#111;}
-.dropdown{display:none;position:absolute;top:calc(100% + 12px);left:0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.1);min-width:160px;z-index:500;overflow:hidden;}
-.dropdown.open{display:block;}
-.dropdown a{display:block;padding:12px 18px;font-size:14px;color:#333;border-bottom:1px solid #f0f0f0;}
-.dropdown a:last-child{border-bottom:none;}
-.dropdown a:hover{background:#f7f7f7;}
-/* nav buttons */
-.nav-actions{display:flex;align-items:center;gap:10px;}
-.btn-join{padding:7px 18px;border:1.5px solid #ccc;border-radius:20px;background:#fff;font-size:13px;cursor:pointer;color:#333;}
-.btn-login{padding:7px 18px;border-radius:20px;background:#111;color:#fff;font-size:13px;cursor:pointer;border:none;}
-.btn-login:hover{background:#333;}
+button{cursor:pointer;font-family:var(--sans);}
 
 /* ── PAGES ── */
 .page{display:none;}
 .page.active{display:block;}
 
-/* ── GRADIENT CARDS (replace photos) ── */
-.g-city   {background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);}
-.g-office {background:linear-gradient(135deg,#2c3e50,#4a6fa5,#68a0d0);}
-.g-meeting{background:linear-gradient(135deg,#134e5e,#3a7d6e,#71b280);}
-.g-dash   {background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);}
-.g-person {background:linear-gradient(135deg,#c79a6e,#e8c99a,#a67850);}
-.g-lagos  {background:linear-gradient(135deg,#1a3a2a,#2d6a4f,#40916c);}
-.g-nairobi{background:linear-gradient(135deg,#1b2838,#2a475e,#4a7da8);}
-.g-cape   {background:linear-gradient(135deg,#2d3561,#c05c7e,#f0a500);}
-.g-accra  {background:linear-gradient(135deg,#006400,#228B22,#5aab5a);}
-.g-joburg {background:linear-gradient(135deg,#3d0000,#8b0000,#cc4400);}
-.g-network{background:linear-gradient(135deg,#0d1117,#1a2332,#243447);}
-.g-build  {background:linear-gradient(135deg,#c9b08a,#a08060,#7a5c3a);}
-.grad-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;opacity:.3;}
+/* ── NAV ── */
+nav{
+  position:sticky;top:0;z-index:1000;
+  background:rgba(255,255,255,.96);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--rule);
+  padding:0 48px;
+  height:64px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.nav-logo{
+  font-family:var(--serif);
+  font-size:17px;letter-spacing:.01em;color:var(--ink);
+  display:flex;align-items:center;gap:10px;
+}
+.nav-logo-mark{
+  width:28px;height:28px;background:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:13px;color:#fff;
+  letter-spacing:0;
+}
+.nav-links{display:flex;align-items:center;gap:32px;}
+.nav-links a{font-size:13.5px;font-weight:500;color:var(--ink3);letter-spacing:.01em;transition:color .15s;}
+.nav-links a:hover{color:var(--ink);}
+.nav-actions{display:flex;align-items:center;gap:12px;}
+.btn-nav-demo{
+  padding:8px 20px;background:var(--ink);color:#fff;
+  font-size:13px;font-weight:500;border:none;border-radius:2px;
+  letter-spacing:.02em;transition:background .15s;
+}
+.btn-nav-demo:hover{background:var(--ink2);}
+.btn-nav-login{
+  padding:8px 16px;background:transparent;color:var(--ink);
+  font-size:13px;font-weight:500;border:1px solid var(--rule);border-radius:2px;
+  transition:border-color .15s;
+}
+.btn-nav-login:hover{border-color:#aaa;}
+#nav-user-pill{
+  display:none;align-items:center;gap:8px;
+  padding:6px 14px;border:1px solid var(--rule);border-radius:2px;
+  font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;
+}
 
-/* ── SHARED BUTTONS ── */
-.btn-dark   {padding:11px 24px;background:#111;color:#fff;border-radius:25px;font-size:14px;font-weight:600;border:none;cursor:pointer;}
-.btn-dark:hover{background:#333;}
-.btn-outline{padding:11px 24px;background:#fff;color:#111;border-radius:25px;font-size:14px;font-weight:500;border:1.5px solid #ccc;cursor:pointer;}
-.btn-outline:hover{border-color:#888;}
-.btn-sm-outline{padding:9px 20px;border:1.5px solid #ccc;border-radius:20px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+/* ── SHARED ── */
+.eyebrow{
+  font-size:11px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:14px;
+}
+.section-label{
+  font-size:11px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink4);
+}
+h1,h2,h3{font-family:var(--serif);font-weight:400;line-height:1.15;}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:13px 28px;background:var(--ink);color:#fff;
+  font-size:13.5px;font-weight:500;border:none;border-radius:2px;
+  letter-spacing:.02em;transition:background .15s;
+}
+.btn-primary:hover{background:var(--ink2);}
+.btn-secondary{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:13px 28px;background:transparent;color:var(--ink);
+  font-size:13.5px;font-weight:500;border:1px solid var(--ink);border-radius:2px;
+  letter-spacing:.02em;transition:all .15s;
+}
+.btn-secondary:hover{background:var(--ink);color:#fff;}
+.btn-gold{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:13px 28px;background:var(--gold);color:#fff;
+  font-size:13.5px;font-weight:500;border:none;border-radius:2px;
+  letter-spacing:.02em;transition:background .15s;
+}
+.btn-gold:hover{background:var(--gold2);}
+.divider{height:1px;background:var(--rule);}
 
 /* ── HOME HERO ── */
-.hero{background:#f5f5f5;padding:60px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;min-height:480px;}
-.hero h1{font-size:46px;font-weight:800;line-height:1.1;margin-bottom:18px;}
-.hero p{font-size:15px;color:#555;line-height:1.6;margin-bottom:28px;max-width:400px;}
-.hero-btns{display:flex;gap:12px;}
-.hero-img{border-radius:16px;overflow:hidden;height:320px;position:relative;}
+.hero{
+  padding:96px 48px 80px;
+  background:var(--white);
+  border-bottom:1px solid var(--rule);
+  display:grid;grid-template-columns:1fr 480px;gap:80px;align-items:center;
+  min-height:560px;
+}
+.hero-kicker{
+  display:inline-flex;align-items:center;gap:8px;
+  border:1px solid var(--rule);padding:5px 12px;border-radius:2px;
+  font-size:11.5px;font-weight:500;color:var(--ink3);letter-spacing:.06em;
+  text-transform:uppercase;margin-bottom:28px;
+}
+.hero-kicker span{width:6px;height:6px;border-radius:50%;background:var(--gold);display:inline-block;}
+.hero h1{font-size:52px;line-height:1.08;color:var(--ink);margin-bottom:22px;letter-spacing:-.02em;}
+.hero h1 em{font-style:italic;color:var(--gold);}
+.hero-sub{font-size:16px;color:var(--ink3);line-height:1.65;max-width:500px;margin-bottom:36px;font-weight:300;}
+.hero-btns{display:flex;gap:12px;margin-bottom:48px;}
+.hero-stats{display:flex;gap:0;border-top:1px solid var(--rule);padding-top:28px;}
+.hero-stat{padding-right:32px;margin-right:32px;border-right:1px solid var(--rule);}
+.hero-stat:last-child{border-right:none;}
+.hero-stat .n{font-family:var(--serif);font-size:28px;color:var(--ink);line-height:1;}
+.hero-stat .l{font-size:11px;color:var(--ink4);margin-top:4px;letter-spacing:.04em;text-transform:uppercase;}
+.hero-visual{
+  background:var(--ink);border-radius:4px;
+  height:380px;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.hv-bar{
+  padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08);
+  display:flex;align-items:center;gap:8px;
+}
+.hv-dot{width:6px;height:6px;border-radius:50%;}
+.hv-title{font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-left:4px;}
+.hv-body{padding:20px;flex:1;display:flex;flex-direction:column;gap:14px;}
+.hv-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:2px;border:1px solid rgba(255,255,255,.06);}
+.hv-row .city{font-size:12px;color:rgba(255,255,255,.7);font-weight:500;}
+.hv-row .metric{font-size:11px;color:rgba(255,255,255,.35);}
+.hv-row .val{font-family:var(--serif);font-size:16px;color:var(--gold);}
+.hv-bar2{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between;}
+.hv-status{display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.3);}
+.hv-live{width:5px;height:5px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 
-/* split section */
-.sec-split{padding:60px;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;background:#fff;}
-.split-img{height:280px;border-radius:12px;position:relative;overflow:hidden;}
-.sec-split h2{font-size:26px;font-weight:800;margin-bottom:14px;line-height:1.2;}
-.sec-split p{font-size:14px;color:#555;line-height:1.7;margin-bottom:16px;}
-.feat-row{display:flex;gap:12px;margin-bottom:14px;}
-.feat-row-icon{font-size:18px;margin-top:2px;}
-.feat-row strong{font-size:14px;font-weight:700;display:block;margin-bottom:3px;}
-.feat-row span{font-size:13px;color:#666;}
+/* ── TRUST STRIP ── */
+.trust-strip{
+  padding:20px 48px;background:var(--surface);
+  border-bottom:1px solid var(--rule);
+  display:flex;align-items:center;gap:0;overflow-x:auto;
+}
+.trust-item{
+  display:flex;align-items:center;gap:10px;
+  padding:0 32px;border-right:1px solid var(--rule);
+  white-space:nowrap;flex-shrink:0;
+}
+.trust-item:first-child{padding-left:0;}
+.trust-item:last-child{border-right:none;}
+.trust-item .ti-n{font-family:var(--serif);font-size:20px;color:var(--ink);}
+.trust-item .ti-l{font-size:12px;color:var(--ink4);}
 
-/* 3-col cards */
-.sec-3col{padding:60px;background:#fff;}
-.sec-3col .eyebrow{text-align:center;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;font-weight:600;margin-bottom:8px;}
-.sec-3col h2{font-size:26px;font-weight:800;text-align:center;margin-bottom:8px;}
-.sec-3col .sub{font-size:14px;color:#666;text-align:center;margin-bottom:40px;max-width:600px;margin-left:auto;margin-right:auto;}
-.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-.card3{background:#f5f5f5;border-radius:12px;padding:28px;text-align:center;}
-.card3 .icon{font-size:28px;margin-bottom:12px;}
-.card3 h3{font-size:15px;font-weight:700;margin-bottom:8px;}
-.card3 p{font-size:13px;color:#666;line-height:1.6;margin-bottom:14px;}
-.card3 a{font-size:13px;font-weight:600;}
+/* ── WHO USES ── */
+.who-strip{
+  padding:48px;border-bottom:1px solid var(--rule);
+}
+.who-strip .ws-label{font-size:12px;color:var(--ink4);letter-spacing:.08em;text-transform:uppercase;margin-bottom:28px;text-align:center;}
+.who-logos{
+  display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;
+}
+.who-logo{
+  padding:16px 36px;border:1px solid var(--rule);margin:-1px 0 0 -1px;
+  font-size:13px;font-weight:600;color:var(--ink4);letter-spacing:.06em;text-transform:uppercase;
+  background:var(--white);
+}
 
-/* how-to-navigate */
-.sec-how{padding:60px;background:#f5f5f5;}
-.sec-how h2{font-size:26px;font-weight:800;text-align:center;margin-bottom:8px;}
-.sec-how .sub{font-size:14px;color:#666;text-align:center;margin-bottom:40px;}
-.how-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-.how-card{background:#fff;border-radius:12px;overflow:hidden;}
-.how-card-img{height:160px;position:relative;}
-.how-card-body{padding:16px 20px 20px;}
-.how-card h3{font-size:14px;font-weight:700;margin-bottom:8px;}
-.how-card p{font-size:13px;color:#666;line-height:1.6;margin-bottom:12px;}
-.how-card a{font-size:13px;font-weight:600;}
+/* ── PLATFORM SECTION ── */
+.platform-sec{padding:96px 48px;border-bottom:1px solid var(--rule);}
+.platform-sec .sec-hd{max-width:600px;margin-bottom:64px;}
+.platform-sec .sec-hd h2{font-size:38px;margin-bottom:16px;letter-spacing:-.01em;}
+.platform-sec .sec-hd p{font-size:15px;color:var(--ink3);line-height:1.7;font-weight:300;}
+.modules-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);}
+.module{background:var(--white);padding:36px 32px;transition:background .2s;}
+.module:hover{background:var(--surface);}
+.module-icon{font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.06em;margin-bottom:20px;text-transform:uppercase;}
+.module h3{font-family:var(--serif);font-size:21px;margin-bottom:12px;color:var(--ink);}
+.module p{font-size:13.5px;color:var(--ink3);line-height:1.65;font-weight:300;}
+.module-tag{margin-top:20px;font-size:11px;font-weight:600;color:var(--ink4);letter-spacing:.06em;text-transform:uppercase;}
 
-.cta-strip{display:flex;padding:36px 60px;background:#f5f5f5;border-top:1px solid #e5e5e5;}
-.cta-strip div{flex:1;text-align:center;font-size:13px;font-weight:600;}
+/* ── COVERAGE ── */
+.coverage-sec{padding:96px 48px;background:var(--surface);border-bottom:1px solid var(--rule);}
+.coverage-sec .sec-hd{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:48px;}
+.coverage-sec .sec-hd h2{font-size:38px;letter-spacing:-.01em;}
+.cov-table{width:100%;border-collapse:collapse;}
+.cov-table th{
+  font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink4);padding:12px 16px;border-bottom:2px solid var(--rule);text-align:left;
+}
+.cov-table td{
+  padding:14px 16px;border-bottom:1px solid var(--rule);font-size:13.5px;
+  color:var(--ink2);vertical-align:middle;
+}
+.cov-table tr:hover td{background:var(--white);}
+.cov-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:2px;font-size:11px;font-weight:600;letter-spacing:.04em;
+}
+.badge-live{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;}
+.badge-exp{background:#fefce8;color:#854d0e;border:1px solid #fde68a;}
+.badge-pilot{background:#f0f9ff;color:#075985;border:1px solid #bae6fd;}
+.asset-tags{display:flex;gap:5px;flex-wrap:wrap;}
+.asset-tag{padding:3px 8px;background:var(--white);border:1px solid var(--rule);border-radius:2px;font-size:11px;color:var(--ink3);}
 
-/* ── DATA PAGE ── */
-.data-hero{padding:50px 60px 40px;background:#f5f5f5;}
-.data-hero .eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:8px;}
-.data-hero h1{font-size:36px;font-weight:800;margin-bottom:12px;}
-.data-hero p{font-size:15px;color:#555;max-width:500px;margin-bottom:22px;}
-.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-.svc-card{background:#f5f5f5;border-radius:12px;padding:28px;text-align:center;}
-.svc-card .icon{font-size:26px;margin-bottom:14px;}
-.svc-card h3{font-size:15px;font-weight:700;margin-bottom:8px;}
-.svc-card p{font-size:13px;color:#666;line-height:1.6;}
-.check-list{list-style:none;}
-.check-list li{font-size:14px;color:#333;padding:5px 0;display:flex;align-items:center;gap:8px;}
-.check-list li::before{content:'✅';font-size:13px;}
+/* ── METHODOLOGY ── */
+.method-sec{padding:96px 48px;border-bottom:1px solid var(--rule);}
+.method-grid{display:grid;grid-template-columns:280px 1fr;gap:80px;}
+.method-nav{position:sticky;top:88px;}
+.method-nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 0;border-bottom:1px solid var(--rule);
+  font-size:13px;font-weight:500;color:var(--ink4);cursor:pointer;transition:color .15s;
+}
+.method-nav-item:hover,.method-nav-item.active{color:var(--ink);}
+.method-nav-item.active::before{content:'';width:3px;height:100%;background:var(--gold);position:absolute;left:0;}
+.method-content h2{font-size:38px;margin-bottom:48px;letter-spacing:-.01em;}
+.method-block{margin-bottom:48px;padding-bottom:48px;border-bottom:1px solid var(--rule);}
+.method-block:last-child{border-bottom:none;}
+.method-block h3{font-family:var(--serif);font-size:22px;margin-bottom:14px;}
+.method-block p{font-size:14px;color:var(--ink3);line-height:1.75;font-weight:300;margin-bottom:12px;}
+.method-block ul{list-style:none;margin-top:14px;}
+.method-block ul li{
+  font-size:13.5px;color:var(--ink3);padding:8px 0;
+  border-bottom:1px solid var(--rule);display:flex;gap:12px;font-weight:300;
+}
+.method-block ul li::before{content:'—';color:var(--gold);flex-shrink:0;}
 
-/* ── ANALYTICS ── */
-.analytics-wrap{display:grid;grid-template-columns:260px 1fr;gap:20px;padding:20px;background:#f5f5f5;min-height:calc(100vh - 60px);}
-.sidebar-box{background:#fff;border-radius:10px;padding:20px;margin-bottom:16px;}
-.sidebar-box h3{font-size:15px;font-weight:700;margin-bottom:16px;}
-.fg{margin-bottom:14px;}
-.fg label{font-size:12px;color:#666;display:block;margin-bottom:5px;}
-.fg select,.fg input{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;outline:none;}
-.btn-apply{width:100%;padding:9px;background:#333;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin-top:4px;}
-.mo-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px;}
-.mo-row:last-child{border-bottom:none;}
-.mo-row .lbl{color:#777;}
-.mo-row .val{font-weight:700;}
-#africa-map{height:340px;border-radius:10px;border:1px solid #ddd;margin-bottom:20px;}
-.a-bottom{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-.a-card{background:#fff;border-radius:10px;padding:20px;}
-.a-card h3{font-size:15px;font-weight:700;margin-bottom:16px;}
-.rent-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f5f5f5;font-size:13px;}
-.rent-row:last-child{border-bottom:none;}
-.r-val{font-weight:700;}
-.r-up{color:#16a34a;font-size:12px;margin-left:5px;}
-.tr{padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:13px;overflow:hidden;}
-.tr:last-child{border-bottom:none;}
-.tr .ttype{font-weight:600;}
-.tr .tdate{color:#888;font-size:12px;}
-.tr .tprice{float:right;font-weight:700;}
-.vacancy-box{background:#fff;border-radius:10px;padding:20px;margin-top:20px;}
-.vacancy-box h3{font-size:15px;font-weight:700;margin-bottom:16px;}
-.chart{position:relative;height:180px;border-left:1px solid #ddd;border-bottom:1px solid #ddd;margin:0 16px 6px 28px;}
-.y-lbls{position:absolute;left:-26px;top:0;height:100%;display:flex;flex-direction:column;justify-content:space-between;font-size:11px;color:#888;}
-.x-lbls{display:flex;justify-content:space-around;font-size:11px;color:#888;margin:0 16px 0 28px;}
-svg.linechart{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;}
-.legend{display:flex;align-items:center;gap:6px;justify-content:center;margin-top:10px;font-size:12px;color:#666;}
-.ldot{width:8px;height:8px;border-radius:50%;background:#8b8bc8;display:inline-block;}
+/* ── USE CASES ── */
+.usecases-sec{padding:96px 48px;background:var(--ink);border-bottom:1px solid rgba(255,255,255,.08);}
+.usecases-sec .sec-hd{margin-bottom:56px;}
+.usecases-sec .eyebrow{color:var(--gold);}
+.usecases-sec h2{font-size:38px;color:#fff;letter-spacing:-.01em;}
+.ucases-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,.08);}
+.ucase{background:var(--ink);padding:36px 32px;border:1px solid rgba(255,255,255,.06);}
+.ucase-who{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
+.ucase h3{font-family:var(--serif);font-size:20px;color:#fff;margin-bottom:12px;line-height:1.2;}
+.ucase p{font-size:13px;color:rgba(255,255,255,.5);line-height:1.7;font-weight:300;}
+.ucase ul{list-style:none;margin-top:16px;}
+.ucase ul li{font-size:12.5px;color:rgba(255,255,255,.4);padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);display:flex;gap:10px;}
+.ucase ul li::before{content:'→';color:var(--gold);flex-shrink:0;}
 
-/* ── PROPERTIES ── */
-.props-hdr{padding:28px 40px 16px;background:#f5f5f5;display:flex;justify-content:space-between;align-items:center;}
-.props-hdr h1{font-size:28px;font-weight:800;margin-bottom:4px;}
-.props-hdr p{font-size:14px;color:#666;}
-.vtoggle{display:flex;gap:4px;}
-.vtoggle button{width:32px;height:32px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:15px;}
-.vtoggle button.act{background:#111;color:#fff;border-color:#111;}
-.filter-bar{padding:14px 40px;background:#fff;border-top:1px solid #eee;border-bottom:1px solid #eee;}
-.filter-bar h3{font-size:13px;font-weight:700;margin-bottom:10px;}
-.frow{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;}
-.fcol label{font-size:11px;color:#666;display:block;margin-bottom:3px;}
-.fcol select{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;min-width:110px;}
-.fcol input{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;width:80px;}
-.btn-clr{padding:6px 12px;border:1px solid #ddd;border-radius:6px;background:#fff;font-size:12px;cursor:pointer;}
-.pgrid{padding:16px 40px 40px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-.pcard{background:#fff;border-radius:10px;overflow:hidden;border:1px solid #eee;}
-.pimg{height:160px;position:relative;overflow:hidden;}
-.poverlay{position:absolute;inset:0;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;}
-.plock{width:32px;height:32px;background:rgba(255,255,255,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:1.5px solid rgba(255,255,255,.5);}
-.pbadge{position:absolute;top:10px;right:10px;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;}
-.ba{background:rgba(34,197,94,.85);color:#fff;}
-.bo{background:rgba(107,114,128,.85);color:#fff;}
-.pbody{padding:14px 16px;}
-.ptype{float:right;font-size:11px;color:#888;}
-.pname{font-size:15px;font-weight:700;margin-bottom:4px;clear:both;}
-.ploc{font-size:12px;color:#888;margin-bottom:10px;}
-.pmeta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.pmv{font-size:14px;font-weight:700;}
-.pmk{font-size:11px;color:#888;}
-.pprow{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid #f0f0f0;}
-.ppv{font-size:16px;font-weight:800;}
-.ppm{font-size:11px;color:#888;}
-.btn-vd{padding:7px 14px;background:#111;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;}
-.psub{background:#fff8e6;padding:8px 16px;font-size:12px;color:#996600;text-align:center;}
-.unlock{background:#111;color:#fff;padding:40px;text-align:center;margin:0 40px 40px;border-radius:10px;}
-.unlock h2{font-size:22px;font-weight:700;margin-bottom:8px;}
-.unlock p{font-size:14px;color:#aaa;margin-bottom:20px;}
-.unlock-btns{display:flex;gap:12px;justify-content:center;}
-.btn-wo{padding:9px 20px;border:1.5px solid #fff;background:transparent;color:#fff;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;}
-.btn-ws{padding:9px 20px;border:none;background:#fff;color:#111;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;}
+/* ── SAMPLE OUTPUTS ── */
+.outputs-sec{padding:96px 48px;background:var(--surface);border-bottom:1px solid var(--rule);}
+.outputs-sec .sec-hd{margin-bottom:48px;}
+.outputs-sec h2{font-size:38px;letter-spacing:-.01em;margin-bottom:12px;}
+.outputs-sec .sec-sub{font-size:15px;color:var(--ink3);font-weight:300;}
+.outputs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);}
+.output-card{
+  background:var(--white);padding:32px 28px;
+  display:flex;flex-direction:column;
+}
+.output-card .oc-type{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink4);margin-bottom:20px;}
+.output-card .oc-icon{font-size:32px;margin-bottom:16px;color:var(--ink);}
+.output-card h3{font-family:var(--serif);font-size:19px;margin-bottom:10px;line-height:1.2;}
+.output-card p{font-size:13px;color:var(--ink3);line-height:1.6;font-weight:300;flex:1;}
+.output-card .oc-btn{
+  margin-top:24px;padding:9px 0;border-top:1px solid var(--rule);
+  font-size:12.5px;font-weight:600;color:var(--ink);letter-spacing:.03em;
+  display:flex;align-items:center;gap:6px;background:none;border:none;border-top:1px solid var(--rule);
+  width:100%;text-align:left;
+}
+.output-card .oc-btn:hover{color:var(--gold);}
 
-/* ── SUBSCRIPTION ── */
-.sub-pg{padding:60px 24px 80px;background:#f7f7f6;}
-.sub-hd{text-align:center;max-width:600px;margin:0 auto 48px;}
-.sub-hd h1{font-size:34px;font-weight:800;letter-spacing:-.02em;color:#111;margin-bottom:10px;}
-.sub-hd p{font-size:15px;color:#666;line-height:1.6;}
-/* billing toggle */
-.bill-toggle{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:22px;}
-.bill-toggle span{font-size:13px;font-weight:600;color:#888;}
-.bill-toggle span.on{color:#111;}
-.toggle-wrap{position:relative;width:44px;height:24px;background:#ddd;border-radius:12px;cursor:pointer;transition:background .2s;}
-.toggle-wrap.active{background:#111;}
+/* ── API ── */
+.api-sec{padding:96px 48px;border-bottom:1px solid var(--rule);}
+.api-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start;}
+.api-content h2{font-size:38px;letter-spacing:-.01em;margin-bottom:20px;}
+.api-content p{font-size:14.5px;color:var(--ink3);line-height:1.7;font-weight:300;margin-bottom:32px;}
+.api-features{list-style:none;margin-bottom:36px;}
+.api-features li{
+  padding:12px 0;border-bottom:1px solid var(--rule);
+  font-size:13.5px;color:var(--ink2);display:flex;gap:12px;align-items:flex-start;
+}
+.api-features li::before{content:'✓';color:var(--gold);font-weight:700;flex-shrink:0;}
+.api-code{
+  background:var(--ink);border-radius:4px;overflow:hidden;
+}
+.api-code-bar{
+  padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.08);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.api-code-bar span{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.06em;text-transform:uppercase;}
+.api-code pre{
+  padding:24px 18px;font-family:'Courier New',monospace;font-size:12px;
+  line-height:1.8;color:rgba(255,255,255,.7);overflow-x:auto;
+}
+.api-code .k{color:#7dd3fc;}
+.api-code .s{color:#86efac;}
+.api-code .n{color:var(--gold);}
+.api-code .p{color:rgba(255,255,255,.35);}
+
+/* ── PRICING ── */
+.pricing-sec{padding:96px 48px;background:var(--surface);border-bottom:1px solid var(--rule);}
+.pricing-sec .sec-hd{text-align:center;max-width:540px;margin:0 auto 56px;}
+.pricing-sec h2{font-size:38px;letter-spacing:-.01em;margin-bottom:14px;}
+.pricing-sec .sec-sub{font-size:15px;color:var(--ink3);font-weight:300;}
+.bill-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:40px;}
+.bill-row span{font-size:13px;font-weight:500;color:var(--ink4);}
+.bill-row span.on{color:var(--ink);}
+.toggle-wrap{position:relative;width:44px;height:24px;background:#ccc;border-radius:12px;cursor:pointer;transition:background .2s;}
+.toggle-wrap.active{background:var(--ink);}
 .toggle-knob{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2);}
 .toggle-wrap.active .toggle-knob{transform:translateX(20px);}
-.save-badge{display:inline-block;background:#dcfce7;color:#16a34a;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:4px;}
-/* plans grid */
-.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1020px;margin:0 auto 60px;}
-.plan{background:#fff;border-radius:14px;padding:32px 28px;border:1.5px solid #e5e5e5;position:relative;display:flex;flex-direction:column;}
-.plan.feat{border-color:#111;border-width:2px;box-shadow:0 8px 40px rgba(0,0,0,.1);}
-.pop-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;letter-spacing:.04em;}
-.pln-name{font-size:18px;font-weight:800;color:#111;margin-bottom:4px;}
-.pln-tag{font-size:12.5px;color:#777;margin-bottom:20px;line-height:1.5;}
-.pln-price{margin-bottom:6px;}
-.pln-amt{font-size:38px;font-weight:900;color:#111;letter-spacing:-.03em;line-height:1;}
-.pln-per{font-size:13px;color:#888;margin-left:2px;}
-.pln-annual{font-size:11.5px;color:#888;margin-top:5px;margin-bottom:20px;min-height:18px;}
-.pln-annual strong{color:#16a34a;}
-.pln-div{height:1px;background:#f0f0f0;margin-bottom:20px;}
-.pln-feats{list-style:none;margin-bottom:28px;flex:1;}
-.pln-feats li{font-size:12.5px;color:#444;padding:5px 0;display:flex;align-items:flex-start;gap:9px;line-height:1.4;}
-.pln-feats li .ck{color:#16a34a;font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px;}
-.pln-feats li.inherit .ck{color:#aaa;}
-.btn-sub{width:100%;padding:12px;border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;border:none;transition:opacity .15s;}
-.btn-sub:hover{opacity:.88;}
-.btn-sub-o{background:#f3f3f2;color:#333;}
-.btn-sub-d{background:#111;color:#fff;}
-.btn-sub-e{background:transparent;color:#111;border:1.5px solid #111;}
-/* enterprise note */
-.ent-note{font-size:11.5px;color:#888;text-align:center;margin-top:10px;line-height:1.5;}
-/* why section */
-.why-box{background:#fff;border-radius:14px;padding:44px;max-width:1020px;margin:0 auto;}
-.why-box h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:32px;letter-spacing:-.01em;}
-.why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center;}
-.wi-badge{display:inline-flex;width:44px;height:44px;background:#111;color:#fff;border-radius:8px;align-items:center;justify-content:center;font-size:13px;font-weight:800;margin-bottom:10px;}
-.why-item h4{font-size:14px;font-weight:700;margin-bottom:5px;color:#111;}
-.why-item p{font-size:12px;color:#777;}
-@media(max-width:800px){.plans{grid-template-columns:1fr;max-width:480px;}.why-grid{grid-template-columns:1fr 1fr;}}
+.save-chip{background:var(--gold-pale);color:var(--gold);font-size:11px;font-weight:600;padding:2px 8px;border-radius:2px;}
+.plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);max-width:1020px;margin:0 auto;}
+.plan-card{background:var(--white);padding:36px 32px;position:relative;display:flex;flex-direction:column;}
+.plan-card.featured{background:var(--ink);}
+.plan-badge{
+  position:absolute;top:-1px;left:50%;transform:translateX(-50%);
+  background:var(--gold);color:#fff;font-size:10px;font-weight:700;
+  padding:4px 14px;letter-spacing:.06em;text-transform:uppercase;
+}
+.plan-name{font-family:var(--serif);font-size:22px;margin-bottom:6px;}
+.plan-card.featured .plan-name{color:#fff;}
+.plan-desc{font-size:12.5px;color:var(--ink4);margin-bottom:24px;line-height:1.5;}
+.plan-card.featured .plan-desc{color:rgba(255,255,255,.45);}
+.plan-price .amt{font-family:var(--serif);font-size:42px;color:var(--ink);line-height:1;}
+.plan-card.featured .plan-price .amt{color:#fff;}
+.plan-price .per{font-size:13px;color:var(--ink4);}
+.plan-card.featured .plan-price .per{color:rgba(255,255,255,.4);}
+.plan-annual{font-size:11.5px;color:var(--ink4);margin-top:5px;margin-bottom:24px;min-height:18px;}
+.plan-card.featured .plan-annual{color:rgba(255,255,255,.35);}
+.plan-div{height:1px;background:var(--rule);margin-bottom:24px;}
+.plan-card.featured .plan-div{background:rgba(255,255,255,.1);}
+.plan-feats{list-style:none;flex:1;margin-bottom:28px;}
+.plan-feats li{font-size:13px;color:var(--ink3);padding:6px 0;display:flex;gap:10px;border-bottom:1px solid var(--rule);line-height:1.4;}
+.plan-card.featured .plan-feats li{color:rgba(255,255,255,.6);border-color:rgba(255,255,255,.08);}
+.plan-feats li::before{content:'✓';color:var(--gold);font-weight:700;flex-shrink:0;}
+.plan-feats li.inh::before{content:'↳';color:var(--ink4);}
+.plan-card.featured .plan-feats li.inh::before{color:rgba(255,255,255,.25);}
+.btn-plan{width:100%;padding:12px;font-size:13.5px;font-weight:600;border-radius:2px;letter-spacing:.02em;transition:all .15s;}
+.btn-plan-dark{background:var(--ink);color:#fff;border:none;}
+.btn-plan-dark:hover{background:var(--ink2);}
+.btn-plan-outline{background:transparent;color:var(--ink);border:1.5px solid var(--rule);}
+.btn-plan-outline:hover{border-color:var(--ink);}
+.btn-plan-gold{background:var(--gold);color:#fff;border:none;}
+.btn-plan-gold:hover{background:var(--gold2);}
+.btn-plan-white{background:#fff;color:var(--ink);border:none;}
+.btn-plan-white:hover{background:var(--surface);}
+.ent-note{font-size:11.5px;color:var(--ink4);text-align:center;margin-top:10px;line-height:1.5;}
 
-/* ── DASHBOARD LOCKED ── */
-.dlocked{min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px;background:#f5f5f5;}
-.dlocked .lbig{font-size:48px;margin-bottom:20px;color:#ccc;}
-.dlocked h1{font-size:28px;font-weight:800;margin-bottom:10px;}
-.dlocked p{font-size:14px;color:#666;margin-bottom:24px;}
-.dbtns{display:flex;gap:12px;justify-content:center;}
+/* ── LEADERSHIP ── */
+.team-sec{padding:96px 48px;border-bottom:1px solid var(--rule);}
+.team-sec .sec-hd{margin-bottom:56px;}
+.team-sec h2{font-size:38px;letter-spacing:-.01em;}
+.team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);}
+.team-card{background:var(--white);padding:36px 32px;}
+.team-avatar{
+  width:60px;height:60px;background:var(--surface2);
+  border-radius:2px;margin-bottom:20px;display:flex;
+  align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:22px;color:var(--ink3);
+}
+.team-name{font-family:var(--serif);font-size:20px;margin-bottom:4px;}
+.team-role{font-size:12px;font-weight:600;color:var(--gold);letter-spacing:.06em;text-transform:uppercase;margin-bottom:16px;}
+.team-bio{font-size:13px;color:var(--ink3);line-height:1.7;font-weight:300;}
+.team-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px;}
+.team-tag{padding:3px 9px;border:1px solid var(--rule);border-radius:2px;font-size:11px;color:var(--ink4);}
 
-/* ── AUTH ── */
-.auth-pg{min-height:calc(100vh - 60px);background:#f5f5f5;display:flex;align-items:center;justify-content:center;padding:40px;}
-.auth-box{background:#fff;border-radius:12px;padding:40px;width:100%;max-width:400px;}
-.auth-logo{width:44px;height:44px;background:#111;color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;margin:0 auto 20px;}
-.auth-box h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:6px;}
-.auth-sub{font-size:13px;color:#888;text-align:center;margin-bottom:24px;}
-.auth-sub a{color:#111;font-weight:600;}
-.fg-auth{margin-bottom:16px;}
-.fg-auth label{font-size:13px;font-weight:600;display:block;margin-bottom:5px;}
-.fg-auth input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;outline:none;}
-.fg-auth input:focus{border-color:#888;}
-.pw{position:relative;}
-.pw input{padding-right:36px;}
-.pw-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:15px;color:#888;}
-.chk-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:16px;font-size:13px;color:#444;}
-.chk-row a{color:#111;font-weight:600;}
-.btn-submit{width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;}
-.auth-sw{text-align:center;font-size:13px;color:#666;}
-.auth-sw a{color:#111;font-weight:700;}
-.ftrial{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px 16px;margin-top:16px;}
-.ftrial .ft-t{font-size:13px;font-weight:700;color:#166534;margin-bottom:4px;}
-.ftrial p{font-size:12px;color:#166534;}
+/* ── FAQ ── */
+.faq-sec{padding:96px 48px;background:var(--surface);border-bottom:1px solid var(--rule);}
+.faq-grid{display:grid;grid-template-columns:320px 1fr;gap:80px;}
+.faq-grid h2{font-size:38px;letter-spacing:-.01em;position:sticky;top:88px;}
+.faq-list{display:flex;flex-direction:column;}
+.faq-item{border-bottom:1px solid var(--rule);padding:20px 0;}
+.faq-q{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:15px;font-weight:500;color:var(--ink);cursor:pointer;gap:16px;
+}
+.faq-q .faq-icon{font-size:18px;color:var(--ink4);flex-shrink:0;transition:transform .2s;}
+.faq-a{font-size:14px;color:var(--ink3);line-height:1.7;font-weight:300;margin-top:12px;display:none;}
+.faq-item.open .faq-a{display:block;}
+.faq-item.open .faq-icon{transform:rotate(45deg);}
 
-/* ── CONTACT ── */
-.cnt-hero{position:relative;height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;overflow:hidden;}
-.cnt-hero .eyebrow{position:relative;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#ccc;margin-bottom:8px;}
-.cnt-hero h1{position:relative;font-size:32px;font-weight:800;color:#fff;margin-bottom:10px;}
-.cnt-hero p{position:relative;font-size:14px;color:#ccc;max-width:480px;margin-bottom:20px;}
-.cnt-hero-btns{position:relative;display:flex;gap:10px;}
-.btn-wh{padding:9px 20px;background:#fff;color:#111;border-radius:6px;font-size:13px;font-weight:700;border:none;cursor:pointer;}
-.btn-ghw{padding:9px 20px;background:transparent;color:#fff;border-radius:6px;font-size:13px;font-weight:600;border:1.5px solid rgba(255,255,255,.4);cursor:pointer;}
-.cnt-info{padding:50px 60px;display:grid;grid-template-columns:1fr 1fr;gap:60px;background:#fff;}
-.cnt-info h2{font-size:22px;font-weight:800;margin-bottom:8px;}
-.cnt-info .ci-desc{font-size:14px;color:#666;margin-bottom:28px;}
-.ci-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:20px;}
-.ci-icon{font-size:20px;margin-top:1px;}
-.ci-lbl{font-size:13px;font-weight:700;margin-bottom:2px;}
-.ci-val{font-size:13px;color:#555;}
-.ci-imgbox{height:260px;border-radius:12px;overflow:hidden;border:1px solid #eee;position:relative;}
-.cnt-form-sec{padding:40px 60px 60px;background:#f5f5f5;}
-.cnt-form-sec h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:4px;}
-.cf-sub{font-size:14px;color:#666;text-align:center;margin-bottom:30px;}
-.cform{max-width:700px;margin:0 auto;}
-.frow2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
-.cform textarea{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;font-family:inherit;resize:vertical;min-height:120px;outline:none;}
+/* ── CONTACT / CTA ── */
+.cta-sec{
+  padding:96px 48px;background:var(--ink);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.cta-sec .eyebrow{color:var(--gold);}
+.cta-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
+.cta-left h2{font-size:42px;color:#fff;letter-spacing:-.02em;margin-bottom:16px;}
+.cta-left p{font-size:15px;color:rgba(255,255,255,.5);line-height:1.7;font-weight:300;margin-bottom:32px;}
+.cta-btns{display:flex;gap:12px;}
+.cta-right{display:flex;flex-direction:column;gap:16px;}
+.cta-option{
+  padding:24px 28px;border:1px solid rgba(255,255,255,.1);border-radius:2px;
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;transition:border-color .15s;
+}
+.cta-option:hover{border-color:rgba(255,255,255,.3);}
+.cta-opt-label{font-size:13.5px;font-weight:500;color:#fff;}
+.cta-opt-desc{font-size:12px;color:rgba(255,255,255,.35);margin-top:3px;}
+.cta-opt-arrow{font-size:18px;color:rgba(255,255,255,.25);}
 
 /* ── FOOTER ── */
-footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
-.footer-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;gap:32px;margin-bottom:36px;}
-.fbrand .fb-name{font-size:14px;font-weight:800;letter-spacing:.04em;margin-bottom:8px;line-height:1.4;}
-.fbrand p{font-size:13px;color:#777;line-height:1.6;}
-.fcol h4{font-size:13px;font-weight:700;margin-bottom:14px;color:#333;}
+footer{background:var(--white);border-top:1px solid var(--rule);padding:56px 48px 28px;}
+.footer-grid{display:grid;grid-template-columns:1.8fr 1fr 1fr 1fr 1fr;gap:40px;margin-bottom:48px;}
+.fb-name{font-family:var(--serif);font-size:16px;color:var(--ink);margin-bottom:10px;}
+.fb-desc{font-size:13px;color:var(--ink4);line-height:1.6;}
+.fb-addr{font-size:12px;color:var(--ink4);margin-top:12px;line-height:1.7;}
+.fcol h4{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink4);margin-bottom:16px;}
 .fcol ul{list-style:none;}
-.fcol ul li{margin-bottom:8px;}
-.fcol ul li a{font-size:13px;color:#666;}
-.fcol ul li a:hover{color:#111;}
-.fcol select{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;}
-.footer-bottom{border-top:1px solid #eee;padding-top:20px;text-align:center;font-size:12px;color:#999;}
+.fcol ul li{margin-bottom:10px;}
+.fcol ul li a{font-size:13px;color:var(--ink3);transition:color .15s;}
+.fcol ul li a:hover{color:var(--ink);}
+.footer-bottom{
+  border-top:1px solid var(--rule);padding-top:20px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.footer-bottom p{font-size:12px;color:var(--ink4);}
+.footer-bottom .fl{display:flex;gap:24px;}
+.footer-bottom .fl a{font-size:12px;color:var(--ink4);}
+.footer-bottom .fl a:hover{color:var(--ink);}
+.footer-slot{}
+
+/* ── AUTH PAGES ── */
+.auth-pg{min-height:calc(100vh - 64px);background:var(--surface);display:flex;align-items:center;justify-content:center;padding:40px;}
+.auth-box{background:var(--white);border:1px solid var(--rule);border-radius:4px;padding:44px;width:100%;max-width:420px;}
+.auth-box h2{font-family:var(--serif);font-size:28px;margin-bottom:6px;}
+.auth-sub{font-size:13.5px;color:var(--ink3);margin-bottom:28px;}
+.auth-sub a{color:var(--ink);font-weight:600;text-decoration:underline;}
+.fg-auth{margin-bottom:16px;}
+.fg-auth label{font-size:12.5px;font-weight:600;display:block;margin-bottom:6px;color:var(--ink2);}
+.fg-auth input{width:100%;padding:10px 13px;border:1px solid var(--rule);border-radius:2px;font-size:14px;font-family:var(--sans);outline:none;transition:border-color .15s;}
+.fg-auth input:focus{border-color:var(--ink);}
+.pw{position:relative;}
+.pw input{padding-right:38px;}
+.pw-eye{position:absolute;right:11px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:14px;color:var(--ink4);}
+.chk-row{display:flex;align-items:flex-start;gap:9px;margin-bottom:16px;font-size:13px;color:var(--ink3);}
+.chk-row a{color:var(--ink);font-weight:600;}
+.btn-submit{width:100%;padding:12px;background:var(--ink);color:#fff;border:none;border-radius:2px;font-size:14px;font-weight:600;font-family:var(--sans);margin-bottom:14px;transition:background .15s;}
+.btn-submit:hover{background:var(--ink2);}
+.auth-sw{text-align:center;font-size:13px;color:var(--ink3);}
+.auth-sw a{color:var(--ink);font-weight:700;}
+.auth-msg{padding:10px 14px;border-radius:2px;font-size:13px;margin-bottom:14px;display:none;}
+.auth-err{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;}
+.auth-ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;}
+
+/* ── CONTACT PAGE ── */
+.contact-pg{max-width:960px;margin:0 auto;padding:80px 48px;}
+.contact-pg h1{font-family:var(--serif);font-size:42px;margin-bottom:14px;letter-spacing:-.02em;}
+.contact-pg .cp-sub{font-size:16px;color:var(--ink3);font-weight:300;margin-bottom:56px;}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;}
+.contact-options{display:flex;flex-direction:column;gap:12px;}
+.contact-opt{
+  padding:24px;border:1px solid var(--rule);border-radius:2px;
+  cursor:pointer;transition:border-color .15s;
+}
+.contact-opt:hover{border-color:var(--ink);}
+.co-label{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+.co-desc{font-size:12.5px;color:var(--ink4);}
+.contact-form h3{font-family:var(--serif);font-size:22px;margin-bottom:24px;}
+.cform textarea{width:100%;padding:10px 13px;border:1px solid var(--rule);border-radius:2px;font-size:14px;font-family:var(--sans);resize:vertical;min-height:120px;outline:none;}
+.cform textarea:focus{border-color:var(--ink);}
+.cform select{width:100%;padding:10px 13px;border:1px solid var(--rule);border-radius:2px;font-size:14px;font-family:var(--sans);background:var(--white);outline:none;}
+.ci-item{display:flex;gap:14px;margin-bottom:20px;}
+.ci-icon{font-size:18px;margin-top:2px;}
+.ci-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4);margin-bottom:3px;}
+.ci-val{font-size:14px;color:var(--ink2);}
+.ci-val a{color:var(--gold);}
+
+/* ── ABOUT PAGE ── */
+.about-pg{max-width:1080px;margin:0 auto;}
+.about-hero{padding:80px 48px;border-bottom:1px solid var(--rule);}
+.about-hero h1{font-family:var(--serif);font-size:48px;letter-spacing:-.02em;margin-bottom:18px;}
+.about-hero p{font-size:16px;color:var(--ink3);font-weight:300;max-width:560px;line-height:1.7;}
+.about-mission{padding:72px 48px;display:grid;grid-template-columns:1fr 1fr;gap:80px;border-bottom:1px solid var(--rule);}
+.about-mission h2{font-family:var(--serif);font-size:34px;margin-bottom:18px;letter-spacing:-.01em;}
+.about-mission p{font-size:14.5px;color:var(--ink3);line-height:1.75;font-weight:300;margin-bottom:14px;}
+.about-numbers{padding:56px 48px;background:var(--surface);border-bottom:1px solid var(--rule);display:grid;grid-template-columns:repeat(4,1fr);}
+.abn{padding:24px;border-right:1px solid var(--rule);}
+.abn:last-child{border-right:none;}
+.abn .n{font-family:var(--serif);font-size:38px;color:var(--ink);}
+.abn .l{font-size:12px;color:var(--ink4);margin-top:6px;text-transform:uppercase;letter-spacing:.06em;}
+
+/* ── ACCOUNT ── */
+.account-pg{max-width:760px;margin:0 auto;padding:56px 48px;}
+.account-pg h1{font-family:var(--serif);font-size:32px;margin-bottom:6px;}
+.account-pg .ap-sub{font-size:14px;color:var(--ink3);margin-bottom:36px;}
+.acc-card{background:var(--white);border:1px solid var(--rule);border-radius:2px;padding:28px;margin-bottom:16px;}
+.acc-card-title{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink4);margin-bottom:20px;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .hero{grid-template-columns:1fr;padding:60px 24px;}
+  .hero-visual{display:none;}
+  .modules-grid,.ucases-grid,.outputs-grid,.plans-grid,.team-grid{grid-template-columns:1fr;}
+  .coverage-sec .sec-hd{flex-direction:column;align-items:flex-start;gap:16px;}
+  .api-grid,.method-grid,.cta-grid,.contact-grid,.about-mission,.footer-grid,.faq-grid{grid-template-columns:1fr;}
+  .about-numbers{grid-template-columns:1fr 1fr;}
+  nav{padding:0 24px;}
+  .platform-sec,.coverage-sec,.method-sec,.usecases-sec,.outputs-sec,.api-sec,.pricing-sec,.team-sec,.faq-sec,.cta-sec,.who-strip,.trust-strip{padding-left:24px;padding-right:24px;}
+  footer{padding-left:24px;padding-right:24px;}
+}
 </style>
 </head>
 <body>
 
-<!-- ═══ NAV ═══ -->
+<!-- NAV -->
 <nav>
-  <div class="nav-logo" onclick="go('home')">IRONWOOD INTELLIGENCE</div>
-  <div class="nav-links" id="nav-links-loggedout">
-    <a onclick="go('home')">Home</a>
-    <a onclick="go('data')">Data</a>
-    <a onclick="go('about')">About Us</a>
-    <a onclick="go('subscription')">Pricing</a>
-    <a onclick="go('contact')">Contact Us</a>
+  <div class="nav-logo" onclick="go('home')" style="cursor:pointer;">
+    <div class="nav-logo-mark">II</div>
+    Ironwood Intelligence
   </div>
-  <div class="nav-links" id="nav-links-loggedin" style="display:none;">
-    <a onclick="go('home')">Home</a>
-    <a onclick="go('data')">Data</a>
-    <a onclick="go('about')">About Us</a>
+  <div class="nav-links" id="nav-links-out">
+    <a onclick="go('home')">Platform</a>
+    <a onclick="go('coverage')">Coverage</a>
+    <a onclick="go('methodology')">Methodology</a>
+    <a onclick="go('api')">API</a>
     <a onclick="go('subscription')">Pricing</a>
-    <a onclick="go('contact')">Contact Us</a>
-    <a onclick="goAnalytics()">Analytics</a>
-    <a onclick="goDashboard()">Dashboard</a>
+    <a onclick="go('about')">About</a>
+  </div>
+  <div class="nav-links" id="nav-links-in" style="display:none;">
+    <a onclick="go('home')">Platform</a>
+    <a onclick="go('coverage')">Coverage</a>
+    <a onclick="go('subscription')">Pricing</a>
+    <a onclick="go('about')">About</a>
+    <a onclick="openDash()">Dashboard</a>
   </div>
   <div class="nav-actions">
-    <button class="btn-join" id="nav-register-btn" onclick="go('register')">Join Now</button>
-    <button class="btn-login" id="nav-login-btn" onclick="go('login')">Sign In</button>
-    <span id="nav-user-name" style="display:none;font-size:13px;font-weight:600;color:#111;cursor:pointer;padding:7px 14px;border:1.5px solid #e0e0e0;border-radius:20px;" onclick="go('account')">👤 <span id="nav-user-label"></span> ▾</span>
+    <button class="btn-nav-login" id="nav-login-btn" onclick="go('login')">Sign In</button>
+    <button class="btn-nav-demo" id="nav-demo-btn" onclick="go('contact')">Book a Demo</button>
+    <span id="nav-user-pill" onclick="go('account')">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--gold);display:inline-block;"></span>
+      <span id="nav-user-label"></span>
+    </span>
   </div>
 </nav>
 
-<!-- ═══ HOME ═══ -->
+<!-- ═══════════ HOME ═══════════ -->
 <div id="page-home" class="page active">
-  <div class="hero">
+
+  <!-- Hero -->
+  <section class="hero">
     <div>
-      <h1>Unlock Insights with Real Estate Analytics</h1>
-      <p>Discover the power of data-driven decisions in real estate. Our platform provides comprehensive analytics to help you make informed choices.</p>
+      <div class="hero-kicker"><span></span>Real Estate Data Platform · Africa</div>
+      <h1>Institutional-Grade<br/>Real Estate Intelligence<br/>for <em>Africa</em></h1>
+      <p class="hero-sub">Market data, pricing benchmarks, pipeline tracking, transaction intelligence, and API access across Africa's most opaque and fastest-growing real estate markets.</p>
       <div class="hero-btns">
-        <button class="btn-dark">Learn More</button>
-        <button class="btn-outline" onclick="go('register')">Sign Up</button>
+        <button class="btn-primary" onclick="go('contact')">Book a Demo →</button>
+        <button class="btn-secondary" onclick="go('coverage')">View Coverage</button>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="n">35+</div><div class="l">Countries tracked</div></div>
+        <div class="hero-stat"><div class="n">100+</div><div class="l">Cities monitored</div></div>
+        <div class="hero-stat"><div class="n">8</div><div class="l">Asset classes</div></div>
+        <div class="hero-stat"><div class="n">API</div><div class="l">Ready</div></div>
       </div>
     </div>
-    <div class="hero-img g-city"><span class="grad-icon">🌆</span></div>
+    <div class="hero-visual">
+      <div class="hv-bar">
+        <div class="hv-dot" style="background:#ff5f57;"></div>
+        <div class="hv-dot" style="background:#febc2e;"></div>
+        <div class="hv-dot" style="background:#28c840;"></div>
+        <span class="hv-title">ironwood · market intelligence · live</span>
+      </div>
+      <div class="hv-body">
+        <div class="hv-row"><span class="city">Casablanca · Offices</span><span class="metric">Median DH/m²/mo</span><span class="val">142</span></div>
+        <div class="hv-row"><span class="city">Marrakech · Apartments</span><span class="metric">Median DH/m²</span><span class="val">18,400</span></div>
+        <div class="hv-row"><span class="city">Lagos · Retail</span><span class="metric">Median ₦/m²/mo</span><span class="val">8,200</span></div>
+        <div class="hv-row"><span class="city">Nairobi · Villas</span><span class="metric">Median KES/m²</span><span class="val">94,000</span></div>
+        <div class="hv-row"><span class="city">Rabat · Land</span><span class="metric">Median DH/m²</span><span class="val">3,850</span></div>
+      </div>
+      <div class="hv-bar2">
+        <div class="hv-status"><div class="hv-live"></div>Live · Morocco Market Active</div>
+        <span style="font-size:11px;color:rgba(255,255,255,.2);">Updated daily</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust strip -->
+  <div class="trust-strip">
+    <div class="trust-item"><div class="ti-n">35+</div><div class="ti-l">African countries tracked</div></div>
+    <div class="trust-item"><div class="ti-n">100+</div><div class="ti-l">Cities with price data</div></div>
+    <div class="trust-item"><div class="ti-n">8</div><div class="ti-l">Asset classes covered</div></div>
+    <div class="trust-item"><div class="ti-n">District</div><div class="ti-l">Level granularity</div></div>
+    <div class="trust-item"><div class="ti-n">REST</div><div class="ti-l">API access included</div></div>
+    <div class="trust-item"><div class="ti-n">XLSX · CSV</div><div class="ti-l">Export formats</div></div>
   </div>
 
-  <div class="sec-split">
-    <div class="split-img g-office"><span class="grad-icon">🏢</span></div>
-    <div>
-      <h2>Unlock the Power of Real Estate Data at Your Fingertips</h2>
-      <p>Our platform offers comprehensive data analytics to help you make informed real estate decisions. Gain valuable property insights and stay ahead of market trends with ease.</p>
-      <div class="feat-row"><div class="feat-row-icon">📊</div><div><strong>Data Analytics</strong><span>Transform raw data into actionable insights for smarter investment strategies.</span></div></div>
-      <div class="feat-row"><div class="feat-row-icon">🔍</div><div><strong>Property Insights</strong><span>Discover detailed property information to enhance your buying or selling process.</span></div></div>
+  <!-- Who uses -->
+  <div class="who-strip">
+    <div class="ws-label">Built for institutional buyers, not retail consumers</div>
+    <div class="who-logos">
+      <div class="who-logo">Private Equity</div>
+      <div class="who-logo">Development Finance</div>
+      <div class="who-logo">Family Offices</div>
+      <div class="who-logo">Advisory Firms</div>
+      <div class="who-logo">Commercial Banks</div>
+      <div class="who-logo">Developers</div>
+      <div class="who-logo">Research Teams</div>
+      <div class="who-logo">Proptech</div>
     </div>
   </div>
 
-  <div class="sec-3col">
-    <div class="eyebrow">SERVICES</div>
-    <h2>Unlock the Power of Real Estate Data with Our Advanced Analytics</h2>
-    <p class="sub">Our platform provides powerful tools to analyze market trends and make data-driven decisions.</p>
-    <div class="cards3">
-      <div class="card3"><div class="icon">⚡</div><h3>Stay Ahead with Real-Time Insights</h3><p>Comprehensive data analysis to empower your real estate decisions.</p><a>Learn More →</a></div>
-      <div class="card3"><div class="icon">🔍</div><h3>Get Tailored Property Investments</h3><p>Customized insights that align with your unique property goals.</p><a onclick="go('register')">Sign Up →</a></div>
-      <div class="card3"><div class="icon">📈</div><h3>Analyze Comprehensive Data</h3><p>Dive deep into the hidden potential of properties with our detailed analytics.</p><a onclick="go('analytics')">Explore →</a></div>
+  <!-- Platform modules -->
+  <section class="platform-sec">
+    <div class="sec-hd">
+      <div class="eyebrow">Platform Modules</div>
+      <h2>Everything needed to underwrite, benchmark, and monitor African real estate markets</h2>
+      <p>Six integrated data modules. Each independently valuable. More powerful together.</p>
     </div>
-  </div>
-
-  <div class="sec-how">
-    <h2>Discover How to Navigate Our Platform Effortlessly</h2>
-    <p class="sub">A simple, intuitive process to get you from sign-up to insights in minutes.</p>
-    <div class="how-cards">
-      <div class="how-card"><div class="how-card-img g-person"><span class="grad-icon">👤</span></div><div class="how-card-body"><h3>Unlock Powerful Insights with Our User-Friendly Data Tools</h3><p>Our platform simplifies the process of accessing and analyzing real estate data.</p><a>Get Started →</a></div></div>
-      <div class="how-card"><div class="how-card-img g-meeting"><span class="grad-icon">🤝</span></div><div class="how-card-body"><h3>Step 1: Create Your Account for Personalized Data Access</h3><p>Sign up to gain access to exclusive analytics tailored to your needs.</p><a onclick="go('register')">Join →</a></div></div>
-      <div class="how-card"><div class="how-card-img g-dash"><span class="grad-icon">📊</span></div><div class="how-card-body"><h3>Step 2: Explore Our Comprehensive Dashboard for Insights</h3><p>Utilize our intuitive dashboard to visualize trends and make informed decisions.</p><a onclick="go('analytics')">See More →</a></div></div>
+    <div class="modules-grid">
+      <div class="module">
+        <div class="module-icon">01 · Market Intelligence</div>
+        <h3>City & District Analytics</h3>
+        <p>Median pricing, transaction volumes, vacancy rates, and demand signals at city and sub-market level. Updated monthly across covered markets.</p>
+        <div class="module-tag">Investors · Advisors · Lenders</div>
+      </div>
+      <div class="module">
+        <div class="module-icon">02 · Benchmarks</div>
+        <h3>Pricing & Rent Benchmarks</h3>
+        <p>Rent and capital value benchmarks by asset class, district, building grade, and transaction type. Indexed to verified listing and transactional evidence.</p>
+        <div class="module-tag">Developers · Valuers · Occupiers</div>
+      </div>
+      <div class="module">
+        <div class="module-icon">03 · Pipeline</div>
+        <h3>Development Pipeline Tracker</h3>
+        <p>Track active, approved, and proposed developments by city, asset class, and developer. Monitor supply risk before it prices into the market.</p>
+        <div class="module-tag">Investors · Developers · Banks</div>
+      </div>
+      <div class="module">
+        <div class="module-icon">04 · Transactions</div>
+        <h3>Transactions Database</h3>
+        <p>Observed transaction evidence including deal size, price per square metre, yield, buyer/seller type, and deal structure where available.</p>
+        <div class="module-tag">Institutional Investors · Advisors</div>
+      </div>
+      <div class="module">
+        <div class="module-icon">05 · API</div>
+        <h3>Data API & Feeds</h3>
+        <p>REST API access to all platform data. JSON and CSV outputs. Compatible with Excel, Power BI, GIS platforms, and internal financial models.</p>
+        <div class="module-tag">Proptech · Research Teams · Corporates</div>
+      </div>
+      <div class="module">
+        <div class="module-icon">06 · Research</div>
+        <h3>Custom Research & Reports</h3>
+        <p>Bespoke market studies, feasibility support, and portfolio benchmarking. Delivered by our in-house research team with full data room access.</p>
+        <div class="module-tag">PE Funds · DFIs · Family Offices</div>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="cta-strip">
-    <div><a>Learn More →</a></div>
-    <div><a onclick="go('register')">Sign Up →</a></div>
-    <div><a onclick="go('analytics')">Explore →</a></div>
-  </div>
+  <!-- Use cases -->
+  <section class="usecases-sec">
+    <div class="sec-hd">
+      <div class="eyebrow">Use Cases</div>
+      <h2>What our clients use Ironwood for</h2>
+    </div>
+    <div class="ucases-grid">
+      <div class="ucase">
+        <div class="ucase-who">Institutional Investors</div>
+        <h3>Market Entry & Underwriting</h3>
+        <p>Assess new market entry opportunities with city-level pricing, yield benchmarks, vacancy trends, and pipeline risk.</p>
+        <ul>
+          <li>Underwriting assumption validation</li>
+          <li>Market entry risk scoring</li>
+          <li>Comparable transaction analysis</li>
+        </ul>
+      </div>
+      <div class="ucase">
+        <div class="ucase-who">Developers</div>
+        <h3>Feasibility & Demand Analysis</h3>
+        <p>Benchmark proposed schemes against current supply, absorption rates, and district-level price trends before committing capital.</p>
+        <ul>
+          <li>District price benchmarking</li>
+          <li>Supply pipeline risk assessment</li>
+          <li>GBA and unit mix optimisation</li>
+        </ul>
+      </div>
+      <div class="ucase">
+        <div class="ucase-who">Banks & Lenders</div>
+        <h3>Collateral & Credit Decisions</h3>
+        <p>Support loan underwriting and collateral assessment with independent market data across African cities.</p>
+        <ul>
+          <li>Collateral valuation context</li>
+          <li>LTV stress testing data</li>
+          <li>Market liquidity indicators</li>
+        </ul>
+      </div>
+      <div class="ucase">
+        <div class="ucase-who">Advisory Firms</div>
+        <h3>Client Reporting & Research</h3>
+        <p>Strengthen feasibility studies, market reports, and investment committee presentations with credible, cited data.</p>
+        <ul>
+          <li>Exportable benchmarks and tables</li>
+          <li>White-label report data</li>
+          <li>Market narrative support</li>
+        </ul>
+      </div>
+      <div class="ucase">
+        <div class="ucase-who">Corporates & Occupiers</div>
+        <h3>Expansion Market Intelligence</h3>
+        <p>Evaluate new office or operational footprints across African cities with rent benchmarks and occupancy data.</p>
+        <ul>
+          <li>Office rent benchmarks by grade</li>
+          <li>City cost comparison matrices</li>
+          <li>Lease market conditions</li>
+        </ul>
+      </div>
+      <div class="ucase">
+        <div class="ucase-who">Research & Academia</div>
+        <h3>Data Access & Analysis</h3>
+        <p>API and bulk export access for quantitative research on African real estate pricing, market structure, and urbanisation.</p>
+        <ul>
+          <li>Bulk data export via API</li>
+          <li>Historical time series</li>
+          <li>City and district granularity</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sample Outputs -->
+  <section class="outputs-sec">
+    <div class="sec-hd">
+      <div class="eyebrow">Sample Outputs</div>
+      <h2>What the platform delivers</h2>
+      <p class="sec-sub">Request access to sample datasets, reports, and API documentation below.</p>
+    </div>
+    <div class="outputs-grid">
+      <div class="output-card">
+        <div class="oc-type">Report</div>
+        <div class="oc-icon">📄</div>
+        <h3>Morocco Market Overview</h3>
+        <p>Sample market intelligence brief covering Casablanca, Marrakech, Rabat, and Tangiers. Includes pricing benchmarks, absorption, and asset class breakdown.</p>
+        <button class="oc-btn" onclick="go('contact')">Request Sample →</button>
+      </div>
+      <div class="output-card">
+        <div class="oc-type">Dashboard</div>
+        <div class="oc-icon">📊</div>
+        <h3>City Analytics Dashboard</h3>
+        <p>Interactive platform interface showing district-level pricing, heatmaps, and trend charts. Live data visible to subscribers.</p>
+        <button class="oc-btn" onclick="go('contact')">Book Demo →</button>
+      </div>
+      <div class="output-card">
+        <div class="oc-type">Data Export</div>
+        <div class="oc-icon">📋</div>
+        <h3>Benchmark Export Sheet</h3>
+        <p>Sample XLSX export of median prices, rent levels, and volume by district, city, asset class, and listing type — formatted for financial models.</p>
+        <button class="oc-btn" onclick="go('contact')">Request Sample →</button>
+      </div>
+      <div class="output-card">
+        <div class="oc-type">API</div>
+        <div class="oc-icon">⚡</div>
+        <h3>API Schema & Docs</h3>
+        <p>Full API documentation including endpoint reference, authentication, response schema, rate limits, and integration examples for Python, R, and Excel.</p>
+        <button class="oc-btn" onclick="go('api')">View API Docs →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-sec">
+    <div class="cta-grid">
+      <div class="cta-left">
+        <div class="eyebrow">Get Started</div>
+        <h2>Ready to access African real estate intelligence?</h2>
+        <p>Book a product demo, request a sample dataset, or enquire about enterprise data access. Our team responds within one business day.</p>
+        <div class="cta-btns">
+          <button class="btn-gold" onclick="go('contact')">Book a Demo →</button>
+          <button class="btn-secondary" style="border-color:rgba(255,255,255,.2);color:#fff;" onclick="go('subscription')">View Pricing</button>
+        </div>
+      </div>
+      <div class="cta-right">
+        <div class="cta-option" onclick="go('contact')">
+          <div><div class="cta-opt-label">Book a Product Demo</div><div class="cta-opt-desc">30-minute walkthrough with our team</div></div>
+          <span class="cta-opt-arrow">→</span>
+        </div>
+        <div class="cta-option" onclick="go('contact')">
+          <div><div class="cta-opt-label">Request Sample Dataset</div><div class="cta-opt-desc">Download a sample market report or data export</div></div>
+          <span class="cta-opt-arrow">→</span>
+        </div>
+        <div class="cta-option" onclick="go('contact')">
+          <div><div class="cta-opt-label">Enterprise Data Access</div><div class="cta-opt-desc">Custom data feeds, API integration, and SLA</div></div>
+          <span class="cta-opt-arrow">→</span>
+        </div>
+        <div class="cta-option" onclick="go('subscription')">
+          <div><div class="cta-opt-label">Subscribe to Platform</div><div class="cta-opt-desc">Self-serve access from $99/month</div></div>
+          <span class="cta-opt-arrow">→</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ DATA ═══ -->
-<div id="page-data" class="page">
-  <div class="data-hero">
-    <div class="eyebrow">INSIGHTS</div>
-    <h1>Data-Driven Solutions</h1>
-    <p>Unlock the power of real estate analytics with our comprehensive data solutions tailored for you.</p>
-    <div style="display:flex;gap:12px;"><button class="btn-dark">Learn More</button><button class="btn-outline" onclick="go('register')">Sign Up</button></div>
+<!-- ═══════════ COVERAGE ═══════════ -->
+<div id="page-coverage" class="page">
+  <div style="padding:72px 48px 48px;border-bottom:1px solid var(--rule);">
+    <div class="eyebrow">Geographic Coverage</div>
+    <h1 style="font-family:var(--serif);font-size:44px;letter-spacing:-.02em;margin-bottom:14px;">Market Coverage</h1>
+    <p style="font-size:16px;color:var(--ink3);font-weight:300;max-width:560px;line-height:1.65;">Current and expanding coverage across African real estate markets. Coverage depth varies by market — see status column for detail.</p>
   </div>
-  <div style="padding:60px;background:#fff;">
-    <div style="text-align:center;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:8px;">SERVICES</div>
-    <h2 style="font-size:26px;font-weight:800;text-align:center;margin-bottom:8px;">Explore Our Comprehensive Real Estate Services</h2>
-    <p style="font-size:14px;color:#666;text-align:center;margin-bottom:40px;max-width:560px;margin-left:auto;margin-right:auto;">Unlock the true potential of real estate with our expert services. We provide insights that drive informed decisions.</p>
-    <div class="svc-grid">
-      <div class="svc-card"><div class="icon">🗄️</div><h3>Property Data Analysis</h3><p>Gain deep insights into property values and market dynamics with our advanced data analysis.</p></div>
-      <div class="svc-card"><div class="icon">📊</div><h3>Market Trends Reporting</h3><p>Stay ahead of the curve with our detailed market analysis and reporting services.</p></div>
-      <div class="svc-card"><div class="icon">📈</div><h3>Investment Advisory Services</h3><p>Maximize your real estate investment strategy and achieve your goals.</p></div>
+  <section class="coverage-sec" style="padding-top:48px;">
+    <div class="sec-hd">
+      <div>
+        <div class="eyebrow">Active Markets</div>
+        <h2>Coverage Matrix</h2>
+      </div>
+      <div style="display:flex;gap:16px;align-items:center;">
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink4);"><span class="cov-badge badge-live">Live</span> Full data access</span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink4);"><span class="cov-badge badge-exp">Expanding</span> Partial coverage</span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink4);"><span class="cov-badge badge-pilot">Pilot</span> In development</span>
+      </div>
     </div>
-    <div style="text-align:center;margin-top:32px;"><button class="btn-sm-outline">Learn More →</button></div>
-  </div>
-  <div style="padding:60px;background:#f5f5f5;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;">
-    <div>
-      <h2 style="font-size:26px;font-weight:800;margin-bottom:14px;">Unlock the Power of Property Data Analysis for Informed Real Estate Decisions</h2>
-      <p style="font-size:14px;color:#555;line-height:1.7;margin-bottom:18px;">Dive deep into our comprehensive data to make smarter, data-driven choices.</p>
-      <ul class="check-list"><li>Comprehensive market analysis</li><li>Accurate property valuations</li><li>Predictive investment modeling</li></ul>
-      <div style="margin-top:20px;"><button class="btn-sm-outline">Learn More →</button></div>
+    <table class="cov-table">
+      <thead>
+        <tr>
+          <th>Country</th><th>City</th><th>Asset Classes</th><th>Data Available</th><th>History</th><th>Update Freq.</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Morocco</strong></td><td>Casablanca</td><td><div class="asset-tags"><span class="asset-tag">Apartments</span><span class="asset-tag">Offices</span><span class="asset-tag">Retail</span><span class="asset-tag">Villas</span><span class="asset-tag">Land</span></div></td><td>Price/m², Volume, Districts</td><td>6+ months</td><td>Monthly</td><td><span class="cov-badge badge-live">Live</span></td></tr>
+        <tr><td></td><td>Marrakech</td><td><div class="asset-tags"><span class="asset-tag">Apartments</span><span class="asset-tag">Riads</span><span class="asset-tag">Villas</span><span class="asset-tag">Land</span></div></td><td>Price/m², Volume, Districts</td><td>6+ months</td><td>Monthly</td><td><span class="cov-badge badge-live">Live</span></td></tr>
+        <tr><td></td><td>Rabat</td><td><div class="asset-tags"><span class="asset-tag">Apartments</span><span class="asset-tag">Offices</span><span class="asset-tag">Land</span></div></td><td>Price/m², Volume, Districts</td><td>6+ months</td><td>Monthly</td><td><span class="cov-badge badge-live">Live</span></td></tr>
+        <tr><td></td><td>Tangiers</td><td><div class="asset-tags"><span class="asset-tag">Apartments</span><span class="asset-tag">Land</span><span class="asset-tag">Retail</span></div></td><td>Price/m², Volume</td><td>6+ months</td><td>Monthly</td><td><span class="cov-badge badge-live">Live</span></td></tr>
+        <tr><td></td><td>Fez</td><td><div class="asset-tags"><span class="asset-tag">Apartments</span><span class="asset-tag">Riads</span></div></td><td>Price/m², Volume</td><td>6+ months</td><td>Monthly</td><td><span class="cov-badge badge-live">Live</span></td></tr>
+        <tr><td><strong>Nigeria</strong></td><td>Lagos</td><td><div class="asset-tags"><span class="asset-tag">Apartments</span><span class="asset-tag">Offices</span><span class="asset-tag">Retail</span></div></td><td>Price benchmarks</td><td>—</td><td>Quarterly</td><td><span class="cov-badge badge-exp">Expanding</span></td></tr>
+        <tr><td></td><td>Abuja</td><td><div class="asset-tags"><span class="asset-tag">Apartments</span><span class="asset-tag">Offices</span></div></td><td>Price benchmarks</td><td>—</td><td>Quarterly</td><td><span class="cov-badge badge-pilot">Pilot</span></td></tr>
+        <tr><td><strong>Senegal</strong></td><td>Dakar</td><td><div class="asset-tags"><span class="asset-tag">Apartments</span><span class="asset-tag">Offices</span></div></td><td>Price benchmarks</td><td>—</td><td>Quarterly</td><td><span class="cov-badge badge-pilot">Pilot</span></td></tr>
+        <tr><td><strong>Kenya</strong></td><td>Nairobi</td><td><div class="asset-tags"><span class="asset-tag">Apartments</span><span class="asset-tag">Offices</span><span class="asset-tag">Retail</span></div></td><td>Price benchmarks</td><td>—</td><td>Quarterly</td><td><span class="cov-badge badge-exp">Expanding</span></td></tr>
+        <tr><td><strong>Côte d'Ivoire</strong></td><td>Abidjan</td><td><div class="asset-tags"><span class="asset-tag">Apartments</span><span class="asset-tag">Offices</span></div></td><td>Price benchmarks</td><td>—</td><td>—</td><td><span class="cov-badge badge-pilot">Pilot</span></td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:32px;padding:20px;background:var(--white);border:1px solid var(--rule);border-radius:2px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:13.5px;font-weight:500;color:var(--ink);">Don't see your market?</div>
+        <div style="font-size:13px;color:var(--ink4);margin-top:3px;">We are actively expanding. Contact us to request a specific market or asset class.</div>
+      </div>
+      <button class="btn-primary" onclick="go('contact')">Request Coverage →</button>
     </div>
-    <div class="split-img g-dash" style="height:300px;border-radius:12px;position:relative;overflow:hidden;"><span class="grad-icon">📊</span></div>
-  </div>
+  </section>
   <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ ANALYTICS ═══ -->
-<div id="page-analytics" class="page">
-  <div class="analytics-wrap">
-    <div>
-      <div class="sidebar-box">
-        <h3>Analytics Filter</h3>
-        <div class="fg"><label>City</label><select><option>All Cities</option><option>Lagos</option><option>Nairobi</option><option>Cape Town</option><option>Accra</option><option>Johannesburg</option></select></div>
-        <div class="fg"><label>Property Type</label><select><option>All Property Types</option><option>Office</option><option>Retail</option><option>Residential</option><option>Hospitality</option><option>Industrial</option></select></div>
-        <div class="fg"><label>Minimum Size (sqm)</label><input type="text" placeholder="e.g., 500"/></div>
-        <div class="fg"><label>Maximum Size (sqm)</label><input type="text" placeholder="e.g., 10000"/></div>
-        <button class="btn-apply">Apply Filters</button>
+<!-- ═══════════ METHODOLOGY ═══════════ -->
+<div id="page-methodology" class="page">
+  <div style="padding:72px 48px 48px;border-bottom:1px solid var(--rule);">
+    <div class="eyebrow">Data Methodology</div>
+    <h1 style="font-family:var(--serif);font-size:44px;letter-spacing:-.02em;margin-bottom:14px;">How We Build Our Data</h1>
+    <p style="font-size:16px;color:var(--ink3);font-weight:300;max-width:560px;line-height:1.65;">Transparency is foundational to institutional data products. This page explains exactly how Ironwood Intelligence collects, verifies, cleans, and delivers market intelligence.</p>
+  </div>
+  <section class="method-sec">
+    <div class="method-grid">
+      <div class="method-nav">
+        <div class="eyebrow" style="margin-bottom:20px;">Contents</div>
+        <div class="method-nav-item">Data Sources</div>
+        <div class="method-nav-item">Collection Process</div>
+        <div class="method-nav-item">Verification & Cleaning</div>
+        <div class="method-nav-item">Deduplication</div>
+        <div class="method-nav-item">Metric Definitions</div>
+        <div class="method-nav-item">Update Frequency</div>
+        <div class="method-nav-item">Observed vs. Estimated</div>
+        <div class="method-nav-item">Limitations</div>
       </div>
-      <div class="sidebar-box">
-        <h3>Market Overview</h3>
-        <div class="mo-row"><span class="lbl">Total Properties</span><span class="val">5</span></div>
-        <div class="mo-row"><span class="lbl">Avg. Rent/sqm</span><span class="val">$1570.00</span></div>
-        <div class="mo-row"><span class="lbl">Vacancy Rate</span><span class="val">10.0%</span></div>
+      <div class="method-content">
+        <h2>Methodology & Data Standards</h2>
+
+        <div class="method-block">
+          <h3>Data Sources</h3>
+          <p>Ironwood Intelligence aggregates data from multiple complementary source types to maximise coverage and cross-reference accuracy.</p>
+          <ul>
+            <li>Public listing portals — scraped at regular intervals per market</li>
+            <li>Developer direct sources — price lists, launches, and absorption data</li>
+            <li>Agent network — verified asking and achieved rents from in-market agents</li>
+            <li>Transactional registries — where available and accessible by market</li>
+            <li>Field research — direct market surveys conducted by our team</li>
+          </ul>
+        </div>
+
+        <div class="method-block">
+          <h3>Collection Process</h3>
+          <p>Data is collected via automated scraping pipelines operating at defined intervals per market, supplemented by manual field collection. Each record is timestamped and source-tagged at the point of collection.</p>
+          <p>Collection cadence varies by market. Live markets (e.g. Morocco) are updated monthly. Expanding and pilot markets are updated quarterly or when new data becomes available.</p>
+        </div>
+
+        <div class="method-block">
+          <h3>Verification & Cleaning</h3>
+          <p>Raw collected data goes through a multi-stage cleaning pipeline before entering the platform database.</p>
+          <ul>
+            <li>Price outlier removal using interquartile range trimming (top and bottom 2% excluded)</li>
+            <li>Null and incomplete records flagged and excluded from aggregations</li>
+            <li>Price-per-square-metre normalisation across different listing formats</li>
+            <li>Currency and unit standardisation per market</li>
+            <li>Asset class classification using structured taxonomies</li>
+            <li>Geographic tagging and district-level geocoding</li>
+          </ul>
+        </div>
+
+        <div class="method-block">
+          <h3>Deduplication</h3>
+          <p>Duplicate records across collection runs are identified and removed using a composite matching approach. Records are considered duplicates when all of the following fields match: city, submarket, title, price, and size (m²).</p>
+          <p>Where duplicates are found, the earliest collected record is retained and all subsequent identical records are excluded from aggregations. Listings that remain active across multiple collection periods are tracked as continuous observations, not new entries.</p>
+        </div>
+
+        <div class="method-block">
+          <h3>Metric Definitions</h3>
+          <ul>
+            <li><strong>Median price/m²</strong> — the middle value of all cleaned, deduplicated price-per-square-metre observations for a given market segment. Preferred over mean due to robustness against outliers.</li>
+            <li><strong>Listing volume</strong> — count of unique, deduplicated active listings within a market segment at time of collection.</li>
+            <li><strong>Rent benchmark</strong> — median DH/m²/month (or local currency equivalent) for active rental listings in a defined submarket and asset class.</li>
+            <li><strong>Sale benchmark</strong> — median DH/m² (or local currency equivalent) for active sale listings.</li>
+          </ul>
+        </div>
+
+        <div class="method-block">
+          <h3>Observed vs. Estimated</h3>
+          <p>Ironwood Intelligence distinguishes clearly between observed and estimated data points. All benchmarks published on the platform are based on observed listing or transactional evidence unless otherwise stated.</p>
+          <p>Where data coverage is insufficient for reliable aggregation (fewer than 5 observations in a given segment), metrics are suppressed and marked as unavailable rather than estimated.</p>
+        </div>
+
+        <div class="method-block">
+          <h3>Limitations & Disclaimers</h3>
+          <ul>
+            <li>Listing data reflects asking prices, not necessarily achieved transaction prices</li>
+            <li>Coverage depth varies significantly by market and asset class</li>
+            <li>Data should be used as one input among several in investment and underwriting decisions</li>
+            <li>Ironwood Intelligence does not provide valuation opinions or investment advice</li>
+            <li>Historical comparability may be affected by changes in collection methodology</li>
+          </ul>
+        </div>
       </div>
     </div>
-    <div>
-      <div style="font-size:18px;font-weight:700;margin-bottom:14px;">Property Dashboard</div>
-      <div id="africa-map"></div>
-      <div class="a-bottom">
-        <div class="a-card">
-          <h3>Average Rent by Property Type</h3>
-          <div class="rent-row"><span>Office</span><span><span class="r-val">$1800/sqm</span><span class="r-up">+5.2%</span></span></div>
-          <div class="rent-row"><span>Retail</span><span><span class="r-val">$1600/sqm</span><span class="r-up">+5.2%</span></span></div>
-          <div class="rent-row"><span>Residential</span><span><span class="r-val">$1500/sqm</span><span class="r-up">+5.2%</span></span></div>
-          <div class="rent-row"><span>Hospitality</span><span><span class="r-val">$1750/sqm</span><span class="r-up">+5.2%</span></span></div>
-          <div class="rent-row"><span>Industrial</span><span><span class="r-val">$1200/sqm</span><span class="r-up">+5.2%</span></span></div>
-        </div>
-        <div class="a-card">
-          <h3>Recent Transactions</h3>
-          <div class="tr"><span class="tprice">$450,000</span><div class="ttype">Apartment Sale</div><div class="tdate">15/01/2024</div></div>
-          <div class="tr"><span class="tprice">$280,000</span><div class="ttype">Apartment Sale</div><div class="tdate">20/02/2024</div></div>
-          <div class="tr"><span class="tprice">$1,200,000</span><div class="ttype">Office Sale</div><div class="tdate">05/03/2024</div></div>
+  </section>
+  <div class="footer-slot"></div>
+</div>
+
+<!-- ═══════════ API ═══════════ -->
+<div id="page-api" class="page">
+  <div style="padding:72px 48px 48px;border-bottom:1px solid var(--rule);">
+    <div class="eyebrow">Developer Access</div>
+    <h1 style="font-family:var(--serif);font-size:44px;letter-spacing:-.02em;margin-bottom:14px;">API & Data Integration</h1>
+    <p style="font-size:16px;color:var(--ink3);font-weight:300;max-width:560px;line-height:1.65;">REST API access to all Ironwood Intelligence market data. Designed for integration with financial models, BI platforms, and research workflows.</p>
+  </div>
+  <section class="api-sec">
+    <div class="api-grid">
+      <div class="api-content">
+        <div class="eyebrow">Capabilities</div>
+        <h2>Enterprise-Ready Data Access</h2>
+        <p>Ironwood's REST API gives programmatic access to pricing benchmarks, market aggregates, district-level data, and time series — in the formats your workflow requires.</p>
+        <ul class="api-features">
+          <li>REST API with JSON responses and full schema documentation</li>
+          <li>CSV and XLSX bulk export endpoints</li>
+          <li>Excel and Power BI connector compatible</li>
+          <li>GIS-ready geographic outputs with coordinate data</li>
+          <li>Historical time series endpoints (where available)</li>
+          <li>Authentication via API key (Bearer token)</li>
+          <li>Rate limits documented by subscription tier</li>
+          <li>Webhook support for data refresh notifications</li>
+          <li>Dedicated onboarding for enterprise API subscribers</li>
+        </ul>
+        <div style="display:flex;gap:12px;">
+          <button class="btn-primary" onclick="go('contact')">Request API Access →</button>
+          <button class="btn-secondary" onclick="go('contact')">Download API Docs</button>
         </div>
       </div>
-      <div class="vacancy-box">
-        <h3>Vacancy Rate Trends</h3>
-        <div style="position:relative;">
-          <div class="chart">
-            <div class="y-lbls"><span>16</span><span>12</span><span>8</span><span>4</span><span>0</span></div>
-            <svg class="linechart" viewBox="0 0 400 180" preserveAspectRatio="none">
-              <line x1="0" y1="22" x2="400" y2="22" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
-              <line x1="0" y1="67" x2="400" y2="67" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
-              <line x1="0" y1="112" x2="400" y2="112" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
-              <line x1="0" y1="157" x2="400" y2="157" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
-              <polyline points="0,45 133,112 266,9 400,140" fill="none" stroke="#8b8bc8" stroke-width="2.5"/>
-              <circle cx="0" cy="45" r="4" fill="#8b8bc8"/>
-              <circle cx="133" cy="112" r="4" fill="#8b8bc8"/>
-              <circle cx="266" cy="9" r="4" fill="#8b8bc8"/>
-              <circle cx="400" cy="140" r="4" fill="#8b8bc8"/>
-            </svg>
+      <div>
+        <div class="api-code">
+          <div class="api-code-bar">
+            <span>Sample API Request</span>
+            <span>REST · JSON</span>
+          </div>
+          <pre><span class="k">GET</span> /v1/markets/<span class="n">MAR</span>/cities/<span class="n">casablanca</span>/benchmarks
+<span class="k">Authorization:</span> <span class="s">Bearer {api_key}</span>
+<span class="k">Content-Type:</span> <span class="s">application/json</span>
+
+<span class="p">Response 200 OK</span>
+<span class="p">{</span>
+  <span class="k">"market"</span><span class="p">:</span> <span class="s">"Casablanca"</span><span class="p">,</span>
+  <span class="k">"currency"</span><span class="p">:</span> <span class="s">"MAD"</span><span class="p">,</span>
+  <span class="k">"as_of"</span><span class="p">:</span> <span class="s">"2026-02"</span><span class="p">,</span>
+  <span class="k">"benchmarks"</span><span class="p">: [</span>
+    <span class="p">{</span>
+      <span class="k">"district"</span><span class="p">:</span> <span class="s">"Maarif"</span><span class="p">,</span>
+      <span class="k">"asset_class"</span><span class="p">:</span> <span class="s">"Offices"</span><span class="p">,</span>
+      <span class="k">"listing_type"</span><span class="p">:</span> <span class="s">"Rent"</span><span class="p">,</span>
+      <span class="k">"median_price_sqm"</span><span class="p">:</span> <span class="n">142</span><span class="p">,</span>
+      <span class="k">"observations"</span><span class="p">:</span> <span class="n">47</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span></pre>
+        </div>
+        <div style="margin-top:16px;padding:20px;border:1px solid var(--rule);border-radius:2px;">
+          <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;">Integration Targets</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <span class="asset-tag">Excel</span><span class="asset-tag">Power BI</span><span class="asset-tag">Tableau</span><span class="asset-tag">Python</span><span class="asset-tag">R</span><span class="asset-tag">GIS / QGIS</span><span class="asset-tag">Argus</span><span class="asset-tag">CoStar</span>
           </div>
         </div>
-        <div class="x-lbls"><span>Westlands</span><span>Sea Point</span><span>Airport City</span><span>Sandton</span></div>
-        <div class="legend"><span class="ldot"></span> Vacancy Rate</div>
       </div>
     </div>
-  </div>
+  </section>
   <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ SUBSCRIPTION ═══ -->
+<!-- ═══════════ SUBSCRIPTION / PRICING ═══════════ -->
 <div id="page-subscription" class="page">
-  <div class="sub-pg">
-    <div class="sub-hd">
-      <h1>Simple, Transparent Pricing</h1>
-      <p>Professional-grade African real estate intelligence — from independent analysts to institutional teams.</p>
-      <div class="bill-toggle">
-        <span class="on" id="lbl-monthly">Monthly</span>
-        <div class="toggle-wrap" id="bill-tog" onclick="toggleBilling()"><div class="toggle-knob"></div></div>
-        <span id="lbl-annual">Annual <span class="save-badge">Save 20%</span></span>
+  <div style="padding:72px 48px 48px;border-bottom:1px solid var(--rule);text-align:center;">
+    <div class="eyebrow">Pricing</div>
+    <h1 style="font-family:var(--serif);font-size:44px;letter-spacing:-.02em;margin-bottom:14px;">Transparent Pricing</h1>
+    <p style="font-size:16px;color:var(--ink3);font-weight:300;max-width:500px;margin:0 auto;line-height:1.65;">Professional-grade African real estate intelligence — from independent analysts to institutional teams.</p>
+  </div>
+  <section class="pricing-sec">
+    <div class="bill-row">
+      <span class="on" id="lbl-monthly">Monthly</span>
+      <div class="toggle-wrap" id="bill-tog" onclick="toggleBilling()"><div class="toggle-knob"></div></div>
+      <span id="lbl-annual">Annual <span class="save-chip">Save 20%</span></span>
+    </div>
+    <div class="plans-grid">
+      <!-- Basic -->
+      <div class="plan-card">
+        <div class="plan-name">Basic</div>
+        <div class="plan-desc">Essential market intelligence for independent analysts and small teams.</div>
+        <div class="plan-price"><span class="amt" id="p-basic">$99</span><span class="per" id="pp-basic"> /month</span></div>
+        <div class="plan-annual" id="pa-basic"></div>
+        <div class="plan-div"></div>
+        <ul class="plan-feats">
+          <li>Core market intelligence dashboards</li>
+          <li>Country-level real estate indicators</li>
+          <li>Key macroeconomic & sector data</li>
+          <li>Up to 3 years historical data</li>
+          <li>Quarterly intelligence briefs</li>
+          <li>Interactive charts and maps</li>
+          <li>10 export credits / month</li>
+          <li>Email support</li>
+        </ul>
+        <button class="btn-plan btn-plan-outline" onclick="goStripe('basic')">Get Started</button>
+      </div>
+      <!-- Professional -->
+      <div class="plan-card featured">
+        <div class="plan-badge">Most Popular</div>
+        <div class="plan-name">Professional</div>
+        <div class="plan-desc">Advanced analytics for investors, developers, and advisory firms.</div>
+        <div class="plan-price"><span class="amt" id="p-pro">$499</span><span class="per" id="pp-pro"> /month</span></div>
+        <div class="plan-annual" id="pa-pro"></div>
+        <div class="plan-div"></div>
+        <ul class="plan-feats">
+          <li class="inh">Everything in Basic</li>
+          <li>City & district-level datasets</li>
+          <li>10+ years historical database</li>
+          <li>Monthly intelligence updates</li>
+          <li>Development pipeline tracking</li>
+          <li>Transaction & pricing trend analysis</li>
+          <li>Advanced benchmarking tools</li>
+          <li>100 export credits / month</li>
+          <li>Limited API access</li>
+          <li>Priority support</li>
+        </ul>
+        <button class="btn-plan btn-plan-white" onclick="goStripe('professional')">Get Started</button>
+      </div>
+      <!-- Enterprise -->
+      <div class="plan-card">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-desc">Institutional-grade access with full data, integrations, and SLA.</div>
+        <div class="plan-price"><span class="amt" style="font-size:28px;line-height:1.3;">From<br/>$25,000</span></div>
+        <div class="plan-annual" style="color:var(--ink4);">/year · negotiated contract</div>
+        <div class="plan-div"></div>
+        <ul class="plan-feats">
+          <li class="inh">Everything in Professional</li>
+          <li>Asset-level granular datasets</li>
+          <li>Full historical database access</li>
+          <li>Unlimited exports</li>
+          <li>Full API + custom data feeds</li>
+          <li>Custom integrations</li>
+          <li>Multi-user organisation accounts</li>
+          <li>Custom research support</li>
+          <li>White-label reporting</li>
+          <li>Dedicated account manager</li>
+          <li>Training & onboarding</li>
+          <li>SLA guarantee</li>
+        </ul>
+        <button class="btn-plan btn-plan-dark" onclick="go('contact')">Contact Sales</button>
+        <div class="ent-note">Pricing negotiated based on scope,<br/>team size, and data requirements.</div>
       </div>
     </div>
-
-    <div class="plans">
-
-      <!-- BASIC -->
-      <div class="plan">
-        <div class="pln-name">Basic</div>
-        <div class="pln-tag">Essential market intelligence for independent professionals and small teams</div>
-        <div class="pln-price">
-          <span class="pln-amt" id="p-basic">$99</span><span class="pln-per" id="pp-basic">/month</span>
-        </div>
-        <div class="pln-annual" id="pa-basic"></div>
-        <div class="pln-div"></div>
-        <ul class="pln-feats">
-          <li><span class="ck">✓</span>Access to core market intelligence dashboards</li>
-          <li><span class="ck">✓</span>Country-level real estate indicators</li>
-          <li><span class="ck">✓</span>Key macroeconomic and sector indicators</li>
-          <li><span class="ck">✓</span>Aggregated development pipeline insights</li>
-          <li><span class="ck">✓</span>Up to 3 years of historical data</li>
-          <li><span class="ck">✓</span>Quarterly market intelligence briefs</li>
-          <li><span class="ck">✓</span>Interactive charts and maps</li>
-          <li><span class="ck">✓</span>10 export credits / month</li>
-          <li><span class="ck">✓</span>Email support</li>
-        </ul>
-        <button class="btn-sub btn-sub-o" onclick="goStripe('basic')">Get Started</button>
+    <div style="max-width:1020px;margin:32px auto 0;padding:24px 28px;background:var(--white);border:1px solid var(--rule);border-radius:2px;display:flex;align-items:center;justify-content:space-between;gap:24px;">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;">Not sure which plan is right for you?</div>
+        <div style="font-size:13px;color:var(--ink4);">Book a 30-minute demo and our team will recommend the right access level for your use case.</div>
       </div>
-
-      <!-- PROFESSIONAL -->
-      <div class="plan feat">
-        <div class="pop-badge">⭐ Most Popular</div>
-        <div class="pln-name">Professional</div>
-        <div class="pln-tag">Advanced analytics and deeper datasets for investors, developers, and advisory firms</div>
-        <div class="pln-price">
-          <span class="pln-amt" id="p-pro">$499</span><span class="pln-per" id="pp-pro">/month</span>
-        </div>
-        <div class="pln-annual" id="pa-pro"></div>
-        <div class="pln-div"></div>
-        <ul class="pln-feats">
-          <li class="inherit"><span class="ck">✓</span>Everything in Basic</li>
-          <li><span class="ck">✓</span>City-level datasets and indicators</li>
-          <li><span class="ck">✓</span>Extended historical database (10+ years)</li>
-          <li><span class="ck">✓</span>Monthly market intelligence updates</li>
-          <li><span class="ck">✓</span>Development pipeline tracking by project phase</li>
-          <li><span class="ck">✓</span>Transaction and pricing trend analysis</li>
-          <li><span class="ck">✓</span>Advanced analytics and benchmarking tools</li>
-          <li><span class="ck">✓</span>100 export credits / month</li>
-          <li><span class="ck">✓</span>Limited API access</li>
-          <li><span class="ck">✓</span>Priority support</li>
-        </ul>
-        <button class="btn-sub btn-sub-d" onclick="goStripe('professional')">Get Started</button>
-      </div>
-
-      <!-- ENTERPRISE -->
-      <div class="plan">
-        <div class="pln-name">Enterprise</div>
-        <div class="pln-tag">Institutional-grade market intelligence with full data access and integrations</div>
-        <div class="pln-price">
-          <span class="pln-amt" style="font-size:26px;line-height:1.2;">Starting at<br/>$25,000</span>
-        </div>
-        <div class="pln-annual" style="color:#888;">/year · custom contract</div>
-        <div class="pln-div"></div>
-        <ul class="pln-feats">
-          <li class="inherit"><span class="ck">✓</span>Everything in Professional</li>
-          <li><span class="ck">✓</span>Asset-level datasets and granular intelligence</li>
-          <li><span class="ck">✓</span>Full historical database access</li>
-          <li><span class="ck">✓</span>Unlimited exports and data extraction tools</li>
-          <li><span class="ck">✓</span>Full API access</li>
-          <li><span class="ck">✓</span>Custom integrations and data feeds</li>
-          <li><span class="ck">✓</span>Multi-user accounts and organization workspaces</li>
-          <li><span class="ck">✓</span>Custom datasets and tailored research support</li>
-          <li><span class="ck">✓</span>White-label reporting capabilities</li>
-          <li><span class="ck">✓</span>Dedicated account manager</li>
-          <li><span class="ck">✓</span>Training and onboarding</li>
-          <li><span class="ck">✓</span>Service Level Agreement (SLA)</li>
-        </ul>
-        <button class="btn-sub btn-sub-e" onclick="go('contact')">Contact Sales</button>
-        <div class="ent-note">Enterprise pricing is negotiated based on scope,<br/>team size, and data requirements.</div>
-      </div>
-
+      <button class="btn-gold" onclick="go('contact')">Book a Demo →</button>
     </div>
+  </section>
+  <div class="footer-slot"></div>
+</div>
 
-    <div class="why-box">
-      <h2>Why Ironwood Intelligence?</h2>
-      <div class="why-grid">
-        <div class="why-item"><div class="wi-badge">35+</div><h4>Countries Tracked</h4><p>Comprehensive coverage across African markets</p></div>
-        <div class="why-item"><div class="wi-badge">↻</div><h4>Regular Updates</h4><p>Fresh data delivered on a consistent cadence</p></div>
-        <div class="why-item"><div class="wi-badge">API</div><h4>API Access</h4><p>Integrate market data directly into your workflow</p></div>
-        <div class="why-item"><div class="wi-badge">✦</div><h4>Expert Coverage</h4><p>Built by analysts who understand African real estate</p></div>
+<!-- ═══════════ ABOUT ═══════════ -->
+<div id="page-about" class="page">
+  <div class="about-pg">
+    <div class="about-hero">
+      <div class="eyebrow">About Ironwood Intelligence</div>
+      <h1>Built to bring rigour<br/>to African real estate data</h1>
+      <p>Ironwood Intelligence is a real estate data and market intelligence platform focused exclusively on African markets. We provide institutional-grade data infrastructure for markets that have historically lacked it.</p>
+    </div>
+    <div class="about-mission">
+      <div>
+        <div class="eyebrow">Our Mission</div>
+        <h2>Transparency in opaque markets</h2>
+        <p>Africa is home to the world's fastest-growing cities and youngest population. Yet real estate data across the continent remains fragmented, unreliable, and inaccessible to the decision-makers who need it most.</p>
+        <p>Ironwood Intelligence was built to fix that. We aggregate, clean, and structure property data from across the continent so investors, developers, lenders, and institutions can make decisions grounded in evidence rather than assumption.</p>
+        <p>Based in Meydan Free Zone, Dubai, UAE — with a research and data presence across Africa.</p>
+      </div>
+      <div>
+        <div class="eyebrow">What We Build</div>
+        <h2>A data terminal for African real estate</h2>
+        <p>We are building the institutional data layer that African real estate has been missing — comparable to what CoStar, MSCI Real Assets, and RCA provide in more mature markets.</p>
+        <p>That means not just collecting data, but verifying it, structuring it, and delivering it in formats that fit the workflows of serious institutional buyers: financial models, BI platforms, research reports, and API integrations.</p>
+        <div style="margin-top:24px;">
+          <button class="btn-primary" onclick="go('contact')">Get in Touch →</button>
+        </div>
+      </div>
+    </div>
+    <div class="about-numbers">
+      <div class="abn"><div class="n">35+</div><div class="l">Countries in scope</div></div>
+      <div class="abn"><div class="n">100+</div><div class="l">Cities monitored</div></div>
+      <div class="abn"><div class="n">8</div><div class="l">Asset classes tracked</div></div>
+      <div class="abn"><div class="n">2024</div><div class="l">Founded</div></div>
+    </div>
+    <section class="team-sec" style="max-width:none;">
+      <div class="sec-hd">
+        <div class="eyebrow">Leadership</div>
+        <h2>The team behind the platform</h2>
+      </div>
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="team-avatar">MI</div>
+          <div class="team-name">Mahmoud I. Nassef</div>
+          <div class="team-role">Founder & CEO</div>
+          <div class="team-bio">Real estate strategy and investment professional with deep expertise in African and Middle Eastern markets. Previously active across commercial and residential asset classes in the MENA and Africa regions.</div>
+          <div class="team-tags"><span class="team-tag">Real Estate Strategy</span><span class="team-tag">African Markets</span><span class="team-tag">Investment</span></div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar">RE</div>
+          <div class="team-name">Research & Economics</div>
+          <div class="team-role">Market Intelligence Lead</div>
+          <div class="team-bio">Specialist in African real estate market analysis, macroeconomic indicators, and data-driven research. Responsible for market coverage methodology, data quality standards, and intelligence outputs.</div>
+          <div class="team-tags"><span class="team-tag">Market Research</span><span class="team-tag">Economics</span><span class="team-tag">Data Standards</span></div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar">DE</div>
+          <div class="team-name">Data Engineering</div>
+          <div class="team-role">Head of Data Infrastructure</div>
+          <div class="team-bio">Responsible for data collection pipelines, cleaning infrastructure, database architecture, and API platform engineering. Ensures data integrity and delivery across all platform modules.</div>
+          <div class="team-tags"><span class="team-tag">Data Engineering</span><span class="team-tag">API</span><span class="team-tag">Infrastructure</span></div>
+        </div>
+      </div>
+    </section>
+    <div class="footer-slot"></div>
+  </div>
+</div>
+
+<!-- ═══════════ CONTACT ═══════════ -->
+<div id="page-contact" class="page">
+  <div class="contact-pg">
+    <div class="eyebrow">Get in Touch</div>
+    <h1>Contact & Enquiries</h1>
+    <p class="cp-sub">We respond to all enquiries within one business day. For enterprise and API access, please use the enterprise inquiry option.</p>
+    <div class="contact-grid">
+      <div>
+        <div style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink4);margin-bottom:20px;">Enquiry Type</div>
+        <div class="contact-options">
+          <div class="contact-opt"><div class="co-label">📅 Book a Product Demo</div><div class="co-desc">30-minute walkthrough with our team</div></div>
+          <div class="contact-opt"><div class="co-label">📦 Request Sample Dataset</div><div class="co-desc">Download a sample market report or data export</div></div>
+          <div class="contact-opt"><div class="co-label">🏢 Enterprise Data Access</div><div class="co-desc">Custom data feeds, API, and SLA contracts</div></div>
+          <div class="contact-opt"><div class="co-label">⚡ API Access Request</div><div class="co-desc">Developer and integration enquiries</div></div>
+          <div class="contact-opt"><div class="co-label">📋 Coverage Request</div><div class="co-desc">Request a specific market or asset class</div></div>
+        </div>
+        <div style="margin-top:36px;padding-top:32px;border-top:1px solid var(--rule);">
+          <div class="ci-item"><div class="ci-icon">✉️</div><div><div class="ci-lbl">Email</div><div class="ci-val"><a href="mailto:business@ironwoodintelligence.com">business@ironwoodintelligence.com</a></div></div></div>
+          <div class="ci-item"><div class="ci-icon">📞</div><div><div class="ci-lbl">Phone</div><div class="ci-val">+971 50 123 4567</div></div></div>
+          <div class="ci-item"><div class="ci-icon">📍</div><div><div class="ci-lbl">Registered Office</div><div class="ci-val">Meydan Free Zone<br/>Dubai, United Arab Emirates</div></div></div>
+        </div>
+      </div>
+      <div class="contact-form">
+        <h3>Send a Message</h3>
+        <div class="cform">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+            <div class="fg-auth" style="margin:0;"><label>First Name</label><input type="text" placeholder="Jane"/></div>
+            <div class="fg-auth" style="margin:0;"><label>Last Name</label><input type="text" placeholder="Smith"/></div>
+          </div>
+          <div class="fg-auth"><label>Email</label><input type="email" placeholder="jane@institution.com"/></div>
+          <div class="fg-auth"><label>Organisation</label><input type="text" placeholder="Fund / Bank / Advisory Firm"/></div>
+          <div class="fg-auth"><label>Enquiry Type</label>
+            <select>
+              <option>Book a Demo</option>
+              <option>Request Sample Dataset</option>
+              <option>Enterprise Access</option>
+              <option>API Access</option>
+              <option>Coverage Request</option>
+              <option>General Enquiry</option>
+            </select>
+          </div>
+          <div class="fg-auth"><label>Message</label><textarea placeholder="Tell us about your data needs, use case, or the markets you're focused on…"></textarea></div>
+          <button class="btn-primary" style="width:100%;justify-content:center;">Send Enquiry →</button>
+        </div>
       </div>
     </div>
   </div>
   <div class="footer-slot"></div>
 </div>
 
-
-<!-- ═══ DASHBOARD ═══ -->
-<div id="page-dashboard" class="page">
-  <div class="dlocked">
-    <div class="lbig">🔒</div>
-    <h1>Subscriber Access Only</h1>
-    <p>This dashboard is part of our premium subscription. Please log in or join to access.</p>
-    <div class="dbtns"><button class="btn-dark" onclick="go('login')">Login</button><button class="btn-outline" onclick="go('register')">Join Now →</button></div>
-  </div>
-  <div class="footer-slot"></div>
-</div>
-
-<!-- ═══ ACCOUNT ═══ -->
-<div id="page-account" class="page">
-  <div style="max-width:760px;margin:0 auto;padding:48px 24px;">
-
-    <!-- Header -->
-    <div style="margin-bottom:32px;">
-      <h1 style="font-size:26px;font-weight:800;color:#111;">My Account</h1>
-      <p style="font-size:14px;color:#666;margin-top:4px;">Manage your profile, subscription and billing details.</p>
-    </div>
-
-    <!-- Profile card -->
-    <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:28px;margin-bottom:18px;">
-      <div style="display:flex;align-items:center;gap:18px;margin-bottom:24px;">
-        <div style="width:56px;height:56px;border-radius:50%;background:#111;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:700;" id="acc-avatar">—</div>
-        <div>
-          <div style="font-size:17px;font-weight:700;color:#111;" id="acc-name">—</div>
-          <div style="font-size:13px;color:#888;" id="acc-email">—</div>
-        </div>
-        <div style="margin-left:auto;">
-          <span id="acc-plan-badge" style="padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;">Free Trial</span>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-        <div style="background:#f8f8f8;border-radius:10px;padding:16px;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#999;margin-bottom:6px;">Member Since</div>
-          <div style="font-size:14px;font-weight:600;color:#111;" id="acc-since">—</div>
-        </div>
-        <div style="background:#f8f8f8;border-radius:10px;padding:16px;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#999;margin-bottom:6px;">Account Status</div>
-          <div style="font-size:14px;font-weight:600;color:#16a34a;">Active</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Current Plan -->
-    <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:28px;margin-bottom:18px;">
-      <div style="font-size:15px;font-weight:700;color:#111;margin-bottom:18px;">Current Subscription</div>
-      <div id="acc-plan-detail" style="background:#f8f8f8;border-radius:10px;padding:20px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div>
-            <div style="font-size:16px;font-weight:700;color:#111;" id="acc-plan-name">Free Trial</div>
-            <div style="font-size:13px;color:#888;margin-top:3px;">7-day trial — full access to all features</div>
-          </div>
-          <div style="font-size:22px;font-weight:800;color:#111;">$0<span style="font-size:13px;font-weight:400;color:#888;">/mo</span></div>
-        </div>
-        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e5e5;font-size:13px;color:#666;">
-          Upgrade to a paid plan to keep access after your trial ends.
-        </div>
-      </div>
-    </div>
-
-    <!-- Upgrade Plans -->
-    <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:28px;margin-bottom:18px;">
-      <div style="font-size:15px;font-weight:700;color:#111;margin-bottom:18px;">Upgrade Your Plan</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-
-        <div style="border:1.5px solid #e5e5e5;border-radius:12px;padding:20px;">
-          <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">Basic</div>
-          <div style="font-size:11px;color:#888;margin-bottom:14px;">Independent professionals &amp; small teams</div>
-          <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:2px;">$99<span style="font-size:12px;font-weight:400;color:#888;">/mo</span></div>
-          <div style="font-size:11px;color:#888;margin-bottom:14px;">or $950/year</div>
-          <ul style="font-size:12px;color:#555;line-height:2;list-style:none;padding:0;margin-bottom:16px;">
-            <li>✓ Core market intelligence dashboards</li>
-            <li>✓ Country-level indicators</li>
-            <li>✓ 3 years historical data</li>
-            <li>✓ 10 export credits/month</li>
-          </ul>
-          <button onclick="go('subscription')" style="width:100%;padding:9px;border:1.5px solid #111;border-radius:20px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;">Select Basic</button>
-        </div>
-
-        <div style="border:2px solid #111;border-radius:12px;padding:20px;position:relative;">
-          <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.06em;">MOST POPULAR</div>
-          <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">Professional</div>
-          <div style="font-size:11px;color:#888;margin-bottom:14px;">Investors, developers &amp; advisory firms</div>
-          <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:2px;">$499<span style="font-size:12px;font-weight:400;color:#888;">/mo</span></div>
-          <div style="font-size:11px;color:#888;margin-bottom:14px;">or $4,790/year</div>
-          <ul style="font-size:12px;color:#555;line-height:2;list-style:none;padding:0;margin-bottom:16px;">
-            <li>✓ City-level datasets &amp; indicators</li>
-            <li>✓ 10+ years historical data</li>
-            <li>✓ Pricing trend analysis</li>
-            <li>✓ 100 export credits/month</li>
-          </ul>
-          <button onclick="go('subscription')" style="width:100%;padding:9px;border:none;border-radius:20px;background:#111;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">Select Professional</button>
-        </div>
-
-        <div style="border:1.5px solid #e5e5e5;border-radius:12px;padding:20px;">
-          <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">Enterprise</div>
-          <div style="font-size:11px;color:#888;margin-bottom:14px;">Institutional clients &amp; large organizations</div>
-          <div style="font-size:19px;font-weight:800;color:#111;margin-bottom:2px;">From $25,000</div>
-          <div style="font-size:11px;color:#888;margin-bottom:14px;">/year · custom contract</div>
-          <ul style="font-size:12px;color:#555;line-height:2;list-style:none;padding:0;margin-bottom:16px;">
-            <li>✓ Asset-level granular data</li>
-            <li>✓ Full API + custom integrations</li>
-            <li>✓ Dedicated account manager</li>
-            <li>✓ White-label &amp; SLA</li>
-          </ul>
-          <button onclick="go('contact')" style="width:100%;padding:9px;border:1.5px solid #111;border-radius:20px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;">Contact Sales</button>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- Settings -->
-    <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:28px;margin-bottom:18px;">
-      <div style="font-size:15px;font-weight:700;color:#111;margin-bottom:18px;">Account Settings</div>
-      <div style="display:flex;flex-direction:column;gap:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:#f8f8f8;border-radius:10px;">
-          <div>
-            <div style="font-size:13px;font-weight:600;color:#111;">Email Address</div>
-            <div style="font-size:12px;color:#888;margin-top:2px;" id="acc-email-setting">—</div>
-          </div>
-          <button style="padding:6px 14px;border:1.5px solid #ccc;border-radius:20px;background:#fff;font-size:12px;cursor:pointer;font-weight:600;">Change</button>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:#f8f8f8;border-radius:10px;">
-          <div>
-            <div style="font-size:13px;font-weight:600;color:#111;">Password</div>
-            <div style="font-size:12px;color:#888;margin-top:2px;">Last changed: never</div>
-          </div>
-          <button onclick="go('forgot-password')" style="padding:6px 14px;border:1.5px solid #ccc;border-radius:20px;background:#fff;font-size:12px;cursor:pointer;font-weight:600;">Reset Password</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sign out -->
-    <div style="text-align:center;padding:8px 0 32px;">
-      <button onclick="doSignOut()" style="padding:10px 28px;border:1.5px solid #ff4444;border-radius:20px;background:#fff;color:#cc0000;font-size:13px;font-weight:600;cursor:pointer;">Sign Out</button>
-    </div>
-
-  </div>
-  <div class="footer-slot"></div>
-</div>
-
-<!-- ═══ LOGIN ═══ -->
+<!-- ═══════════ LOGIN ═══════════ -->
 <div id="page-login" class="page">
   <div class="auth-pg">
     <div class="auth-box">
-      <h2>Sign in to your account</h2>
-      <div style="height:20px;"></div>
-      <div id="login-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
-      <div id="login-success" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
-      <div class="fg-auth"><label>Email address</label><input type="email" id="login-email" placeholder="you@example.com"/></div>
+      <h2>Sign in</h2>
+      <div class="auth-sub">Don't have an account? <a onclick="go('register')">Create one</a></div>
+      <div id="login-error" class="auth-msg auth-err"></div>
+      <div id="login-success" class="auth-msg auth-ok"></div>
+      <div class="fg-auth"><label>Email</label><input type="email" id="login-email" placeholder="you@institution.com"/></div>
       <div class="fg-auth">
-        <label style="display:flex;justify-content:space-between;align-items:center;">
-          Password
-          <a onclick="go('forgot-password')" style="font-size:12px;font-weight:500;color:#111;cursor:pointer;">Forgot password?</a>
-        </label>
+        <label style="display:flex;justify-content:space-between;">Password <a onclick="go('forgot-password')" style="font-size:12px;font-weight:400;color:var(--ink3);">Forgot password?</a></label>
         <div class="pw"><input type="password" id="login-password" placeholder="Your password"/><span class="pw-eye" onclick="togglePw('login-password',this)">👁</span></div>
       </div>
       <button class="btn-submit" id="login-btn" onclick="doLogin()">Sign in</button>
-      <div class="auth-sw">Not a member? <a onclick="go('register')">Join now</a></div>
+      <div class="auth-sw">New to Ironwood? <a onclick="go('register')">Create an account</a></div>
     </div>
   </div>
-  <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ FORGOT PASSWORD ═══ -->
-<div id="page-forgot-password" class="page">
-  <div class="auth-pg">
-    <div class="auth-box">
-      <h2>Reset your password</h2>
-      <p class="auth-sub" style="margin-top:8px;margin-bottom:20px;color:#555;font-size:14px;">Enter your email and we'll send you a link to reset your password.</p>
-      <div id="fp-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
-      <div id="fp-success" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
-      <div class="fg-auth"><label>Email address</label><input type="email" id="fp-email" placeholder="you@example.com"/></div>
-      <button class="btn-submit" id="fp-btn" onclick="doForgotPassword()">Send reset link</button>
-      <div class="auth-sw"><a onclick="go('login')" style="cursor:pointer;">← Back to sign in</a></div>
-    </div>
-  </div>
-  <div class="footer-slot"></div>
-</div>
-
-<!-- ═══ REGISTER ═══ -->
+<!-- ═══════════ REGISTER ═══════════ -->
 <div id="page-register" class="page">
   <div class="auth-pg">
     <div class="auth-box">
-      <div class="auth-logo">IW</div>
-      <h2>Create your account</h2>
-      <p class="auth-sub">Or <a onclick="go('login')">sign in to your existing account</a></p>
-      <div id="reg-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
-      <div id="reg-success" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
-      <div class="fg-auth"><label>Full Name</label><input type="text" id="reg-name" placeholder="Enter your full name"/></div>
-      <div class="fg-auth"><label>Email address</label><input type="email" id="reg-email" placeholder="Enter your email"/></div>
-      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password" id="reg-password" placeholder="Create a password (min 8 chars)"/><span class="pw-eye" onclick="togglePw('reg-password',this)">👁</span></div></div>
-      <div class="fg-auth"><label>Confirm Password</label><div class="pw"><input type="password" id="reg-confirm" placeholder="Confirm your password"/><span class="pw-eye" onclick="togglePw('reg-confirm',this)">👁</span></div></div>
-      <div class="chk-row"><input type="checkbox" id="reg-terms"/><label>I agree to the <a>Terms of Service</a> and <a>Privacy Policy</a></label></div>
+      <h2>Create account</h2>
+      <div class="auth-sub">Already have an account? <a onclick="go('login')">Sign in</a></div>
+      <div id="reg-error" class="auth-msg auth-err"></div>
+      <div id="reg-success" class="auth-msg auth-ok"></div>
+      <div class="fg-auth"><label>Full Name</label><input type="text" id="reg-name" placeholder="Jane Smith"/></div>
+      <div class="fg-auth"><label>Email</label><input type="email" id="reg-email" placeholder="you@institution.com"/></div>
+      <div class="fg-auth"><label>Password</label>
+        <div class="pw"><input type="password" id="reg-password" placeholder="Min 8 characters"/><span class="pw-eye" onclick="togglePw('reg-password',this)">👁</span></div>
+      </div>
+      <div class="fg-auth"><label>Confirm Password</label><input type="password" id="reg-confirm" placeholder="Repeat password"/></div>
+      <div class="chk-row"><input type="checkbox" id="reg-terms"/><label for="reg-terms">I agree to the <a onclick="go('home')">Terms of Service</a> and <a onclick="go('home')">Privacy Policy</a></label></div>
       <button class="btn-submit" id="reg-btn" onclick="doRegister()">Create account</button>
-      <div class="ftrial"><div class="ft-t">Free Trial Included</div><p>Get 7 days of free access to all premium features when you create your account.</p></div>
+      <div class="auth-sw">Already have an account? <a onclick="go('login')">Sign in</a></div>
     </div>
   </div>
-  <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ CONTACT ═══ -->
-<div id="page-contact" class="page">
-  <div class="cnt-hero g-network">
-    <div class="eyebrow">CONNECT</div>
-    <h1>Get in Touch</h1>
-    <p>We're here to answer your questions and help you with your real estate analytics needs.</p>
-    <div class="cnt-hero-btns"><button class="btn-wh">Learn More</button><button class="btn-ghw">Contact</button></div>
-  </div>
-  <div class="cnt-info">
-    <div>
-      <h2>Get in Touch</h2>
-      <p class="ci-desc">We're here to answer your questions and provide support. Reach out to us anytime!</p>
-      <div class="ci-item"><div class="ci-icon">✉️</div><div><div class="ci-lbl">Email</div><div class="ci-val"><a href="mailto:business@ironwoodintelligence.com">business@ironwoodintelligence.com</a></div></div></div>
-      <div class="ci-item"><div class="ci-icon">📞</div><div><div class="ci-lbl">Phone</div><div class="ci-val">+971 50 123 4567</div></div></div>
-      <div class="ci-item"><div class="ci-icon">📍</div><div><div class="ci-lbl">Office</div><div class="ci-val">Meydan Free Zone, Dubai, UAE</div></div></div>
-    </div>
-    <div class="ci-imgbox g-build"><span class="grad-icon">🏗️</span></div>
-  </div>
-  <div class="cnt-form-sec">
-    <h2>Send us a Message</h2>
-    <p class="cf-sub">We'd love to hear from you. Reach out today!</p>
-    <div class="cform">
-      <div class="frow2"><div class="fg-auth" style="margin:0;"><label>First Name</label><input type="text"/></div><div class="fg-auth" style="margin:0;"><label>Last Name</label><input type="text"/></div></div>
-      <div class="fg-auth"><label>Email</label><input type="email"/></div>
-      <div class="fg-auth"><label>Message</label><textarea></textarea></div>
-      <div style="text-align:center;"><button class="btn-dark" style="padding:12px 32px;border-radius:25px;">Send Message</button></div>
+<!-- ═══════════ FORGOT PASSWORD ═══════════ -->
+<div id="page-forgot-password" class="page">
+  <div class="auth-pg">
+    <div class="auth-box">
+      <h2>Reset password</h2>
+      <div class="auth-sub">Enter your email to receive a reset link.</div>
+      <div id="fp-error" class="auth-msg auth-err"></div>
+      <div id="fp-success" class="auth-msg auth-ok"></div>
+      <div class="fg-auth"><label>Email</label><input type="email" id="fp-email" placeholder="you@institution.com"/></div>
+      <button class="btn-submit" id="fp-btn" onclick="doForgotPassword()">Send reset link</button>
+      <div class="auth-sw"><a onclick="go('login')">← Back to sign in</a></div>
     </div>
   </div>
-  <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ ABOUT ═══ -->
-<div id="page-about" class="page">
-  <div class="data-hero">
-    <div class="eyebrow">ABOUT US</div>
-    <h1>About Ironwood Intelligence</h1>
-    <p>Building the definitive real estate data platform for African markets.</p>
-  </div>
-
-  <div class="sec-split" style="background:#fff;">
-    <div class="split-img g-meeting"><span class="grad-icon">🤝</span></div>
-    <div>
-      <h2>Our Mission</h2>
-      <p>Ironwood Intelligence exists to bring transparency, data, and institutional-grade analytics to real estate markets across Africa. We aggregate, clean, and structure property data from 35+ countries so investors, developers, and institutions can make smarter decisions.</p>
-      <p style="margin-top:14px;font-size:14px;color:#555;line-height:1.7;">Based in Meydan Free Zone, Dubai, UAE — operating across the African continent, tracking thousands of properties in real time.</p>
+<!-- ═══════════ ACCOUNT ═══════════ -->
+<div id="page-account" class="page">
+  <div class="account-pg">
+    <h1>My Account</h1>
+    <p class="ap-sub">Manage your profile, subscription, and billing.</p>
+    <div class="acc-card">
+      <div class="acc-card-title">Profile</div>
+      <div style="display:flex;align-items:center;gap:18px;margin-bottom:20px;">
+        <div style="width:52px;height:52px;background:var(--ink);border-radius:2px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:20px;color:#fff;" id="acc-avatar">—</div>
+        <div><div style="font-size:16px;font-weight:600;" id="acc-name">—</div><div style="font-size:13px;color:var(--ink4);" id="acc-email">—</div></div>
+        <div style="margin-left:auto;"><span id="acc-plan-badge" style="padding:4px 12px;border-radius:2px;font-size:12px;font-weight:600;background:var(--gold-pale);color:var(--gold);border:1px solid #e8d5a0;">Free Trial</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:var(--surface);padding:14px;border-radius:2px;"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink4);margin-bottom:5px;">Member Since</div><div style="font-size:14px;font-weight:500;" id="acc-since">—</div></div>
+        <div style="background:var(--surface);padding:14px;border-radius:2px;"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink4);margin-bottom:5px;">Status</div><div style="font-size:14px;font-weight:500;color:#16a34a;">Active</div></div>
+      </div>
+    </div>
+    <div class="acc-card">
+      <div class="acc-card-title">Subscription</div>
+      <div style="background:var(--surface);border-radius:2px;padding:18px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div><div style="font-size:15px;font-weight:600;" id="acc-plan-name">Free Trial</div><div style="font-size:12.5px;color:var(--ink4);margin-top:3px;">7-day trial — full access to all features</div></div>
+          <div style="font-family:var(--serif);font-size:22px;">$0<span style="font-size:13px;font-weight:400;color:var(--ink4);">/mo</span></div>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="go('subscription')">Upgrade Plan →</button>
+    </div>
+    <div class="acc-card">
+      <div class="acc-card-title">Account Settings</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--surface);border-radius:2px;">
+          <div><div style="font-size:13px;font-weight:600;">Email Address</div><div style="font-size:12px;color:var(--ink4);margin-top:2px;" id="acc-email-setting">—</div></div>
+          <button style="padding:6px 14px;border:1px solid var(--rule);border-radius:2px;background:var(--white);font-size:12px;font-weight:600;cursor:pointer;">Change</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--surface);border-radius:2px;">
+          <div><div style="font-size:13px;font-weight:600;">Password</div><div style="font-size:12px;color:var(--ink4);margin-top:2px;">Last changed: never</div></div>
+          <button onclick="go('forgot-password')" style="padding:6px 14px;border:1px solid var(--rule);border-radius:2px;background:var(--white);font-size:12px;font-weight:600;cursor:pointer;">Reset</button>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;padding:12px 0 32px;">
+      <button onclick="doSignOut()" style="padding:9px 24px;border:1px solid #fca5a5;border-radius:2px;background:var(--white);color:#dc2626;font-size:13px;font-weight:600;cursor:pointer;">Sign Out</button>
     </div>
   </div>
-
-  <div class="sec-3col" style="background:#f7f7f6;">
-    <div class="eyebrow">WHAT WE DO</div>
-    <h2>The CoStar of Africa</h2>
-    <p class="sub">We bring institutional-grade data infrastructure to the world's fastest-growing real estate markets.</p>
-    <div class="cards3">
-      <div class="card3"><div class="icon">📊</div><h3>Market Intelligence</h3><p>Comprehensive datasets across 35+ African countries, updated regularly with verified transaction and listing data.</p></div>
-      <div class="card3"><div class="icon">🗺️</div><h3>City-Level Analytics</h3><p>District-by-district price tracking, vacancy rates, and development pipeline data for Africa's major metros.</p></div>
-      <div class="card3"><div class="icon">🔗</div><h3>API & Integrations</h3><p>Plug our data directly into your models, platforms, and workflows via a clean, reliable API.</p></div>
-    </div>
-  </div>
-
-  <div class="sec-split" style="background:#fff;">
-    <div>
-      <h2>Why Africa?</h2>
-      <p>Africa is home to the world's fastest-growing cities and youngest population. Yet real estate data across the continent remains fragmented, unreliable, and inaccessible. Ironwood Intelligence is fixing that — one market at a time.</p>
-      <p style="margin-top:14px;font-size:14px;color:#555;line-height:1.7;">Our team combines deep expertise in African real estate markets with data engineering capabilities to deliver a product that institutional investors, developers, and advisory firms can trust.</p>
-      <div style="margin-top:24px;"><button class="btn-dark" onclick="go('contact')">Get in Touch</button></div>
-    </div>
-    <div class="split-img g-lagos"><span class="grad-icon">🌍</span></div>
-  </div>
-
-  <div class="sec-3col">
-    <div class="eyebrow">BY THE NUMBERS</div>
-    <h2>Our Coverage</h2>
-    <p class="sub">Growing every month as we expand across the continent.</p>
-    <div class="cards3">
-      <div class="card3"><div class="icon">🌍</div><h3>35+ Countries</h3><p>Comprehensive coverage across Sub-Saharan Africa, North Africa, and East Africa.</p></div>
-      <div class="card3"><div class="icon">🏙️</div><h3>100+ Cities</h3><p>City and district-level data for Africa's most active real estate markets.</p></div>
-      <div class="card3"><div class="icon">📋</div><h3>Millions of Records</h3><p>Aggregated from verified listings, transactions, and proprietary field research.</p></div>
-    </div>
-  </div>
-
   <div class="footer-slot"></div>
 </div>
 
 <!-- FOOTER TEMPLATE -->
 <template id="ftpl">
-  <footer>
-    <div class="footer-grid">
-      <div class="fbrand"><div class="fb-name">IRONWOOD<br/>INTELLIGENCE</div><p>Data-driven decisions for real estate.</p></div>
-      <div class="fcol"><h4>Platform</h4><ul><li><a onclick="go('properties')">Properties</a></li><li><a onclick="go('analytics')">Analytics</a></li><li><a onclick="go('subscription')">Pricing</a></li></ul></div>
-      <div class="fcol"><h4>Company</h4><ul><li><a onclick="go('about')">About Us</a></li><li><a onclick="go('contact')">Contact Us</a></li></ul></div>
-      <div class="fcol"><h4>Legal</h4><ul><li><a>Privacy Policy</a></li><li><a>Terms of Service</a></li></ul></div>
-      <div class="fcol"><h4>Language</h4><select><option>🌐 English</option><option>Français</option><option>Português</option><option>العربية</option></select></div>
+<footer>
+  <div class="footer-grid">
+    <div>
+      <div class="fb-name">Ironwood Intelligence</div>
+      <div class="fb-desc">Institutional-grade real estate intelligence for Africa's most dynamic and opaque markets.</div>
+      <div class="fb-addr">Meydan Free Zone<br/>Dubai, United Arab Emirates<br/>business@ironwoodintelligence.com</div>
     </div>
-    <div class="footer-bottom">© 2026 Ironwood Intelligence. All rights reserved.</div>
-  </footer>
+    <div class="fcol"><h4>Platform</h4><ul>
+      <li><a onclick="go('home')">Overview</a></li>
+      <li><a onclick="go('coverage')">Coverage</a></li>
+      <li><a onclick="go('methodology')">Methodology</a></li>
+      <li><a onclick="go('api')">API & Data</a></li>
+      <li><a onclick="go('subscription')">Pricing</a></li>
+    </ul></div>
+    <div class="fcol"><h4>Company</h4><ul>
+      <li><a onclick="go('about')">About Us</a></li>
+      <li><a onclick="go('contact')">Contact</a></li>
+      <li><a onclick="go('contact')">Book a Demo</a></li>
+      <li><a onclick="go('contact')">Enterprise Sales</a></li>
+    </ul></div>
+    <div class="fcol"><h4>Resources</h4><ul>
+      <li><a onclick="go('contact')">Sample Outputs</a></li>
+      <li><a onclick="go('methodology')">Data Methodology</a></li>
+      <li><a onclick="go('api')">API Documentation</a></li>
+      <li><a onclick="go('contact')">Coverage Request</a></li>
+    </ul></div>
+    <div class="fcol"><h4>Legal</h4><ul>
+      <li><a>Privacy Policy</a></li>
+      <li><a>Terms of Service</a></li>
+      <li><a>Data Security</a></li>
+      <li><a>SLA & Support</a></li>
+    </ul></div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 Ironwood Intelligence. All rights reserved. Registered in Meydan Free Zone, Dubai, UAE.</p>
+    <div class="fl">
+      <a>Privacy</a><a>Terms</a><a>Security</a><a onclick="go('methodology')">Methodology</a>
+    </div>
+  </div>
+</footer>
 </template>
 
 <script>
-var mapDone = false;
+const SB_URL='https://ujhqkirhfmumvvnfvgnz.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+let _currentUser=null;
 
-function go(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  var el = document.getElementById('page-' + name);
-  if (!el) return;
+function go(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const el=document.getElementById('page-'+name);
+  if(!el)return;
   el.classList.add('active');
-  window.scrollTo(0, 0);
-  closeDD();
-  // inject footer if empty
-  var slot = el.querySelector('.footer-slot');
-  if (slot && !slot.hasChildNodes()) {
-    slot.appendChild(document.importNode(document.getElementById('ftpl').content, true));
-  }
-  if (name === 'analytics' && !mapDone) { setTimeout(initMap, 150); }
-}
-
-function initMap() {
-  try {
-    var map = L.map('africa-map').setView([2, 20], 3);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: 'Leaflet | © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 18
-    }).addTo(map);
-    var pts = [
-      [6.5244, 3.3792, 'Lagos', 'Nigeria', 'Office', '$1,800/sqm'],
-      [-1.2921, 36.8219, 'Nairobi', 'Kenya', 'Retail', '$1,600/sqm'],
-      [-33.9249, 18.4241, 'Cape Town', 'South Africa', 'Residential', '$1,950/sqm'],
-      [5.6037, -0.1870, 'Accra', 'Ghana', 'Hospitality', '$1,400/sqm'],
-      [-26.2041, 28.0473, 'Johannesburg', 'South Africa', 'Industrial', '$1,750/sqm']
-    ];
-    pts.forEach(function(p) {
-      L.marker([p[0], p[1]]).addTo(map)
-        .bindPopup('<strong>' + p[2] + '</strong><br/>' + p[3] + '<br/>Type: ' + p[4] + '<br/>Avg Rent: ' + p[5]);
-    });
-    mapDone = true;
-  } catch(e) {
-    var el = document.getElementById('africa-map');
-    if (el) el.innerHTML = '<div style="height:340px;background:#e8f0e8;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#666;font-size:13px;">Map requires internet connection to load</div>';
+  window.scrollTo(0,0);
+  const slot=el.querySelector('.footer-slot');
+  if(slot&&!slot.hasChildNodes()){
+    slot.appendChild(document.importNode(document.getElementById('ftpl').content,true));
   }
 }
 
-// ═══ SUPABASE AUTH ═══
-const SB_URL = 'https://ujhqkirhfmumvvnfvgnz.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik';
-const sb = supabase.createClient(SB_URL, SB_KEY);
+function openDash(){
+  if(_currentUser) window.open('/dashboard.html','_blank');
+  else go('login');
+}
 
-let _currentUser = null;
-
-// Check session on load and update nav
-window.addEventListener('load', async function() {
-  const { data } = await sb.auth.getSession();
-  if (data?.session?.user) { _currentUser = data.session.user; updateNavLoggedIn(data.session.user); }
-  if (window.location.hash === '#login') go('login');
+// Auth state
+window.addEventListener('load',async()=>{
+  const{data}=await sb.auth.getSession();
+  if(data?.session?.user){_currentUser=data.session.user;updateNavIn(data.session.user);}
+  if(window.location.hash==='#login')go('login');
+});
+sb.auth.onAuthStateChange((e,session)=>{
+  _currentUser=session?.user||null;
+  if(session?.user)updateNavIn(session.user);
+  else updateNavOut();
 });
 
-// Listen for auth state changes
-sb.auth.onAuthStateChange((event, session) => {
-  _currentUser = session?.user || null;
-  if (session?.user) updateNavLoggedIn(session.user);
-  else updateNavLoggedOut();
-});
-
-function updateNavLoggedIn(user) {
-  const name = user.user_metadata?.full_name || user.email.split('@')[0];
-  document.getElementById('nav-user-label').textContent = name;
-  document.getElementById('nav-user-name').style.display = 'inline-flex';
-  document.getElementById('nav-login-btn').style.display = 'none';
-  document.getElementById('nav-register-btn').style.display = 'none';
-  document.getElementById('nav-links-loggedout').style.display = 'none';
-  document.getElementById('nav-links-loggedin').style.display = 'flex';
-  // Populate account page
-  const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-  const since = new Date(user.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-  const el = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
-  el('acc-avatar', initials);
-  el('acc-name', name);
-  el('acc-email', user.email);
-  el('acc-email-setting', user.email);
-  el('acc-since', since);
+function updateNavIn(user){
+  const name=user.user_metadata?.full_name||user.email.split('@')[0];
+  document.getElementById('nav-user-label').textContent=name;
+  document.getElementById('nav-user-pill').style.display='flex';
+  document.getElementById('nav-login-btn').style.display='none';
+  document.getElementById('nav-demo-btn').style.display='none';
+  document.getElementById('nav-links-out').style.display='none';
+  document.getElementById('nav-links-in').style.display='flex';
+  const initials=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  const since=new Date(user.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const el=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  el('acc-avatar',initials);el('acc-name',name);el('acc-email',user.email);
+  el('acc-email-setting',user.email);el('acc-since',since);
+}
+function updateNavOut(){
+  document.getElementById('nav-user-pill').style.display='none';
+  document.getElementById('nav-login-btn').style.display='inline-block';
+  document.getElementById('nav-demo-btn').style.display='inline-block';
+  document.getElementById('nav-links-out').style.display='flex';
+  document.getElementById('nav-links-in').style.display='none';
 }
 
-function updateNavLoggedOut() {
-  document.getElementById('nav-user-name').style.display = 'none';
-  document.getElementById('nav-login-btn').style.display = 'inline-block';
-  document.getElementById('nav-register-btn').style.display = 'inline-block';
-  document.getElementById('nav-links-loggedout').style.display = 'flex';
-  document.getElementById('nav-links-loggedin').style.display = 'none';
-}
-
-function goAnalytics() {
-  sb.auth.getSession().then(({ data }) => {
-    if (data?.session?.user) {
-      window.open('/dashboard.html#trends', '_blank');
-    } else {
-      go('login');
-    }
-  });
-}
-
-function goDashboard() {
-  sb.auth.getSession().then(({ data }) => {
-    if (data?.session?.user) {
-      window.open('/dashboard.html#assets', '_blank');
-    } else {
-      go('login');
-    }
-  });
-}
-
-function updateNavLoggedOut() {
-  document.getElementById('nav-user-name').style.display = 'none';
-  document.getElementById('nav-login-btn').style.display = 'inline-block';
-  document.getElementById('nav-register-btn').style.display = 'inline-block';
-  document.getElementById('nav-links-loggedout').style.display = 'flex';
-  document.getElementById('nav-links-loggedin').style.display = 'none';
-}
-
-async function doLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-  const btn = document.getElementById('login-btn');
-  const errEl = document.getElementById('login-error');
-  const okEl = document.getElementById('login-success');
-  errEl.style.display = 'none'; okEl.style.display = 'none';
-
-  if (!email || !password) { showAuthMsg('login-error', 'Please enter your email and password.'); return; }
-
-  btn.disabled = true; btn.textContent = 'Signing in...';
-  const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  btn.disabled = false; btn.textContent = 'Sign in';
-
-  if (error) {
-    showAuthMsg('login-error', error.message === 'Invalid login credentials' ? 'Incorrect email or password.' : error.message);
-    return;
-  }
-
-  showAuthMsg('login-success', '✅ Signed in successfully! Redirecting...');
-  updateNavLoggedIn(data.user);
-  setTimeout(() => {
-    const stripeUrl = sessionStorage.getItem('stripe_redirect');
-    if (stripeUrl) {
-      sessionStorage.removeItem('stripe_redirect');
-      window.open(stripeUrl, '_blank');
-    }
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const password=document.getElementById('login-password').value;
+  const btn=document.getElementById('login-btn');
+  document.getElementById('login-error').style.display='none';
+  document.getElementById('login-success').style.display='none';
+  if(!email||!password){showMsg('login-error','Please enter your email and password.');return;}
+  btn.disabled=true;btn.textContent='Signing in…';
+  const{data,error}=await sb.auth.signInWithPassword({email,password});
+  btn.disabled=false;btn.textContent='Sign in';
+  if(error){showMsg('login-error',error.message==='Invalid login credentials'?'Incorrect email or password.':error.message);return;}
+  showMsg('login-success','✓ Signed in successfully.');
+  updateNavIn(data.user);
+  setTimeout(()=>{
+    const url=sessionStorage.getItem('stripe_redirect');
+    if(url){sessionStorage.removeItem('stripe_redirect');window.open(url,'_blank');}
     go('home');
-  }, 1000);
+  },900);
 }
 
-async function doRegister() {
-  const name = document.getElementById('reg-name').value.trim();
-  const email = document.getElementById('reg-email').value.trim();
-  const password = document.getElementById('reg-password').value;
-  const confirm = document.getElementById('reg-confirm').value;
-  const terms = document.getElementById('reg-terms').checked;
-  const btn = document.getElementById('reg-btn');
-
-  document.getElementById('reg-error').style.display = 'none';
-  document.getElementById('reg-success').style.display = 'none';
-
-  if (!name) { showAuthMsg('reg-error', 'Please enter your full name.'); return; }
-  if (!email) { showAuthMsg('reg-error', 'Please enter your email address.'); return; }
-  if (password.length < 8) { showAuthMsg('reg-error', 'Password must be at least 8 characters.'); return; }
-  if (password !== confirm) { showAuthMsg('reg-error', 'Passwords do not match.'); return; }
-  if (!terms) { showAuthMsg('reg-error', 'Please agree to the Terms of Service to continue.'); return; }
-
-  btn.disabled = true; btn.textContent = 'Creating account...';
-  const { data, error } = await sb.auth.signUp({
-    email, password,
-    options: { data: { full_name: name } }
-  });
-  btn.disabled = false; btn.textContent = 'Create account';
-
-  if (error) { showAuthMsg('reg-error', error.message); return; }
-
-  const stripeUrl = sessionStorage.getItem('stripe_redirect');
-  if (stripeUrl) {
-    showAuthMsg('reg-success', '✅ Account created! Sign in to complete your purchase.');
-    setTimeout(() => go('login'), 1500);
-  } else {
-    showAuthMsg('reg-success', '✅ Account created! Please check your email to confirm, then sign in.');
-  }
-  document.getElementById('reg-name').value = '';
-  document.getElementById('reg-email').value = '';
-  document.getElementById('reg-password').value = '';
-  document.getElementById('reg-confirm').value = '';
-  document.getElementById('reg-terms').checked = false;
+async function doRegister(){
+  const name=document.getElementById('reg-name').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const password=document.getElementById('reg-password').value;
+  const confirm=document.getElementById('reg-confirm').value;
+  const terms=document.getElementById('reg-terms').checked;
+  const btn=document.getElementById('reg-btn');
+  document.getElementById('reg-error').style.display='none';
+  document.getElementById('reg-success').style.display='none';
+  if(!name){showMsg('reg-error','Please enter your full name.');return;}
+  if(!email){showMsg('reg-error','Please enter your email.');return;}
+  if(password.length<8){showMsg('reg-error','Password must be at least 8 characters.');return;}
+  if(password!==confirm){showMsg('reg-error','Passwords do not match.');return;}
+  if(!terms){showMsg('reg-error','Please agree to the Terms of Service.');return;}
+  btn.disabled=true;btn.textContent='Creating account…';
+  const{error}=await sb.auth.signUp({email,password,options:{data:{full_name:name}}});
+  btn.disabled=false;btn.textContent='Create account';
+  if(error){showMsg('reg-error',error.message);return;}
+  const url=sessionStorage.getItem('stripe_redirect');
+  if(url){showMsg('reg-success','✓ Account created. Sign in to complete your purchase.');setTimeout(()=>go('login'),1400);}
+  else{showMsg('reg-success','✓ Account created. Please check your email to confirm, then sign in.');}
+  ['reg-name','reg-email','reg-password','reg-confirm'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('reg-terms').checked=false;
 }
 
-async function doForgotPassword() {
-  const email = document.getElementById('fp-email').value.trim();
-  const btn = document.getElementById('fp-btn');
-  document.getElementById('fp-error').style.display = 'none';
-  document.getElementById('fp-success').style.display = 'none';
-
-  if (!email) { showAuthMsg('fp-error', 'Please enter your email address.'); return; }
-
-  btn.disabled = true; btn.textContent = 'Sending...';
-  const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://www.ironwoodintelligence.com'
-  });
-  btn.disabled = false; btn.textContent = 'Send reset link';
-
-  if (error) { showAuthMsg('fp-error', error.message); return; }
-  showAuthMsg('fp-success', '✅ Reset link sent! Check your email inbox (and spam folder).');
-  document.getElementById('fp-email').value = '';
+async function doForgotPassword(){
+  const email=document.getElementById('fp-email').value.trim();
+  const btn=document.getElementById('fp-btn');
+  document.getElementById('fp-error').style.display='none';
+  document.getElementById('fp-success').style.display='none';
+  if(!email){showMsg('fp-error','Please enter your email.');return;}
+  btn.disabled=true;btn.textContent='Sending…';
+  const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://www.ironwoodintelligence.com'});
+  btn.disabled=false;btn.textContent='Send reset link';
+  if(error){showMsg('fp-error',error.message);return;}
+  showMsg('fp-success','✓ Reset link sent. Check your inbox (and spam folder).');
+  document.getElementById('fp-email').value='';
 }
 
-async function doSignOut() {
+async function doSignOut(){
   await sb.auth.signOut();
-  updateNavLoggedOut();
+  updateNavOut();
   go('home');
 }
 
-function showAuthMsg(id, msg) {
-  const el = document.getElementById(id);
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-
-function togglePw(inputId, eyeEl) {
-  const input = document.getElementById(inputId);
-  if (input.type === 'password') { input.type = 'text'; eyeEl.textContent = '🙈'; }
-  else { input.type = 'password'; eyeEl.textContent = '👁'; }
-}
-// ═══ END AUTH ═══
-
-function closeDD() {}
-document.addEventListener('click', closeDD);
+function showMsg(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
+function togglePw(inputId,eye){const i=document.getElementById(inputId);if(i.type==='password'){i.type='text';eye.textContent='🙈';}else{i.type='password';eye.textContent='👁';}}
 
 // Billing toggle
 var isAnnual=false;
 function toggleBilling(){
   isAnnual=!isAnnual;
-  var tog=document.getElementById('bill-tog');
-  var lm=document.getElementById('lbl-monthly');
-  var la=document.getElementById('lbl-annual');
+  const tog=document.getElementById('bill-tog');
+  const lm=document.getElementById('lbl-monthly');
+  const la=document.getElementById('lbl-annual');
   if(isAnnual){tog.classList.add('active');lm.classList.remove('on');la.classList.add('on');}
   else{tog.classList.remove('active');lm.classList.add('on');la.classList.remove('on');}
-  // Basic: $99/mo → $950/yr (~$79/mo)
   document.getElementById('p-basic').textContent=isAnnual?'$950':'$99';
-  document.getElementById('pp-basic').textContent=isAnnual?'/year':'/month';
-  document.getElementById('pa-basic').innerHTML=isAnnual?'<strong>You save $238</strong> vs monthly':'<strong>$950/year</strong> with annual billing';
-  // Pro: $499/mo → $4,790/yr (~$399/mo)
+  document.getElementById('pp-basic').textContent=isAnnual?' /year':' /month';
+  document.getElementById('pa-basic').innerHTML=isAnnual?'<strong style="color:var(--gold)">Save $238</strong> vs monthly':'or <strong>$950/year</strong>';
   document.getElementById('p-pro').textContent=isAnnual?'$4,790':'$499';
-  document.getElementById('pp-pro').textContent=isAnnual?'/year':'/month';
-  document.getElementById('pa-pro').innerHTML=isAnnual?'<strong>You save $1,198</strong> vs monthly':'<strong>$4,790/year</strong> with annual billing';
+  document.getElementById('pp-pro').textContent=isAnnual?' /year':' /month';
+  document.getElementById('pa-pro').innerHTML=isAnnual?'<strong style="color:var(--gold)">Save $1,198</strong> vs monthly':'or <strong>$4,790/year</strong>';
 }
 
 const STRIPE_LINKS={
@@ -1143,15 +1512,18 @@ const STRIPE_LINKS={
   professional:{monthly:'https://buy.stripe.com/test_9B600l86PcdC2Cm1Ei4F200',annual:'https://buy.stripe.com/test_9B65kF72L6Tifp8er44F201'}
 };
 function goStripe(plan){
-  const billing = isAnnual ? 'annual' : 'monthly';
-  const url = STRIPE_LINKS[plan][billing];
-  if (_currentUser) {
-    window.open(url, '_blank');
-  } else {
-    sessionStorage.setItem('stripe_redirect', url);
-    go('login');
-  }
+  const url=STRIPE_LINKS[plan][isAnnual?'annual':'monthly'];
+  if(_currentUser){window.open(url,'_blank');}
+  else{sessionStorage.setItem('stripe_redirect',url);go('login');}
 }
+
+// FAQ accordion
+document.addEventListener('click',function(e){
+  const q=e.target.closest('.faq-q');
+  if(!q)return;
+  const item=q.closest('.faq-item');
+  item.classList.toggle('open');
+});
 </script>
 </body>
 </html>
