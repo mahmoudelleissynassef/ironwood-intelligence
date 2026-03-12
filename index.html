@@ -898,16 +898,18 @@ const SB_URL = 'https://ujhqkirhfmumvvnfvgnz.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik';
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
+let _currentUser = null;
+
 // Check session on load and update nav
 window.addEventListener('load', async function() {
   const { data } = await sb.auth.getSession();
-  if (data?.session?.user) updateNavLoggedIn(data.session.user);
-  // If redirected from dashboard auth gate, open login
+  if (data?.session?.user) { _currentUser = data.session.user; updateNavLoggedIn(data.session.user); }
   if (window.location.hash === '#login') go('login');
 });
 
 // Listen for auth state changes
 sb.auth.onAuthStateChange((event, session) => {
+  _currentUser = session?.user || null;
   if (session?.user) updateNavLoggedIn(session.user);
   else updateNavLoggedOut();
 });
@@ -961,9 +963,10 @@ function goDashboard() {
 
 function updateNavLoggedOut() {
   document.getElementById('nav-user-name').style.display = 'none';
-  document.getElementById('nav-signout-btn').style.display = 'none';
   document.getElementById('nav-login-btn').style.display = 'inline-block';
   document.getElementById('nav-register-btn').style.display = 'inline-block';
+  document.getElementById('nav-links-loggedout').style.display = 'flex';
+  document.getElementById('nav-links-loggedin').style.display = 'none';
 }
 
 async function doLogin() {
@@ -986,7 +989,15 @@ async function doLogin() {
   }
 
   showAuthMsg('login-success', '✅ Signed in successfully! Redirecting...');
-  setTimeout(() => go('home'), 1200);
+  updateNavLoggedIn(data.user);
+  setTimeout(() => {
+    const stripeUrl = sessionStorage.getItem('stripe_redirect');
+    if (stripeUrl) {
+      sessionStorage.removeItem('stripe_redirect');
+      window.open(stripeUrl, '_blank');
+    }
+    go('home');
+  }, 1000);
 }
 
 async function doRegister() {
@@ -1015,7 +1026,13 @@ async function doRegister() {
 
   if (error) { showAuthMsg('reg-error', error.message); return; }
 
-  showAuthMsg('reg-success', '✅ Account created! Please check your email to confirm your account, then sign in.');
+  const stripeUrl = sessionStorage.getItem('stripe_redirect');
+  if (stripeUrl) {
+    showAuthMsg('reg-success', '✅ Account created! Sign in to complete your purchase.');
+    setTimeout(() => go('login'), 1500);
+  } else {
+    showAuthMsg('reg-success', '✅ Account created! Please check your email to confirm, then sign in.');
+  }
   document.getElementById('reg-name').value = '';
   document.getElementById('reg-email').value = '';
   document.getElementById('reg-password').value = '';
@@ -1088,7 +1105,14 @@ const STRIPE_LINKS={
   professional:{monthly:'https://buy.stripe.com/test_9B600l86PcdC2Cm1Ei4F200',annual:'https://buy.stripe.com/test_9B65kF72L6Tifp8er44F201'}
 };
 function goStripe(plan){
-  window.open(STRIPE_LINKS[plan][isAnnual?'annual':'monthly'],'_blank');
+  const billing = isAnnual ? 'annual' : 'monthly';
+  const url = STRIPE_LINKS[plan][billing];
+  if (_currentUser) {
+    window.open(url, '_blank');
+  } else {
+    sessionStorage.setItem('stripe_redirect', url);
+    go('login');
+  }
 }
 </script>
 </body>
