@@ -597,6 +597,18 @@ function showPage(name,el){
 function setAF(btn,container){if(container)container.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
 
 loadData();
+
+// Handle deep-link anchors e.g. dashboard.html#trends or #assets
+window.addEventListener('load', () => {
+  const hash = window.location.hash.replace('#','');
+  const valid = ['overview','map','cities','districts','assets','trends','explorer'];
+  if(hash && valid.includes(hash)) {
+    setTimeout(() => {
+      const navEl = document.querySelector(`.ni[onclick*="'${hash}'"]`);
+      showPage(hash, navEl);
+    }, 200);
+  }
+});
 </script>
 </body>
 </html>
