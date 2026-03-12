@@ -27,6 +27,8 @@ export default async function handler(req, res) {
   }
 
   try {
+
+    // ── First-time checkout completed ──
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
       const email = session.customer_details?.email;
@@ -34,33 +36,53 @@ export default async function handler(req, res) {
       const plan = PLAN_MAP[priceId] || 'basic';
 
       if (email) {
-        const { error } = await sb.from('profiles').update({
+        await sb.from('profiles').update({
           plan,
           stripe_customer_id: session.customer,
           plan_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         }).eq('email', email);
-
-        if (error) console.error('Supabase update error:', error);
       }
     }
 
-    if (event.type === 'customer.subscription.deleted') {
-      const sub = event.data.object;
-      const { error } = await sb.from('profiles').update({ plan: 'free' })
-        .eq('stripe_customer_id', sub.customer);
+    // ── Every successful payment / renewal ──
+    if (event.type === 'invoice.payment_succeeded') {
+      const invoice = event.data.object;
+      const customerId = invoice.customer;
+      const priceId = invoice.lines?.data[0]?.price?.id;
+      const plan = PLAN_MAP[priceId];
 
-      if (error) console.error('Supabase update error:', error);
+      // period_end is a Unix timestamp from Stripe — exact renewal date
+      const periodEnd = invoice.lines?.data[0]?.period?.end;
+      const expiresAt = periodEnd
+        ? new Date(periodEnd * 1000)
+        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+      if (plan) {
+        await sb.from('profiles').update({
+          plan,
+          plan_expires_at: expiresAt,
+        }).eq('stripe_customer_id', customerId);
+      }
     }
 
+    // ── Plan upgrade / downgrade ──
     if (event.type === 'customer.subscription.updated') {
       const sub = event.data.object;
       const priceId = sub.items?.data[0]?.price?.id;
-      const plan = PLAN_MAP[priceId] || 'basic';
+      const plan = PLAN_MAP[priceId];
+      const expiresAt = new Date(sub.current_period_end * 1000);
 
-      const { error } = await sb.from('profiles').update({ plan })
+      if (plan) {
+        await sb.from('profiles').update({ plan, plan_expires_at: expiresAt })
+          .eq('stripe_customer_id', sub.customer);
+      }
+    }
+
+    // ── Cancellation / payment failure ──
+    if (event.type === 'customer.subscription.deleted') {
+      const sub = event.data.object;
+      await sb.from('profiles').update({ plan: 'free' })
         .eq('stripe_customer_id', sub.customer);
-
-      if (error) console.error('Supabase update error:', error);
     }
 
   } catch (err) {
