@@ -3,612 +3,963 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Ironwood Intelligence — Analytics</title>
-<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<title>Ironwood Intelligence</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{
-  --bg:#f4f3ef;--surface:#ffffff;--surface2:#f9f8f5;--surface3:#f0efe9;
-  --border:#e8e6de;--border2:#d4d0c4;
-  --text:#1a1a18;--text2:#4a4a44;--muted:#9a9890;--muted2:#c4c2ba;
-  --accent:#2d4a3e;--gold:#c8a96e;--orange:#e8654a;
-  --green:#2d7a5a;--green-bg:#e8f5ee;
-  --blue:#2a4a7a;--blue-bg:#eef2fa;
-  --sidebar-w:240px;--font:'Cabinet Grotesk',sans-serif;--display:'Clash Display',sans-serif;
-  --r:14px;--shadow:0 2px 16px rgba(26,26,24,.06);--shadow-md:0 6px 28px rgba(26,26,24,.1);
-}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:14px;}
+a{text-decoration:none;color:inherit;cursor:pointer;}
 
-/* LOADING */
-.loading-overlay{position:fixed;inset:0;background:var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s;}
-.loading-overlay.hidden{opacity:0;pointer-events:none;}
-.ll{font-family:var(--display);font-size:26px;font-weight:700;color:#fff;letter-spacing:-.02em;margin-bottom:6px;}
-.ll span{color:var(--gold);}
-.lt{font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.12em;text-transform:uppercase;margin-bottom:36px;}
-.lb{width:200px;height:2px;background:rgba(255,255,255,.12);border-radius:1px;overflow:hidden;}
-.lf{height:100%;background:var(--gold);border-radius:1px;transition:width .4s;}
-.ls{font-size:11px;color:rgba(255,255,255,.35);margin-top:12px;font-family:monospace;}
+/* ── NAV ── */
+nav{background:#fff;border-bottom:1px solid #e5e5e5;padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;}
+.nav-logo{font-size:15px;font-weight:700;letter-spacing:.04em;color:#111;cursor:pointer;}
+.nav-links{display:flex;align-items:center;gap:28px;}
+.nav-links>a{font-size:14px;color:#444;}
+.nav-links>a:hover{color:#111;}
+/* dropdown */
+.nav-more{position:relative;}
+.nav-more-btn{display:flex;align-items:center;gap:4px;font-size:14px;color:#444;background:none;border:none;font-family:inherit;cursor:pointer;padding:0;}
+.nav-more-btn:hover{color:#111;}
+.dropdown{display:none;position:absolute;top:calc(100% + 12px);left:0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.1);min-width:160px;z-index:500;overflow:hidden;}
+.dropdown.open{display:block;}
+.dropdown a{display:block;padding:12px 18px;font-size:14px;color:#333;border-bottom:1px solid #f0f0f0;}
+.dropdown a:last-child{border-bottom:none;}
+.dropdown a:hover{background:#f7f7f7;}
+/* nav buttons */
+.nav-actions{display:flex;align-items:center;gap:10px;}
+.btn-join{padding:7px 18px;border:1.5px solid #ccc;border-radius:20px;background:#fff;font-size:13px;cursor:pointer;color:#333;}
+.btn-login{padding:7px 18px;border-radius:20px;background:#111;color:#fff;font-size:13px;cursor:pointer;border:none;}
+.btn-login:hover{background:#333;}
 
-/* LAYOUT */
-.layout{display:flex;min-height:100vh;}
+/* ── PAGES ── */
+.page{display:none;}
+.page.active{display:block;}
 
-/* SIDEBAR */
-.sidebar{
-  width:var(--sidebar-w);background:var(--accent);
-  position:fixed;left:0;top:0;bottom:0;z-index:200;
-  display:flex;flex-direction:column;
-}
-.sb-logo{padding:22px 22px 18px;border-bottom:1px solid rgba(255,255,255,.07);}
-.sb-logo .mark{font-family:var(--display);font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em;}
-.sb-logo .mark span{color:var(--gold);}
-.sb-logo .sub{font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.12em;text-transform:uppercase;margin-top:3px;}
-.sb-sec{padding:18px 14px 6px;}
-.sb-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.22);padding:0 8px;margin-bottom:3px;}
-.ni{
-  display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;
-  font-size:13px;font-weight:500;color:rgba(255,255,255,.5);cursor:pointer;
-  transition:all .15s;margin-bottom:1px;user-select:none;
-}
-.ni:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85);}
-.ni.active{background:rgba(200,169,110,.14);color:var(--gold);}
-.ni .ico{font-size:13px;width:18px;text-align:center;flex-shrink:0;}
-.ni .badge{margin-left:auto;background:var(--gold);color:var(--accent);font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;}
-.sb-bottom{margin-top:auto;padding:14px;border-top:1px solid rgba(255,255,255,.06);}
-.sb-status{display:flex;align-items:center;gap:9px;padding:10px 13px;border-radius:10px;background:rgba(255,255,255,.04);}
-.sdot{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;flex-shrink:0;}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
-.stext{font-size:11px;color:rgba(255,255,255,.38);line-height:1.5;}
-.stext strong{color:rgba(255,255,255,.65);display:block;font-size:12px;}
+/* ── GRADIENT CARDS (replace photos) ── */
+.g-city   {background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);}
+.g-office {background:linear-gradient(135deg,#2c3e50,#4a6fa5,#68a0d0);}
+.g-meeting{background:linear-gradient(135deg,#134e5e,#3a7d6e,#71b280);}
+.g-dash   {background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);}
+.g-person {background:linear-gradient(135deg,#c79a6e,#e8c99a,#a67850);}
+.g-lagos  {background:linear-gradient(135deg,#1a3a2a,#2d6a4f,#40916c);}
+.g-nairobi{background:linear-gradient(135deg,#1b2838,#2a475e,#4a7da8);}
+.g-cape   {background:linear-gradient(135deg,#2d3561,#c05c7e,#f0a500);}
+.g-accra  {background:linear-gradient(135deg,#006400,#228B22,#5aab5a);}
+.g-joburg {background:linear-gradient(135deg,#3d0000,#8b0000,#cc4400);}
+.g-network{background:linear-gradient(135deg,#0d1117,#1a2332,#243447);}
+.g-build  {background:linear-gradient(135deg,#c9b08a,#a08060,#7a5c3a);}
+.grad-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;opacity:.3;}
 
-/* MAIN */
-.main-wrap{margin-left:var(--sidebar-w);flex:1;}
+/* ── SHARED BUTTONS ── */
+.btn-dark   {padding:11px 24px;background:#111;color:#fff;border-radius:25px;font-size:14px;font-weight:600;border:none;cursor:pointer;}
+.btn-dark:hover{background:#333;}
+.btn-outline{padding:11px 24px;background:#fff;color:#111;border-radius:25px;font-size:14px;font-weight:500;border:1.5px solid #ccc;cursor:pointer;}
+.btn-outline:hover{border-color:#888;}
+.btn-sm-outline{padding:9px 20px;border:1.5px solid #ccc;border-radius:20px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
 
-/* TOPBAR */
-.topbar{
-  height:60px;background:var(--surface);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 28px;position:sticky;top:0;z-index:100;
-}
-.tb-left h2{font-family:var(--display);font-size:17px;font-weight:600;color:var(--text);letter-spacing:-.02em;}
-.tb-left p{font-size:11px;color:var(--muted);margin-top:1px;}
-.tb-right{display:flex;align-items:center;gap:10px;}
-.dpill{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);padding:5px 14px;border-radius:20px;font-size:11px;color:var(--text2);font-weight:600;}
-.dpill .d{width:6px;height:6px;border-radius:50%;background:var(--green);}
+/* ── HOME HERO ── */
+.hero{background:#f5f5f5;padding:60px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;min-height:480px;}
+.hero h1{font-size:46px;font-weight:800;line-height:1.1;margin-bottom:18px;}
+.hero p{font-size:15px;color:#555;line-height:1.6;margin-bottom:28px;max-width:400px;}
+.hero-btns{display:flex;gap:12px;}
+.hero-img{border-radius:16px;overflow:hidden;height:320px;position:relative;}
 
-/* CONTENT */
-.content{padding:24px 28px;}
-.page{display:none;}.page.active{display:block;}
+/* split section */
+.sec-split{padding:60px;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;background:#fff;}
+.split-img{height:280px;border-radius:12px;position:relative;overflow:hidden;}
+.sec-split h2{font-size:26px;font-weight:800;margin-bottom:14px;line-height:1.2;}
+.sec-split p{font-size:14px;color:#555;line-height:1.7;margin-bottom:16px;}
+.feat-row{display:flex;gap:12px;margin-bottom:14px;}
+.feat-row-icon{font-size:18px;margin-top:2px;}
+.feat-row strong{font-size:14px;font-weight:700;display:block;margin-bottom:3px;}
+.feat-row span{font-size:13px;color:#666;}
 
-/* KPI */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:13px;margin-bottom:22px;}
-.kpi{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
-  padding:18px 20px;position:relative;overflow:hidden;
-  transition:box-shadow .2s,transform .15s;cursor:default;
-}
-.kpi:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);}
-.kpi-top{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0;}
-.kpi-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
-.kpi-val{font-family:var(--display);font-size:28px;font-weight:700;color:var(--text);letter-spacing:-.03em;line-height:1;}
-.kpi-sub{font-size:11px;color:var(--muted);margin-top:6px;}
+/* 3-col cards */
+.sec-3col{padding:60px;background:#fff;}
+.sec-3col .eyebrow{text-align:center;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;font-weight:600;margin-bottom:8px;}
+.sec-3col h2{font-size:26px;font-weight:800;text-align:center;margin-bottom:8px;}
+.sec-3col .sub{font-size:14px;color:#666;text-align:center;margin-bottom:40px;max-width:600px;margin-left:auto;margin-right:auto;}
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.card3{background:#f5f5f5;border-radius:12px;padding:28px;text-align:center;}
+.card3 .icon{font-size:28px;margin-bottom:12px;}
+.card3 h3{font-size:15px;font-weight:700;margin-bottom:8px;}
+.card3 p{font-size:13px;color:#666;line-height:1.6;margin-bottom:14px;}
+.card3 a{font-size:13px;font-weight:600;}
 
-/* GRID */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:15px;}
-.gf{margin-bottom:15px;}
+/* how-to-navigate */
+.sec-how{padding:60px;background:#f5f5f5;}
+.sec-how h2{font-size:26px;font-weight:800;text-align:center;margin-bottom:8px;}
+.sec-how .sub{font-size:14px;color:#666;text-align:center;margin-bottom:40px;}
+.how-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.how-card{background:#fff;border-radius:12px;overflow:hidden;}
+.how-card-img{height:160px;position:relative;}
+.how-card-body{padding:16px 20px 20px;}
+.how-card h3{font-size:14px;font-weight:700;margin-bottom:8px;}
+.how-card p{font-size:13px;color:#666;line-height:1.6;margin-bottom:12px;}
+.how-card a{font-size:13px;font-weight:600;}
 
-/* CARD */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;box-shadow:var(--shadow);}
-.ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;}
-.ct{font-family:var(--display);font-size:13px;font-weight:600;color:var(--text);letter-spacing:-.01em;}
-.cs{font-size:10px;color:var(--muted);margin-top:2px;}
-.cbadge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--green-bg);color:var(--green);}
+.cta-strip{display:flex;padding:36px 60px;background:#f5f5f5;border-top:1px solid #e5e5e5;}
+.cta-strip div{flex:1;text-align:center;font-size:13px;font-weight:600;}
 
-/* CHART */
-.cv{position:relative;}
-.h200{height:200px;}.h220{height:220px;}.h240{height:240px;}.h280{height:280px;}.h300{height:300px;}.h320{height:320px;}.h340{height:340px;}.h360{height:360px;}
+/* ── DATA PAGE ── */
+.data-hero{padding:50px 60px 40px;background:#f5f5f5;}
+.data-hero .eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:8px;}
+.data-hero h1{font-size:36px;font-weight:800;margin-bottom:12px;}
+.data-hero p{font-size:15px;color:#555;max-width:500px;margin-bottom:22px;}
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.svc-card{background:#f5f5f5;border-radius:12px;padding:28px;text-align:center;}
+.svc-card .icon{font-size:26px;margin-bottom:14px;}
+.svc-card h3{font-size:15px;font-weight:700;margin-bottom:8px;}
+.svc-card p{font-size:13px;color:#666;line-height:1.6;}
+.check-list{list-style:none;}
+.check-list li{font-size:14px;color:#333;padding:5px 0;display:flex;align-items:center;gap:8px;}
+.check-list li::before{content:'✅';font-size:13px;}
 
-/* MAP */
-#map-wrap{height:420px;border-radius:var(--r);overflow:hidden;border:1px solid var(--border);margin-bottom:15px;}
-#the-map{height:100%;}
+/* ── ANALYTICS ── */
+.analytics-wrap{display:grid;grid-template-columns:260px 1fr;gap:20px;padding:20px;background:#f5f5f5;min-height:calc(100vh - 60px);}
+.sidebar-box{background:#fff;border-radius:10px;padding:20px;margin-bottom:16px;}
+.sidebar-box h3{font-size:15px;font-weight:700;margin-bottom:16px;}
+.fg{margin-bottom:14px;}
+.fg label{font-size:12px;color:#666;display:block;margin-bottom:5px;}
+.fg select,.fg input{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;outline:none;}
+.btn-apply{width:100%;padding:9px;background:#333;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin-top:4px;}
+.mo-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px;}
+.mo-row:last-child{border-bottom:none;}
+.mo-row .lbl{color:#777;}
+.mo-row .val{font-weight:700;}
+#africa-map{height:340px;border-radius:10px;border:1px solid #ddd;margin-bottom:20px;}
+.a-bottom{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.a-card{background:#fff;border-radius:10px;padding:20px;}
+.a-card h3{font-size:15px;font-weight:700;margin-bottom:16px;}
+.rent-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f5f5f5;font-size:13px;}
+.rent-row:last-child{border-bottom:none;}
+.r-val{font-weight:700;}
+.r-up{color:#16a34a;font-size:12px;margin-left:5px;}
+.tr{padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:13px;overflow:hidden;}
+.tr:last-child{border-bottom:none;}
+.tr .ttype{font-weight:600;}
+.tr .tdate{color:#888;font-size:12px;}
+.tr .tprice{float:right;font-weight:700;}
+.vacancy-box{background:#fff;border-radius:10px;padding:20px;margin-top:20px;}
+.vacancy-box h3{font-size:15px;font-weight:700;margin-bottom:16px;}
+.chart{position:relative;height:180px;border-left:1px solid #ddd;border-bottom:1px solid #ddd;margin:0 16px 6px 28px;}
+.y-lbls{position:absolute;left:-26px;top:0;height:100%;display:flex;flex-direction:column;justify-content:space-between;font-size:11px;color:#888;}
+.x-lbls{display:flex;justify-content:space-around;font-size:11px;color:#888;margin:0 16px 0 28px;}
+svg.linechart{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;}
+.legend{display:flex;align-items:center;gap:6px;justify-content:center;margin-top:10px;font-size:12px;color:#666;}
+.ldot{width:8px;height:8px;border-radius:50%;background:#8b8bc8;display:inline-block;}
 
-/* TABLE */
-.tbl{width:100%;border-collapse:collapse;font-size:12px;}
-.tbl th{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px 12px;text-align:left;border-bottom:2px solid var(--border);}
-.tbl td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:500;}
-.tbl tr:last-child td{border-bottom:none;}
-.tbl tr:hover td{background:var(--surface2);}
-.tbl .val{font-family:var(--display);font-size:12px;font-weight:600;color:var(--accent);}
-.tbl .dim{color:var(--muted);font-size:11px;}
-.tbl .num{font-size:11px;}
-.stbl{overflow-x:auto;max-height:360px;overflow-y:auto;}
-.stbl::-webkit-scrollbar{width:3px;}.stbl::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+/* ── PROPERTIES ── */
+.props-hdr{padding:28px 40px 16px;background:#f5f5f5;display:flex;justify-content:space-between;align-items:center;}
+.props-hdr h1{font-size:28px;font-weight:800;margin-bottom:4px;}
+.props-hdr p{font-size:14px;color:#666;}
+.vtoggle{display:flex;gap:4px;}
+.vtoggle button{width:32px;height:32px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:15px;}
+.vtoggle button.act{background:#111;color:#fff;border-color:#111;}
+.filter-bar{padding:14px 40px;background:#fff;border-top:1px solid #eee;border-bottom:1px solid #eee;}
+.filter-bar h3{font-size:13px;font-weight:700;margin-bottom:10px;}
+.frow{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;}
+.fcol label{font-size:11px;color:#666;display:block;margin-bottom:3px;}
+.fcol select{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;min-width:110px;}
+.fcol input{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;width:80px;}
+.btn-clr{padding:6px 12px;border:1px solid #ddd;border-radius:6px;background:#fff;font-size:12px;cursor:pointer;}
+.pgrid{padding:16px 40px 40px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.pcard{background:#fff;border-radius:10px;overflow:hidden;border:1px solid #eee;}
+.pimg{height:160px;position:relative;overflow:hidden;}
+.poverlay{position:absolute;inset:0;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;}
+.plock{width:32px;height:32px;background:rgba(255,255,255,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:1.5px solid rgba(255,255,255,.5);}
+.pbadge{position:absolute;top:10px;right:10px;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;}
+.ba{background:rgba(34,197,94,.85);color:#fff;}
+.bo{background:rgba(107,114,128,.85);color:#fff;}
+.pbody{padding:14px 16px;}
+.ptype{float:right;font-size:11px;color:#888;}
+.pname{font-size:15px;font-weight:700;margin-bottom:4px;clear:both;}
+.ploc{font-size:12px;color:#888;margin-bottom:10px;}
+.pmeta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.pmv{font-size:14px;font-weight:700;}
+.pmk{font-size:11px;color:#888;}
+.pprow{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid #f0f0f0;}
+.ppv{font-size:16px;font-weight:800;}
+.ppm{font-size:11px;color:#888;}
+.btn-vd{padding:7px 14px;background:#111;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;}
+.psub{background:#fff8e6;padding:8px 16px;font-size:12px;color:#996600;text-align:center;}
+.unlock{background:#111;color:#fff;padding:40px;text-align:center;margin:0 40px 40px;border-radius:10px;}
+.unlock h2{font-size:22px;font-weight:700;margin-bottom:8px;}
+.unlock p{font-size:14px;color:#aaa;margin-bottom:20px;}
+.unlock-btns{display:flex;gap:12px;justify-content:center;}
+.btn-wo{padding:9px 20px;border:1.5px solid #fff;background:transparent;color:#fff;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-ws{padding:9px 20px;border:none;background:#fff;color:#111;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;}
 
-/* PILLS */
-.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
-.pill-r{background:var(--blue-bg);color:var(--blue);}
-.pill-s{background:rgba(200,169,110,.15);color:#8a6a2e;}
+/* ── SUBSCRIPTION ── */
+.sub-pg{padding:50px 40px;background:#f5f5f5;}
+.sub-pg h1{font-size:32px;font-weight:800;text-align:center;margin-bottom:10px;}
+.sub-desc{font-size:15px;color:#555;text-align:center;max-width:560px;margin:0 auto 40px;}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:960px;margin:0 auto 40px;}
+.plan{background:#fff;border-radius:12px;padding:32px;border:1.5px solid #e5e5e5;position:relative;}
+.plan.feat{border-color:#111;border-width:2px;}
+.pop-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:4px 16px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+.pln-name{font-size:20px;font-weight:800;margin-bottom:4px;}
+.pln-tag{font-size:13px;color:#777;margin-bottom:20px;}
+.pln-price{display:flex;align-items:baseline;gap:4px;margin-bottom:24px;}
+.pln-price .amt{font-size:40px;font-weight:900;}
+.pln-price .per{font-size:14px;color:#888;}
+.pln-feats{list-style:none;margin-bottom:28px;}
+.pln-feats li{font-size:13px;color:#444;padding:6px 0;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f5f5f5;}
+.pln-feats li:last-child{border-bottom:none;}
+.pln-feats li::before{content:'✓';color:#16a34a;font-weight:700;}
+.btn-sub{width:100%;padding:11px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:none;}
+.btn-sub-o{background:#f5f5f5;color:#333;}
+.btn-sub-d{background:#111;color:#fff;}
+.why-box{background:#fff;border-radius:12px;padding:40px;max-width:960px;margin:0 auto;}
+.why-box h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:32px;}
+.why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center;}
+.wi-badge{display:inline-flex;width:44px;height:44px;background:#111;color:#fff;border-radius:8px;align-items:center;justify-content:center;font-size:13px;font-weight:800;margin-bottom:10px;}
+.why-item h4{font-size:14px;font-weight:700;margin-bottom:5px;}
+.why-item p{font-size:12px;color:#777;}
 
-/* FILTER BAR */
-.fb-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
-.fl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
-.fb{padding:5px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:20px;font-size:11px;font-family:var(--font);font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s;}
-.fb:hover{border-color:var(--accent);color:var(--accent);}
-.fb.active{background:var(--accent);border-color:var(--accent);color:#fff;}
-.fs{padding:5px 12px;background:var(--surface);border:1.5px solid var(--border);border-radius:20px;font-size:11px;font-family:var(--font);color:var(--text);cursor:pointer;outline:none;font-weight:500;}
-.fi{padding:7px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:20px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;min-width:200px;transition:border-color .15s;}
-.fi:focus{border-color:var(--accent);}
-.fi::placeholder{color:var(--muted2);}
-.dv{width:1px;height:18px;background:var(--border);}
+/* ── DASHBOARD LOCKED ── */
+.dlocked{min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px;background:#f5f5f5;}
+.dlocked .lbig{font-size:48px;margin-bottom:20px;color:#ccc;}
+.dlocked h1{font-size:28px;font-weight:800;margin-bottom:10px;}
+.dlocked p{font-size:14px;color:#666;margin-bottom:24px;}
+.dbtns{display:flex;gap:12px;justify-content:center;}
 
-/* CITY TABS */
-.ctabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
-.ctab{padding:6px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:20px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s;}
-.ctab:hover{border-color:var(--accent);color:var(--accent);}
-.ctab.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+/* ── AUTH ── */
+.auth-pg{min-height:calc(100vh - 60px);background:#f5f5f5;display:flex;align-items:center;justify-content:center;padding:40px;}
+.auth-box{background:#fff;border-radius:12px;padding:40px;width:100%;max-width:400px;}
+.auth-logo{width:44px;height:44px;background:#111;color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;margin:0 auto 20px;}
+.auth-box h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:6px;}
+.auth-sub{font-size:13px;color:#888;text-align:center;margin-bottom:24px;}
+.auth-sub a{color:#111;font-weight:600;}
+.fg-auth{margin-bottom:16px;}
+.fg-auth label{font-size:13px;font-weight:600;display:block;margin-bottom:5px;}
+.fg-auth input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;outline:none;}
+.fg-auth input:focus{border-color:#888;}
+.pw{position:relative;}
+.pw input{padding-right:36px;}
+.pw-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:15px;color:#888;}
+.chk-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:16px;font-size:13px;color:#444;}
+.chk-row a{color:#111;font-weight:600;}
+.btn-submit{width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;}
+.auth-sw{text-align:center;font-size:13px;color:#666;}
+.auth-sw a{color:#111;font-weight:700;}
+.ftrial{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px 16px;margin-top:16px;}
+.ftrial .ft-t{font-size:13px;font-weight:700;color:#166534;margin-bottom:4px;}
+.ftrial p{font-size:12px;color:#166534;}
 
-/* HEATMAP */
-.hmc{padding:7px 5px;border-radius:8px;font-size:10px;font-weight:700;text-align:center;min-width:68px;cursor:default;transition:transform .12s;}
-.hmc:hover{transform:scale(1.06);}
+/* ── CONTACT ── */
+.cnt-hero{position:relative;height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;overflow:hidden;}
+.cnt-hero .eyebrow{position:relative;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#ccc;margin-bottom:8px;}
+.cnt-hero h1{position:relative;font-size:32px;font-weight:800;color:#fff;margin-bottom:10px;}
+.cnt-hero p{position:relative;font-size:14px;color:#ccc;max-width:480px;margin-bottom:20px;}
+.cnt-hero-btns{position:relative;display:flex;gap:10px;}
+.btn-wh{padding:9px 20px;background:#fff;color:#111;border-radius:6px;font-size:13px;font-weight:700;border:none;cursor:pointer;}
+.btn-ghw{padding:9px 20px;background:transparent;color:#fff;border-radius:6px;font-size:13px;font-weight:600;border:1.5px solid rgba(255,255,255,.4);cursor:pointer;}
+.cnt-info{padding:50px 60px;display:grid;grid-template-columns:1fr 1fr;gap:60px;background:#fff;}
+.cnt-info h2{font-size:22px;font-weight:800;margin-bottom:8px;}
+.cnt-info .ci-desc{font-size:14px;color:#666;margin-bottom:28px;}
+.ci-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:20px;}
+.ci-icon{font-size:20px;margin-top:1px;}
+.ci-lbl{font-size:13px;font-weight:700;margin-bottom:2px;}
+.ci-val{font-size:13px;color:#555;}
+.ci-imgbox{height:260px;border-radius:12px;overflow:hidden;border:1px solid #eee;position:relative;}
+.cnt-form-sec{padding:40px 60px 60px;background:#f5f5f5;}
+.cnt-form-sec h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:4px;}
+.cf-sub{font-size:14px;color:#666;text-align:center;margin-bottom:30px;}
+.cform{max-width:700px;margin:0 auto;}
+.frow2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.cform textarea{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;font-family:inherit;resize:vertical;min-height:120px;outline:none;}
 
-/* TREND PH */
-.tph{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:10px;}
-.tph .ico{font-size:30px;opacity:.3;}
-.tph p{font-size:12px;text-align:center;max-width:280px;line-height:1.8;color:var(--muted);}
-
-/* PAGE HEADER */
-.ph{margin-bottom:20px;}
-.ph h1{font-family:var(--display);font-size:22px;font-weight:700;color:var(--text);letter-spacing:-.03em;}
-.ph p{font-size:12px;color:var(--muted);margin-top:4px;}
-
-@media(max-width:900px){.sidebar{display:none;}.main-wrap{margin-left:0;}.g2,.g3{grid-template-columns:1fr;}}
+/* ── FOOTER ── */
+footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
+.footer-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;gap:32px;margin-bottom:36px;}
+.fbrand .fb-name{font-size:14px;font-weight:800;letter-spacing:.04em;margin-bottom:8px;line-height:1.4;}
+.fbrand p{font-size:13px;color:#777;line-height:1.6;}
+.fcol h4{font-size:13px;font-weight:700;margin-bottom:14px;color:#333;}
+.fcol ul{list-style:none;}
+.fcol ul li{margin-bottom:8px;}
+.fcol ul li a{font-size:13px;color:#666;}
+.fcol ul li a:hover{color:#111;}
+.fcol select{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;}
+.footer-bottom{border-top:1px solid #eee;padding-top:20px;text-align:center;font-size:12px;color:#999;}
 </style>
 </head>
 <body>
 
-<div class="loading-overlay" id="loading">
-  <div class="ll">IRONWOOD <span>INTELLIGENCE</span></div>
-  <div class="lt">Real Estate Analytics · Africa</div>
-  <div class="lb"><div class="lf" id="lf" style="width:0%"></div></div>
-  <div class="ls" id="ls">Connecting to database...</div>
-</div>
+<!-- ═══ NAV ═══ -->
+<nav>
+  <div class="nav-logo" onclick="go('home')">IRONWOOD INTELLIGENCE</div>
+  <div class="nav-links" id="nav-links-loggedout">
+    <a onclick="go('home')">Home</a>
+    <a onclick="go('data')">Data</a>
+    <a onclick="go('about')">About Us</a>
+    <a onclick="go('subscription')">Pricing</a>
+    <a onclick="go('contact')">Contact Us</a>
+  </div>
+  <div class="nav-links" id="nav-links-loggedin" style="display:none;">
+    <a onclick="go('home')">Home</a>
+    <a onclick="go('data')">Data</a>
+    <a onclick="go('about')">About Us</a>
+    <a onclick="go('subscription')">Pricing</a>
+    <a onclick="go('contact')">Contact Us</a>
+    <a onclick="goAnalytics()">Analytics</a>
+    <a onclick="goDashboard()">Dashboard</a>
+  </div>
+  <div class="nav-actions">
+    <button class="btn-join" id="nav-register-btn" onclick="go('register')">Join Now</button>
+    <button class="btn-login" id="nav-login-btn" onclick="go('login')">Sign In</button>
+    <span id="nav-user-name" style="display:none;font-size:13px;font-weight:600;color:#111;cursor:pointer;padding:7px 14px;border:1.5px solid #e0e0e0;border-radius:20px;" onclick="go('account')">👤 <span id="nav-user-label"></span> ▾</span>
+  </div>
+</nav>
 
-<div class="layout">
-
-  <aside class="sidebar">
-    <div class="sb-logo">
-      <div class="mark">IRONWOOD <span>INTEL</span></div>
-      <div class="sub">Market Analytics Platform</div>
-    </div>
-
-    <div class="sb-sec">
-      <div class="sb-label">Overview</div>
-      <div class="ni active" onclick="showPage('overview',this)">
-        <span class="ico">▦</span> Market Overview
-        <span class="badge" id="nb">—</span>
+<!-- ═══ HOME ═══ -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div>
+      <h1>Unlock Insights with Real Estate Analytics</h1>
+      <p>Discover the power of data-driven decisions in real estate. Our platform provides comprehensive analytics to help you make informed choices.</p>
+      <div class="hero-btns">
+        <button class="btn-dark">Learn More</button>
+        <button class="btn-outline" onclick="go('register')">Sign Up</button>
       </div>
     </div>
+    <div class="hero-img g-city"><span class="grad-icon">🌆</span></div>
+  </div>
 
-    <div class="sb-sec">
-      <div class="sb-label">Analysis</div>
-      <div class="ni" onclick="showPage('map',this)"><span class="ico">◉</span> Price Map</div>
-      <div class="ni" onclick="showPage('cities',this)"><span class="ico">⬡</span> City Comparison</div>
-      <div class="ni" onclick="showPage('districts',this)"><span class="ico">◫</span> Districts</div>
-      <div class="ni" onclick="showPage('assets',this)"><span class="ico">◧</span> Asset Classes</div>
-    </div>
-
-    <div class="sb-sec">
-      <div class="sb-label">Insights</div>
-      <div class="ni" onclick="showPage('trends',this)"><span class="ico">↗</span> Price Trends</div>
-      <div class="ni" onclick="showPage('explorer',this)"><span class="ico">⊞</span> Data Explorer</div>
-    </div>
-
-    <div class="sb-bottom">
-      <div class="sb-status">
-        <div class="sdot"></div>
-        <div class="stext"><strong id="srows">Loading...</strong>Live · Supabase</div>
-      </div>
-    </div>
-  </aside>
-
-  <div class="main-wrap">
-    <div class="topbar">
-      <div class="tb-left">
-        <h2 id="tb-title">Market Overview</h2>
-        <p id="tb-sub">Loading market data...</p>
-      </div>
-      <div class="tb-right">
-        <div class="dpill"><div class="d"></div><span id="dpill">Live Data</span></div>
-      </div>
-    </div>
-
-    <div class="content">
-
-      <!-- OVERVIEW -->
-      <div class="page active" id="page-overview">
-        <div class="kpi-grid" id="kpi-grid"></div>
-        <div class="g2">
-          <div class="card"><div class="ch"><div><div class="ct">Office Rent by City</div><div class="cs">Median DH/m²/month</div></div></div><div class="cv h220"><canvas id="c-off-rent"></canvas></div></div>
-          <div class="card"><div class="ch"><div><div class="ct">Apartment Sale by City</div><div class="cs">Median DH/m²</div></div></div><div class="cv h220"><canvas id="c-apt-sale"></canvas></div></div>
-        </div>
-        <div class="g2">
-          <div class="card"><div class="ch"><div><div class="ct">Listings by City</div><div class="cs">Volume distribution</div></div></div><div class="cv h220"><canvas id="c-city-pie"></canvas></div></div>
-          <div class="card"><div class="ch"><div><div class="ct">Asset Class Distribution</div><div class="cs">Total listings</div></div></div><div class="cv h220"><canvas id="c-asset-pie"></canvas></div></div>
-        </div>
-        <div class="g2">
-          <div class="card"><div class="ch"><div><div class="ct">Rent vs Sale by City</div></div></div><div class="cv h220"><canvas id="c-rv-s"></canvas></div></div>
-          <div class="card"><div class="ch"><div><div class="ct">All Asset Classes — Rent</div><div class="cs">Cross-city avg median DH/m²</div></div></div><div class="cv h220"><canvas id="c-asset-rent"></canvas></div></div>
-        </div>
-      </div>
-
-      <!-- MAP -->
-      <div class="page" id="page-map">
-        <div class="ph"><h1>Price Map</h1><p>District-level prices — size = listing volume · color = price level (green=low, red=high)</p></div>
-        <div class="fb-row" id="map-city-f"><span class="fl">City</span><button class="fb active" onclick="MS.city='All';setAF(this,this.closest('.fb-row'));renderMap()">All</button></div>
-        <div class="fb-row">
-          <span class="fl">Type</span>
-          <button class="fb active" onclick="MS.listing='All';setAF(this,this.closest('.fb-row'));renderMap()">All</button>
-          <button class="fb" onclick="MS.listing='Rent';setAF(this,this.closest('.fb-row'));renderMap()">Rent</button>
-          <button class="fb" onclick="MS.listing='Sale';setAF(this,this.closest('.fb-row'));renderMap()">Sale</button>
-          <div class="dv"></div>
-          <span class="fl">Asset</span>
-          <select class="fs" id="map-asset" onchange="MS.asset=this.value;renderMap()"><option value="All">All Assets</option></select>
-        </div>
-        <div id="map-wrap"><div id="the-map"></div></div>
-        <div class="card">
-          <div class="ch"><div class="ct">District Price Table</div><span class="cs" id="map-sub"></span></div>
-          <div class="stbl"><table class="tbl"><thead><tr><th>#</th><th>District</th><th>City</th><th>Asset</th><th>Type</th><th>Median DH/m²</th><th>Listings</th></tr></thead><tbody id="map-tbody"></tbody></table></div>
-        </div>
-      </div>
-
-      <!-- CITIES -->
-      <div class="page" id="page-cities">
-        <div class="ph"><h1>City Comparison</h1><p>Cross-city pricing analysis by asset class</p></div>
-        <div class="fb-row">
-          <span class="fl">Type</span>
-          <button class="fb active" onclick="CS.listing='Rent';setAF(this,this.closest('.fb-row'));renderCities()">Rent</button>
-          <button class="fb" onclick="CS.listing='Sale';setAF(this,this.closest('.fb-row'));renderCities()">Sale</button>
-        </div>
-        <div class="gf card">
-          <div class="ch"><div><div class="ct">Price by Asset Class — All Cities</div><div class="cs" id="cities-sub">Median DH/m²/mo · Rent</div></div></div>
-          <div class="cv h340"><canvas id="c-cities-grp"></canvas></div>
-        </div>
-        <div class="gf card" style="margin-top:15px;">
-          <div class="ch"><div><div class="ct">City × Asset Class Heatmap</div><div class="cs" id="hm-sub">Median DH/m²</div></div></div>
-          <div style="overflow-x:auto;" id="heatmap"></div>
-        </div>
-        <div class="g2" style="margin-top:15px;">
-          <div class="card"><div class="ch"><div class="ct">Listing Volume</div></div><div class="cv h220"><canvas id="c-city-vol"></canvas></div></div>
-          <div class="card"><div class="ch"><div><div class="ct">Office Rent Ranking</div><div class="cs">Median DH/m²/mo</div></div></div><div class="cv h220"><canvas id="c-city-rank"></canvas></div></div>
-        </div>
-      </div>
-
-      <!-- DISTRICTS -->
-      <div class="page" id="page-districts">
-        <div class="ph"><h1>Districts</h1><p>Drill down by city and asset class</p></div>
-        <div class="ctabs" id="dist-ctabs"></div>
-        <div class="fb-row">
-          <span class="fl">Asset</span>
-          <select class="fs" id="dist-asset" onchange="renderDistricts()"><option value="All">All Assets</option></select>
-          <div class="dv"></div>
-          <span class="fl">Type</span>
-          <button class="fb active" onclick="DS.listing='All';setAF(this,this.closest('.fb-row'));renderDistricts()">All</button>
-          <button class="fb" onclick="DS.listing='Rent';setAF(this,this.closest('.fb-row'));renderDistricts()">Rent</button>
-          <button class="fb" onclick="DS.listing='Sale';setAF(this,this.closest('.fb-row'));renderDistricts()">Sale</button>
-        </div>
-        <div class="g2">
-          <div class="card"><div class="ch"><div><div class="ct">Top Districts — Price</div><div class="cs">Median DH/m²</div></div></div><div class="cv h340"><canvas id="c-dist-p"></canvas></div></div>
-          <div class="card"><div class="ch"><div><div class="ct">Top Districts — Volume</div><div class="cs">Listing count</div></div></div><div class="cv h340"><canvas id="c-dist-v"></canvas></div></div>
-        </div>
-        <div class="gf card" style="margin-top:4px;">
-          <div class="ch"><div class="ct">All Districts</div><span class="cs" id="dist-count"></span></div>
-          <div class="stbl"><table class="tbl"><thead><tr><th>#</th><th>District</th><th>Asset</th><th>Type</th><th>Median DH/m²</th><th>Listings</th></tr></thead><tbody id="dist-tbody"></tbody></table></div>
-        </div>
-      </div>
-
-      <!-- ASSETS -->
-      <div class="page" id="page-assets">
-        <div class="ph"><h1>Asset Classes</h1><p>Performance by property type across all cities</p></div>
-        <div class="gf card">
-          <div class="ch"><div><div class="ct">Rent vs Sale — All Asset Types</div><div class="cs">Avg median DH/m² across cities</div></div></div>
-          <div class="cv h300"><canvas id="c-as-rv-s"></canvas></div>
-        </div>
-        <div class="g2" style="margin-top:15px;">
-          <div class="card"><div class="ch"><div class="ct">Rent · Asset × City</div></div><div class="cv h300"><canvas id="c-as-city-r"></canvas></div></div>
-          <div class="card"><div class="ch"><div class="ct">Sale · Asset × City</div></div><div class="cv h300"><canvas id="c-as-city-s"></canvas></div></div>
-        </div>
-        <div class="gf card" style="margin-top:15px;">
-          <div class="ch"><div class="ct">Asset Class Summary</div></div>
-          <table class="tbl"><thead><tr><th>Asset Class</th><th>Type</th><th>Median DH/m²</th><th>Cities</th><th>Listings</th></tr></thead><tbody id="assets-tbody"></tbody></table>
-        </div>
-      </div>
-
-      <!-- TRENDS -->
-      <div class="page" id="page-trends">
-        <div class="ph"><h1>Price Trends</h1><p>Auto-updates with every new scraping run — no code changes ever needed</p></div>
-        <div id="trends-content"></div>
-      </div>
-
-      <!-- EXPLORER -->
-      <div class="page" id="page-explorer">
-        <div class="ph"><h1>Data Explorer</h1><p>Search all district-level price aggregates</p></div>
-        <div class="fb-row">
-          <input class="fi" id="exp-q" placeholder="Search district or city..." oninput="renderExplorer()"/>
-          <select class="fs" id="exp-city" onchange="renderExplorer()"><option value="All">All Cities</option></select>
-          <select class="fs" id="exp-asset" onchange="renderExplorer()"><option value="All">All Assets</option></select>
-          <select class="fs" id="exp-lt" onchange="renderExplorer()"><option value="All">All Types</option><option>Rent</option><option>Sale</option></select>
-          <select class="fs" id="exp-sort" onchange="renderExplorer()"><option value="pd">Highest Price</option><option value="pa">Lowest Price</option><option value="cd">Most Listings</option></select>
-        </div>
-        <div class="card">
-          <div class="ch"><div class="ct">Results</div><span class="cs" id="exp-count"></span></div>
-          <div class="stbl" style="max-height:520px;"><table class="tbl"><thead><tr><th>#</th><th>District</th><th>City</th><th>Country</th><th>Asset</th><th>Type</th><th>Median DH/m²</th><th>Listings</th></tr></thead><tbody id="exp-tbody"></tbody></table></div>
-        </div>
-      </div>
-
+  <div class="sec-split">
+    <div class="split-img g-office"><span class="grad-icon">🏢</span></div>
+    <div>
+      <h2>Unlock the Power of Real Estate Data at Your Fingertips</h2>
+      <p>Our platform offers comprehensive data analytics to help you make informed real estate decisions. Gain valuable property insights and stay ahead of market trends with ease.</p>
+      <div class="feat-row"><div class="feat-row-icon">📊</div><div><strong>Data Analytics</strong><span>Transform raw data into actionable insights for smarter investment strategies.</span></div></div>
+      <div class="feat-row"><div class="feat-row-icon">🔍</div><div><strong>Property Insights</strong><span>Discover detailed property information to enhance your buying or selling process.</span></div></div>
     </div>
   </div>
+
+  <div class="sec-3col">
+    <div class="eyebrow">SERVICES</div>
+    <h2>Unlock the Power of Real Estate Data with Our Advanced Analytics</h2>
+    <p class="sub">Our platform provides powerful tools to analyze market trends and make data-driven decisions.</p>
+    <div class="cards3">
+      <div class="card3"><div class="icon">⚡</div><h3>Stay Ahead with Real-Time Insights</h3><p>Comprehensive data analysis to empower your real estate decisions.</p><a>Learn More →</a></div>
+      <div class="card3"><div class="icon">🔍</div><h3>Get Tailored Property Investments</h3><p>Customized insights that align with your unique property goals.</p><a onclick="go('register')">Sign Up →</a></div>
+      <div class="card3"><div class="icon">📈</div><h3>Analyze Comprehensive Data</h3><p>Dive deep into the hidden potential of properties with our detailed analytics.</p><a onclick="go('analytics')">Explore →</a></div>
+    </div>
+  </div>
+
+  <div class="sec-how">
+    <h2>Discover How to Navigate Our Platform Effortlessly</h2>
+    <p class="sub">A simple, intuitive process to get you from sign-up to insights in minutes.</p>
+    <div class="how-cards">
+      <div class="how-card"><div class="how-card-img g-person"><span class="grad-icon">👤</span></div><div class="how-card-body"><h3>Unlock Powerful Insights with Our User-Friendly Data Tools</h3><p>Our platform simplifies the process of accessing and analyzing real estate data.</p><a>Get Started →</a></div></div>
+      <div class="how-card"><div class="how-card-img g-meeting"><span class="grad-icon">🤝</span></div><div class="how-card-body"><h3>Step 1: Create Your Account for Personalized Data Access</h3><p>Sign up to gain access to exclusive analytics tailored to your needs.</p><a onclick="go('register')">Join →</a></div></div>
+      <div class="how-card"><div class="how-card-img g-dash"><span class="grad-icon">📊</span></div><div class="how-card-body"><h3>Step 2: Explore Our Comprehensive Dashboard for Insights</h3><p>Utilize our intuitive dashboard to visualize trends and make informed decisions.</p><a onclick="go('analytics')">See More →</a></div></div>
+    </div>
+  </div>
+
+  <div class="cta-strip">
+    <div><a>Learn More →</a></div>
+    <div><a onclick="go('register')">Sign Up →</a></div>
+    <div><a onclick="go('analytics')">Explore →</a></div>
+  </div>
+  <div class="footer-slot"></div>
 </div>
 
-<script>
-const SB_URL='https://ujhqkirhfmumvvnfvgnz.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik';
-const sb=supabase.createClient(SB_URL,SB_KEY);
+<!-- ═══ DATA ═══ -->
+<div id="page-data" class="page">
+  <div class="data-hero">
+    <div class="eyebrow">INSIGHTS</div>
+    <h1>Data-Driven Solutions</h1>
+    <p>Unlock the power of real estate analytics with our comprehensive data solutions tailored for you.</p>
+    <div style="display:flex;gap:12px;"><button class="btn-dark">Learn More</button><button class="btn-outline" onclick="go('register')">Sign Up</button></div>
+  </div>
+  <div style="padding:60px;background:#fff;">
+    <div style="text-align:center;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:8px;">SERVICES</div>
+    <h2 style="font-size:26px;font-weight:800;text-align:center;margin-bottom:8px;">Explore Our Comprehensive Real Estate Services</h2>
+    <p style="font-size:14px;color:#666;text-align:center;margin-bottom:40px;max-width:560px;margin-left:auto;margin-right:auto;">Unlock the true potential of real estate with our expert services. We provide insights that drive informed decisions.</p>
+    <div class="svc-grid">
+      <div class="svc-card"><div class="icon">🗄️</div><h3>Property Data Analysis</h3><p>Gain deep insights into property values and market dynamics with our advanced data analysis.</p></div>
+      <div class="svc-card"><div class="icon">📊</div><h3>Market Trends Reporting</h3><p>Stay ahead of the curve with our detailed market analysis and reporting services.</p></div>
+      <div class="svc-card"><div class="icon">📈</div><h3>Investment Advisory Services</h3><p>Maximize your real estate investment strategy and achieve your goals.</p></div>
+    </div>
+    <div style="text-align:center;margin-top:32px;"><button class="btn-sm-outline">Learn More →</button></div>
+  </div>
+  <div style="padding:60px;background:#f5f5f5;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;">
+    <div>
+      <h2 style="font-size:26px;font-weight:800;margin-bottom:14px;">Unlock the Power of Property Data Analysis for Informed Real Estate Decisions</h2>
+      <p style="font-size:14px;color:#555;line-height:1.7;margin-bottom:18px;">Dive deep into our comprehensive data to make smarter, data-driven choices.</p>
+      <ul class="check-list"><li>Comprehensive market analysis</li><li>Accurate property valuations</li><li>Predictive investment modeling</li></ul>
+      <div style="margin-top:20px;"><button class="btn-sm-outline">Learn More →</button></div>
+    </div>
+    <div class="split-img g-dash" style="height:300px;border-radius:12px;position:relative;overflow:hidden;"><span class="grad-icon">📊</span></div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
 
-let DB={raw:[],agg:{},cities:[],assets:[],countries:[],periods:[]};
-let MS={city:'All',listing:'All',asset:'All'};
-let CS={listing:'Rent'};
-let DS={city:'',listing:'All'};
-let TS={asset:'Offices',listing:'Rent'};
-let leafMap=null,mapM=[];
+<!-- ═══ ANALYTICS ═══ -->
+<div id="page-analytics" class="page">
+  <div class="analytics-wrap">
+    <div>
+      <div class="sidebar-box">
+        <h3>Analytics Filter</h3>
+        <div class="fg"><label>City</label><select><option>All Cities</option><option>Lagos</option><option>Nairobi</option><option>Cape Town</option><option>Accra</option><option>Johannesburg</option></select></div>
+        <div class="fg"><label>Property Type</label><select><option>All Property Types</option><option>Office</option><option>Retail</option><option>Residential</option><option>Hospitality</option><option>Industrial</option></select></div>
+        <div class="fg"><label>Minimum Size (sqm)</label><input type="text" placeholder="e.g., 500"/></div>
+        <div class="fg"><label>Maximum Size (sqm)</label><input type="text" placeholder="e.g., 10000"/></div>
+        <button class="btn-apply">Apply Filters</button>
+      </div>
+      <div class="sidebar-box">
+        <h3>Market Overview</h3>
+        <div class="mo-row"><span class="lbl">Total Properties</span><span class="val">5</span></div>
+        <div class="mo-row"><span class="lbl">Avg. Rent/sqm</span><span class="val">$1570.00</span></div>
+        <div class="mo-row"><span class="lbl">Vacancy Rate</span><span class="val">10.0%</span></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:14px;">Property Dashboard</div>
+      <div id="africa-map"></div>
+      <div class="a-bottom">
+        <div class="a-card">
+          <h3>Average Rent by Property Type</h3>
+          <div class="rent-row"><span>Office</span><span><span class="r-val">$1800/sqm</span><span class="r-up">+5.2%</span></span></div>
+          <div class="rent-row"><span>Retail</span><span><span class="r-val">$1600/sqm</span><span class="r-up">+5.2%</span></span></div>
+          <div class="rent-row"><span>Residential</span><span><span class="r-val">$1500/sqm</span><span class="r-up">+5.2%</span></span></div>
+          <div class="rent-row"><span>Hospitality</span><span><span class="r-val">$1750/sqm</span><span class="r-up">+5.2%</span></span></div>
+          <div class="rent-row"><span>Industrial</span><span><span class="r-val">$1200/sqm</span><span class="r-up">+5.2%</span></span></div>
+        </div>
+        <div class="a-card">
+          <h3>Recent Transactions</h3>
+          <div class="tr"><span class="tprice">$450,000</span><div class="ttype">Apartment Sale</div><div class="tdate">15/01/2024</div></div>
+          <div class="tr"><span class="tprice">$280,000</span><div class="ttype">Apartment Sale</div><div class="tdate">20/02/2024</div></div>
+          <div class="tr"><span class="tprice">$1,200,000</span><div class="ttype">Office Sale</div><div class="tdate">05/03/2024</div></div>
+        </div>
+      </div>
+      <div class="vacancy-box">
+        <h3>Vacancy Rate Trends</h3>
+        <div style="position:relative;">
+          <div class="chart">
+            <div class="y-lbls"><span>16</span><span>12</span><span>8</span><span>4</span><span>0</span></div>
+            <svg class="linechart" viewBox="0 0 400 180" preserveAspectRatio="none">
+              <line x1="0" y1="22" x2="400" y2="22" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="0" y1="67" x2="400" y2="67" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="0" y1="112" x2="400" y2="112" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="0" y1="157" x2="400" y2="157" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
+              <polyline points="0,45 133,112 266,9 400,140" fill="none" stroke="#8b8bc8" stroke-width="2.5"/>
+              <circle cx="0" cy="45" r="4" fill="#8b8bc8"/>
+              <circle cx="133" cy="112" r="4" fill="#8b8bc8"/>
+              <circle cx="266" cy="9" r="4" fill="#8b8bc8"/>
+              <circle cx="400" cy="140" r="4" fill="#8b8bc8"/>
+            </svg>
+          </div>
+        </div>
+        <div class="x-lbls"><span>Westlands</span><span>Sea Point</span><span>Airport City</span><span>Sandton</span></div>
+        <div class="legend"><span class="ldot"></span> Vacancy Rate</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
 
-const CC={'Casablanca':[33.5731,-7.5898],'Rabat':[34.0209,-6.8416],'Marrakech':[31.6295,-7.9811],'Tangiers':[35.7595,-5.834],'Fez':[34.0181,-5.0078],'Agadir':[30.4278,-9.5981],'Meknes':[33.8935,-5.5547]};
-const CPAL=['#2d4a3e','#c8a96e','#e8654a','#4a7a6a','#2a4a7a','#8a6a2e','#6a4a8a','#7a4a2a'];
-const APAL=['#2d4a3e','#c8a96e','#e8654a','#4a7a6a','#2a4a7a','#8a6a2e','#6a4a8a','#7a4a2a','#4a7a3a','#8a4a4a'];
-function gc(city){return CPAL[DB.cities.indexOf(city)%CPAL.length]||'#2d4a3e';}
+<!-- ═══ SUBSCRIPTION ═══ -->
+<div id="page-subscription" class="page">
+  <div class="sub-pg">
+    <h1>Choose Your Plan</h1>
+    <p class="sub-desc">Get access to comprehensive African real estate market data, analytics, and insights tailored to your investment needs.</p>
+    <div class="plans">
+      <div class="plan"><div class="pln-name">Basic</div><div class="pln-tag">Essential market data for small investors</div><div class="pln-price"><span class="amt">$99</span><span class="per">/month</span></div><ul class="pln-feats"><li>Access to property listings</li><li>Basic market analytics</li><li>Monthly market reports</li><li>Email support</li><li>Up to 50 property views/month</li></ul><button class="btn-sub btn-sub-o">Subscribe to Basic</button></div>
+      <div class="plan feat"><div class="pop-badge">⭐ Most Popular</div><div class="pln-name">Professional</div><div class="pln-tag">Advanced analytics for serious investors</div><div class="pln-price"><span class="amt">$299</span><span class="per">/month</span></div><ul class="pln-feats"><li>Everything in Basic</li><li>Advanced market analytics</li><li>Real-time data updates</li><li>Transaction history access</li><li>Unlimited property views</li><li>Priority support</li><li>Custom reports</li><li>API access</li></ul><button class="btn-sub btn-sub-d">Subscribe to Professional</button></div>
+      <div class="plan"><div class="pln-name">Enterprise</div><div class="pln-tag">Complete solution for large organizations</div><div class="pln-price"><span class="amt">$999</span><span class="per">/month</span></div><ul class="pln-feats"><li>Everything in Professional</li><li>Multi-user accounts</li><li>White-label solutions</li><li>Dedicated account manager</li><li>Custom integrations</li><li>Advanced security features</li><li>Training &amp; onboarding</li><li>SLA guarantee</li></ul><button class="btn-sub btn-sub-o">Subscribe to Enterprise</button></div>
+    </div>
+    <div class="why-box">
+      <h2>Why Choose Our Platform?</h2>
+      <div class="why-grid">
+        <div class="why-item"><div class="wi-badge">+35</div><h4>Countries Covered</h4><p>Comprehensive data across major African markets</p></div>
+        <div class="why-item"><div class="wi-badge">24/7</div><h4>Real-time Updates</h4><p>Live market data and instant notifications</p></div>
+        <div class="why-item"><div class="wi-badge">API</div><h4>Developer Friendly</h4><p>RESTful API for custom integrations</p></div>
+        <div class="why-item"><div class="wi-badge">99%</div><h4>Uptime Guarantee</h4><p>Reliable platform you can depend on</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
 
-function ld(p,t){document.getElementById('lf').style.width=p+'%';document.getElementById('ls').textContent=t;}
-function hideLoad(){document.getElementById('loading').classList.add('hidden');}
-function med(arr){if(!arr.length)return null;const s=[...arr].sort((a,b)=>a-b),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
-function rmOut(arr){if(arr.length<4)return arr;const s=[...arr].sort((a,b)=>a-b);return s.filter((_,i)=>i>=Math.floor(s.length*.02)&&i<Math.floor(s.length*.98));}
+<!-- ═══ DASHBOARD ═══ -->
+<div id="page-dashboard" class="page">
+  <div class="dlocked">
+    <div class="lbig">🔒</div>
+    <h1>Subscriber Access Only</h1>
+    <p>This dashboard is part of our premium subscription. Please log in or join to access.</p>
+    <div class="dbtns"><button class="btn-dark" onclick="go('login')">Login</button><button class="btn-outline" onclick="go('register')">Join Now →</button></div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
 
-async function loadData(){
-  ld(5,'Connecting...');
-  let rows=[],from=0;
-  while(true){
-    const{data,error}=await sb.from('properties').select('city,country,submarket,asset_class,listing_type,price_per_sqm,retrieved_at').not('price_per_sqm','is',null).gt('price_per_sqm',0).range(from,from+999);
-    if(error||!data||!data.length)break;
-    rows=rows.concat(data);from+=1000;
-    ld(5+Math.min(45,Math.round((from/50000)*45)),'Fetching... '+rows.length.toLocaleString()+' rows');
-    if(data.length<1000)break;
+<!-- ═══ ACCOUNT ═══ -->
+<div id="page-account" class="page">
+  <div style="max-width:760px;margin:0 auto;padding:48px 24px;">
+
+    <!-- Header -->
+    <div style="margin-bottom:32px;">
+      <h1 style="font-size:26px;font-weight:800;color:#111;">My Account</h1>
+      <p style="font-size:14px;color:#666;margin-top:4px;">Manage your profile, subscription and billing details.</p>
+    </div>
+
+    <!-- Profile card -->
+    <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:28px;margin-bottom:18px;">
+      <div style="display:flex;align-items:center;gap:18px;margin-bottom:24px;">
+        <div style="width:56px;height:56px;border-radius:50%;background:#111;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:700;" id="acc-avatar">—</div>
+        <div>
+          <div style="font-size:17px;font-weight:700;color:#111;" id="acc-name">—</div>
+          <div style="font-size:13px;color:#888;" id="acc-email">—</div>
+        </div>
+        <div style="margin-left:auto;">
+          <span id="acc-plan-badge" style="padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;">Free Trial</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div style="background:#f8f8f8;border-radius:10px;padding:16px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#999;margin-bottom:6px;">Member Since</div>
+          <div style="font-size:14px;font-weight:600;color:#111;" id="acc-since">—</div>
+        </div>
+        <div style="background:#f8f8f8;border-radius:10px;padding:16px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#999;margin-bottom:6px;">Account Status</div>
+          <div style="font-size:14px;font-weight:600;color:#16a34a;">Active</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Current Plan -->
+    <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:28px;margin-bottom:18px;">
+      <div style="font-size:15px;font-weight:700;color:#111;margin-bottom:18px;">Current Subscription</div>
+      <div id="acc-plan-detail" style="background:#f8f8f8;border-radius:10px;padding:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:#111;" id="acc-plan-name">Free Trial</div>
+            <div style="font-size:13px;color:#888;margin-top:3px;">7-day trial — full access to all features</div>
+          </div>
+          <div style="font-size:22px;font-weight:800;color:#111;">$0<span style="font-size:13px;font-weight:400;color:#888;">/mo</span></div>
+        </div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e5e5;font-size:13px;color:#666;">
+          Upgrade to a paid plan to keep access after your trial ends.
+        </div>
+      </div>
+    </div>
+
+    <!-- Upgrade Plans -->
+    <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:28px;margin-bottom:18px;">
+      <div style="font-size:15px;font-weight:700;color:#111;margin-bottom:18px;">Upgrade Your Plan</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+
+        <div style="border:1.5px solid #e5e5e5;border-radius:12px;padding:20px;">
+          <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">Basic</div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">Essential market data</div>
+          <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:14px;">$99<span style="font-size:12px;font-weight:400;color:#888;">/mo</span></div>
+          <ul style="font-size:12px;color:#555;line-height:2;list-style:none;padding:0;margin-bottom:16px;">
+            <li>✓ Property listings</li>
+            <li>✓ Basic analytics</li>
+            <li>✓ Monthly reports</li>
+            <li>✓ 50 views/month</li>
+          </ul>
+          <button onclick="go('subscription')" style="width:100%;padding:9px;border:1.5px solid #111;border-radius:20px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;">Select Basic</button>
+        </div>
+
+        <div style="border:2px solid #111;border-radius:12px;padding:20px;position:relative;">
+          <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.06em;">MOST POPULAR</div>
+          <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">Professional</div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">Advanced analytics</div>
+          <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:14px;">$299<span style="font-size:12px;font-weight:400;color:#888;">/mo</span></div>
+          <ul style="font-size:12px;color:#555;line-height:2;list-style:none;padding:0;margin-bottom:16px;">
+            <li>✓ Everything in Basic</li>
+            <li>✓ Real-time data</li>
+            <li>✓ Unlimited views</li>
+            <li>✓ API access</li>
+          </ul>
+          <button onclick="go('subscription')" style="width:100%;padding:9px;border:none;border-radius:20px;background:#111;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">Select Professional</button>
+        </div>
+
+        <div style="border:1.5px solid #e5e5e5;border-radius:12px;padding:20px;">
+          <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">Enterprise</div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">Full solution</div>
+          <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:14px;">$999<span style="font-size:12px;font-weight:400;color:#888;">/mo</span></div>
+          <ul style="font-size:12px;color:#555;line-height:2;list-style:none;padding:0;margin-bottom:16px;">
+            <li>✓ Multi-user accounts</li>
+            <li>✓ White-label</li>
+            <li>✓ Dedicated manager</li>
+            <li>✓ SLA guarantee</li>
+          </ul>
+          <button onclick="go('subscription')" style="width:100%;padding:9px;border:1.5px solid #111;border-radius:20px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;">Select Enterprise</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:28px;margin-bottom:18px;">
+      <div style="font-size:15px;font-weight:700;color:#111;margin-bottom:18px;">Account Settings</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:#f8f8f8;border-radius:10px;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#111;">Email Address</div>
+            <div style="font-size:12px;color:#888;margin-top:2px;" id="acc-email-setting">—</div>
+          </div>
+          <button style="padding:6px 14px;border:1.5px solid #ccc;border-radius:20px;background:#fff;font-size:12px;cursor:pointer;font-weight:600;">Change</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:#f8f8f8;border-radius:10px;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#111;">Password</div>
+            <div style="font-size:12px;color:#888;margin-top:2px;">Last changed: never</div>
+          </div>
+          <button onclick="go('forgot-password')" style="padding:6px 14px;border:1.5px solid #ccc;border-radius:20px;background:#fff;font-size:12px;cursor:pointer;font-weight:600;">Reset Password</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sign out -->
+    <div style="text-align:center;padding:8px 0 32px;">
+      <button onclick="doSignOut()" style="padding:10px 28px;border:1.5px solid #ff4444;border-radius:20px;background:#fff;color:#cc0000;font-size:13px;font-weight:600;cursor:pointer;">Sign Out</button>
+    </div>
+
+  </div>
+  <div class="footer-slot"></div>
+</div>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="page-login" class="page">
+  <div class="auth-pg">
+    <div class="auth-box">
+      <h2>Sign in to your account</h2>
+      <div style="height:20px;"></div>
+      <div id="login-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+      <div id="login-success" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+      <div class="fg-auth"><label>Email address</label><input type="email" id="login-email" placeholder="you@example.com"/></div>
+      <div class="fg-auth">
+        <label style="display:flex;justify-content:space-between;align-items:center;">
+          Password
+          <a onclick="go('forgot-password')" style="font-size:12px;font-weight:500;color:#111;cursor:pointer;">Forgot password?</a>
+        </label>
+        <div class="pw"><input type="password" id="login-password" placeholder="Your password"/><span class="pw-eye" onclick="togglePw('login-password',this)">👁</span></div>
+      </div>
+      <button class="btn-submit" id="login-btn" onclick="doLogin()">Sign in</button>
+      <div class="auth-sw">Not a member? <a onclick="go('register')">Join now</a></div>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
+
+<!-- ═══ FORGOT PASSWORD ═══ -->
+<div id="page-forgot-password" class="page">
+  <div class="auth-pg">
+    <div class="auth-box">
+      <h2>Reset your password</h2>
+      <p class="auth-sub" style="margin-top:8px;margin-bottom:20px;color:#555;font-size:14px;">Enter your email and we'll send you a link to reset your password.</p>
+      <div id="fp-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+      <div id="fp-success" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+      <div class="fg-auth"><label>Email address</label><input type="email" id="fp-email" placeholder="you@example.com"/></div>
+      <button class="btn-submit" id="fp-btn" onclick="doForgotPassword()">Send reset link</button>
+      <div class="auth-sw"><a onclick="go('login')" style="cursor:pointer;">← Back to sign in</a></div>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
+
+<!-- ═══ REGISTER ═══ -->
+<div id="page-register" class="page">
+  <div class="auth-pg">
+    <div class="auth-box">
+      <div class="auth-logo">IW</div>
+      <h2>Create your account</h2>
+      <p class="auth-sub">Or <a onclick="go('login')">sign in to your existing account</a></p>
+      <div id="reg-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+      <div id="reg-success" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+      <div class="fg-auth"><label>Full Name</label><input type="text" id="reg-name" placeholder="Enter your full name"/></div>
+      <div class="fg-auth"><label>Email address</label><input type="email" id="reg-email" placeholder="Enter your email"/></div>
+      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password" id="reg-password" placeholder="Create a password (min 8 chars)"/><span class="pw-eye" onclick="togglePw('reg-password',this)">👁</span></div></div>
+      <div class="fg-auth"><label>Confirm Password</label><div class="pw"><input type="password" id="reg-confirm" placeholder="Confirm your password"/><span class="pw-eye" onclick="togglePw('reg-confirm',this)">👁</span></div></div>
+      <div class="chk-row"><input type="checkbox" id="reg-terms"/><label>I agree to the <a>Terms of Service</a> and <a>Privacy Policy</a></label></div>
+      <button class="btn-submit" id="reg-btn" onclick="doRegister()">Create account</button>
+      <div class="ftrial"><div class="ft-t">Free Trial Included</div><p>Get 7 days of free access to all premium features when you create your account.</p></div>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
+
+<!-- ═══ CONTACT ═══ -->
+<div id="page-contact" class="page">
+  <div class="cnt-hero g-network">
+    <div class="eyebrow">CONNECT</div>
+    <h1>Get in Touch</h1>
+    <p>We're here to answer your questions and help you with your real estate analytics needs.</p>
+    <div class="cnt-hero-btns"><button class="btn-wh">Learn More</button><button class="btn-ghw">Contact</button></div>
+  </div>
+  <div class="cnt-info">
+    <div>
+      <h2>Get in Touch</h2>
+      <p class="ci-desc">We're here to answer your questions and provide support. Reach out to us anytime!</p>
+      <div class="ci-item"><div class="ci-icon">✉️</div><div><div class="ci-lbl">Email</div><div class="ci-val"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fa988f8993949f8989ba938895948d95959e93948e9f9696939d9f94999fd4999597">[email&#160;protected]</a></div></div></div>
+      <div class="ci-item"><div class="ci-icon">📞</div><div><div class="ci-lbl">Phone</div><div class="ci-val">+971 50 123 4567</div></div></div>
+      <div class="ci-item"><div class="ci-icon">📍</div><div><div class="ci-lbl">Office</div><div class="ci-val">Meydan Free Zone, Dubai, UAE</div></div></div>
+    </div>
+    <div class="ci-imgbox g-build"><span class="grad-icon">🏗️</span></div>
+  </div>
+  <div class="cnt-form-sec">
+    <h2>Send us a Message</h2>
+    <p class="cf-sub">We'd love to hear from you. Reach out today!</p>
+    <div class="cform">
+      <div class="frow2"><div class="fg-auth" style="margin:0;"><label>First Name</label><input type="text"/></div><div class="fg-auth" style="margin:0;"><label>Last Name</label><input type="text"/></div></div>
+      <div class="fg-auth"><label>Email</label><input type="email"/></div>
+      <div class="fg-auth"><label>Message</label><textarea></textarea></div>
+      <div style="text-align:center;"><button class="btn-dark" style="padding:12px 32px;border-radius:25px;">Send Message</button></div>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
+
+<!-- ═══ ABOUT ═══ -->
+<div id="page-about" class="page">
+  <div class="data-hero">
+    <h1>About Ironwood Intelligence</h1>
+    <p>Building the definitive real estate data platform for African markets.</p>
+  </div>
+  <div class="sec-split" style="background:#fff;">
+    <div class="split-img g-meeting"><span class="grad-icon">🤝</span></div>
+    <div>
+      <h2>Our Mission</h2>
+      <p>Ironwood Intelligence exists to bring transparency, data, and institutional-grade analytics to real estate markets across Africa. We aggregate, clean, and structure property data from 35+ countries so investors, developers, and institutions can make smarter decisions.</p>
+      <p style="margin-top:14px;font-size:14px;color:#555;line-height:1.7;">Based in Meydan Free Zone, Dubai, UAE — operating across the African continent, tracking thousands of properties in real time.</p>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
+
+<!-- FOOTER TEMPLATE -->
+<template id="ftpl">
+  <footer>
+    <div class="footer-grid">
+      <div class="fbrand"><div class="fb-name">IRONWOOD<br/>INTELLIGENCE</div><p>Data-driven decisions for real estate.</p></div>
+      <div class="fcol"><h4>Platform</h4><ul><li><a onclick="go('properties')">Properties</a></li><li><a onclick="go('analytics')">Analytics</a></li><li><a onclick="go('subscription')">Pricing</a></li></ul></div>
+      <div class="fcol"><h4>Company</h4><ul><li><a onclick="go('about')">About Us</a></li><li><a onclick="go('contact')">Contact Us</a></li></ul></div>
+      <div class="fcol"><h4>Legal</h4><ul><li><a>Privacy Policy</a></li><li><a>Terms of Service</a></li></ul></div>
+      <div class="fcol"><h4>Language</h4><select><option>🌐 English</option><option>Français</option><option>Português</option><option>العربية</option></select></div>
+    </div>
+    <div class="footer-bottom">© 2026 Ironwood Intelligence. All rights reserved.</div>
+  </footer>
+</template>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+var mapDone = false;
+
+function go(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  var el = document.getElementById('page-' + name);
+  if (!el) return;
+  el.classList.add('active');
+  window.scrollTo(0, 0);
+  closeDD();
+  // inject footer if empty
+  var slot = el.querySelector('.footer-slot');
+  if (slot && !slot.hasChildNodes()) {
+    slot.appendChild(document.importNode(document.getElementById('ftpl').content, true));
   }
-  ld(55,'Processing...');
-  if(!rows.length){ld(100,'No data');setTimeout(hideLoad,600);return;}
-  DB.raw=rows;
-  DB.cities=[...new Set(rows.map(r=>r.city).filter(Boolean))].sort();
-  DB.assets=[...new Set(rows.map(r=>r.asset_class).filter(Boolean))].sort();
-  DB.countries=[...new Set(rows.map(r=>r.country).filter(Boolean))].sort();
-  DB.periods=[...new Set(rows.map(r=>r.retrieved_at?r.retrieved_at.slice(0,7):null).filter(Boolean))].sort();
-  ld(70,'Computing aggregates...');buildAgg();
-  ld(85,'Building UI...');populateFilters();
-  ld(95,'Rendering...');renderOverview();
-  const info=`${rows.length.toLocaleString()} listings · ${DB.cities.length} cities · ${DB.periods.length} period${DB.periods.length!==1?'s':''}`;
-  document.getElementById('srows').textContent=rows.length.toLocaleString()+' listings';
-  document.getElementById('dpill').textContent=info;
-  document.getElementById('nb').textContent=rows.length.toLocaleString();
-  document.getElementById('tb-sub').textContent=`${rows.length.toLocaleString()} listings · ${DB.cities.join(', ')}`;
-  ld(100,'Ready');setTimeout(hideLoad,400);
+  if (name === 'analytics' && !mapDone) { setTimeout(initMap, 150); }
 }
 
-function buildAgg(){
-  const raw=DB.raw;
-  const cm={};raw.forEach(r=>{if(!r.city)return;if(!cm[r.city])cm[r.city]={city:r.city,prices:[],count:0,rent:0,sale:0};cm[r.city].prices.push(r.price_per_sqm);cm[r.city].count++;if(r.listing_type==='Rent')cm[r.city].rent++;if(r.listing_type==='Sale')cm[r.city].sale++;});
-  DB.agg.cs=Object.values(cm).map(c=>({...c,median:Math.round(med(rmOut(c.prices)))}));
-  const cal={};raw.forEach(r=>{if(!r.city||!r.asset_class||!r.listing_type)return;const k=`${r.city}|${r.asset_class}|${r.listing_type}`;if(!cal[k])cal[k]={city:r.city,asset_class:r.asset_class,listing_type:r.listing_type,prices:[],count:0};cal[k].prices.push(r.price_per_sqm);cal[k].count++;});
-  DB.agg.cal=Object.values(cal).map(c=>({...c,median:Math.round(med(rmOut(c.prices)))})).filter(c=>c.count>=5);
-  const dm={};raw.forEach(r=>{if(!r.city||!r.submarket||!r.asset_class||!r.listing_type)return;const k=`${r.city}|${r.submarket}|${r.asset_class}|${r.listing_type}`;if(!dm[k])dm[k]={city:r.city,district:r.submarket,asset_class:r.asset_class,listing_type:r.listing_type,prices:[],count:0};dm[k].prices.push(r.price_per_sqm);dm[k].count++;});
-  DB.agg.dist=Object.values(dm).map(d=>({...d,median:Math.round(med(rmOut(d.prices)))})).filter(d=>d.count>=3);
-  const tm={};raw.forEach(r=>{if(!r.retrieved_at||!r.city||!r.asset_class||!r.listing_type)return;const p=r.retrieved_at.slice(0,7);const k=`${p}|${r.city}|${r.asset_class}|${r.listing_type}`;if(!tm[k])tm[k]={period:p,city:r.city,asset_class:r.asset_class,listing_type:r.listing_type,prices:[],count:0};tm[k].prices.push(r.price_per_sqm);tm[k].count++;});
-  DB.agg.ts=Object.values(tm).map(t=>({...t,median:Math.round(med(rmOut(t.prices)))})).filter(t=>t.count>=3);
+function initMap() {
+  try {
+    var map = L.map('africa-map').setView([2, 20], 3);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: 'Leaflet | © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 18
+    }).addTo(map);
+    var pts = [
+      [6.5244, 3.3792, 'Lagos', 'Nigeria', 'Office', '$1,800/sqm'],
+      [-1.2921, 36.8219, 'Nairobi', 'Kenya', 'Retail', '$1,600/sqm'],
+      [-33.9249, 18.4241, 'Cape Town', 'South Africa', 'Residential', '$1,950/sqm'],
+      [5.6037, -0.1870, 'Accra', 'Ghana', 'Hospitality', '$1,400/sqm'],
+      [-26.2041, 28.0473, 'Johannesburg', 'South Africa', 'Industrial', '$1,750/sqm']
+    ];
+    pts.forEach(function(p) {
+      L.marker([p[0], p[1]]).addTo(map)
+        .bindPopup('<strong>' + p[2] + '</strong><br/>' + p[3] + '<br/>Type: ' + p[4] + '<br/>Avg Rent: ' + p[5]);
+    });
+    mapDone = true;
+  } catch(e) {
+    var el = document.getElementById('africa-map');
+    if (el) el.innerHTML = '<div style="height:340px;background:#e8f0e8;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#666;font-size:13px;">Map requires internet connection to load</div>';
+  }
 }
 
-function populateFilters(){
-  const aO='<option value="All">All Assets</option>'+DB.assets.map(a=>`<option>${a}</option>`).join('');
-  ['map-asset','dist-asset','exp-asset'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=aO;});
-  document.getElementById('exp-city').innerHTML='<option value="All">All Cities</option>'+DB.cities.map(c=>`<option>${c}</option>`).join('');
-  const mcf=document.getElementById('map-city-f');
-  DB.cities.forEach(c=>{const b=document.createElement('button');b.className='fb';b.textContent=c;b.onclick=()=>{MS.city=c;setAF(b,mcf);renderMap();};mcf.appendChild(b);});
-  const dct=document.getElementById('dist-ctabs');
-  DB.cities.forEach((c,i)=>{const b=document.createElement('button');b.className='ctab'+(i===0?' active':'');b.textContent=c;b.onclick=()=>{DS.city=c;dct.querySelectorAll('.ctab').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderDistricts();};dct.appendChild(b);});
-  if(DB.cities.length)DS.city=DB.cities[0];
+// ═══ SUPABASE AUTH ═══
+const SB_URL = 'https://ujhqkirhfmumvvnfvgnz.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+// Check session on load and update nav
+window.addEventListener('load', async function() {
+  const { data } = await sb.auth.getSession();
+  if (data?.session?.user) updateNavLoggedIn(data.session.user);
+  // If redirected from dashboard auth gate, open login
+  if (window.location.hash === '#login') go('login');
+});
+
+// Listen for auth state changes
+sb.auth.onAuthStateChange((event, session) => {
+  if (session?.user) updateNavLoggedIn(session.user);
+  else updateNavLoggedOut();
+});
+
+function updateNavLoggedIn(user) {
+  const name = user.user_metadata?.full_name || user.email.split('@')[0];
+  document.getElementById('nav-user-label').textContent = name;
+  document.getElementById('nav-user-name').style.display = 'inline-flex';
+  document.getElementById('nav-login-btn').style.display = 'none';
+  document.getElementById('nav-register-btn').style.display = 'none';
+  document.getElementById('nav-links-loggedout').style.display = 'none';
+  document.getElementById('nav-links-loggedin').style.display = 'flex';
+  // Populate account page
+  const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  const since = new Date(user.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const el = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+  el('acc-avatar', initials);
+  el('acc-name', name);
+  el('acc-email', user.email);
+  el('acc-email-setting', user.email);
+  el('acc-since', since);
 }
 
-Chart.defaults.color='#9a9890';Chart.defaults.font.family='Cabinet Grotesk,sans-serif';Chart.defaults.font.size=11;
-const TT={backgroundColor:'#fff',borderColor:'#e8e6de',borderWidth:1,titleFont:{size:12,weight:'600',family:'Clash Display,sans-serif'},bodyFont:{size:11},padding:12,cornerRadius:10,titleColor:'#1a1a18',bodyColor:'#4a4a44'};
-
-function mk(id,type,data,opts={}){const ctx=document.getElementById(id);if(!ctx)return;if(ctx._c)ctx._c.destroy();ctx._c=new Chart(ctx,{type,data,options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},...opts}});return ctx._c;}
-
-function vbar(id,labels,vals,cols){
-  const bg=Array.isArray(cols)?cols.map(c=>c+'20'):APAL.map(c=>c+'20');
-  const bc=Array.isArray(cols)?cols:APAL;
-  mk(id,'bar',{labels,datasets:[{data:vals,backgroundColor:bg,borderColor:bc,borderWidth:2,borderRadius:8,borderSkipped:false}]},{scales:{y:{grid:{color:'#f0efe9'},border:{display:false},ticks:{callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}},x:{grid:{display:false},border:{display:false}}}});
-}
-function hbar(id,labels,vals,col='#2d4a3e'){
-  mk(id,'bar',{labels,datasets:[{data:vals,backgroundColor:col+'20',borderColor:col,borderWidth:2,borderRadius:6,borderSkipped:false}]},{indexAxis:'y',scales:{x:{grid:{color:'#f0efe9'},border:{display:false},ticks:{callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}},y:{grid:{display:false},border:{display:false},ticks:{font:{size:10}}}}});
+function updateNavLoggedOut() {
+  document.getElementById('nav-user-name').style.display = 'none';
+  document.getElementById('nav-login-btn').style.display = 'inline-block';
+  document.getElementById('nav-register-btn').style.display = 'inline-block';
+  document.getElementById('nav-links-loggedout').style.display = 'flex';
+  document.getElementById('nav-links-loggedin').style.display = 'none';
 }
 
-function renderOverview(){
-  const{cs,cal,dist}=DB.agg;
-  const tl=DB.raw.length,dd=[...new Set(dist.map(d=>d.district))].length;
-  const ACCS=['#2d4a3e','#c8a96e','#e8654a','#4a7a6a','#2a4a7a','#8a6a2e'];
-  document.getElementById('kpi-grid').innerHTML=[
-    ['Total Listings',tl.toLocaleString(),'in database',ACCS[0]],
-    ['Cities',DB.cities.length,'tracked markets',ACCS[1]],
-    ['Districts',dd,'with avg prices',ACCS[2]],
-    ['Asset Classes',DB.assets.length,'property types',ACCS[3]],
-    ['Data Periods',DB.periods.length,DB.periods.length>1?DB.periods[0]+' – '+DB.periods[DB.periods.length-1]:DB.periods[0]||'—',ACCS[4]],
-    ['Countries',DB.countries.length,DB.countries.join(', '),ACCS[5]]
-  ].map(([l,v,s,a])=>`<div class="kpi"><div class="kpi-top" style="background:${a}"></div><div class="kpi-lbl">${l}</div><div class="kpi-val">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
-
-  const cc=DB.cities.map(c=>gc(c));
-  vbar('c-off-rent',DB.cities,DB.cities.map(c=>{const r=cal.find(d=>d.city===c&&d.asset_class==='Offices'&&d.listing_type==='Rent');return r?r.median:null;}),cc);
-  vbar('c-apt-sale',DB.cities,DB.cities.map(c=>{const r=cal.find(d=>d.city===c&&d.asset_class==='Apartments'&&d.listing_type==='Sale');return r?r.median:null;}),cc);
-
-  mk('c-city-pie','doughnut',{labels:cs.map(c=>c.city),datasets:[{data:cs.map(c=>c.count),backgroundColor:DB.cities.map(c=>gc(c)+'cc'),borderWidth:3,borderColor:'#fff',hoverOffset:8}]},{plugins:{legend:{display:true,position:'right',labels:{color:'#4a4a44',padding:12,font:{size:11},usePointStyle:true}},tooltip:TT}});
-
-  const ac={};DB.raw.forEach(r=>{if(r.asset_class)ac[r.asset_class]=(ac[r.asset_class]||0)+1;});
-  const ak=Object.keys(ac).sort((a,b)=>ac[b]-ac[a]);
-  mk('c-asset-pie','doughnut',{labels:ak,datasets:[{data:ak.map(k=>ac[k]),backgroundColor:APAL.map(c=>c+'cc'),borderWidth:3,borderColor:'#fff',hoverOffset:8}]},{plugins:{legend:{display:true,position:'right',labels:{color:'#4a4a44',padding:10,font:{size:11},usePointStyle:true}},tooltip:TT}});
-
-  mk('c-rv-s','bar',{labels:cs.map(c=>c.city),datasets:[{label:'Rent',data:cs.map(c=>c.rent),backgroundColor:'#2d4a3e20',borderColor:'#2d4a3e',borderWidth:2,borderRadius:6,borderSkipped:false,stack:'s'},{label:'Sale',data:cs.map(c=>c.sale),backgroundColor:'#c8a96e20',borderColor:'#c8a96e',borderWidth:2,borderRadius:6,borderSkipped:false,stack:'s'}]},{plugins:{legend:{display:true,labels:{color:'#4a4a44',padding:16,usePointStyle:true}},tooltip:TT},scales:{y:{stacked:true,grid:{color:'#f0efe9'},border:{display:false}},x:{stacked:true,grid:{display:false},border:{display:false}}}});
-
-  const ats=DB.assets.filter(a=>a!=='Farms');
-  hbar('c-asset-rent',ats,ats.map(a=>{const r=cal.filter(d=>d.asset_class===a&&d.listing_type==='Rent');return r.length?Math.round(r.reduce((s,x)=>s+x.median,0)/r.length):null;}),'#2d4a3e');
-}
-
-function initMap(){
-  leafMap=L.map('the-map').setView([32.5,-6],6);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CartoDB',maxZoom:19}).addTo(leafMap);
-  renderMap();
-}
-
-function renderMap(){
-  if(!leafMap)return;
-  mapM.forEach(m=>leafMap.removeLayer(m));mapM=[];
-  const asset=document.getElementById('map-asset')?.value||'All';
-  let data=DB.agg.dist;
-  if(MS.city!=='All')data=data.filter(d=>d.city===MS.city);
-  if(MS.listing!=='All')data=data.filter(d=>d.listing_type===MS.listing);
-  if(asset!=='All')data=data.filter(d=>d.asset_class===asset);
-  const byD={};data.forEach(d=>{const k=d.city+'|'+d.district;if(!byD[k])byD[k]={city:d.city,district:d.district,prices:[],count:0};byD[k].prices.push(d.median);byD[k].count+=d.count;});
-  const entries=Object.values(byD).map(e=>({...e,avg:Math.round(e.prices.reduce((a,b)=>a+b,0)/e.prices.length)}));
-  const ps=entries.map(e=>e.avg);const mn=Math.min(...ps),mx=Math.max(...ps);
-  function pc(p){const t=mx>mn?(p-mn)/(mx-mn):0.5;return t<.33?'#2d7a5a':t<.66?'#c8a96e':'#e8654a';}
-  entries.forEach(e=>{
-    const base=CC[e.city];if(!base)return;
-    const jlat=base[0]+(Math.random()-.5)*.07,jlng=base[1]+(Math.random()-.5)*.07;
-    const unit=MS.listing==='Rent'?'DH/m²/mo':'DH/m²';
-    const m=L.circleMarker([jlat,jlng],{radius:Math.max(5,Math.min(16,Math.sqrt(e.count))),fillColor:pc(e.avg),color:'#fff',weight:1.5,fillOpacity:.85}).bindPopup(`<div style="font-family:Cabinet Grotesk,sans-serif;font-size:12px;line-height:1.9;padding:4px;"><b style="font-size:13px;">${e.district}</b><br/>${e.city}<br/><b style="color:#2d4a3e">${e.avg.toLocaleString()} ${unit}</b><br/>${e.count.toLocaleString()} listings</div>`);
-    m.addTo(leafMap);mapM.push(m);
+function goAnalytics() {
+  sb.auth.getSession().then(({ data }) => {
+    if (data?.session?.user) {
+      window.open('/dashboard.html#trends', '_blank');
+    } else {
+      go('login');
+    }
   });
-  DB.cities.forEach(c=>{const base=CC[c];if(!base)return;const s=DB.agg.cs.find(x=>x.city===c);L.marker(base).bindPopup(`<div style="font-family:Cabinet Grotesk,sans-serif;font-size:12px;"><b>${c}</b><br/>${s?s.count.toLocaleString():''} listings</div>`).addTo(leafMap);});
-  const sorted=[...entries].sort((a,b)=>b.avg-a.avg);
-  document.getElementById('map-tbody').innerHTML=sorted.slice(0,60).map((e,i)=>`<tr><td class="dim">${i+1}</td><td>${e.district}</td><td class="dim">${e.city}</td><td class="dim">${asset==='All'?'Mixed':asset}</td><td><span class="pill ${MS.listing==='Rent'?'pill-r':MS.listing==='Sale'?'pill-s':''}">${MS.listing==='All'?'—':MS.listing}</span></td><td class="val">${e.avg.toLocaleString()}</td><td class="num">${e.count}</td></tr>`).join('');
-  document.getElementById('map-sub').textContent=`${entries.length} districts`;
 }
 
-function renderCities(){
-  const lt=CS.listing;
-  document.getElementById('cities-sub').textContent=`Median DH/m²${lt==='Rent'?'/mo':''} · ${lt}`;
-  document.getElementById('hm-sub').textContent=`Median DH/m² · ${lt}`;
-  const ats=DB.assets.filter(a=>a!=='Farms');
-  mk('c-cities-grp','bar',{labels:ats,datasets:DB.cities.map(city=>({label:city,data:ats.map(at=>{const r=DB.agg.cal.find(d=>d.city===city&&d.asset_class===at&&d.listing_type===lt);return r?r.median:null;}),backgroundColor:gc(city)+'20',borderColor:gc(city),borderWidth:2,borderRadius:6,borderSkipped:false}))},{plugins:{legend:{display:true,labels:{color:'#4a4a44',padding:14,usePointStyle:true,font:{size:11}}},tooltip:TT},scales:{y:{grid:{color:'#f0efe9'},border:{display:false},ticks:{callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}},x:{grid:{display:false},border:{display:false},ticks:{font:{size:10}}}}});
-
-  const cols=[`140px`,...DB.cities.map(()=>'1fr')].join(' ');
-  let html=`<div style="display:grid;grid-template-columns:${cols};gap:4px;min-width:480px;padding:4px 0;"><div></div>`;
-  DB.cities.forEach(c=>html+=`<div style="font-size:10px;font-weight:700;color:var(--muted);text-align:center;padding:6px 2px;letter-spacing:.05em;">${c}</div>`);
-  ats.forEach(at=>{
-    const vals=DB.cities.map(c=>{const r=DB.agg.cal.find(d=>d.city===c&&d.asset_class===at&&d.listing_type===lt);return r?r.median:null;});
-    const nn=vals.filter(v=>v!==null);const mn2=Math.min(...nn),mx2=Math.max(...nn);
-    html+=`<div style="font-size:10px;font-weight:600;color:var(--text2);display:flex;align-items:center;padding:3px 6px;">${at.length>14?at.slice(0,13)+'…':at}</div>`;
-    vals.forEach(v=>{if(v===null){html+=`<div class="hmc" style="background:var(--surface2);color:var(--muted2);">—</div>`;return;}const t=nn.length>1?(v-mn2)/(mx2-mn2+1):0.5;const bg=t<.33?'rgba(45,122,90,.1)':t<.66?'rgba(200,169,110,.15)':'rgba(232,101,74,.1)';const col=t<.33?'#2d7a5a':t<.66?'#8a6a2e':'#c94a3a';html+=`<div class="hmc" style="background:${bg};color:${col};" title="${v.toLocaleString()} DH/m²">${v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}</div>`;});
+function goDashboard() {
+  sb.auth.getSession().then(({ data }) => {
+    if (data?.session?.user) {
+      window.open('/dashboard.html#assets', '_blank');
+    } else {
+      go('login');
+    }
   });
-  html+='</div>';document.getElementById('heatmap').innerHTML=html;
-
-  vbar('c-city-vol',DB.cities,DB.agg.cs.map(c=>c.count),DB.cities.map(c=>gc(c)));
-  const offr=DB.cities.map(c=>{const r=DB.agg.cal.find(d=>d.city===c&&d.asset_class==='Offices'&&d.listing_type==='Rent');return{city:c,v:r?r.median:0};}).sort((a,b)=>b.v-a.v);
-  hbar('c-city-rank',offr.map(r=>r.city),offr.map(r=>r.v),'#c8a96e');
 }
 
-function renderDistricts(){
-  const city=DS.city,asset=document.getElementById('dist-asset')?.value||'All',lt=DS.listing;
-  let data=DB.agg.dist.filter(d=>d.city===city);
-  if(asset!=='All')data=data.filter(d=>d.asset_class===asset);
-  if(lt!=='All')data=data.filter(d=>d.listing_type===lt);
-  const byD={};data.forEach(d=>{if(!byD[d.district])byD[d.district]={district:d.district,listing_type:d.listing_type,asset_class:d.asset_class,prices:[],count:0};byD[d.district].prices.push(d.median);byD[d.district].count+=d.count;});
-  const entries=Object.values(byD).map(e=>({...e,avg:Math.round(e.prices.reduce((a,b)=>a+b,0)/e.prices.length)}));
-  const byP=[...entries].sort((a,b)=>b.avg-a.avg),byV=[...entries].sort((a,b)=>b.count-a.count);
-  hbar('c-dist-p',byP.slice(0,15).map(d=>d.district.length>20?d.district.slice(0,19)+'…':d.district),byP.slice(0,15).map(d=>d.avg),'#2d4a3e');
-  hbar('c-dist-v',byV.slice(0,15).map(d=>d.district.length>20?d.district.slice(0,19)+'…':d.district),byV.slice(0,15).map(d=>d.count),'#c8a96e');
-  document.getElementById('dist-count').textContent=`${byP.length} districts in ${city}`;
-  document.getElementById('dist-tbody').innerHTML=byP.map((e,i)=>`<tr><td class="dim">${i+1}</td><td>${e.district}</td><td class="dim">${asset==='All'?'Mixed':asset}</td><td><span class="pill ${lt==='Rent'?'pill-r':lt==='Sale'?'pill-s':''}">${lt==='All'?'—':lt}</span></td><td class="val">${e.avg.toLocaleString()}</td><td class="num">${e.count}</td></tr>`).join('');
+function updateNavLoggedOut() {
+  document.getElementById('nav-user-name').style.display = 'none';
+  document.getElementById('nav-signout-btn').style.display = 'none';
+  document.getElementById('nav-login-btn').style.display = 'inline-block';
+  document.getElementById('nav-register-btn').style.display = 'inline-block';
 }
 
-function renderAssets(){
-  const ats=DB.assets.filter(a=>a!=='Farms');
-  const rv=ats.map(a=>{const r=DB.agg.cal.filter(d=>d.asset_class===a&&d.listing_type==='Rent');return r.length?Math.round(r.reduce((s,x)=>s+x.median,0)/r.length):null;});
-  const sv=ats.map(a=>{const r=DB.agg.cal.filter(d=>d.asset_class===a&&d.listing_type==='Sale');return r.length?Math.round(r.reduce((s,x)=>s+x.median,0)/r.length):null;});
-  mk('c-as-rv-s','bar',{labels:ats,datasets:[{label:'Rent (DH/m²/mo)',data:rv,backgroundColor:'#2d4a3e20',borderColor:'#2d4a3e',borderWidth:2,borderRadius:6,borderSkipped:false},{label:'Sale (DH/m²)',data:sv,backgroundColor:'#c8a96e20',borderColor:'#c8a96e',borderWidth:2,borderRadius:6,borderSkipped:false}]},{plugins:{legend:{display:true,labels:{color:'#4a4a44',padding:16,usePointStyle:true}},tooltip:TT},scales:{y:{grid:{color:'#f0efe9'},border:{display:false},ticks:{callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}},x:{grid:{display:false},border:{display:false}}}});
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  const okEl = document.getElementById('login-success');
+  errEl.style.display = 'none'; okEl.style.display = 'none';
 
-  const mkAssetCity=(id,lt)=>{mk(id,'bar',{labels:ats,datasets:DB.cities.map(city=>({label:city,data:ats.map(at=>{const r=DB.agg.cal.find(d=>d.city===city&&d.asset_class===at&&d.listing_type===lt);return r?r.median:null;}),backgroundColor:gc(city)+'20',borderColor:gc(city),borderWidth:2,borderRadius:4,borderSkipped:false}))},{plugins:{legend:{display:true,labels:{color:'#4a4a44',padding:10,font:{size:10},usePointStyle:true}},tooltip:TT},scales:{y:{grid:{color:'#f0efe9'},border:{display:false},ticks:{callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}},x:{grid:{display:false},border:{display:false},ticks:{font:{size:9}}}}});};
-  mkAssetCity('c-as-city-r','Rent');mkAssetCity('c-as-city-s','Sale');
+  if (!email || !password) { showAuthMsg('login-error', 'Please enter your email and password.'); return; }
 
-  const sm={};DB.agg.cal.forEach(d=>{const k=d.asset_class+'|'+d.listing_type;if(!sm[k])sm[k]={asset_class:d.asset_class,listing_type:d.listing_type,prices:[],count:0,cities:new Set()};sm[k].prices.push(d.median);sm[k].count+=d.count;sm[k].cities.add(d.city);});
-  document.getElementById('assets-tbody').innerHTML=Object.values(sm).map(s=>({...s,avg:Math.round(s.prices.reduce((a,b)=>a+b,0)/s.prices.length),nc:s.cities.size})).sort((a,b)=>a.asset_class.localeCompare(b.asset_class)||a.listing_type.localeCompare(b.listing_type)).map(r=>`<tr><td>${r.asset_class}</td><td><span class="pill ${r.listing_type==='Rent'?'pill-r':'pill-s'}">${r.listing_type}</span></td><td class="val">${r.avg.toLocaleString()}</td><td class="num">${r.nc}</td><td class="num">${r.count.toLocaleString()}</td></tr>`).join('');
-}
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = 'Sign in';
 
-function renderTrends(){
-  const el=document.getElementById('trends-content');
-  if(DB.periods.length<2){
-    el.innerHTML=`<div class="card"><div class="ch"><div class="ct">Price Evolution Over Time</div></div><div class="tph"><div class="ico">📈</div><p>You currently have <b style="color:var(--text)">${DB.periods.length} data period${DB.periods.length!==1?'s':''}${DB.periods.length?` (${DB.periods[0]})`:''}</b>.<br/>Upload a new scraping run and trend charts appear automatically.</p></div></div><div class="g2" style="margin-top:15px;">${DB.cities.map(c=>`<div class="card"><div class="ch"><div class="ct">${c}</div></div><div class="tph" style="height:120px;"><div class="ico" style="font-size:22px;">⏳</div><p style="font-size:11px;">Awaiting more data periods</p></div></div>`).join('')}</div>`;
+  if (error) {
+    showAuthMsg('login-error', error.message === 'Invalid login credentials' ? 'Incorrect email or password.' : error.message);
     return;
   }
-  el.innerHTML=`<div class="fb-row"><span class="fl">Asset</span><select class="fs" id="ta" onchange="TS.asset=this.value;renderTrendCharts()">${DB.assets.map(a=>`<option value="${a}"${a==='Offices'?' selected':''}>${a}</option>`).join('')}</select><span class="fl" style="margin-left:8px;">Type</span><button class="fb active" onclick="TS.listing='Rent';setAF(this,this.closest('.fb-row'));renderTrendCharts()">Rent</button><button class="fb" onclick="TS.listing='Sale';setAF(this,this.closest('.fb-row'));renderTrendCharts()">Sale</button></div><div class="gf card"><div class="ch"><div><div class="ct">All Cities — Price Evolution</div><div class="cs" id="t-sub"></div></div></div><div class="cv h320"><canvas id="c-trend-all"></canvas></div></div><div class="g2" style="margin-top:15px;">${DB.cities.map(c=>`<div class="card"><div class="ch"><div class="ct">${c}</div></div><div class="cv h220"><canvas id="ct-${c.replace(/\s/g,'_')}"></canvas></div></div>`).join('')}</div>`;
-  renderTrendCharts();
+
+  showAuthMsg('login-success', '✅ Signed in successfully! Redirecting...');
+  setTimeout(() => go('home'), 1200);
 }
 
-function renderTrendCharts(){
-  const asset=document.getElementById('ta')?.value||'Offices',lt=TS.listing,periods=DB.periods;
-  const ts=DB.agg.ts.filter(d=>d.asset_class===asset&&d.listing_type===lt);
-  document.getElementById('t-sub').textContent=`${asset} · ${lt} · Median DH/m²`;
-  mk('c-trend-all','line',{labels:periods,datasets:DB.cities.map(city=>({label:city,data:periods.map(p=>{const r=ts.find(d=>d.city===city&&d.period===p);return r?r.median:null;}),borderColor:gc(city),backgroundColor:gc(city)+'10',tension:.4,pointRadius:5,pointHoverRadius:7,fill:false,borderWidth:2}))},{plugins:{legend:{display:true,labels:{color:'#4a4a44',padding:16,usePointStyle:true}},tooltip:TT},scales:{y:{grid:{color:'#f0efe9'},border:{display:false},ticks:{callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}},x:{grid:{display:false},border:{display:false}}}});
-  DB.cities.forEach(city=>{const id='ct-'+city.replace(/\s/g,'_');if(!document.getElementById(id))return;mk(id,'line',{labels:periods,datasets:[{label:city,data:periods.map(p=>{const r=ts.find(d=>d.city===city&&d.period===p);return r?r.median:null;}),borderColor:gc(city),backgroundColor:gc(city)+'12',tension:.4,pointRadius:4,fill:true,borderWidth:2}]},{plugins:{legend:{display:false},tooltip:TT},scales:{y:{grid:{color:'#f0efe9'},border:{display:false},ticks:{callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}},x:{grid:{display:false},border:{display:false},ticks:{font:{size:9}}}}});});
+async function doRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const confirm = document.getElementById('reg-confirm').value;
+  const terms = document.getElementById('reg-terms').checked;
+  const btn = document.getElementById('reg-btn');
+
+  document.getElementById('reg-error').style.display = 'none';
+  document.getElementById('reg-success').style.display = 'none';
+
+  if (!name) { showAuthMsg('reg-error', 'Please enter your full name.'); return; }
+  if (!email) { showAuthMsg('reg-error', 'Please enter your email address.'); return; }
+  if (password.length < 8) { showAuthMsg('reg-error', 'Password must be at least 8 characters.'); return; }
+  if (password !== confirm) { showAuthMsg('reg-error', 'Passwords do not match.'); return; }
+  if (!terms) { showAuthMsg('reg-error', 'Please agree to the Terms of Service to continue.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Creating account...';
+  const { data, error } = await sb.auth.signUp({
+    email, password,
+    options: { data: { full_name: name } }
+  });
+  btn.disabled = false; btn.textContent = 'Create account';
+
+  if (error) { showAuthMsg('reg-error', error.message); return; }
+
+  showAuthMsg('reg-success', '✅ Account created! Please check your email to confirm your account, then sign in.');
+  document.getElementById('reg-name').value = '';
+  document.getElementById('reg-email').value = '';
+  document.getElementById('reg-password').value = '';
+  document.getElementById('reg-confirm').value = '';
+  document.getElementById('reg-terms').checked = false;
 }
 
-function renderExplorer(){
-  const q=document.getElementById('exp-q')?.value.toLowerCase()||'',city=document.getElementById('exp-city')?.value||'All',asset=document.getElementById('exp-asset')?.value||'All',lt=document.getElementById('exp-lt')?.value||'All',sort=document.getElementById('exp-sort')?.value||'pd';
-  let data=[...DB.agg.dist];
-  if(q)data=data.filter(d=>d.district.toLowerCase().includes(q)||d.city.toLowerCase().includes(q));
-  if(city!=='All')data=data.filter(d=>d.city===city);if(asset!=='All')data=data.filter(d=>d.asset_class===asset);if(lt!=='All')data=data.filter(d=>d.listing_type===lt);
-  if(sort==='pd')data.sort((a,b)=>b.median-a.median);else if(sort==='pa')data.sort((a,b)=>a.median-b.median);else data.sort((a,b)=>b.count-a.count);
-  document.getElementById('exp-count').textContent=data.length.toLocaleString()+' rows (first 300)';
-  document.getElementById('exp-tbody').innerHTML=data.slice(0,300).map((d,i)=>`<tr><td class="dim">${i+1}</td><td>${d.district}</td><td class="dim">${d.city}</td><td class="dim">Morocco</td><td class="dim" style="font-size:11px;">${d.asset_class}</td><td><span class="pill ${d.listing_type==='Rent'?'pill-r':'pill-s'}">${d.listing_type}</span></td><td class="val">${d.median.toLocaleString()}</td><td class="num">${d.count}</td></tr>`).join('');
+async function doForgotPassword() {
+  const email = document.getElementById('fp-email').value.trim();
+  const btn = document.getElementById('fp-btn');
+  document.getElementById('fp-error').style.display = 'none';
+  document.getElementById('fp-success').style.display = 'none';
+
+  if (!email) { showAuthMsg('fp-error', 'Please enter your email address.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Sending...';
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://www.ironwoodintelligence.com'
+  });
+  btn.disabled = false; btn.textContent = 'Send reset link';
+
+  if (error) { showAuthMsg('fp-error', error.message); return; }
+  showAuthMsg('fp-success', '✅ Reset link sent! Check your email inbox (and spam folder).');
+  document.getElementById('fp-email').value = '';
 }
 
-const PM={overview:'Market Overview',map:'Price Map',cities:'City Comparison',districts:'Districts',assets:'Asset Classes',trends:'Price Trends',explorer:'Data Explorer'};
-const PS={overview:'Live market snapshot',map:'District-level prices across all markets',cities:'Cross-city pricing by asset class',districts:'Drill down by city and asset type',assets:'Performance by property type',trends:'Historical price evolution',explorer:'Search all district aggregates'};
-
-function showPage(name,el){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.ni').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  if(el)el.classList.add('active');
-  document.getElementById('tb-title').textContent=PM[name]||name;
-  document.getElementById('tb-sub').textContent=PS[name]||'';
-  if(name==='map'&&!leafMap)setTimeout(initMap,80);
-  if(name==='cities')renderCities();if(name==='districts')renderDistricts();
-  if(name==='assets')renderAssets();if(name==='trends')renderTrends();
-  if(name==='explorer')renderExplorer();
+async function doSignOut() {
+  await sb.auth.signOut();
+  updateNavLoggedOut();
+  go('home');
 }
 
-function setAF(btn,container){if(container)container.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+function showAuthMsg(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
 
-loadData();
+function togglePw(inputId, eyeEl) {
+  const input = document.getElementById(inputId);
+  if (input.type === 'password') { input.type = 'text'; eyeEl.textContent = '🙈'; }
+  else { input.type = 'password'; eyeEl.textContent = '👁'; }
+}
+// ═══ END AUTH ═══
 
-// Handle deep-link anchors e.g. dashboard.html#trends or #assets
-window.addEventListener('load', () => {
-  const hash = window.location.hash.replace('#','');
-  const valid = ['overview','map','cities','districts','assets','trends','explorer'];
-  if(hash && valid.includes(hash)) {
-    setTimeout(() => {
-      const navEl = document.querySelector(`.ni[onclick*="'${hash}'"]`);
-      showPage(hash, navEl);
-    }, 200);
-  }
-});
+function closeDD() {}
+document.addEventListener('click', closeDD);
 </script>
 </body>
 </html>
