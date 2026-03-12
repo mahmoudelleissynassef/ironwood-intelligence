@@ -291,30 +291,26 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
 <!-- ═══ NAV ═══ -->
 <nav>
   <div class="nav-logo" onclick="go('home')">IRONWOOD INTELLIGENCE</div>
-  <div class="nav-links">
-    <a onclick="go('home')">Home Page</a>
-    <a onclick="go('about')">About Us</a>
+  <div class="nav-links" id="nav-links-loggedout">
+    <a onclick="go('home')">Home</a>
     <a onclick="go('data')">Data</a>
+    <a onclick="go('about')">About Us</a>
+    <a onclick="go('subscription')">Pricing</a>
     <a onclick="go('contact')">Contact Us</a>
-    <div class="nav-more">
-      <button class="nav-more-btn" onclick="toggleDD(event)">
-        More Links
-        <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
-      </button>
-      <div class="dropdown" id="dd">
-        <a onclick="go('properties')">Properties</a>
-        <a onclick="go('analytics')">Analytics</a>
-        <a onclick="goDashboard()">Dashboard</a>
-        <a onclick="go('subscription')">Pricing</a>
-      </div>
-    </div>
+  </div>
+  <div class="nav-links" id="nav-links-loggedin" style="display:none;">
+    <a onclick="go('home')">Home</a>
+    <a onclick="go('data')">Data</a>
+    <a onclick="go('about')">About Us</a>
+    <a onclick="go('subscription')">Pricing</a>
+    <a onclick="go('contact')">Contact Us</a>
+    <a onclick="goAnalytics()">Analytics</a>
+    <a onclick="goDashboard()">Dashboard</a>
   </div>
   <div class="nav-actions">
     <button class="btn-join" id="nav-register-btn" onclick="go('register')">Join Now</button>
     <button class="btn-login" id="nav-login-btn" onclick="go('login')">Sign In</button>
-    <button class="btn-login" id="nav-signout-btn" style="display:none;" onclick="doSignOut()">Sign Out</button>
-    <span id="nav-user-name" style="display:none;font-size:13px;font-weight:600;color:#111;margin-right:4px;cursor:pointer;padding:7px 14px;border:1.5px solid #e0e0e0;border-radius:20px;" onclick="go('account')">👤 <span id="nav-user-label"></span> ▾</span>
-  </div>
+    <span id="nav-user-name" style="display:none;font-size:13px;font-weight:600;color:#111;cursor:pointer;padding:7px 14px;border:1.5px solid #e0e0e0;border-radius:20px;" onclick="go('account')">👤 <span id="nav-user-label"></span> ▾</span>
   </div>
 </nav>
 
@@ -462,40 +458,6 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
         <div class="legend"><span class="ldot"></span> Vacancy Rate</div>
       </div>
     </div>
-  </div>
-  <div class="footer-slot"></div>
-</div>
-
-<!-- ═══ PROPERTIES ═══ -->
-<div id="page-properties" class="page">
-  <div class="props-hdr">
-    <div><h1>Property Listings</h1><p>Explore 5 properties across African markets</p></div>
-    <div class="vtoggle"><button class="act">⊞</button><button>☰</button></div>
-  </div>
-  <div class="filter-bar">
-    <h3>Filter Properties</h3>
-    <div class="frow">
-      <div class="fcol"><label>Region</label><select><option>All Regions</option></select></div>
-      <div class="fcol"><label>Submarket</label><select><option>All Submarkets</option></select></div>
-      <div class="fcol"><label>Type</label><select><option>All Types</option><option>Office</option><option>Retail</option><option>Residential</option><option>Hospitality</option><option>Industrial</option></select></div>
-      <div class="fcol"><label>Min Size (sqm)</label><input type="text" placeholder="0"/></div>
-      <div class="fcol"><label>Max Size (sqm)</label><input type="text" placeholder="∞"/></div>
-      <div class="fcol"><label>Min Rent ($)</label><input type="text" placeholder="0"/></div>
-      <div class="fcol"><label>Max Rent ($)</label><input type="text" placeholder="∞"/></div>
-      <button class="btn-clr">Clear All Filters</button>
-    </div>
-  </div>
-  <div class="pgrid">
-    <div class="pcard"><div class="pimg g-lagos"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge ba">Available</span></div><div class="pbody"><div class="ptype">Office</div><div class="pname">Lagos Business District Tower</div><div class="ploc">📍 Lagos, Victoria Island</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
-    <div class="pcard"><div class="pimg g-nairobi"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge bo">Occupied</span></div><div class="pbody"><div class="ptype">Retail</div><div class="pname">Nairobi Commercial Center</div><div class="ploc">📍 Nairobi, Westlands</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
-    <div class="pcard"><div class="pimg g-cape"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge ba">Available</span></div><div class="pbody"><div class="ptype">Residential</div><div class="pname">Cape Town Residential Complex</div><div class="ploc">📍 Cape Town, Sea Point</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
-    <div class="pcard"><div class="pimg g-accra"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge bo">Occupied</span></div><div class="pbody"><div class="ptype">Hospitality</div><div class="pname">Accra Hotel &amp; Conference</div><div class="ploc">📍 Accra, Airport City</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
-    <div class="pcard"><div class="pimg g-joburg"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge bo">Occupied</span></div><div class="pbody"><div class="ptype">Industrial</div><div class="pname">Johannesburg Logistics Hub</div><div class="ploc">📍 Johannesburg, Sandton</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
-  </div>
-  <div class="unlock">
-    <h2>Unlock Full Property Details</h2>
-    <p>Subscribe to access complete property information, transaction history, and advanced market analytics.</p>
-    <div class="unlock-btns"><button class="btn-wo" onclick="go('subscription')">View Subscription Plans</button><button class="btn-ws" onclick="go('register')">Start Free Trial</button></div>
   </div>
   <div class="footer-slot"></div>
 </div>
@@ -849,9 +811,10 @@ function updateNavLoggedIn(user) {
   const name = user.user_metadata?.full_name || user.email.split('@')[0];
   document.getElementById('nav-user-label').textContent = name;
   document.getElementById('nav-user-name').style.display = 'inline-flex';
-  document.getElementById('nav-signout-btn').style.display = 'none';
   document.getElementById('nav-login-btn').style.display = 'none';
   document.getElementById('nav-register-btn').style.display = 'none';
+  document.getElementById('nav-links-loggedout').style.display = 'none';
+  document.getElementById('nav-links-loggedin').style.display = 'flex';
   // Populate account page
   const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
   const since = new Date(user.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
@@ -863,12 +826,28 @@ function updateNavLoggedIn(user) {
   el('acc-since', since);
 }
 
-function goDashboard() {
-  closeDD();
-  // If logged in, open the real dashboard in a new tab
+function updateNavLoggedOut() {
+  document.getElementById('nav-user-name').style.display = 'none';
+  document.getElementById('nav-login-btn').style.display = 'inline-block';
+  document.getElementById('nav-register-btn').style.display = 'inline-block';
+  document.getElementById('nav-links-loggedout').style.display = 'flex';
+  document.getElementById('nav-links-loggedin').style.display = 'none';
+}
+
+function goAnalytics() {
   sb.auth.getSession().then(({ data }) => {
     if (data?.session?.user) {
-      window.open('/dashboard.html', '_blank');
+      window.open('/dashboard.html#trends', '_blank');
+    } else {
+      go('login');
+    }
+  });
+}
+
+function goDashboard() {
+  sb.auth.getSession().then(({ data }) => {
+    if (data?.session?.user) {
+      window.open('/dashboard.html#assets', '_blank');
     } else {
       go('login');
     }
@@ -958,7 +937,7 @@ async function doForgotPassword() {
   document.getElementById('fp-email').value = '';
 }
 
-
+async function doSignOut() {
   await sb.auth.signOut();
   updateNavLoggedOut();
   go('home');
@@ -977,14 +956,7 @@ function togglePw(inputId, eyeEl) {
 }
 // ═══ END AUTH ═══
 
-function toggleDD(e) {
-  e.stopPropagation();
-  document.getElementById('dd').classList.toggle('open');
-}
-function closeDD() {
-  var dd = document.getElementById('dd');
-  if (dd) dd.classList.remove('open');
-}
+function closeDD() {}
 document.addEventListener('click', closeDD);
 </script>
 </body>
