@@ -543,9 +543,31 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
       <div id="login-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
       <div id="login-success" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
       <div class="fg-auth"><label>Email address</label><input type="email" id="login-email" placeholder="you@example.com"/></div>
-      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password" id="login-password" placeholder="Your password"/><span class="pw-eye" onclick="togglePw('login-password',this)">👁</span></div></div>
+      <div class="fg-auth">
+        <label style="display:flex;justify-content:space-between;align-items:center;">
+          Password
+          <a onclick="go('forgot-password')" style="font-size:12px;font-weight:500;color:#111;cursor:pointer;">Forgot password?</a>
+        </label>
+        <div class="pw"><input type="password" id="login-password" placeholder="Your password"/><span class="pw-eye" onclick="togglePw('login-password',this)">👁</span></div>
+      </div>
       <button class="btn-submit" id="login-btn" onclick="doLogin()">Sign in</button>
       <div class="auth-sw">Not a member? <a onclick="go('register')">Join now</a></div>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
+
+<!-- ═══ FORGOT PASSWORD ═══ -->
+<div id="page-forgot-password" class="page">
+  <div class="auth-pg">
+    <div class="auth-box">
+      <h2>Reset your password</h2>
+      <p class="auth-sub" style="margin-top:8px;margin-bottom:20px;color:#555;font-size:14px;">Enter your email and we'll send you a link to reset your password.</p>
+      <div id="fp-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+      <div id="fp-success" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+      <div class="fg-auth"><label>Email address</label><input type="email" id="fp-email" placeholder="you@example.com"/></div>
+      <button class="btn-submit" id="fp-btn" onclick="doForgotPassword()">Send reset link</button>
+      <div class="auth-sw"><a onclick="go('login')" style="cursor:pointer;">← Back to sign in</a></div>
     </div>
   </div>
   <div class="footer-slot"></div>
@@ -767,7 +789,26 @@ async function doRegister() {
   document.getElementById('reg-terms').checked = false;
 }
 
-async function doSignOut() {
+async function doForgotPassword() {
+  const email = document.getElementById('fp-email').value.trim();
+  const btn = document.getElementById('fp-btn');
+  document.getElementById('fp-error').style.display = 'none';
+  document.getElementById('fp-success').style.display = 'none';
+
+  if (!email) { showAuthMsg('fp-error', 'Please enter your email address.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Sending...';
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://www.ironwoodintelligence.com'
+  });
+  btn.disabled = false; btn.textContent = 'Send reset link';
+
+  if (error) { showAuthMsg('fp-error', error.message); return; }
+  showAuthMsg('fp-success', '✅ Reset link sent! Check your email inbox (and spam folder).');
+  document.getElementById('fp-email').value = '';
+}
+
+
   await sb.auth.signOut();
   updateNavLoggedOut();
   go('home');
