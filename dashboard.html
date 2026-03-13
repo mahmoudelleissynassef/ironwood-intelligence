@@ -49,10 +49,13 @@ button{cursor:pointer;font-family:var(--sans);}
 .sb-wordmark{font-family:var(--serif);font-size:15px;color:#fff;letter-spacing:.01em;}
 .sb-wordmark em{color:var(--gold);font-style:normal;}
 .sb-tag{font-size:9.5px;color:rgba(255,255,255,.25);margin-top:3px;letter-spacing:.08em;text-transform:uppercase;}
-.sb-mkt{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.sb-mkt{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;cursor:pointer;position:relative;}
 .sb-mkt:hover{background:rgba(255,255,255,.04);}
 .sb-mkt-name{font-size:12px;color:rgba(255,255,255,.7);font-weight:500;}
 .sb-mkt-caret{font-size:10px;color:rgba(255,255,255,.3);}
+.country-opt{display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:12.5px;cursor:pointer;color:#2a2a2a;transition:background .1s;}
+.country-opt:hover{background:#f5f5f3;}
+.country-opt.active{background:#f0fdf4;color:#166534;font-weight:500;}
 .sb-section{padding:16px 10px 2px;flex-shrink:0;}
 .sb-section-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.25);padding:0 8px;margin-bottom:2px;}
 .ni{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:2px;color:rgba(255,255,255,.5);font-size:12px;cursor:pointer;transition:all .12s;white-space:nowrap;}
@@ -334,9 +337,25 @@ button{cursor:pointer;font-family:var(--sans);}
     <div class="sb-wordmark">Ironwood <em>Intelligence</em></div>
     <div class="sb-tag">Market Terminal · v3.0</div>
   </div>
-  <div class="sb-mkt">
-    <span class="sb-mkt-name">🇲🇦 Morocco</span>
+  <div class="sb-mkt" id="sb-mkt-btn" onclick="toggleCountryDropdown()">
+    <span class="sb-mkt-name" id="sb-mkt-label">🇲🇦 Morocco</span>
     <span class="sb-mkt-caret">▾</span>
+  </div>
+  <div id="country-dropdown" style="display:none;position:absolute;left:12px;right:12px;background:#fff;border:1px solid #e8e6e1;border-radius:6px;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.12);overflow:hidden;">
+    <div style="padding:8px 12px;font-size:10px;font-weight:700;color:#9c9994;letter-spacing:.08em;border-bottom:1px solid #e8e6e1;">ACTIVE COVERAGE</div>
+    <div class="country-opt active" id="copt-Morocco" onclick="switchCountry('Morocco')">
+      <span style="font-size:15px;">🇲🇦</span><span>Morocco</span><span style="margin-left:auto;font-size:10px;color:#6b7280;">62k listings</span>
+    </div>
+    <div style="padding:8px 12px;font-size:10px;font-weight:700;color:#9c9994;letter-spacing:.08em;border-top:1px solid #e8e6e1;border-bottom:1px solid #e8e6e1;margin-top:2px;">COMING SOON</div>
+    <div class="country-opt disabled" style="opacity:.4;cursor:not-allowed;">
+      <span style="font-size:15px;">🇳🇬</span><span>Nigeria</span><span style="margin-left:auto;font-size:10px;color:#9c9994;">Pending</span>
+    </div>
+    <div class="country-opt disabled" style="opacity:.4;cursor:not-allowed;">
+      <span style="font-size:15px;">🇸🇳</span><span>Senegal</span><span style="margin-left:auto;font-size:10px;color:#9c9994;">Pending</span>
+    </div>
+    <div class="country-opt disabled" style="opacity:.4;cursor:not-allowed;">
+      <span style="font-size:15px;">🇰🇪</span><span>Kenya</span><span style="margin-left:auto;font-size:10px;color:#9c9994;">Pending</span>
+    </div>
   </div>
 
   <div class="sb-section">
@@ -391,7 +410,7 @@ button{cursor:pointer;font-family:var(--sans);}
   </div>
 
   <div class="sb-foot">
-    <div class="sb-live"><div class="live-dot"></div>Morocco · Updated March 2026</div>
+    <div class="sb-live" id="sb-live-indicator"><div class="live-dot"></div>Morocco · Updated March 2026</div>
     <div class="sb-user">
       <div class="sb-avatar" id="sb-av">—</div>
       <div class="sb-uname" id="sb-un">Loading...</div>
@@ -447,7 +466,7 @@ button{cursor:pointer;font-family:var(--sans);}
     <div class="pg active" id="pg-market-terminal">
       <div class="eyebrow">Overview</div>
       <div class="pg-title">Market Terminal</div>
-      <div class="pg-sub">Morocco real estate intelligence — March 2026. Click any metric to view the evidence behind it. All indicators show source classification and confidence level.</div>
+      <div class="pg-sub" id="mt-subtitle">Morocco real estate intelligence — March 2026. Click any metric to view the evidence behind it. All indicators show source classification and confidence level.</div>
 
       <!-- KPI Snapshot -->
       <div class="kpi-grid">
@@ -460,35 +479,35 @@ button{cursor:pointer;font-family:var(--sans);}
         </div>
         <div class="kpi" onclick="showEvidence('median-price')" style="cursor:pointer;">
           <div class="kpi-lbl">Median Sale Price <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
-          <div class="kpi-val">DH 18,400</div>
+          <div class="kpi-val" id="kpi-median-price">DH 18,400</div>
           <div class="kpi-sub">per m² · Apts national</div>
-          <div class="kpi-chg chg pos">▲ +6.1% 12M</div>
+          <div class="kpi-chg chg pos" id="kpi-price-growth">▲ +6.1% 12M</div>
           <div style="margin-top:6px;"><span class="ds-tag ds-listings">Listings-derived</span></div>
         </div>
         <div class="kpi" onclick="showEvidence('listings-volume')" style="cursor:pointer;">
           <div class="kpi-lbl">Active Listings <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
-          <div class="kpi-val">12,806</div>
+          <div class="kpi-val" id="kpi-active-listings">12,806</div>
           <div class="kpi-sub">verified · all asset classes</div>
           <div class="kpi-chg chg pos">▲ +8.3% MoM</div>
           <div style="margin-top:6px;"><span class="ds-tag ds-listings">Listings-derived</span></div>
         </div>
         <div class="kpi" onclick="showEvidence('yield-estimate')" style="cursor:pointer;">
           <div class="kpi-lbl">Yield Estimate <span class="conf conf-e"><span class="conf-dot"></span>Est.</span></div>
-          <div class="kpi-val">5.8%</div>
+          <div class="kpi-val" id="kpi-yield">5.8%</div>
           <div class="kpi-sub">gross · Casablanca resi.</div>
           <div class="kpi-chg" style="color:var(--ink4);">→ Stable</div>
           <div style="margin-top:6px;"><span class="ds-tag ds-model">Modelled</span></div>
         </div>
         <div class="kpi" onclick="showEvidence('liquidity')" style="cursor:pointer;">
           <div class="kpi-lbl">Liquidity Score <span class="conf conf-m"><span class="conf-dot"></span>Med.</span></div>
-          <div class="kpi-val">6.4<span style="font-size:14px;color:var(--ink4);">/10</span></div>
+          <div class="kpi-val" id="kpi-liquidity">6.4<span style="font-size:14px;color:var(--ink4);">/10</span></div>
           <div class="kpi-sub">Ironwood Liquidity Index</div>
           <div class="kpi-chg chg pos">▲ +0.3 pts MoM</div>
           <div style="margin-top:6px;"><span class="ds-tag ds-model">Modelled</span></div>
         </div>
         <div class="kpi" onclick="showEvidence('pipeline')" style="cursor:pointer;">
           <div class="kpi-lbl">Pipeline Supply <span class="conf conf-m"><span class="conf-dot"></span>Med.</span></div>
-          <div class="kpi-val">~340k</div>
+          <div class="kpi-val" id="kpi-pipeline">~340k</div>
           <div class="kpi-sub">m² GFA · 33 tracked projects</div>
           <div class="kpi-chg" style="color:var(--amber);">⚠ Elevated</div>
           <div style="margin-top:6px;"><span class="ds-tag ds-pipeline">Pipeline</span></div>
@@ -674,7 +693,7 @@ button{cursor:pointer;font-family:var(--sans);}
       <div class="pg-sub">Full city market profiles for all covered markets. Select a city to view its complete intelligence dossier. All indicators are listings-derived unless otherwise noted.</div>
 
       <!-- City selector tabs -->
-      <div style="display:flex;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px;">
+      <div id="city-tabs-bar" style="display:flex;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px;">
         <button class="city-tab active-tab" onclick="switchCity(this,'casablanca')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:var(--ink);color:#fff;border:none;cursor:pointer;">Casablanca</button>
         <button class="city-tab" onclick="switchCity(this,'marrakech')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:var(--surface);color:var(--ink3);border:none;cursor:pointer;">Marrakech</button>
         <button class="city-tab" onclick="switchCity(this,'rabat')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:var(--surface);color:var(--ink3);border:none;cursor:pointer;">Rabat</button>
@@ -1598,6 +1617,119 @@ const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 let sb=null;
 let _map=null,_chartsBuilt=false;
 
+// ── COUNTRY CONFIG ──
+const COUNTRIES={
+  Morocco:{flag:'🇲🇦',label:'Morocco',cities:['Casablanca','Marrakech','Rabat','Tangiers','Fez'],listingCount:'62,052',
+    kpis:{medianPrice:'DH 12,400/m²',priceGrowth:'+6.1%',activeListings:'12,806',yieldEst:'5.8%',pipeline:'~340k m²',liquidityScore:'6.4/10'},
+    currency:'DH',region:'North Africa',updated:'March 2026',
+    cityData:{
+      Casablanca:{price:18420,growth:6.2,listings:4120,yield:5.1,color:'#0d0d0d'},
+      Marrakech:{price:17800,growth:8.4,listings:2847,yield:6.4,color:'#b8933f'},
+      Rabat:{price:14200,growth:2.6,listings:2340,yield:4.8,color:'#1d4ed8'},
+      Tangiers:{price:11800,growth:1.3,listings:1890,yield:5.2,color:'#7c3aed'},
+      Fez:{price:9200,growth:-2.1,listings:1609,yield:4.3,color:'#dc2626'}
+    }
+  },
+  Nigeria:{flag:'🇳🇬',label:'Nigeria',cities:['Lagos','Abuja','Port Harcourt'],listingCount:'Pending',
+    kpis:{medianPrice:'—',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
+    currency:'₦',region:'West Africa',updated:'Coming Soon',cityData:{}
+  },
+  Senegal:{flag:'🇸🇳',label:'Senegal',cities:['Dakar'],listingCount:'Pending',
+    kpis:{medianPrice:'—',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
+    currency:'CFA',region:'West Africa',updated:'Coming Soon',cityData:{}
+  }
+};
+let ACTIVE_COUNTRY='Morocco';
+
+function toggleCountryDropdown(){
+  var dd=document.getElementById('country-dropdown');
+  dd.style.display=dd.style.display==='none'?'block':'none';
+}
+document.addEventListener('click',function(e){
+  var btn=document.getElementById('sb-mkt-btn');
+  var dd=document.getElementById('country-dropdown');
+  if(dd&&btn&&!btn.contains(e.target)&&!dd.contains(e.target)){dd.style.display='none';}
+});
+
+function switchCountry(name){
+  if(!COUNTRIES[name]){return;}
+  ACTIVE_COUNTRY=name;
+  var c=COUNTRIES[name];
+  // Update sidebar label
+  document.getElementById('sb-mkt-label').textContent=c.flag+' '+c.label;
+  // Update live indicator
+  var liveEl=document.querySelector('.sb-live');
+  if(liveEl)liveEl.innerHTML='<div class="live-dot"></div>'+c.label+' · Updated '+c.updated;
+  // Highlight active in dropdown
+  document.querySelectorAll('.country-opt').forEach(el=>el.classList.remove('active'));
+  var activeOpt=document.getElementById('copt-'+name);
+  if(activeOpt)activeOpt.classList.add('active');
+  // Close dropdown
+  document.getElementById('country-dropdown').style.display='none';
+  // Update all page content
+  updateAllPagesForCountry(c);
+  // Rebuild charts for new country
+  _chartsBuilt=false;
+  buildCharts();
+}
+
+function updateAllPagesForCountry(c){
+  var name=c.label;
+  // Update KPI cards
+  var kpis=c.kpis;
+  safeSet('kpi-median-price',kpis.medianPrice);
+  safeSet('kpi-price-growth',kpis.priceGrowth);
+  safeSet('kpi-active-listings',kpis.activeListings);
+  safeSet('kpi-yield',kpis.yieldEst);
+  safeSet('kpi-pipeline',kpis.pipeline);
+  safeSet('kpi-liquidity',kpis.liquidityScore);
+  // Update market terminal subtitle
+  var mtSub=document.getElementById('mt-subtitle');
+  if(mtSub) mtSub.textContent=name+' real estate intelligence — '+c.updated+'. Click any metric to view the evidence behind it.';
+  // Update city rankings table
+  var cityBody=document.getElementById('city-rank-body');
+  if(cityBody){
+    var cityArr=Object.entries(c.cityData).sort((a,b)=>b[1].price-a[1].price);
+    if(cityArr.length){
+      cityBody.innerHTML=cityArr.map(([cname,d],i)=>`
+        <tr>
+          <td class="dt-rank">${String(i+1).padStart(2,'0')}</td>
+          <td class="dt-city">${cname}</td>
+          <td class="mono">${d.price.toLocaleString()}</td>
+          <td class="chg ${d.growth>0?'pos':'neg'}">${d.growth>0?'+':''}${d.growth}%</td>
+          <td class="mono">${d.listings.toLocaleString()}</td>
+          <td class="mono">${(d.yield*1.1).toFixed(1)}</td>
+        </tr>`).join('');
+    }
+  }
+  // Update cities list in cities page
+  updateCitiesPage(c);
+  // Update listings subtitle
+  var listSub=document.getElementById('listings-sub');
+  if(listSub) listSub.textContent=name+' · listings-derived';
+  // Update sidebar live indicator
+  var liveEl=document.getElementById('sb-live-indicator');
+  if(liveEl) liveEl.innerHTML='<div class="live-dot"></div>'+name+' · Updated '+c.updated;
+}
+function safeSet(id,val){var el=document.getElementById(id);if(el)el.textContent=val;}
+function updateCitiesPage(c){
+  var wrap=document.getElementById('cities-list-wrap');
+  if(!wrap)return;
+  var cityArr=Object.entries(c.cityData);
+  if(!cityArr.length){wrap.innerHTML='<div style="color:var(--ink4);padding:24px;text-align:center;">Data pending for '+c.label+'</div>';return;}
+  wrap.innerHTML=cityArr.map(([city,d])=>`
+    <div class="city-card" onclick="selectCity('${city}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div style="font-weight:600;font-size:13.5px;">${city}</div>
+        <span class="sig ${d.growth>0?'sig-up':'sig-dn'}">${d.growth>0?'▲':'▼'} ${Math.abs(d.growth)}%</span>
+      </div>
+      <div class="city-stat-row"><span class="city-stat-label">Median /m²</span><span class="city-stat-val mono">${c.currency} ${d.price.toLocaleString()}</span></div>
+      <div class="city-stat-row"><span class="city-stat-label">Active Listings</span><span class="city-stat-val mono">${d.listings.toLocaleString()}</span></div>
+      <div class="city-stat-row"><span class="city-stat-label">Yield Est.</span><span class="city-stat-val mono">${d.yield}%</span></div>
+    </div>
+  `).join('');
+}
+
 // ── LOADER ──
 function loadProgress(pct,msg){
   document.getElementById('ld-fill').style.width=pct+'%';
@@ -1673,39 +1805,77 @@ function nav(id){
 async function loadListings(){
   try{
     if(!sb) throw new Error('no sb');
-    const{data,error}=await sb.from('market_averages').select('*').order('city').limit(200);
+    const{data,error}=await sb.from('market_averages').select('*').eq('country',ACTIVE_COUNTRY).order('city').limit(200);
     if(error||!data||data.length===0) throw new Error('no data');
-    document.getElementById('listings-sub').textContent=`Morocco · ${data.length} records loaded from Supabase · Listings-derived`;
+    document.getElementById('listings-sub').textContent=`${ACTIVE_COUNTRY} · ${data.length} records loaded from Supabase · Listings-derived`;
   }catch(e){
     console.warn('Listings fallback:',e);
   }
 }
 
 // ── CHARTS ──
+function destroyChart(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  const existing=Chart.getChart(el);
+  if(existing) existing.destroy();
+}
 function buildCharts(){
   if(_chartsBuilt) return;
   _chartsBuilt=true;
-  const months=['Oct','Nov','Dec','Jan','Feb','Mar'];
+  const c=COUNTRIES[ACTIVE_COUNTRY];
+  const cityData=c?c.cityData:{};
+  const cityNames=Object.keys(cityData);
   const CHART_DEFAULTS={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:11},color:'#8c8c8c',boxWidth:8,padding:10}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:11},color:'#8c8c8c'}}}};
 
-  // Price trends
+  // ── Price trends (country-specific) ──
+  destroyChart('trends-chart');
   const tc=document.getElementById('trends-chart');
-  if(tc) new Chart(tc,{type:'line',data:{labels:['Q1 25','Q2 25','Q3 25','Q4 25','Q1 26'],datasets:[
-    {label:'Casablanca',data:[100,102,103.4,104.6,106.2],borderColor:'#0d0d0d',borderWidth:2,tension:.3,pointRadius:0,fill:false},
-    {label:'Marrakech',data:[100,102.9,104.7,106.6,108.4],borderColor:'#b8933f',borderWidth:2,tension:.3,pointRadius:0,fill:false},
-    {label:'Rabat',data:[100,101.1,101.3,101.9,102.6],borderColor:'#1d4ed8',borderWidth:1.5,tension:.3,pointRadius:0,fill:false},
-    {label:'Fez',data:[100,99.2,98.7,98.2,97.9],borderColor:'#dc2626',borderWidth:1.5,tension:.3,pointRadius:0,fill:false},
-  ]},options:{...CHART_DEFAULTS,scales:{...CHART_DEFAULTS.scales,y:{...CHART_DEFAULTS.scales.y,ticks:{...CHART_DEFAULTS.scales.y.ticks,callback:v=>v}}}}});
+  if(tc&&cityNames.length){
+    // Build indexed trend lines from city growth data
+    const datasets=cityNames.slice(0,5).map(name=>{
+      const d=cityData[name];
+      const g=d.growth/100;
+      const pts=[100, 100+g*0.25*100, 100+g*0.5*100, 100+g*0.75*100, 100+g*100].map(v=>Math.round(v*10)/10);
+      return {label:name,data:pts,borderColor:d.color||'#8c8c8c',borderWidth:2,tension:.3,pointRadius:0,fill:false};
+    });
+    new Chart(tc,{type:'line',data:{labels:['Q1 25','Q2 25','Q3 25','Q4 25','Q1 26'],datasets},options:{...CHART_DEFAULTS,scales:{...CHART_DEFAULTS.scales,y:{...CHART_DEFAULTS.scales.y,ticks:{...CHART_DEFAULTS.scales.y.ticks,callback:v=>v}}}}});
+  }
 
-  // Growth chart
+  // ── Growth chart (country-specific) ──
+  destroyChart('growth-chart');
   const gc=document.getElementById('growth-chart');
-  if(gc) new Chart(gc,{type:'bar',data:{labels:['Marrakech','Casablanca','Rabat','Tangiers','Fez'],datasets:[{label:'12M Growth %',data:[8.4,6.2,2.6,1.3,-2.1],backgroundColor:['#166534','#0d0d0d','#1d4ed8','#b8933f','#dc2626'],borderWidth:0,borderRadius:2}]},options:{...CHART_DEFAULTS,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:11},color:'#8c8c8c',callback:v=>v+'%'}}}}});
+  if(gc&&cityNames.length){
+    const sorted=[...cityNames].sort((a,b)=>cityData[b].growth-cityData[a].growth);
+    new Chart(gc,{type:'bar',data:{
+      labels:sorted,
+      datasets:[{label:'12M Growth %',data:sorted.map(n=>cityData[n].growth),backgroundColor:sorted.map(n=>cityData[n].color||'#8c8c8c'),borderWidth:0,borderRadius:2}]
+    },options:{...CHART_DEFAULTS,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:11},color:'#8c8c8c',callback:v=>v+'%'}}}}});
+  }
 
-  // City default charts (Casablanca)
+  // ── City tabs — rebuild for active country ──
+  buildCityTabs();
+
+  // ── Default city charts ──
   setTimeout(()=>{
-    buildCityTrendChart('Casablanca',[17340,17680,17920,18140,18420]);
-    buildCityDistrictChart('casablanca');
+    const firstCity=cityNames[0]||'Casablanca';
+    const fd=cityData[firstCity];
+    if(fd) buildCityTrendChart(firstCity,[fd.price*.94,fd.price*.96,fd.price*.97,fd.price*.99,fd.price].map(v=>Math.round(v)));
+    else buildCityTrendChart('Casablanca',[17340,17680,17920,18140,18420]);
+    buildCityDistrictChart((firstCity||'casablanca').toLowerCase());
   },200);
+}
+
+function buildCityTabs(){
+  const c=COUNTRIES[ACTIVE_COUNTRY];
+  if(!c) return;
+  const tabBar=document.getElementById('city-tabs-bar');
+  if(!tabBar) return;
+  const cityNames=Object.keys(c.cityData);
+  if(!cityNames.length) return;
+  tabBar.innerHTML=cityNames.map((name,i)=>
+    `<button class="city-tab${i===0?' active-tab':''}" onclick="switchCity(this,'${name.toLowerCase()}')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:${i===0?'var(--ink)':'var(--surface)'};color:${i===0?'#fff':'var(--ink3)'};border:none;cursor:pointer;">${name}</button>`
+  ).join('');
 }
 
 // ── LIQUIDITY GAUGES ──
