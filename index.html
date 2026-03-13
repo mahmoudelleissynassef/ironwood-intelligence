@@ -10,13 +10,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-(async function(){
-  const _sb=supabase.createClient('https://ujhqkirhfmumvvnfvgnz.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik');
-  const{data}=await _sb.auth.getSession();
-  if(!data?.session?.user)window.location.href='https://www.ironwoodintelligence.com/#login';
-})();
-</script>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -1817,21 +1811,36 @@ function hideLoader(){
   setTimeout(()=>document.getElementById('loader').style.display='none',700);
 }
 async function boot(){
-  loadProgress(20,'Authenticating session...');
-  const{data:sess}=await sb.auth.getSession();
-  const user=sess?.session?.user;
-  if(!user){window.location.href='https://www.ironwoodintelligence.com/#login';return;}
-  const name=user.user_metadata?.full_name||user.email.split('@')[0];
-  const initials=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-  document.getElementById('sb-av').textContent=initials;
-  document.getElementById('sb-un').textContent=name;
-  loadProgress(50,'Loading market data...');
-  await loadListings();
-  loadProgress(80,'Building city rankings...');
-  buildCityRankings();
-  loadProgress(100,'Ready.');
-  setTimeout(hideLoader,400);
-  buildCharts();
+  // Safety: hide loader after 5s regardless
+  const safetyTimer=setTimeout(()=>{hideLoader();buildCharts();},5000);
+  try{
+    loadProgress(20,'Authenticating session...');
+    const{data:sess}=await sb.auth.getSession();
+    const user=sess?.session?.user;
+    if(!user){
+      clearTimeout(safetyTimer);
+      hideLoader();
+      window.location.href='https://www.ironwoodintelligence.com/#login';
+      return;
+    }
+    const name=user.user_metadata?.full_name||user.email.split('@')[0];
+    const initials=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    document.getElementById('sb-av').textContent=initials;
+    document.getElementById('sb-un').textContent=name;
+    loadProgress(50,'Loading market data...');
+    await loadListings();
+    loadProgress(80,'Building city rankings...');
+    buildCityRankings();
+    loadProgress(100,'Ready.');
+    clearTimeout(safetyTimer);
+    setTimeout(hideLoader,400);
+    buildCharts();
+  }catch(e){
+    console.error('Boot error:',e);
+    clearTimeout(safetyTimer);
+    hideLoader();
+    buildCharts();
+  }
 }
 
 // ── NAVIGATION ──
@@ -1849,11 +1858,17 @@ function nav(id){
     'listings':'Data / Listings Database','pipeline':'Data / Development Pipeline',
     'price-trends':'Analytics / Price Trends','yield-estimates':'Analytics / Yield Estimates',
     'liquidity':'Analytics / Liquidity Index','map-view':'Map / Market Map',
-    'exports':'Tools / Data Exports','api-access':'Tools / API Access'
+    'exports':'Tools / Data Exports','api-access':'Tools / API Access',
+    'investment-radar':'Intelligence / Investment Radar',
+    'liquidity-index':'Intelligence / Liquidity Index',
+    'pipeline-tracker':'Intelligence / Pipeline Tracker',
+    'market-reports':'Intelligence / Market Reports',
   };
   const parts=(titles[id]||id).split('/');
-  document.getElementById('tb-bc').innerHTML=parts[0]+'<span>'+'/'+parts.slice(1).join('/')+'</span>';
+  document.getElementById('tb-bc').innerHTML=parts[0]+'<span>/'+parts.slice(1).join('/')+'</span>';
   if(id==='map-view')setTimeout(initMap,100);
+  if(id==='liquidity-index'){buildLiquidityGauges();setTimeout(buildLiquidityCharts,100);}
+  if(id==='pipeline-tracker')setTimeout(buildPipelineChart,100);
 }
 
 // ── TABS ──
@@ -2211,27 +2226,6 @@ function printReport(id){
 }
 
 // ── EXTEND nav() ──
-const _origNav=nav;
-function nav(id){
-  _origNav(id);
-  if(id==='liquidity-index'){
-    buildLiquidityGauges();
-    setTimeout(()=>{buildLiquidityCharts();},100);
-  }
-  if(id==='pipeline-tracker'){
-    setTimeout(()=>buildPipelineChart(),100);
-  }
-  const extTitles={
-    'investment-radar':'Intelligence / Investment Radar',
-    'liquidity-index':'Intelligence / Liquidity Index',
-    'pipeline-tracker':'Intelligence / Pipeline Tracker',
-    'market-reports':'Intelligence / Market Reports',
-  };
-  if(extTitles[id]){
-    const parts=extTitles[id].split('/');
-    document.getElementById('tb-bc').innerHTML=parts[0]+'<span>'+'/'+parts[1]+'</span>';
-  }
-}
 
 
 </script>
