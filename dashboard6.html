@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Ironwood Intelligence — Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(async function(){
+  const _sb=supabase.createClient('https://ujhqkirhfmumvvnfvgnz.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik');
+  const{data}=await _sb.auth.getSession();
+  if(!data?.session?.user)window.location.href='https://www.ironwoodintelligence.com/#login';
+})();
+</script>
+<style>
+:root{
+  --bg:#f7f7f6;--surface:#fff;--surface2:#fafaf9;
+  --border:#ebebea;--border2:#dddddb;
+  --text:#111110;--text2:#6f6e6b;--text3:#a3a29e;
+  --accent:#1a1a1a;--gold:#b8933f;
+  --blue:#1d4ed8;--blue-l:#eff6ff;
+  --amber:#d97706;--amber-l:#fffbeb;
+  --sw:220px;--r:10px;
+  --font:'Inter',sans-serif;
+  --sh:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --sh2:0 4px 16px rgba(0,0,0,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;-webkit-font-smoothing:antialiased;}
+
+/* LOADING */
+.lo{position:fixed;inset:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .6s;}
+.lo.hide{opacity:0;pointer-events:none;}
+.lo-name{font-size:18px;font-weight:600;color:#fff;letter-spacing:.06em;margin-bottom:4px;}
+.lo-name span{color:var(--gold);}
+.lo-sub{font-size:10px;color:#555;letter-spacing:.14em;text-transform:uppercase;margin-bottom:40px;}
+.lo-bar{width:160px;height:1px;background:#333;}
+.lo-fill{height:100%;background:var(--gold);transition:width .4s;}
+.lo-txt{font-size:11px;color:#444;margin-top:14px;}
+
+/* LAYOUT */
+.app{display:flex;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{
+  width:var(--sw);background:var(--surface);
+  border-right:1px solid var(--border);
+  position:fixed;inset:0 auto 0 0;z-index:100;
+  display:flex;flex-direction:column;
+}
+.sb-head{padding:20px 18px 16px;border-bottom:1px solid var(--border);}
+.sb-name{font-size:13px;font-weight:700;color:var(--text);letter-spacing:.04em;}
+.sb-name span{color:var(--gold);}
+.sb-tag{font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.06em;}
+
+.sb-group{padding:16px 10px 4px;}
+.sb-lbl{font-size:9px;font-weight:600;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;padding:0 8px;margin-bottom:4px;}
+.ni{
+  display:flex;align-items:center;gap:9px;padding:7px 10px;
+  border-radius:6px;color:var(--text2);cursor:pointer;
+  transition:all .12s;margin-bottom:1px;font-size:12.5px;font-weight:500;
+  user-select:none;
+}
+.ni:hover{background:var(--surface2);color:var(--text);}
+.ni.active{background:#f0f0ef;color:var(--text);font-weight:600;}
+.ni.active .ni-dot{background:var(--text);}
+.ni-dot{width:4px;height:4px;border-radius:50%;background:var(--border2);flex-shrink:0;}
+
+.sb-foot{margin-top:auto;padding:14px;border-top:1px solid var(--border);}
+.sb-live{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3);}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* MAIN */
+.main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;}
+
+/* TOPBAR */
+.topbar{
+  height:52px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;position:sticky;top:0;z-index:50;
+}
+.tb-title{font-size:14px;font-weight:600;color:var(--text);}
+.tb-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+.tb-pill{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);padding:4px 12px;border-radius:20px;}
+.tb-pill-dot{width:5px;height:5px;border-radius:50%;background:#22c55e;}
+
+/* CONTENT */
+.content{padding:20px 24px;flex:1;}
+.pg{display:none;animation:fadein .2s ease;}
+.pg.active{display:block;}
+@keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+/* KPI ROW */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh);}
+.kpi-l{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;}
+.kpi-v{font-size:26px;font-weight:700;color:var(--text);line-height:1;letter-spacing:-.02em;}
+.kpi-s{font-size:11px;color:var(--text3);margin-top:5px;}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;}
+.gf{margin-bottom:14px;}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);}
+.c-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;}
+.c-title{font-size:12.5px;font-weight:600;color:var(--text);}
+.c-sub{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* CHART */
+.cv{position:relative;}
+.h180{height:180px;}.h200{height:200px;}.h220{height:220px;}.h260{height:260px;}.h300{height:300px;}.h320{height:320px;}.h360{height:360px;}
+
+/* MAP — dark style */
+#map-outer{position:relative;border-radius:var(--r);overflow:hidden;border:1px solid var(--border);margin-bottom:14px;background:#111;}
+#map-outer{height:calc(100vh - 200px);min-height:420px;}
+#the-map{height:100%;}
+.map-legend{position:absolute;bottom:16px;left:16px;z-index:400;background:rgba(0,0,0,.7);border-radius:8px;padding:10px 14px;backdrop-filter:blur(6px);}
+.map-legend-title{font-size:10px;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;}
+.map-legend-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:11px;color:rgba(255,255,255,.7);}
+.map-legend-dot{width:10px;height:10px;border-radius:50%;}
+.map-info{position:absolute;top:16px;right:16px;z-index:400;background:rgba(0,0,0,.75);border-radius:8px;padding:12px 16px;backdrop-filter:blur(8px);min-width:160px;}
+.map-info-city{font-size:13px;font-weight:600;color:#fff;margin-bottom:6px;}
+.map-info-row{font-size:11px;color:rgba(255,255,255,.6);margin-bottom:3px;}
+.map-info-val{font-size:16px;font-weight:700;color:#fff;margin-top:4px;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2);}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--surface2);}
+.tbl .v{font-size:12px;font-weight:600;color:var(--text);}
+.tbl .d{color:var(--text3);font-size:11px;}
+.stbl{overflow:auto;max-height:340px;}
+.stbl::-webkit-scrollbar{width:3px;height:3px;}.stbl::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* PILLS */
+.tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;}
+.tag-r{background:var(--blue-l);color:var(--blue);}
+.tag-s{background:var(--amber-l);color:var(--amber);}
+
+/* FILTER ROW */
+.frow{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.fl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);}
+.fb{padding:5px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-size:11.5px;font-family:var(--font);font-weight:500;color:var(--text2);cursor:pointer;transition:all .12s;}
+.fb:hover{border-color:var(--border2);color:var(--text);}
+.fb.on{background:var(--text);border-color:var(--text);color:#fff;}
+.fs{padding:5px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-size:11.5px;font-family:var(--font);color:var(--text);outline:none;}
+.fi{padding:6px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;min-width:180px;}
+.fi:focus,.fs:focus{border-color:var(--border2);}
+.fi::placeholder{color:var(--text3);}
+.sep{width:1px;height:16px;background:var(--border);}
+
+/* CITY TABS */
+.ctabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.ctab{padding:5px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-size:11.5px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .12s;}
+.ctab:hover{border-color:var(--border2);color:var(--text);}
+.ctab.on{background:var(--text);border-color:var(--text);color:#fff;}
+
+/* HEATMAP */
+.hmc{padding:6px 4px;border-radius:6px;font-size:10px;font-weight:600;text-align:center;min-width:64px;cursor:default;transition:opacity .1s;}
+.hmc:hover{opacity:.8;}
+
+/* TREND PH */
+.tph{display:flex;flex-direction:column;align-items:center;justify-content:center;height:180px;gap:8px;}
+.tph-ico{font-size:24px;opacity:.2;}
+.tph p{font-size:12px;text-align:center;max-width:260px;line-height:1.7;color:var(--text3);}
+
+/* PG HEADER */
+.pgh{margin-bottom:18px;}
+.pgh h1{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.02em;}
+.pgh p{font-size:12px;color:var(--text3);margin-top:3px;}
+
+@media(max-width:860px){.sidebar{display:none;}.main{margin-left:0;}.g2,.g3{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="lo" id="lo">
+  <div class="lo-name">IRONWOOD <span>INTEL</span></div>
+  <div class="lo-sub">Analytics Platform</div>
+  <div class="lo-bar"><div class="lo-fill" id="lf" style="width:0%"></div></div>
+  <div class="lo-txt" id="ls">Connecting...</div>
+</div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-name">IRONWOOD <span>INTEL</span></div>
+      <div class="sb-tag">Market Analytics</div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-lbl">Overview</div>
+      <div class="ni active" onclick="SP('overview',this)"><div class="ni-dot"></div>Market Overview</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-lbl">Analysis</div>
+      <div class="ni" onclick="SP('map',this)"><div class="ni-dot"></div>Price Map</div>
+      <div class="ni" onclick="SP('cities',this)"><div class="ni-dot"></div>City Comparison</div>
+      <div class="ni" onclick="SP('districts',this)"><div class="ni-dot"></div>Districts</div>
+      <div class="ni" onclick="SP('assets',this)"><div class="ni-dot"></div>Asset Classes</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-lbl">Insights</div>
+      <div class="ni" onclick="SP('trends',this)"><div class="ni-dot"></div>Price Trends</div>
+      <div class="ni" onclick="SP('explorer',this)"><div class="ni-dot"></div>Data Explorer</div>
+    </div>
+
+    <div class="sb-foot">
+      <div class="sb-live"><div class="live-dot"></div><span id="srows">Live</span></div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="tb-title" id="tb-title">Market Overview</div>
+        <div class="tb-sub" id="tb-sub">Loading...</div>
+      </div>
+      <div class="tb-pill"><div class="tb-pill-dot"></div><span id="dpill">Live Data</span></div>
+    </div>
+
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <div class="pg active" id="pg-overview">
+        <div class="kpi-row" id="kpi-row"></div>
+        <div class="g2">
+          <div class="card"><div class="c-head"><div><div class="c-title">Office Rent by City</div><div class="c-sub">Median DH/m²/month</div></div></div><div class="cv h200"><canvas id="c-or"></canvas></div></div>
+          <div class="card"><div class="c-head"><div><div class="c-title">Apartment Sale by City</div><div class="c-sub">Median DH/m²</div></div></div><div class="cv h200"><canvas id="c-as2"></canvas></div></div>
+        </div>
+        <div class="g2">
+          <div class="card"><div class="c-head"><div><div class="c-title">Market by City</div><div class="c-sub">Volume distribution</div></div></div><div class="cv h200"><canvas id="c-cp"></canvas></div></div>
+          <div class="card"><div class="c-head"><div><div class="c-title">Asset Class Mix</div><div class="c-sub">By property type</div></div></div><div class="cv h200"><canvas id="c-ap"></canvas></div></div>
+        </div>
+        <div class="g2">
+          <div class="card"><div class="c-head"><div><div class="c-title">Rent vs Sale</div><div class="c-sub">By city</div></div></div><div class="cv h200"><canvas id="c-rvs"></canvas></div></div>
+          <div class="card"><div class="c-head"><div><div class="c-title">Asset Classes — Rent</div><div class="c-sub">Cross-city avg median</div></div></div><div class="cv h200"><canvas id="c-ar"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- MAP -->
+      <div class="pg" id="pg-map">
+        <div class="pgh"><h1>Price Map</h1><p>Circle size = volume · color = price level (gold=low → white=high)</p></div>
+        <div class="frow" id="mcf"><span class="fl">City</span><button class="fb on" onclick="MS.city='All';AF(this,this.closest('.frow'));RM()">All</button></div>
+        <div class="frow">
+          <span class="fl">Type</span>
+          <button class="fb on" onclick="MS.lt='All';AF(this,this.closest('.frow'));RM()">All</button>
+          <button class="fb" onclick="MS.lt='Rent';AF(this,this.closest('.frow'));RM()">Rent</button>
+          <button class="fb" onclick="MS.lt='Sale';AF(this,this.closest('.frow'));RM()">Sale</button>
+          <div class="sep"></div>
+          <span class="fl">Asset</span>
+          <select class="fs" id="ma" onchange="MS.asset=this.value;RM()"><option value="All">All Assets</option></select>
+        </div>
+        <div id="map-outer">
+          <div id="the-map"></div>
+          <div class="map-legend">
+            <div class="map-legend-title">Price Level</div>
+            <div class="map-legend-row"><div class="map-legend-dot" style="background:#b8933f"></div>Lower</div>
+            <div class="map-legend-row"><div class="map-legend-dot" style="background:#e0b96a"></div>Mid</div>
+            <div class="map-legend-row"><div class="map-legend-dot" style="background:#f5f5f5"></div>Higher</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="c-head"><div class="c-title">District Rankings</div><span class="c-sub" id="map-sub"></span></div>
+          <div class="stbl"><table class="tbl"><thead><tr><th>#</th><th>District</th><th>City</th><th>Type</th><th>Median DH/m²</th></tr></thead><tbody id="map-tb"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- CITIES -->
+      <div class="pg" id="pg-cities">
+        <div class="pgh"><h1>City Comparison</h1><p>Cross-city pricing by asset class</p></div>
+        <div class="frow">
+          <span class="fl">Type</span>
+          <button class="fb on" onclick="CS.lt='Rent';AF(this,this.closest('.frow'));RC()">Rent</button>
+          <button class="fb" onclick="CS.lt='Sale';AF(this,this.closest('.frow'));RC()">Sale</button>
+        </div>
+        <div class="gf card">
+          <div class="c-head"><div><div class="c-title">Price by Asset Class — All Cities</div><div class="c-sub" id="c-sub">Median DH/m²/mo · Rent</div></div></div>
+          <div class="cv h300"><canvas id="c-cg"></canvas></div>
+        </div>
+        <div class="gf card" style="margin-top:14px;">
+          <div class="c-head"><div><div class="c-title">City × Asset Heatmap</div><div class="c-sub" id="hm-sub">Median DH/m²</div></div></div>
+          <div style="overflow-x:auto;" id="heatmap"></div>
+        </div>
+        <div class="g2" style="margin-top:14px;">
+          <div class="card"><div class="c-head"><div class="c-title">Volume by City</div></div><div class="cv h200"><canvas id="c-cv"></canvas></div></div>
+          <div class="card"><div class="c-head"><div><div class="c-title">Office Rent Ranking</div><div class="c-sub">Median DH/m²/mo</div></div></div><div class="cv h200"><canvas id="c-cr"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- DISTRICTS -->
+      <div class="pg" id="pg-districts">
+        <div class="pgh"><h1>Districts</h1><p>Drill down by city and asset class</p></div>
+        <div class="ctabs" id="d-ctabs"></div>
+        <div class="frow">
+          <span class="fl">Asset</span>
+          <select class="fs" id="da" onchange="RD()"><option value="All">All Assets</option></select>
+          <div class="sep"></div>
+          <span class="fl">Type</span>
+          <button class="fb on" onclick="DS.lt='All';AF(this,this.closest('.frow'));RD()">All</button>
+          <button class="fb" onclick="DS.lt='Rent';AF(this,this.closest('.frow'));RD()">Rent</button>
+          <button class="fb" onclick="DS.lt='Sale';AF(this,this.closest('.frow'));RD()">Sale</button>
+        </div>
+        <div class="g2">
+          <div class="card"><div class="c-head"><div><div class="c-title">Top by Price</div><div class="c-sub">Median DH/m²</div></div></div><div class="cv h320"><canvas id="c-dp"></canvas></div></div>
+          <div class="card"><div class="c-head"><div><div class="c-title">Top by Volume</div><div class="c-sub">Listing count</div></div></div><div class="cv h320"><canvas id="c-dv"></canvas></div></div>
+        </div>
+        <div class="gf card" style="margin-top:4px;">
+          <div class="c-head"><div class="c-title">All Districts</div><span class="c-sub" id="d-count"></span></div>
+          <div class="stbl"><table class="tbl"><thead><tr><th>#</th><th>District</th><th>Asset</th><th>Type</th><th>Median DH/m²</th></tr></thead><tbody id="d-tb"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ASSETS -->
+      <div class="pg" id="pg-assets">
+        <div class="pgh"><h1>Asset Classes</h1><p>Performance by property type across all cities</p></div>
+        <div class="gf card">
+          <div class="c-head"><div><div class="c-title">Rent vs Sale — All Asset Types</div><div class="c-sub">Avg median DH/m² across cities</div></div></div>
+          <div class="cv h280"><canvas id="c-aas"></canvas></div>
+        </div>
+        <div class="g2" style="margin-top:14px;">
+          <div class="card"><div class="c-head"><div class="c-title">Rent · Asset × City</div></div><div class="cv h280"><canvas id="c-acr"></canvas></div></div>
+          <div class="card"><div class="c-head"><div class="c-title">Sale · Asset × City</div></div><div class="cv h280"><canvas id="c-acs"></canvas></div></div>
+        </div>
+        <div class="gf card" style="margin-top:14px;">
+          <div class="c-head"><div class="c-title">Summary Table</div></div>
+          <table class="tbl"><thead><tr><th>Asset Class</th><th>Type</th><th>Median DH/m²</th><th>Cities</th></tr></thead><tbody id="a-tb"></tbody></table>
+        </div>
+      </div>
+
+      <!-- TRENDS -->
+      <div class="pg" id="pg-trends">
+        <div class="pgh"><h1>Price Trends</h1><p>Auto-updates with every new data upload</p></div>
+        <div id="trends-wrap"></div>
+      </div>
+
+      <!-- EXPLORER -->
+      <div class="pg" id="pg-explorer">
+        <div class="pgh"><h1>Data Explorer</h1><p>Search all district-level aggregates</p></div>
+        <div class="frow">
+          <input class="fi" id="eq" placeholder="Search district or city…" oninput="RE()"/>
+          <select class="fs" id="ec" onchange="RE()"><option value="All">All Cities</option></select>
+          <select class="fs" id="ea" onchange="RE()"><option value="All">All Assets</option></select>
+          <select class="fs" id="et" onchange="RE()"><option value="All">All Types</option><option>Rent</option><option>Sale</option></select>
+          <select class="fs" id="es" onchange="RE()"><option value="pd">Highest Price</option><option value="pa">Lowest Price</option><option value="cd">Most Listings</option></select>
+        </div>
+        <div class="card">
+          <div class="c-head"><div class="c-title">Results</div><span class="c-sub" id="e-count"></span></div>
+          <div class="stbl" style="max-height:500px;"><table class="tbl"><thead><tr><th>#</th><th>District</th><th>City</th><th>Asset</th><th>Type</th><th>Median DH/m²</th></tr></thead><tbody id="e-tb"></tbody></table></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+const SBURL='https://ujhqkirhfmumvvnfvgnz.supabase.co';
+const SBKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik';
+const sb=supabase.createClient(SBURL,SBKEY);
+let DB={raw:[],agg:{},cities:[],assets:[],periods:[]};
+let MS={city:'All',lt:'All',asset:'All'},CS={lt:'Rent'},DS={city:'',lt:'All'},TS={asset:'Offices',lt:'Rent'};
+let leafMap=null,mapM=[];
+
+const CC={Casablanca:[33.5731,-7.5898],Rabat:[34.0209,-6.8416],Marrakech:[31.6295,-7.9811],Tangiers:[35.7595,-5.834],Fez:[34.0181,-5.0078],Agadir:[30.4278,-9.5981]};
+
+// Color palette — muted, sophisticated
+const CP=['#1a1a1a','#b8933f','#4a7c6f','#8b6e4e','#3d5a7a','#7a4a6e','#4a6e3d','#6e4a3d'];
+function gc(city){return CP[DB.cities.indexOf(city)%CP.length]||'#1a1a1a';}
+
+function ld(p,t){document.getElementById('lf').style.width=p+'%';document.getElementById('ls').textContent=t;}
+function hideLo(){document.getElementById('lo').classList.add('hide');}
+function med(arr){if(!arr.length)return null;const s=[...arr].sort((a,b)=>a-b),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+function trim(arr){if(arr.length<4)return arr;const s=[...arr].sort((a,b)=>a-b);return s.slice(Math.floor(s.length*.02),Math.floor(s.length*.98));}
+
+async function loadData(){
+  ld(5,'Connecting…');
+  let rows=[],from=0;
+  while(true){
+    const{data,error}=await sb.from('properties').select('city,country,submarket,asset_class,listing_type,price_per_sqm,retrieved_at').not('price_per_sqm','is',null).gt('price_per_sqm',0).range(from,from+999);
+    if(error||!data||!data.length)break;
+    rows=rows.concat(data);from+=1000;
+    ld(5+Math.min(50,Math.round((from/60000)*50)),'Loading…');
+    if(data.length<1000)break;
+  }
+  ld(60,'Processing…');
+  if(!rows.length){ld(100,'No data');setTimeout(hideLo,600);return;}
+  DB.raw=rows;
+  DB.cities=[...new Set(rows.map(r=>r.city).filter(Boolean))].sort();
+  DB.assets=[...new Set(rows.map(r=>r.asset_class).filter(Boolean))].sort();
+  DB.periods=[...new Set(rows.map(r=>r.retrieved_at?r.retrieved_at.slice(0,7):null).filter(Boolean))].sort();
+  ld(75,'Aggregating…');buildAgg();
+  ld(90,'Rendering…');populateFilters();renderOverview();
+  const info=`${DB.cities.length} cities · ${DB.periods.length} period${DB.periods.length!==1?'s':''}`;
+  document.getElementById('srows').textContent='Live';
+  document.getElementById('dpill').textContent=info;
+  document.getElementById('tb-sub').textContent=DB.cities.join(' · ');
+  ld(100,'Ready');setTimeout(hideLo,400);
+}
+
+function buildAgg(){
+  const raw=DB.raw;
+  const cm={};raw.forEach(r=>{if(!r.city)return;if(!cm[r.city])cm[r.city]={city:r.city,prices:[],count:0,rent:0,sale:0};cm[r.city].prices.push(r.price_per_sqm);cm[r.city].count++;if(r.listing_type==='Rent')cm[r.city].rent++;if(r.listing_type==='Sale')cm[r.city].sale++;});
+  DB.agg.cs=Object.values(cm).map(c=>({...c,med:Math.round(med(trim(c.prices)))}));
+  const cal={};raw.forEach(r=>{if(!r.city||!r.asset_class||!r.listing_type)return;const k=`${r.city}|${r.asset_class}|${r.listing_type}`;if(!cal[k])cal[k]={city:r.city,asset_class:r.asset_class,listing_type:r.listing_type,prices:[],count:0};cal[k].prices.push(r.price_per_sqm);cal[k].count++;});
+  DB.agg.cal=Object.values(cal).map(c=>({...c,med:Math.round(med(trim(c.prices)))})).filter(c=>c.count>=5);
+  const dm={};raw.forEach(r=>{if(!r.city||!r.submarket||!r.asset_class||!r.listing_type)return;const k=`${r.city}|${r.submarket}|${r.asset_class}|${r.listing_type}`;if(!dm[k])dm[k]={city:r.city,district:r.submarket,asset_class:r.asset_class,listing_type:r.listing_type,prices:[],count:0};dm[k].prices.push(r.price_per_sqm);dm[k].count++;});
+  DB.agg.dist=Object.values(dm).map(d=>({...d,med:Math.round(med(trim(d.prices)))})).filter(d=>d.count>=3);
+  const tm={};raw.forEach(r=>{if(!r.retrieved_at||!r.city||!r.asset_class||!r.listing_type)return;const p=r.retrieved_at.slice(0,7);const k=`${p}|${r.city}|${r.asset_class}|${r.listing_type}`;if(!tm[k])tm[k]={period:p,city:r.city,asset_class:r.asset_class,listing_type:r.listing_type,prices:[],count:0};tm[k].prices.push(r.price_per_sqm);tm[k].count++;});
+  DB.agg.ts=Object.values(tm).map(t=>({...t,med:Math.round(med(trim(t.prices)))})).filter(t=>t.count>=3);
+}
+
+function populateFilters(){
+  const aO='<option value="All">All Assets</option>'+DB.assets.map(a=>`<option>${a}</option>`).join('');
+  ['ma','da','ea'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML=aO;});
+  document.getElementById('ec').innerHTML='<option value="All">All Cities</option>'+DB.cities.map(c=>`<option>${c}</option>`).join('');
+  const mcf=document.getElementById('mcf');
+  DB.cities.forEach(c=>{const b=document.createElement('button');b.className='fb';b.textContent=c;b.onclick=()=>{MS.city=c;AF(b,mcf);RM();};mcf.appendChild(b);});
+  const dct=document.getElementById('d-ctabs');
+  DB.cities.forEach((c,i)=>{const b=document.createElement('button');b.className='ctab'+(i===0?' on':'');b.textContent=c;b.onclick=()=>{DS.city=c;dct.querySelectorAll('.ctab').forEach(x=>x.classList.remove('on'));b.classList.add('on');RD();};dct.appendChild(b);});
+  if(DB.cities.length)DS.city=DB.cities[0];
+}
+
+// ── CHART DEFAULTS — clean, thin, reference-style ──
+Chart.defaults.font.family='Inter,sans-serif';
+Chart.defaults.font.size=11;
+Chart.defaults.color='#9a9896';
+
+// Tooltip — crisp white card
+const TT={
+  backgroundColor:'#fff',borderColor:'#e8e6e3',borderWidth:1,
+  titleFont:{size:12,weight:'600'},bodyFont:{size:11},
+  padding:{top:10,bottom:10,left:14,right:14},
+  cornerRadius:8,titleColor:'#111',bodyColor:'#6f6e6b',
+  displayColors:true,boxWidth:8,boxHeight:8,usePointStyle:true
+};
+
+// Grid — ultra-light horizontal only
+const YAX={
+  grid:{color:'#f2f1ee',drawBorder:false},
+  border:{display:false,dash:[0]},
+  ticks:{color:'#b0aea8',padding:8,callback:v=>v>=10000?(v/1000).toFixed(0)+'k':v>=1000?(v/1000).toFixed(1)+'k':v}
+};
+const XAX={grid:{display:false},border:{display:false},ticks:{color:'#b0aea8',padding:6}};
+
+function mk(id,type,data,opts={}){
+  const c=document.getElementById(id);if(!c)return;if(c._ch)c._ch.destroy();
+  c._ch=new Chart(c,{type,data,options:{responsive:true,maintainAspectRatio:false,animation:{duration:600,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:TT},...opts}});
+  return c._ch;
+}
+
+// Vertical bar — thin columns, flat fill, no border radius (like reference)
+function vbar(id,labels,vals,cols){
+  mk(id,'bar',{
+    labels,
+    datasets:[{
+      data:vals,
+      backgroundColor:cols.map(c=>c+'22'),
+      borderColor:cols,
+      borderWidth:1.5,
+      borderRadius:3,
+      borderSkipped:false,
+      barPercentage:.55,
+      categoryPercentage:.7
+    }]
+  },{scales:{y:{...YAX},x:{...XAX}}});
+}
+
+// Horizontal bar — thin rows
+function hbar(id,labels,vals,col){
+  mk(id,'bar',{
+    labels,
+    datasets:[{
+      data:vals,
+      backgroundColor:col+'20',
+      borderColor:col,
+      borderWidth:1.5,
+      borderRadius:3,
+      borderSkipped:false,
+      barPercentage:.6,
+      categoryPercentage:.75
+    }]
+  },{
+    indexAxis:'y',
+    scales:{
+      x:{...YAX,ticks:{...YAX.ticks,padding:6}},
+      y:{...XAX,ticks:{color:'#9a9896',font:{size:10},padding:4}}
+    }
+  });
+}
+
+// Area/line — filled, smooth, thin line, NO dots except on hover
+function area(id,labels,datasets_cfg){
+  const ds=datasets_cfg.map(d=>({
+    label:d.label||'',
+    data:d.data,
+    borderColor:d.color,
+    backgroundColor:d.fill!==false?d.color+'14':'transparent',
+    borderWidth:1.5,
+    tension:.45,
+    pointRadius:0,
+    pointHoverRadius:4,
+    pointHoverBackgroundColor:d.color,
+    pointHoverBorderColor:'#fff',
+    pointHoverBorderWidth:2,
+    fill:d.fill!==false
+  }));
+  mk(id,'line',{labels,datasets:ds},{
+    interaction:{mode:'index',intersect:false},
+    scales:{y:{...YAX},x:{...XAX}}
+  });
+}
+
+function renderOverview(){
+  const{cs,cal,dist}=DB.agg;
+  const dd=[...new Set(dist.map(d=>d.district))].length;
+  const ACCS=['#1a1a1a','#b8933f','#4a7c6f','#3d5a7a','#8b6e4e','#6e4a3d'];
+  document.getElementById('kpi-row').innerHTML=[
+    ['Cities',DB.cities.length,'tracked markets',ACCS[0]],
+    ['Districts',dd,'with avg prices',ACCS[1]],
+    ['Asset Types',DB.assets.length,'property classes',ACCS[2]],
+    ['Data Periods',DB.periods.length,DB.periods.length>1?DB.periods[0]+' – '+DB.periods[DB.periods.length-1]:DB.periods[0]||'—',ACCS[3]],
+    ['Coverage','Morocco','Primary market',ACCS[4]],
+  ].map(([l,v,s,a])=>`<div class="kpi"><div style="width:24px;height:2px;background:${a};border-radius:1px;margin-bottom:12px;"></div><div class="kpi-l">${l}</div><div class="kpi-v">${v}</div><div class="kpi-s">${s}</div></div>`).join('');
+
+  const cc=DB.cities.map(c=>gc(c));
+  vbar('c-or',DB.cities,DB.cities.map(c=>{const r=cal.find(d=>d.city===c&&d.asset_class==='Offices'&&d.listing_type==='Rent');return r?r.med:null;}),cc);
+  vbar('c-as2',DB.cities,DB.cities.map(c=>{const r=cal.find(d=>d.city===c&&d.asset_class==='Apartments'&&d.listing_type==='Sale');return r?r.med:null;}),cc);
+
+  const lgnd={display:true,position:'right',labels:{color:'#9a9896',padding:10,font:{size:10},usePointStyle:true,pointStyleWidth:8}};
+  mk('c-cp','doughnut',{labels:cs.map(c=>c.city),datasets:[{data:cs.map(c=>c.count),backgroundColor:DB.cities.map(c=>gc(c)),borderWidth:2,borderColor:'#fff',hoverOffset:6}]},{plugins:{legend:lgnd,tooltip:TT}});
+  const ac={};DB.raw.forEach(r=>{if(r.asset_class)ac[r.asset_class]=(ac[r.asset_class]||0)+1;});
+  const ak=Object.keys(ac).sort((a,b)=>ac[b]-ac[a]);
+  mk('c-ap','doughnut',{labels:ak,datasets:[{data:ak.map(k=>ac[k]),backgroundColor:CP.map(c=>c),borderWidth:2,borderColor:'#fff',hoverOffset:6}]},{plugins:{legend:lgnd,tooltip:TT}});
+
+  // Rent vs Sale — grouped thin bars
+  mk('c-rvs','bar',{labels:cs.map(c=>c.city),datasets:[
+    {label:'Rent',data:cs.map(c=>c.rent),backgroundColor:'#1a1a1a18',borderColor:'#1a1a1a',borderWidth:1.5,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8},
+    {label:'Sale',data:cs.map(c=>c.sale),backgroundColor:'#b8933f18',borderColor:'#b8933f',borderWidth:1.5,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8}
+  ]},{
+    plugins:{legend:{display:true,labels:{color:'#9a9896',padding:14,usePointStyle:true,font:{size:11}}},tooltip:{...TT,mode:'index'}},
+    scales:{y:{...YAX},x:{...XAX}}
+  });
+
+  const ats=DB.assets.filter(a=>a!=='Farms');
+  hbar('c-ar',ats,ats.map(a=>{const r=cal.filter(d=>d.asset_class===a&&d.listing_type==='Rent');return r.length?Math.round(r.reduce((s,x)=>s+x.med,0)/r.length):null;}),'#1a1a1a');
+}
+
+function initMap(){
+  leafMap=L.map('the-map',{zoomControl:true}).setView([32.5,-6],6);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© CartoDB',maxZoom:19}).addTo(leafMap);
+  RM();
+}
+
+function RM(){
+  if(!leafMap)return;
+  mapM.forEach(m=>leafMap.removeLayer(m));mapM=[];
+  const asset=document.getElementById('ma')?.value||'All';
+  let data=DB.agg.dist;
+  if(MS.city!=='All')data=data.filter(d=>d.city===MS.city);
+  if(MS.lt!=='All')data=data.filter(d=>d.listing_type===MS.lt);
+  if(asset!=='All')data=data.filter(d=>d.asset_class===asset);
+  const byD={};data.forEach(d=>{const k=d.city+'|'+d.district;if(!byD[k])byD[k]={city:d.city,district:d.district,prices:[],count:0};byD[k].prices.push(d.med);byD[k].count+=d.count;});
+  const entries=Object.values(byD).map(e=>({...e,avg:Math.round(e.prices.reduce((a,b)=>a+b,0)/e.prices.length)}));
+  if(!entries.length)return;
+  const ps=entries.map(e=>e.avg),mn=Math.min(...ps),mx=Math.max(...ps);
+  function pc(p){const t=mx>mn?(p-mn)/(mx-mn):0.5;if(t<.33)return'#b8933f';if(t<.66)return'#e0b96a';return'#f5f5f0';}
+  entries.forEach(e=>{
+    const base=CC[e.city];if(!base)return;
+    const jlat=base[0]+(Math.random()-.5)*.08,jlng=base[1]+(Math.random()-.5)*.08;
+    const unit=MS.lt==='Rent'?'DH/m²/mo':'DH/m²';
+    const m=L.circleMarker([jlat,jlng],{radius:Math.max(4,Math.min(18,Math.sqrt(e.count)*1.2)),fillColor:pc(e.avg),color:'rgba(0,0,0,0)',weight:0,fillOpacity:.85})
+      .bindPopup(`<div style="font-family:Inter,sans-serif;font-size:12px;line-height:1.8;"><b style="font-size:13px;color:#111;">${e.district}</b><br/><span style="color:#888;">${e.city}</span><br/><b style="color:#b8933f;font-size:15px;">${e.avg.toLocaleString()}</b> <span style="color:#aaa;font-size:10px;">${unit}</span></div>`);
+    m.addTo(leafMap);mapM.push(m);
+  });
+  DB.cities.forEach(c=>{const base=CC[c];if(!base)return;L.circleMarker(base,{radius:8,fillColor:'#fff',color:'#333',weight:1.5,fillOpacity:.9}).bindPopup(`<b>${c}</b>`).addTo(leafMap);});
+  const sorted=[...entries].sort((a,b)=>b.avg-a.avg);
+  document.getElementById('map-tb').innerHTML=sorted.slice(0,50).map((e,i)=>`<tr><td class="d">${i+1}</td><td>${e.district}</td><td class="d">${e.city}</td><td><span class="tag ${MS.lt==='Rent'?'tag-r':MS.lt==='Sale'?'tag-s':''}">${MS.lt==='All'?'—':MS.lt}</span></td><td class="v">${e.avg.toLocaleString()}</td></tr>`).join('');
+  document.getElementById('map-sub').textContent=`${entries.length} districts`;
+}
+
+function RC(){
+  const lt=CS.lt;
+  document.getElementById('c-sub').textContent=`Median DH/m²${lt==='Rent'?'/mo':''} · ${lt}`;
+  document.getElementById('hm-sub').textContent=`Median DH/m² · ${lt}`;
+  const ats=DB.assets.filter(a=>a!=='Farms');
+
+  // Grouped thin bars — one series per city
+  mk('c-cg','bar',{labels:ats,datasets:DB.cities.map(city=>({
+    label:city,
+    data:ats.map(at=>{const r=DB.agg.cal.find(d=>d.city===city&&d.asset_class===at&&d.listing_type===lt);return r?r.med:null;}),
+    backgroundColor:gc(city)+'20',borderColor:gc(city),borderWidth:1.5,
+    borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.85
+  }))},{
+    plugins:{legend:{display:true,labels:{color:'#9a9896',padding:12,usePointStyle:true,font:{size:11}}},tooltip:{...TT,mode:'index'}},
+    scales:{y:{...YAX},x:{...XAX,ticks:{font:{size:10}}}}
+  });
+
+  const cols=[`130px`,...DB.cities.map(()=>'1fr')].join(' ');
+  let h=`<div style="display:grid;grid-template-columns:${cols};gap:3px;min-width:420px;padding:2px 0;"><div></div>`;
+  DB.cities.forEach(c=>h+=`<div style="font-size:9px;font-weight:600;color:var(--text3);text-align:center;padding:5px 2px;letter-spacing:.06em;text-transform:uppercase;">${c}</div>`);
+  ats.forEach(at=>{
+    const vals=DB.cities.map(c=>{const r=DB.agg.cal.find(d=>d.city===c&&d.asset_class===at&&d.listing_type===lt);return r?r.med:null;});
+    const nn=vals.filter(v=>v!==null);const mn2=Math.min(...nn),mx2=Math.max(...nn);
+    h+=`<div style="font-size:10px;font-weight:500;color:var(--text2);display:flex;align-items:center;padding:2px 4px;">${at.length>14?at.slice(0,13)+'…':at}</div>`;
+    vals.forEach(v=>{if(v===null){h+=`<div class="hmc" style="background:var(--surface2);color:var(--text3);">—</div>`;return;}const t=nn.length>1?(v-mn2)/(mx2-mn2+1):0.5;const bg=t<.33?'rgba(184,147,63,.08)':t<.66?'rgba(184,147,63,.18)':'rgba(184,147,63,.32)';const col=t<.33?'#9a7a3a':t<.66?'#7a5c1e':'#4a3810';h+=`<div class="hmc" style="background:${bg};color:${col};">${v>=10000?(v/1000).toFixed(0)+'k':v.toLocaleString()}</div>`;});
+  });
+  h+='</div>';document.getElementById('heatmap').innerHTML=h;
+
+  vbar('c-cv',DB.cities,DB.agg.cs.map(c=>c.count),DB.cities.map(c=>gc(c)));
+  const offr=DB.cities.map(c=>{const r=DB.agg.cal.find(d=>d.city===c&&d.asset_class==='Offices'&&d.listing_type==='Rent');return{city:c,v:r?r.med:0};}).sort((a,b)=>b.v-a.v);
+  hbar('c-cr',offr.map(r=>r.city),offr.map(r=>r.v),'#b8933f');
+}
+
+function RD(){
+  const city=DS.city,asset=document.getElementById('da')?.value||'All',lt=DS.lt;
+  let data=DB.agg.dist.filter(d=>d.city===city);
+  if(asset!=='All')data=data.filter(d=>d.asset_class===asset);
+  if(lt!=='All')data=data.filter(d=>d.listing_type===lt);
+  const byD={};data.forEach(d=>{if(!byD[d.district])byD[d.district]={district:d.district,lt:d.listing_type,asset:d.asset_class,prices:[],count:0};byD[d.district].prices.push(d.med);byD[d.district].count+=d.count;});
+  const ents=Object.values(byD).map(e=>({...e,avg:Math.round(e.prices.reduce((a,b)=>a+b,0)/e.prices.length)}));
+  const byP=[...ents].sort((a,b)=>b.avg-a.avg),byV=[...ents].sort((a,b)=>b.count-a.count);
+  hbar('c-dp',byP.slice(0,15).map(d=>d.district.length>20?d.district.slice(0,19)+'…':d.district),byP.slice(0,15).map(d=>d.avg),'#1a1a1a');
+  hbar('c-dv',byV.slice(0,15).map(d=>d.district.length>20?d.district.slice(0,19)+'…':d.district),byV.slice(0,15).map(d=>d.count),'#b8933f');
+  document.getElementById('d-count').textContent=`${byP.length} districts · ${city}`;
+  document.getElementById('d-tb').innerHTML=byP.map((e,i)=>`<tr><td class="d">${i+1}</td><td>${e.district}</td><td class="d">${asset==='All'?'—':asset}</td><td><span class="tag ${lt==='Rent'?'tag-r':lt==='Sale'?'tag-s':''}">${lt==='All'?'—':lt}</span></td><td class="v">${e.avg.toLocaleString()}</td></tr>`).join('');
+}
+
+function RA(){
+  if(!DB.agg.cal?.length)return;
+  const ats=DB.assets.filter(a=>a!=='Farms');
+  const rv=ats.map(a=>{const r=DB.agg.cal.filter(d=>d.asset_class===a&&d.listing_type==='Rent');return r.length?Math.round(r.reduce((s,x)=>s+x.med,0)/r.length):null;});
+  const sv=ats.map(a=>{const r=DB.agg.cal.filter(d=>d.asset_class===a&&d.listing_type==='Sale');return r.length?Math.round(r.reduce((s,x)=>s+x.med,0)/r.length):null;});
+
+  mk('c-aas','bar',{labels:ats,datasets:[
+    {label:'Rent',data:rv,backgroundColor:'#1a1a1a18',borderColor:'#1a1a1a',borderWidth:1.5,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8},
+    {label:'Sale',data:sv,backgroundColor:'#b8933f18',borderColor:'#b8933f',borderWidth:1.5,borderRadius:3,borderSkipped:false,barPercentage:.5,categoryPercentage:.8}
+  ]},{
+    plugins:{legend:{display:true,labels:{color:'#9a9896',padding:14,usePointStyle:true}},tooltip:{...TT,mode:'index'}},
+    scales:{y:{...YAX},x:{...XAX}}
+  });
+
+  const mAC=(id,lt)=>mk(id,'bar',{labels:ats,datasets:DB.cities.map(city=>({
+    label:city,
+    data:ats.map(at=>{const r=DB.agg.cal.find(d=>d.city===city&&d.asset_class===at&&d.listing_type===lt);return r?r.med:null;}),
+    backgroundColor:gc(city)+'1a',borderColor:gc(city),borderWidth:1.5,
+    borderRadius:3,borderSkipped:false,barPercentage:.45,categoryPercentage:.85
+  }))},{
+    plugins:{legend:{display:true,labels:{color:'#9a9896',padding:10,font:{size:10},usePointStyle:true}},tooltip:{...TT,mode:'index'}},
+    scales:{y:{...YAX},x:{...XAX,ticks:{font:{size:9}}}}
+  });
+  mAC('c-acr','Rent');mAC('c-acs','Sale');
+
+  const sm={};DB.agg.cal.forEach(d=>{const k=d.asset_class+'|'+d.listing_type;if(!sm[k])sm[k]={asset_class:d.asset_class,listing_type:d.listing_type,prices:[],count:0,cities:new Set()};sm[k].prices.push(d.med);sm[k].count+=d.count;sm[k].cities.add(d.city);});
+  document.getElementById('a-tb').innerHTML=Object.values(sm).map(s=>({...s,avg:Math.round(s.prices.reduce((a,b)=>a+b,0)/s.prices.length),nc:s.cities.size})).sort((a,b)=>a.asset_class.localeCompare(b.asset_class)||a.listing_type.localeCompare(b.listing_type)).map(r=>`<tr><td>${r.asset_class}</td><td><span class="tag ${r.listing_type==='Rent'?'tag-r':'tag-s'}">${r.listing_type}</span></td><td class="v">${r.avg.toLocaleString()}</td><td class="d">${r.nc}</td></tr>`).join('');
+}
+
+function RT(){
+  const el=document.getElementById('trends-wrap');
+  if(DB.periods.length<2){
+    el.innerHTML=`<div class="card"><div class="c-head"><div class="c-title">Price Evolution</div></div><div class="tph"><div class="tph-ico">↗</div><p>You have <b style="color:var(--text)">${DB.periods.length} period${DB.periods.length!==1?'s':''}${DB.periods.length?` (${DB.periods[0]})`:''}</b>.<br/>Upload more scraping runs to activate trend charts.</p></div></div><div class="g2" style="margin-top:14px;">${DB.cities.map(c=>`<div class="card"><div class="c-head"><div class="c-title">${c}</div></div><div class="tph" style="height:100px;"><div class="tph-ico" style="font-size:18px;">⏳</div><p style="font-size:11px;">Awaiting more periods</p></div></div>`).join('')}</div>`;
+    return;
+  }
+  el.innerHTML=`<div class="frow"><span class="fl">Asset</span><select class="fs" id="ta" onchange="TS.asset=this.value;RTC()">${DB.assets.map(a=>`<option value="${a}"${a==='Offices'?' selected':''}>${a}</option>`).join('')}</select><span class="fl" style="margin-left:6px;">Type</span><button class="fb on" onclick="TS.lt='Rent';AF(this,this.closest('.frow'));RTC()">Rent</button><button class="fb" onclick="TS.lt='Sale';AF(this,this.closest('.frow'));RTC()">Sale</button></div><div class="gf card"><div class="c-head"><div><div class="c-title">All Cities — Price Evolution</div><div class="c-sub" id="t-sub"></div></div></div><div class="cv h320"><canvas id="c-ta"></canvas></div></div><div class="g2" style="margin-top:14px;">${DB.cities.map(c=>`<div class="card"><div class="c-head"><div class="c-title">${c}</div></div><div class="cv h200"><canvas id="ct-${c.replace(/\s/g,'_')}"></canvas></div></div>`).join('')}</div>`;
+  RTC();
+}
+
+function RTC(){
+  const asset=document.getElementById('ta')?.value||'Offices',lt=TS.lt,periods=DB.periods;
+  const ts=DB.agg.ts.filter(d=>d.asset_class===asset&&d.listing_type===lt);
+  document.getElementById('t-sub').textContent=`${asset} · ${lt} · Median DH/m²`;
+
+  // Multi-city: thin lines, no fill, dots only on hover
+  const ds=DB.cities.map(city=>({
+    label:city,
+    data:periods.map(p=>{const r=ts.find(d=>d.city===city&&d.period===p);return r?r.med:null;}),
+    borderColor:gc(city),backgroundColor:'transparent',
+    borderWidth:1.5,tension:.4,
+    pointRadius:0,pointHoverRadius:4,
+    pointHoverBackgroundColor:gc(city),pointHoverBorderColor:'#fff',pointHoverBorderWidth:2,
+    fill:false,spanGaps:true
+  }));
+  mk('c-ta','line',{labels:periods,datasets:ds},{
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:true,labels:{color:'#9a9896',padding:14,usePointStyle:true}},tooltip:TT},
+    scales:{y:{...YAX},x:{...XAX}}
+  });
+
+  // Per-city: area fill, single color
+  DB.cities.forEach(city=>{
+    const id='ct-'+city.replace(/\s/g,'_');
+    if(!document.getElementById(id))return;
+    const col=gc(city);
+    area(id,periods,[{
+      data:periods.map(p=>{const r=ts.find(d=>d.city===city&&d.period===p);return r?r.med:null;}),
+      color:col,fill:true
+    }]);
+  });
+}
+
+function RE(){
+  const q=document.getElementById('eq')?.value.toLowerCase()||'',city=document.getElementById('ec')?.value||'All',asset=document.getElementById('ea')?.value||'All',lt=document.getElementById('et')?.value||'All',sort=document.getElementById('es')?.value||'pd';
+  let data=[...DB.agg.dist];
+  if(q)data=data.filter(d=>d.district.toLowerCase().includes(q)||d.city.toLowerCase().includes(q));
+  if(city!=='All')data=data.filter(d=>d.city===city);
+  if(asset!=='All')data=data.filter(d=>d.asset_class===asset);
+  if(lt!=='All')data=data.filter(d=>d.listing_type===lt);
+  if(sort==='pd')data.sort((a,b)=>b.med-a.med);else if(sort==='pa')data.sort((a,b)=>a.med-b.med);else data.sort((a,b)=>b.count-a.count);
+  document.getElementById('e-count').textContent=`${data.length.toLocaleString()} results`;
+  document.getElementById('e-tb').innerHTML=data.slice(0,300).map((d,i)=>`<tr><td class="d">${i+1}</td><td>${d.district}</td><td class="d">${d.city}</td><td class="d" style="font-size:10px;">${d.asset_class}</td><td><span class="tag ${d.listing_type==='Rent'?'tag-r':'tag-s'}">${d.listing_type}</span></td><td class="v">${d.med.toLocaleString()}</td></tr>`).join('');
+}
+
+const PTL={overview:'Market Overview',map:'Price Map',cities:'City Comparison',districts:'Districts',assets:'Asset Classes',trends:'Price Trends',explorer:'Data Explorer'};
+const PTS={overview:'Live market snapshot',map:'District-level median prices',cities:'Cross-city pricing by asset class',districts:'Drill down by city',assets:'Performance by property type',trends:'Historical price evolution',explorer:'Search all district aggregates'};
+
+function SP(name,el){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pg-'+name).classList.add('active');
+  if(el)el.classList.add('active');
+  document.getElementById('tb-title').textContent=PTL[name]||name;
+  document.getElementById('tb-sub').textContent=PTS[name]||'';
+  if(name==='map'&&!leafMap)setTimeout(initMap,80);
+  if(name==='cities')RC();
+  if(name==='districts')RD();
+  if(name==='assets')RA();
+  if(name==='trends')RT();
+  if(name==='explorer')RE();
+}
+function AF(btn,container){if(container)container.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+
+loadData().then(()=>{
+  const hash=window.location.hash.replace('#','');
+  const valid=['overview','map','cities','districts','assets','trends','explorer'];
+  if(hash&&valid.includes(hash)){
+    const el=document.querySelector(`.ni[onclick*="'${hash}'"]`);
+    SP(hash,el);
+  }
+});
+</script>
+</body>
+</html>

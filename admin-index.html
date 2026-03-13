@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ironwood Intelligence — Admin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0c12;color:#e0e0e0;min-height:100vh;}
+
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+.login-box{background:#12151f;border:1px solid #1e2130;border-radius:16px;padding:48px 40px;width:100%;max-width:400px;}
+.login-logo{font-size:18px;font-weight:900;color:#fff;letter-spacing:.06em;margin-bottom:4px;text-align:center;}
+.login-sub{font-size:11px;color:#555;margin-bottom:36px;text-align:center;text-transform:uppercase;letter-spacing:.1em;}
+.login-box h2{font-size:17px;font-weight:700;color:#fff;margin-bottom:22px;text-align:center;}
+.fg{margin-bottom:14px;}
+.fg label{font-size:12px;color:#888;display:block;margin-bottom:5px;font-weight:600;}
+.fg input{width:100%;padding:11px 14px;background:#0a0c12;border:1px solid #1e2130;border-radius:8px;font-size:14px;color:#fff;outline:none;}
+.fg input:focus{border-color:#4f6ef7;}
+.fg input::placeholder{color:#444;}
+.login-btn{width:100%;padding:12px;background:#4f6ef7;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;}
+.login-btn:hover{background:#3d5ce0;}
+.login-btn:disabled{background:#2a2d3a;color:#555;cursor:not-allowed;}
+.login-error{color:#f87171;font-size:13px;margin-top:12px;text-align:center;display:none;padding:10px;background:#2d0a0a;border:1px solid #7f1d1d;border-radius:6px;}
+
+#app{display:none;}
+.nav{background:#12151f;border-bottom:1px solid #1e2130;padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.nav-logo{font-size:13px;font-weight:800;color:#fff;letter-spacing:.06em;}
+.nav-logo span{color:#4f6ef7;}
+.nav-badge{background:#1e2130;padding:3px 10px;border-radius:20px;font-size:11px;color:#888;margin-left:8px;}
+.nav-right{display:flex;align-items:center;gap:16px;}
+.nav-user{font-size:12px;color:#555;}
+.btn-logout{padding:6px 14px;background:transparent;border:1px solid #1e2130;border-radius:6px;font-size:12px;color:#888;cursor:pointer;}
+.btn-logout:hover{border-color:#f87171;color:#f87171;}
+
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 56px);}
+.sidebar{background:#0e1018;border-right:1px solid #1e2130;padding:20px 0;}
+.sidebar-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#444;padding:8px 20px 4px;}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:13px;color:#888;cursor:pointer;transition:all 0.15s;border-right:2px solid transparent;}
+.sidebar-item:hover{background:#12151f;color:#fff;}
+.sidebar-item.active{background:#12151f;color:#fff;border-right-color:#4f6ef7;}
+.si-icon{font-size:15px;width:20px;text-align:center;}
+
+.main{padding:32px;overflow-y:auto;}
+.page-section{display:none;}
+.page-section.active{display:block;}
+.page-hdr{margin-bottom:28px;}
+.page-hdr h1{font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;}
+.page-hdr p{font-size:13px;color:#666;}
+
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:#12151f;border:1px solid #1e2130;border-radius:10px;padding:20px;}
+.stat-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+.stat-val{font-size:28px;font-weight:800;color:#fff;margin-bottom:4px;}
+.stat-sub{font-size:12px;color:#555;}
+
+.card{background:#12151f;border:1px solid #1e2130;border-radius:10px;padding:24px;margin-bottom:20px;}
+.card-hdr{margin-bottom:20px;}
+.card-hdr h2{font-size:15px;font-weight:700;color:#fff;}
+.card-hdr p{font-size:12px;color:#666;margin-top:3px;}
+
+.tabs{display:flex;gap:4px;margin-bottom:20px;background:#0a0c12;padding:4px;border-radius:8px;width:fit-content;}
+.tab{padding:7px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;color:#666;transition:all 0.15s;}
+.tab.active{background:#4f6ef7;color:#fff;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+.fg2{margin-bottom:16px;}
+.fg2 label{font-size:12px;color:#888;display:block;margin-bottom:5px;font-weight:600;}
+.fg2 input,.fg2 select,.fg2 textarea{width:100%;padding:9px 12px;background:#0a0c12;border:1px solid #1e2130;border-radius:7px;font-size:13px;color:#fff;outline:none;font-family:inherit;}
+.fg2 input:focus,.fg2 select:focus{border-color:#4f6ef7;}
+.fg2 select option{background:#12151f;}
+.fg2 textarea{resize:vertical;min-height:80px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.btn-primary{padding:10px 22px;background:#4f6ef7;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-primary:hover{background:#3d5ce0;}
+.btn-secondary{padding:10px 22px;background:#1e2130;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-secondary:hover{background:#2a2d3a;}
+
+.dropzone{border:2px dashed #1e2130;border-radius:10px;padding:36px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:16px;}
+.dropzone:hover,.dropzone.drag{border-color:#4f6ef7;background:#0e1220;}
+.dropzone input{display:none;}
+.dz-icon{font-size:32px;margin-bottom:10px;}
+.dz-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;}
+.dz-sub{font-size:12px;color:#555;}
+
+.template-box{background:#0a0c12;border:1px solid #1e2130;border-radius:8px;padding:16px;margin-bottom:16px;}
+.template-box h4{font-size:12px;font-weight:700;color:#fff;margin-bottom:10px;}
+.col-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
+.col-tag{padding:3px 10px;border-radius:20px;font-size:11px;background:#1e2130;color:#888;}
+.col-tag.req{background:#1a1f3d;border:1px solid #4f6ef7;color:#8b9cf7;}
+.template-note{font-size:11px;color:#555;margin-bottom:10px;}
+.btn-dl{padding:7px 14px;background:#1e2130;color:#aaa;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;}
+.btn-dl:hover{background:#2a2d3a;color:#fff;}
+
+.preview-wrap{display:none;margin-bottom:16px;}
+.preview-wrap h4{font-size:13px;font-weight:700;color:#fff;margin-bottom:8px;}
+.preview-count{font-size:11px;color:#666;font-weight:400;margin-left:6px;}
+.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid #1e2130;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead tr{background:#0e1018;}
+th{padding:9px 12px;text-align:left;font-weight:600;color:#666;white-space:nowrap;border-bottom:1px solid #1e2130;}
+td{padding:8px 12px;border-bottom:1px solid #0e1018;color:#ccc;white-space:nowrap;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#0e1018;}
+
+.btn-upload{width:100%;padding:12px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;display:none;margin-bottom:12px;}
+.btn-upload:hover{background:#15803d;}
+.btn-upload:disabled{background:#1e2130;color:#444;cursor:not-allowed;}
+.progress-wrap{display:none;margin-bottom:12px;}
+.pbar-bg{background:#0a0c12;border-radius:20px;height:6px;overflow:hidden;margin-bottom:6px;}
+.pbar{background:#16a34a;height:100%;width:0%;transition:width 0.3s;border-radius:20px;}
+.ptext{font-size:12px;color:#666;text-align:center;}
+.result-box{display:none;padding:14px 16px;border-radius:8px;font-size:13px;margin-top:4px;}
+.result-box.ok{background:#052e16;border:1px solid #166534;color:#4ade80;}
+.result-box.err{background:#2d0a0a;border:1px solid #7f1d1d;color:#f87171;}
+.result-box h4{font-weight:700;margin-bottom:4px;}
+.entry-success{display:none;background:#052e16;border:1px solid #166534;color:#4ade80;padding:12px 16px;border-radius:8px;font-size:13px;margin-top:12px;}
+
+.users-table{width:100%;border-collapse:collapse;font-size:13px;}
+.users-table th{padding:10px 14px;text-align:left;color:#666;font-size:11px;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid #1e2130;}
+.users-table td{padding:12px 14px;border-bottom:1px solid #0e1018;color:#ccc;}
+.badge-active{background:#052e16;color:#4ade80;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid #1e2130;}
+.setting-row:last-child{border-bottom:none;}
+.setting-info h4{font-size:13px;font-weight:600;color:#fff;margin-bottom:3px;}
+.setting-info p{font-size:12px;color:#555;}
+.setting-input{width:320px;padding:8px 12px;background:#0a0c12;border:1px solid #1e2130;border-radius:7px;font-size:13px;color:#fff;outline:none;}
+.setting-input:focus{border-color:#4f6ef7;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">IRONWOOD INTELLIGENCE</div>
+    <div class="login-sub">Admin Portal</div>
+    <h2>Sign in to continue</h2>
+    <div class="fg">
+      <label>Email address</label>
+      <input type="email" id="login-email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <div class="fg">
+      <label>Password</label>
+      <input type="password" id="login-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="nav">
+    <div class="nav-logo">IRONWOOD <span>INTELLIGENCE</span><span class="nav-badge">Admin</span></div>
+    <div class="nav-right">
+      <span class="nav-user" id="nav-email"></span>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-label">Overview</div>
+      <div class="sidebar-item active" onclick="showSec('dashboard',this)"><span class="si-icon">📊</span> Dashboard</div>
+      <div class="sidebar-label">Data</div>
+      <div class="sidebar-item" onclick="showSec('upload',this)"><span class="si-icon">📤</span> Upload Data</div>
+      <div class="sidebar-item" onclick="showSec('manual',this)"><span class="si-icon">✏️</span> Manual Entry</div>
+      <div class="sidebar-label">Admin</div>
+      <div class="sidebar-item" onclick="showSec('users',this)"><span class="si-icon">👥</span> Admin Users</div>
+      <div class="sidebar-item" onclick="showSec('settings',this)"><span class="si-icon">⚙️</span> Settings</div>
+    </div>
+
+    <div class="main">
+
+      <!-- DASHBOARD -->
+      <div class="page-section active" id="sec-dashboard">
+        <div class="page-hdr"><h1>Dashboard</h1><p>Your Ironwood Intelligence platform overview.</p></div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">Properties</div><div class="stat-val" id="st-props">—</div><div class="stat-sub">in database</div></div>
+          <div class="stat-card"><div class="stat-label">Price Records</div><div class="stat-val" id="st-prices">—</div><div class="stat-sub">historical entries</div></div>
+          <div class="stat-card"><div class="stat-label">Market Averages</div><div class="stat-val" id="st-avgs">—</div><div class="stat-sub">city snapshots</div></div>
+          <div class="stat-card"><div class="stat-label">Countries</div><div class="stat-val" id="st-countries">—</div><div class="stat-sub">covered</div></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><h2>Quick Actions</h2></div>
+          <div style="display:flex;gap:12px;">
+            <button class="btn-primary" onclick="showSec('upload',document.querySelectorAll('.sidebar-item')[1])">📤 Upload Excel Data</button>
+            <button class="btn-secondary" onclick="showSec('manual',document.querySelectorAll('.sidebar-item')[2])">✏️ Add Single Entry</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><h2>Connection Status</h2></div>
+          <div id="conn-status" style="font-size:13px;color:#666;">Checking...</div>
+        </div>
+      </div>
+
+      <!-- UPLOAD -->
+      <div class="page-section" id="sec-upload">
+        <div class="page-hdr"><h1>Upload Data</h1><p>Upload Excel files to populate your database. Download a template first if needed.</p></div>
+        <div class="tabs" id="upload-tabs">
+          <div class="tab active" onclick="switchTab('utab','properties',this,'upload-tabs')">Properties</div>
+          <div class="tab" onclick="switchTab('utab','prices',this,'upload-tabs')">Price Records</div>
+          <div class="tab" onclick="switchTab('utab','averages',this,'upload-tabs')">Market Averages</div>
+        </div>
+
+        <div class="tab-content active" id="utab-properties">
+          <div class="template-box">
+            <h4>Required columns</h4>
+            <div class="col-tags"><span class="col-tag req">country ★</span><span class="col-tag req">city ★</span><span class="col-tag req">asset_class ★</span><span class="col-tag req">listing_type ★</span><span class="col-tag">property_name</span><span class="col-tag">submarket</span><span class="col-tag">size_sqm</span><span class="col-tag">source_url</span><span class="col-tag">source_name</span></div>
+            <div class="template-note">asset_class: Office, Retail, Residential, Industrial, Hospitality, Land &nbsp;|&nbsp; listing_type: For Sale, For Rent, Both</div>
+            <button class="btn-dl" onclick="dlTemplate('properties')">⬇ Download Template</button>
+          </div>
+          <div class="dropzone" id="dz-p" onclick="document.getElementById('f-p').click()" ondragover="dOv(event,'p')" ondragleave="dLv(event,'p')" ondrop="dDp(event,'p','properties')">
+            <input type="file" id="f-p" accept=".xlsx,.xls" onchange="handleFile(event,'properties')"/>
+            <div class="dz-icon">📋</div><div class="dz-title">Drop Excel file here</div><div class="dz-sub">or click to browse</div>
+          </div>
+          <div class="preview-wrap" id="prev-properties"><h4>Preview<span class="preview-count" id="pc-properties"></span></h4><div class="table-wrap" id="pt-properties"></div></div>
+          <button class="btn-upload" id="bup-properties" onclick="doUpload('properties','properties')">⬆ Upload Properties to Database</button>
+          <div class="progress-wrap" id="prog-properties"><div class="pbar-bg"><div class="pbar" id="pb-properties"></div></div><div class="ptext" id="ptxt-properties"></div></div>
+          <div class="result-box" id="res-properties"></div>
+        </div>
+
+        <div class="tab-content" id="utab-prices">
+          <div class="template-box">
+            <h4>Required columns</h4>
+            <div class="col-tags"><span class="col-tag req">country ★</span><span class="col-tag req">city ★</span><span class="col-tag req">asset_class ★</span><span class="col-tag req">date_recorded ★</span><span class="col-tag">submarket</span><span class="col-tag">property_name</span><span class="col-tag">asking_rent_sqm</span><span class="col-tag">sale_price</span><span class="col-tag">sale_price_sqm</span><span class="col-tag">quarter</span><span class="col-tag">year</span><span class="col-tag">currency</span><span class="col-tag">notes</span></div>
+            <div class="template-note">date_recorded: YYYY-MM-DD &nbsp;|&nbsp; quarter: Q1 2025</div>
+            <button class="btn-dl" onclick="dlTemplate('prices')">⬇ Download Template</button>
+          </div>
+          <div class="dropzone" id="dz-pr" onclick="document.getElementById('f-pr').click()" ondragover="dOv(event,'pr')" ondragleave="dLv(event,'pr')" ondrop="dDp(event,'pr','prices')">
+            <input type="file" id="f-pr" accept=".xlsx,.xls" onchange="handleFile(event,'prices')"/>
+            <div class="dz-icon">💰</div><div class="dz-title">Drop Excel file here</div><div class="dz-sub">or click to browse</div>
+          </div>
+          <div class="preview-wrap" id="prev-prices"><h4>Preview<span class="preview-count" id="pc-prices"></span></h4><div class="table-wrap" id="pt-prices"></div></div>
+          <button class="btn-upload" id="bup-prices" onclick="doUpload('prices','price_records')">⬆ Upload Price Records to Database</button>
+          <div class="progress-wrap" id="prog-prices"><div class="pbar-bg"><div class="pbar" id="pb-prices"></div></div><div class="ptext" id="ptxt-prices"></div></div>
+          <div class="result-box" id="res-prices"></div>
+        </div>
+
+        <div class="tab-content" id="utab-averages">
+          <div class="template-box">
+            <h4>Required columns</h4>
+            <div class="col-tags"><span class="col-tag req">country ★</span><span class="col-tag req">city ★</span><span class="col-tag req">asset_class ★</span><span class="col-tag req">quarter ★</span><span class="col-tag req">year ★</span><span class="col-tag">submarket</span><span class="col-tag">avg_rent_sqm</span><span class="col-tag">avg_sale_price_sqm</span><span class="col-tag">vacancy_rate</span><span class="col-tag">total_listings</span><span class="col-tag">currency</span></div>
+            <div class="template-note">vacancy_rate: number e.g. 10.5 = 10.5%</div>
+            <button class="btn-dl" onclick="dlTemplate('averages')">⬇ Download Template</button>
+          </div>
+          <div class="dropzone" id="dz-av" onclick="document.getElementById('f-av').click()" ondragover="dOv(event,'av')" ondragleave="dLv(event,'av')" ondrop="dDp(event,'av','averages')">
+            <input type="file" id="f-av" accept=".xlsx,.xls" onchange="handleFile(event,'averages')"/>
+            <div class="dz-icon">📈</div><div class="dz-title">Drop Excel file here</div><div class="dz-sub">or click to browse</div>
+          </div>
+          <div class="preview-wrap" id="prev-averages"><h4>Preview<span class="preview-count" id="pc-averages"></span></h4><div class="table-wrap" id="pt-averages"></div></div>
+          <button class="btn-upload" id="bup-averages" onclick="doUpload('averages','market_averages')">⬆ Upload Market Averages to Database</button>
+          <div class="progress-wrap" id="prog-averages"><div class="pbar-bg"><div class="pbar" id="pb-averages"></div></div><div class="ptext" id="ptxt-averages"></div></div>
+          <div class="result-box" id="res-averages"></div>
+        </div>
+      </div>
+
+      <!-- MANUAL ENTRY -->
+      <div class="page-section" id="sec-manual">
+        <div class="page-hdr"><h1>Manual Entry</h1><p>Add a single data point directly.</p></div>
+        <div class="tabs" id="manual-tabs">
+          <div class="tab active" onclick="switchTab('mtab','prop',this,'manual-tabs')">Property</div>
+          <div class="tab" onclick="switchTab('mtab','price',this,'manual-tabs')">Price Record</div>
+          <div class="tab" onclick="switchTab('mtab','avg',this,'manual-tabs')">Market Average</div>
+        </div>
+
+        <div class="tab-content active" id="mtab-prop">
+          <div class="card">
+            <div class="form-grid">
+              <div class="fg2"><label>Country ★</label><input type="text" id="m-country" placeholder="e.g. Nigeria"/></div>
+              <div class="fg2"><label>City ★</label><input type="text" id="m-city" placeholder="e.g. Lagos"/></div>
+              <div class="fg2"><label>Submarket</label><input type="text" id="m-sub" placeholder="e.g. Victoria Island"/></div>
+              <div class="fg2"><label>Asset Class ★</label><select id="m-asset"><option value="">Select...</option><option>Office</option><option>Retail</option><option>Residential</option><option>Industrial</option><option>Hospitality</option><option>Land</option></select></div>
+              <div class="fg2"><label>Listing Type ★</label><select id="m-listing"><option value="">Select...</option><option>For Rent</option><option>For Sale</option><option>Both</option></select></div>
+              <div class="fg2"><label>Property Name</label><input type="text" id="m-name" placeholder="Optional"/></div>
+              <div class="fg2"><label>Size (sqm)</label><input type="number" id="m-size" placeholder="e.g. 1200"/></div>
+              <div class="fg2"><label>Source Name</label><input type="text" id="m-src" placeholder="e.g. PropertyPro"/></div>
+            </div>
+            <div class="fg2"><label>Source URL</label><input type="text" id="m-url" placeholder="https://..."/></div>
+            <button class="btn-primary" onclick="manualInsert('property')">Add Property</button>
+            <div class="entry-success" id="es-property">✅ Property added successfully!</div>
+          </div>
+        </div>
+
+        <div class="tab-content" id="mtab-price">
+          <div class="card">
+            <div class="form-grid">
+              <div class="fg2"><label>Country ★</label><input type="text" id="mp-country" placeholder="e.g. Nigeria"/></div>
+              <div class="fg2"><label>City ★</label><input type="text" id="mp-city" placeholder="e.g. Lagos"/></div>
+              <div class="fg2"><label>Submarket</label><input type="text" id="mp-sub" placeholder="Optional"/></div>
+              <div class="fg2"><label>Asset Class ★</label><select id="mp-asset"><option value="">Select...</option><option>Office</option><option>Retail</option><option>Residential</option><option>Industrial</option><option>Hospitality</option><option>Land</option></select></div>
+              <div class="fg2"><label>Property Name</label><input type="text" id="mp-name" placeholder="Optional"/></div>
+              <div class="fg2"><label>Date Recorded ★</label><input type="date" id="mp-date"/></div>
+              <div class="fg2"><label>Quarter</label><input type="text" id="mp-q" placeholder="e.g. Q1 2025"/></div>
+              <div class="fg2"><label>Year</label><input type="number" id="mp-yr" placeholder="e.g. 2025"/></div>
+              <div class="fg2"><label>Asking Rent / sqm</label><input type="number" id="mp-rent" placeholder="e.g. 25"/></div>
+              <div class="fg2"><label>Sale Price (total)</label><input type="number" id="mp-sale" placeholder="e.g. 850000"/></div>
+              <div class="fg2"><label>Sale Price / sqm</label><input type="number" id="mp-salepsqm" placeholder="e.g. 1800"/></div>
+              <div class="fg2"><label>Currency</label><select id="mp-cur"><option>USD</option><option>KES</option><option>NGN</option><option>ZAR</option><option>GHS</option><option>EGP</option></select></div>
+            </div>
+            <div class="fg2"><label>Notes</label><textarea id="mp-notes" placeholder="Any notes..."></textarea></div>
+            <button class="btn-primary" onclick="manualInsert('price')">Add Price Record</button>
+            <div class="entry-success" id="es-price">✅ Price record added!</div>
+          </div>
+        </div>
+
+        <div class="tab-content" id="mtab-avg">
+          <div class="card">
+            <div class="form-grid">
+              <div class="fg2"><label>Country ★</label><input type="text" id="ma-country" placeholder="e.g. Nigeria"/></div>
+              <div class="fg2"><label>City ★</label><input type="text" id="ma-city" placeholder="e.g. Lagos"/></div>
+              <div class="fg2"><label>Submarket</label><input type="text" id="ma-sub" placeholder="Optional"/></div>
+              <div class="fg2"><label>Asset Class ★</label><select id="ma-asset"><option value="">Select...</option><option>Office</option><option>Retail</option><option>Residential</option><option>Industrial</option><option>Hospitality</option><option>Land</option></select></div>
+              <div class="fg2"><label>Quarter ★</label><input type="text" id="ma-q" placeholder="e.g. Q1 2025"/></div>
+              <div class="fg2"><label>Year ★</label><input type="number" id="ma-yr" placeholder="e.g. 2025"/></div>
+              <div class="fg2"><label>Avg Rent / sqm</label><input type="number" id="ma-rent" placeholder="e.g. 22"/></div>
+              <div class="fg2"><label>Avg Sale Price / sqm</label><input type="number" id="ma-sale" placeholder="e.g. 1800"/></div>
+              <div class="fg2"><label>Vacancy Rate (%)</label><input type="number" id="ma-vac" placeholder="e.g. 12.5"/></div>
+              <div class="fg2"><label>Total Listings</label><input type="number" id="ma-total" placeholder="e.g. 45"/></div>
+              <div class="fg2"><label>Currency</label><select id="ma-cur"><option>USD</option><option>KES</option><option>NGN</option><option>ZAR</option><option>GHS</option><option>EGP</option></select></div>
+            </div>
+            <button class="btn-primary" onclick="manualInsert('average')">Add Market Average</button>
+            <div class="entry-success" id="es-average">✅ Market average added!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN USERS -->
+      <div class="page-section" id="sec-users">
+        <div class="page-hdr"><h1>Admin Users</h1><p>Manage who can access this admin panel.</p></div>
+        <div class="card">
+          <div class="card-hdr"><h2>Add New Admin</h2><p>Create a new admin account with email and password.</p></div>
+          <div class="form-grid">
+            <div class="fg2"><label>Email Address</label><input type="email" id="new-admin-email" placeholder="colleague@example.com"/></div>
+            <div class="fg2"><label>Password</label><input type="password" id="new-admin-pw" placeholder="Min 8 characters"/></div>
+          </div>
+          <button class="btn-primary" onclick="addAdmin()">Create Admin User</button>
+          <div class="entry-success" id="es-admin">✅ Admin user created successfully!</div>
+          <div class="result-box err" id="err-admin" style="margin-top:12px;display:none;"></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><h2>Current Admin Users</h2></div>
+          <table class="users-table">
+            <thead><tr><th>Email</th><th>Created</th><th>Status</th></tr></thead>
+            <tbody id="admin-users-list"><tr><td colspan="3" style="color:#555;text-align:center;padding:20px;">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page-section" id="sec-settings">
+        <div class="page-hdr"><h1>Settings</h1><p>Admin panel configuration.</p></div>
+        <div class="card">
+          <div class="card-hdr"><h2>Supabase Connection</h2><p>Stored locally in your browser — enter once and it's remembered.</p></div>
+          <div class="setting-row">
+            <div class="setting-info"><h4>Project URL</h4><p>Your Supabase project URL</p></div>
+            <input class="setting-input" type="text" id="s-url" placeholder="https://xxxx.supabase.co"/>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><h4>Anon Key</h4><p>Your Supabase anon public key</p></div>
+            <input class="setting-input" type="text" id="s-key" placeholder="eyJhbG..."/>
+          </div>
+          <div style="margin-top:16px;display:flex;align-items:center;gap:12px;">
+            <button class="btn-primary" onclick="saveSettings()">Save & Reconnect</button>
+            <span id="settings-saved" style="font-size:12px;color:#4ade80;display:none;">✅ Saved!</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+var SB_URL = localStorage.getItem('iw_url') || 'https://ujhqkirhfmumvvnfvgnz.supabase.co';
+var SB_KEY = localStorage.getItem('iw_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik';
+var sb = null;
+var parsed = {properties:[],prices:[],averages:[]};
+
+var TEMPLATES = {
+  properties:[['country','city','submarket','asset_class','listing_type','property_name','size_sqm','source_url','source_name'],['Nigeria','Lagos','Victoria Island','Office','For Rent','Lagos Business Tower',1200,'https://example.com','PropertyPro'],['Kenya','Nairobi','Westlands','Retail','For Sale','Westlands Mall',450,'','BuyRentKenya'],['South Africa','Cape Town','Sea Point','Residential','For Rent','Sea Point Apts',85,'','Private']],
+  prices:[['country','city','submarket','asset_class','property_name','asking_rent_sqm','sale_price','sale_price_sqm','date_recorded','quarter','year','currency','notes'],['Nigeria','Lagos','Victoria Island','Office','Lagos Business Tower',25,'','','2025-01-15','Q1 2025',2025,'USD',''],['Kenya','Nairobi','Westlands','Retail','','',850000,1888,'2025-01-20','Q1 2025',2025,'USD',''],['South Africa','Cape Town','Sea Point','Residential','',18,'','','2025-02-01','Q1 2025',2025,'USD','']],
+  averages:[['country','city','submarket','asset_class','quarter','year','avg_rent_sqm','avg_sale_price_sqm','vacancy_rate','total_listings','currency'],['Nigeria','Lagos','Victoria Island','Office','Q1 2025',2025,22,1800,12.5,45,'USD'],['Kenya','Nairobi','Westlands','Retail','Q1 2025',2025,18,1500,8.2,30,'USD'],['South Africa','Cape Town','','Residential','Q1 2025',2025,20,2200,5.5,120,'USD']]
+};
+
+function initSB(){
+  if(SB_URL&&SB_KEY){
+    sb=window.supabase.createClient(SB_URL,SB_KEY);
+  }
+}
+initSB();
+
+// AUTO LOGIN CHECK
+window.addEventListener('load',async function(){
+  if(!sb)return;
+  var {data}=await sb.auth.getSession();
+  if(data?.session?.user){enterApp(data.session.user.email);}
+});
+
+// LOGIN
+async function doLogin(){
+  var email=document.getElementById('login-email').value.trim();
+  var pw=document.getElementById('login-pw').value;
+  var btn=document.getElementById('login-btn');
+  var err=document.getElementById('login-error');
+  if(!email||!pw){showErr('Please enter your email and password.');return;}
+  if(!sb){showErr('Admin panel not configured. Please contact your administrator.');return;}
+  btn.disabled=true;btn.textContent='Signing in...';err.style.display='none';
+  var {data,error}=await sb.auth.signInWithPassword({email,password:pw});
+  if(error){showErr('Incorrect email or password.');btn.disabled=false;btn.textContent='Sign In';return;}
+  enterApp(email);
+}
+
+function showErr(msg){var e=document.getElementById('login-error');e.textContent=msg;e.style.display='block';}
+
+function enterApp(email){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('nav-email').textContent=email;
+  loadSettingsUI();loadStats();loadAdminUsers();
+}
+
+async function doLogout(){
+  if(sb)await sb.auth.signOut();
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-pw').value='';
+  document.getElementById('login-error').style.display='none';
+  document.getElementById('login-btn').disabled=false;
+  document.getElementById('login-btn').textContent='Sign In';
+}
+
+// NAVIGATION
+function showSec(name,el){
+  document.querySelectorAll('.page-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  if(el)el.classList.add('active');
+  if(name==='dashboard')loadStats();
+  if(name==='users')loadAdminUsers();
+}
+
+function switchTab(prefix,name,el,tabsId){
+  document.getElementById(tabsId).querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('[id^="'+prefix+'-"]').forEach(t=>t.classList.remove('active'));
+  document.getElementById(prefix+'-'+name).classList.add('active');
+}
+
+// FILE HANDLING
+function dOv(e,id){e.preventDefault();document.getElementById('dz-'+id).classList.add('drag');}
+function dLv(e,id){document.getElementById('dz-'+id).classList.remove('drag');}
+function dDp(e,id,name){e.preventDefault();dLv(e,id);processFile(e.dataTransfer.files[0],name);}
+function handleFile(e,name){processFile(e.target.files[0],name);}
+
+function processFile(file,name){
+  var r=new FileReader();
+  r.onload=function(e){
+    try{var wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});var ws=wb.Sheets[wb.SheetNames[0]];var data=XLSX.utils.sheet_to_json(ws,{defval:''});parsed[name]=data;showPreview(name,data);}
+    catch(err){alert('Error reading file: '+err.message);}
+  };
+  r.readAsBinaryString(file);
+}
+
+function showPreview(name,data){
+  if(!data.length){alert('No data found');return;}
+  var cols=Object.keys(data[0]);
+  var html='<table><thead><tr>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+data.slice(0,5).map(r=>'<tr>'+cols.map(c=>'<td>'+(r[c]||'')+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+  document.getElementById('pt-'+name).innerHTML=html;
+  document.getElementById('pc-'+name).textContent=' ('+data.length+' rows — first 5 shown)';
+  document.getElementById('prev-'+name).style.display='block';
+  document.getElementById('bup-'+name).style.display='block';
+  var m={properties:'p',prices:'pr',averages:'av'};
+  document.getElementById('dz-'+m[name]).innerHTML='<div class="dz-icon">✅</div><div class="dz-title">'+data.length+' rows ready</div><div class="dz-sub">Click to replace</div>';
+}
+
+// UPLOAD
+async function doUpload(name,table){
+  if(!sb){alert('Not connected. Check Settings.');return;}
+  var data=parsed[name];
+  if(!data.length){alert('No data loaded');return;}
+  var btn=document.getElementById('bup-'+name),prog=document.getElementById('prog-'+name),pbar=document.getElementById('pb-'+name),ptxt=document.getElementById('ptxt-'+name),res=document.getElementById('res-'+name);
+  btn.disabled=true;prog.style.display='block';res.style.display='none';
+  var bsz=50,total=data.length,uploaded=0,errors=[];
+  for(var i=0;i<total;i+=bsz){
+    var batch=data.slice(i,i+bsz).map(function(row){var c={};Object.keys(row).forEach(function(k){var v=row[k];if(v===''||v===null||v===undefined)return;c[k]=v instanceof Date?v.toISOString().split('T')[0]:v;});return c;});
+    var {error}=await sb.from(table).insert(batch);
+    if(error){errors.push('Rows '+(i+1)+'-'+Math.min(i+bsz,total)+': '+error.message);}else{uploaded+=batch.length;}
+    pbar.style.width=Math.min(Math.round(((i+bsz)/total)*100),100)+'%';
+    ptxt.textContent='Uploading... '+Math.min(uploaded,total)+' / '+total;
+  }
+  btn.disabled=false;prog.style.display='none';
+  if(!errors.length){res.className='result-box ok';res.innerHTML='<h4>✅ Upload complete!</h4>'+uploaded+' rows added to '+table+'.';}
+  else{res.className='result-box err';res.innerHTML='<h4>⚠️ Finished with errors</h4>'+uploaded+' uploaded.<ul>'+errors.map(e=>'<li>'+e+'</li>').join('')+'</ul>';}
+  res.style.display='block';loadStats();
+}
+
+// MANUAL INSERT
+function v(id){return document.getElementById(id)?.value?.trim()||'';}
+function n(id){var val=document.getElementById(id)?.value;return val?parseFloat(val):null;}
+
+async function manualInsert(type){
+  if(!sb){alert('Not connected. Check Settings.');return;}
+  var row={},table='';
+  if(type==='property'){table='properties';row={country:v('m-country'),city:v('m-city'),submarket:v('m-sub'),asset_class:v('m-asset'),listing_type:v('m-listing'),property_name:v('m-name'),size_sqm:n('m-size'),source_name:v('m-src'),source_url:v('m-url')};if(!row.country||!row.city||!row.asset_class||!row.listing_type){alert('Please fill required fields (★)');return;}}
+  else if(type==='price'){table='price_records';row={country:v('mp-country'),city:v('mp-city'),submarket:v('mp-sub'),asset_class:v('mp-asset'),property_name:v('mp-name'),date_recorded:v('mp-date'),quarter:v('mp-q'),year:n('mp-yr'),asking_rent_sqm:n('mp-rent'),sale_price:n('mp-sale'),sale_price_sqm:n('mp-salepsqm'),currency:v('mp-cur'),notes:v('mp-notes')};if(!row.country||!row.city||!row.asset_class||!row.date_recorded){alert('Please fill required fields (★)');return;}}
+  else if(type==='average'){table='market_averages';row={country:v('ma-country'),city:v('ma-city'),submarket:v('ma-sub'),asset_class:v('ma-asset'),quarter:v('ma-q'),year:n('ma-yr'),avg_rent_sqm:n('ma-rent'),avg_sale_price_sqm:n('ma-sale'),vacancy_rate:n('ma-vac'),total_listings:n('ma-total'),currency:v('ma-cur')};if(!row.country||!row.city||!row.asset_class||!row.quarter||!row.year){alert('Please fill required fields (★)');return;}}
+  Object.keys(row).forEach(k=>{if(row[k]===null||row[k]==='')delete row[k];});
+  var {error}=await sb.from(table).insert(row);
+  if(!error){var s=document.getElementById('es-'+type);s.style.display='block';setTimeout(()=>s.style.display='none',3000);loadStats();}
+  else{alert('Error: '+error.message);}
+}
+
+// STATS
+async function loadStats(){
+  if(!sb){document.getElementById('conn-status').innerHTML='⚠️ Not connected — go to <strong>Settings</strong> to enter your Supabase credentials.';return;}
+  try{
+    for(var[t,id]of[['properties','st-props'],['price_records','st-prices'],['market_averages','st-avgs']]){
+      var {count}=await sb.from(t).select('*',{count:'exact',head:true});
+      document.getElementById(id).textContent=(count||0).toLocaleString();
+    }
+    var {data:cd}=await sb.from('properties').select('country');
+    document.getElementById('st-countries').textContent=[...new Set((cd||[]).map(r=>r.country).filter(Boolean))].length;
+    document.getElementById('conn-status').innerHTML='✅ Connected to Supabase successfully.';
+  }catch(e){document.getElementById('conn-status').innerHTML='❌ Connection error — check Settings.';}
+}
+
+// ADMIN USERS
+async function loadAdminUsers(){
+  var tbody=document.getElementById('admin-users-list');
+  if(!sb){tbody.innerHTML='<tr><td colspan="3" style="color:#555;text-align:center;padding:20px;">Not connected</td></tr>';return;}
+  var {data:sess}=await sb.auth.getSession();
+  var email=sess?.session?.user?.email||'—';
+  var created=sess?.session?.user?.created_at?new Date(sess.session.user.created_at).toLocaleDateString():'—';
+  tbody.innerHTML='<tr><td>'+email+'</td><td>'+created+'</td><td><span class="badge-active">Active</span></td></tr>';
+}
+
+async function addAdmin(){
+  if(!sb){alert('Not connected');return;}
+  var email=document.getElementById('new-admin-email').value.trim();
+  var pw=document.getElementById('new-admin-pw').value;
+  var errBox=document.getElementById('err-admin');
+  errBox.style.display='none';
+  if(!email||!pw){alert('Please fill in both fields');return;}
+  if(pw.length<8){alert('Password must be at least 8 characters');return;}
+  // Sign up new user via Supabase auth
+  var {data,error}=await sb.auth.signUp({email,password:pw});
+  if(error){errBox.innerHTML='Error: '+error.message;errBox.style.display='block';}
+  else{document.getElementById('es-admin').style.display='block';setTimeout(()=>document.getElementById('es-admin').style.display='none',3000);document.getElementById('new-admin-email').value='';document.getElementById('new-admin-pw').value='';}
+}
+
+// SETTINGS
+function loadSettingsUI(){
+  if(SB_URL)document.getElementById('s-url').value=SB_URL;
+  if(SB_KEY)document.getElementById('s-key').value=SB_KEY;
+}
+
+function saveSettings(){
+  SB_URL=document.getElementById('s-url').value.trim().replace(/\/$/,'');
+  SB_KEY=document.getElementById('s-key').value.trim();
+  localStorage.setItem('iw_url',SB_URL);localStorage.setItem('iw_key',SB_KEY);
+  initSB();
+  var s=document.getElementById('settings-saved');s.style.display='inline';setTimeout(()=>s.style.display='none',3000);
+  loadStats();
+}
+
+function dlTemplate(name){
+  var ws=XLSX.utils.aoa_to_sheet(TEMPLATES[name]);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Template');XLSX.writeFile(wb,'ironwood_'+name+'_template.xlsx');
+}
+</script>
+</body>
+</html>

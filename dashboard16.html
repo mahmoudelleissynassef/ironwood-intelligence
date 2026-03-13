@@ -1,0 +1,2299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Ironwood Intelligence — Market Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#f5f5f3;--bg2:#eeeeeb;--surface:#ffffff;--surface2:#f9f9f7;
+  --border:#e3e3df;--border2:#d0d0cb;
+  --ink:#0d0d0d;--ink2:#2a2a2a;--ink3:#5a5a5a;--ink4:#8c8c8c;--ink5:#b8b8b5;
+  --gold:#b8933f;--gold2:#d4a84f;--gold-pale:#f9f4eb;
+  --green:#166534;--green-bg:#f0fdf4;
+  --red:#dc2626;--red-bg:#fef2f2;
+  --amber:#92400e;--amber-bg:#fffbeb;
+  --blue:#1d4ed8;--blue-bg:#eff6ff;
+  --sw:228px;
+  --serif:'DM Serif Display',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --mono:'DM Mono','Courier New',monospace;
+}
+html,body{height:100%;font-family:var(--sans);font-size:13px;line-height:1.5;color:var(--ink);-webkit-font-smoothing:antialiased;}
+a{text-decoration:none;color:inherit;cursor:pointer;}
+button{cursor:pointer;font-family:var(--sans);}
+
+/* ── LOADER ── */
+#loader{position:fixed;inset:0;background:#0d0d0d;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s ease;}
+#loader.out{opacity:0;pointer-events:none;}
+.ld-logo{font-family:var(--serif);font-size:22px;color:#fff;margin-bottom:6px;letter-spacing:.02em;}
+.ld-logo em{color:var(--gold);font-style:normal;}
+.ld-sub{font-size:11px;color:rgba(255,255,255,.3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:40px;}
+.ld-bar{width:240px;height:1px;background:rgba(255,255,255,.1);margin-bottom:12px;}
+.ld-fill{height:100%;width:0;background:var(--gold);transition:width .4s ease;}
+.ld-msg{font-size:11px;color:rgba(255,255,255,.25);letter-spacing:.06em;}
+
+/* ── APP SHELL ── */
+.app{display:flex;height:100vh;overflow:hidden;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sw);flex-shrink:0;background:var(--ink);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+.sb-head{padding:20px 16px 12px;border-bottom:1px solid rgba(255,255,255,.08);}
+.sb-wordmark{font-family:var(--serif);font-size:15px;color:#fff;letter-spacing:.01em;}
+.sb-wordmark em{color:var(--gold);font-style:normal;}
+.sb-tag{font-size:9.5px;color:rgba(255,255,255,.25);margin-top:3px;letter-spacing:.08em;text-transform:uppercase;}
+.sb-mkt{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;cursor:pointer;position:relative;}
+.sb-mkt:hover{background:rgba(255,255,255,.04);}
+.sb-mkt-name{font-size:12px;color:rgba(255,255,255,.7);font-weight:500;}
+.sb-mkt-caret{font-size:10px;color:rgba(255,255,255,.3);}
+.country-opt{display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:12.5px;cursor:pointer;color:#2a2a2a;transition:background .1s;}
+.country-opt:hover{background:#f5f5f3;}
+.country-opt.active{background:#f0fdf4;color:#166534;font-weight:500;}
+.sb-section{padding:16px 10px 2px;flex-shrink:0;}
+.sb-section-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.25);padding:0 8px;margin-bottom:2px;}
+.ni{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:2px;color:rgba(255,255,255,.5);font-size:12px;cursor:pointer;transition:all .12s;white-space:nowrap;}
+.ni:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.8);}
+.ni.active{background:rgba(255,255,255,.1);color:#fff;}
+.ni-icon{font-size:11px;width:14px;text-align:center;flex-shrink:0;opacity:.6;}
+.ni.active .ni-icon{opacity:1;}
+.ni-badge{margin-left:auto;font-size:8.5px;font-weight:700;letter-spacing:.06em;background:var(--gold);color:#fff;padding:1px 5px;border-radius:1px;}
+.sb-foot{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);}
+.sb-live{display:flex;align-items:center;gap:6px;font-size:10px;color:rgba(255,255,255,.25);margin-bottom:10px;}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.sb-user{display:flex;align-items:center;gap:8px;}
+.sb-avatar{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:rgba(255,255,255,.6);flex-shrink:0;}
+.sb-uname{font-size:11px;color:rgba(255,255,255,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+
+/* ── TOPBAR ── */
+.topbar{height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0;gap:16px;}
+.tb-breadcrumb{font-size:12px;color:var(--ink4);font-weight:400;}
+.tb-breadcrumb span{color:var(--ink);font-weight:500;}
+.tb-right{display:flex;align-items:center;gap:12px;}
+.tb-conf{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink4);}
+.conf{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:1px;}
+.conf-dot{width:5px;height:5px;border-radius:50%;display:inline-block;}
+.conf-h{background:var(--green-bg);color:var(--green);}
+.conf-h .conf-dot{background:var(--green);}
+.conf-m{background:var(--gold-pale);color:var(--gold);}
+.conf-m .conf-dot{background:var(--gold);}
+.conf-e{background:var(--bg2);color:var(--ink4);}
+.conf-e .conf-dot{background:var(--ink4);}
+.tb-filter{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--ink4);}
+.tb-filter select{border:1px solid var(--border);background:var(--surface);padding:3px 6px;font-size:11.5px;font-family:var(--sans);border-radius:2px;color:var(--ink);}
+.tb-export{padding:5px 12px;background:var(--ink);color:#fff;border:none;font-size:11.5px;font-weight:500;border-radius:2px;}
+
+/* ── DATA SOURCE TAGS ── */
+.ds-tag{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:1px;border:1px solid;}
+.ds-listings{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;}
+.ds-transaction{background:#f0fdf4;color:#166534;border-color:#bbf7d0;}
+.ds-pipeline{background:#fff7ed;color:#c2410c;border-color:#fed7aa;}
+.ds-macro{background:#faf5ff;color:#7e22ce;border-color:#e9d5ff;}
+.ds-model{background:#f9f4eb;color:#b8933f;border-color:#e8d5a0;}
+.ds-occupier{background:#fdf2f8;color:#9d174d;border-color:#fbcfe8;}
+.ds-infra{background:#f0f9ff;color:#075985;border-color:#bae6fd;}
+
+/* ── CONTENT AREA ── */
+.content{flex:1;overflow-y:auto;background:var(--bg);}
+.pg{display:none;padding:28px 28px 40px;}
+.pg.active{display:block;}
+.eyebrow{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
+.pg-title{font-family:var(--serif);font-size:28px;line-height:1.1;margin-bottom:6px;}
+.pg-sub{font-size:13px;color:var(--ink4);margin-bottom:24px;line-height:1.6;max-width:700px;}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px;}
+.kpi{background:var(--surface);padding:16px 18px;}
+.kpi-lbl{font-size:10.5px;color:var(--ink4);margin-bottom:6px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.kpi-val{font-family:var(--serif);font-size:22px;line-height:1;margin-bottom:3px;}
+.kpi-sub{font-size:10.5px;color:var(--ink5);margin-bottom:4px;}
+.kpi-chg{font-family:var(--mono);font-size:11px;}
+.chg{font-family:var(--mono);font-size:11px;}
+.chg.pos,.pos{color:var(--green);}
+.chg.neg,.neg{color:var(--red);}
+
+/* ── PANELS ── */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:2px;margin-bottom:16px;overflow:hidden;}
+.panel-hd{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.panel-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;}
+.panel-sub{font-size:11px;color:var(--ink4);}
+.panel-body{padding:14px 18px;}
+.panel-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.pa-btn{padding:4px 10px;font-size:11px;font-weight:500;border:1px solid var(--border);background:var(--surface);border-radius:2px;color:var(--ink3);white-space:nowrap;}
+.pa-btn.gold{background:var(--gold);color:#fff;border-color:var(--gold);}
+.pa-btn:hover{background:var(--bg2);}
+.pa-btn.gold:hover{background:var(--gold2);}
+
+/* ── SECTION DIVIDER ── */
+.sec-div{display:flex;align-items:center;gap:10px;margin:20px 0 12px;}
+.sec-div::before,.sec-div::after{content:'';flex:1;height:1px;background:var(--border);}
+.sd-label{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink5);white-space:nowrap;}
+
+/* ── DATA TABLES ── */
+.dt{width:100%;border-collapse:collapse;font-size:12px;}
+.dt th{padding:7px 10px;text-align:left;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink4);background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap;}
+.dt td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.dt tr:last-child td{border-bottom:none;}
+.dt tr:hover td{background:var(--bg);}
+.dt-rank{font-family:var(--mono);font-size:10.5px;color:var(--ink5);width:28px;}
+.dt-city{font-weight:600;}
+.dt-muted{color:var(--ink4);}
+.mono{font-family:var(--mono);}
+
+/* ── SIGNAL BADGES ── */
+.sig{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:1px;}
+.sig-up{background:var(--green-bg);color:var(--green);}
+.sig-dn{background:var(--red-bg);color:var(--red);}
+.sig-warn{background:var(--amber-bg);color:var(--amber);}
+.sig-neutral{background:var(--bg2);color:var(--ink4);}
+
+/* ── OPPORTUNITY BADGES ── */
+.opp-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:1px;font-size:10.5px;font-weight:700;letter-spacing:.04em;}
+.opp-strong{background:var(--green-bg);color:var(--green);border:1px solid #bbf7d0;}
+.opp-moderate{background:var(--gold-pale);color:var(--gold);border:1px solid #e8d5a0;}
+.opp-neutral{background:var(--bg2);color:var(--ink4);border:1px solid var(--border);}
+.opp-weak{background:var(--red-bg);color:var(--red);border:1px solid #fecaca;}
+
+/* ── EVIDENCE PANEL ── */
+#evidence-panel{
+  position:fixed;right:0;top:0;bottom:0;width:380px;
+  background:var(--surface);border-left:1px solid var(--border);
+  z-index:400;transform:translateX(100%);transition:transform .25s ease;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#evidence-panel.open{transform:translateX(0);}
+.ep-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;}
+.ep-title{font-size:13px;font-weight:600;margin-bottom:4px;}
+.ep-sub{font-size:11px;color:var(--ink4);}
+.ep-close{background:none;border:none;font-size:18px;color:var(--ink4);padding:0 4px;line-height:1;}
+.ep-body{flex:1;overflow-y:auto;padding:16px 20px;}
+.ep-note{padding:12px;background:var(--gold-pale);border:1px solid #e8d5a0;border-radius:2px;font-size:12px;color:var(--amber);line-height:1.6;margin-bottom:16px;}
+.ep-meta-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.ep-meta-row:last-child{border-bottom:none;}
+.ep-meta-lbl{color:var(--ink4);font-size:11px;}
+.ep-meta-val{font-weight:500;}
+.ep-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:6px;}
+
+/* ── SIGNAL BARS ── */
+.signal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px;}
+.signal-card{background:var(--surface);padding:16px 18px;}
+.signal-name{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink4);margin-bottom:8px;}
+.signal-bar-track{height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-bottom:6px;}
+.signal-bar-fill{height:100%;border-radius:2px;transition:width .5s ease;}
+.signal-rating{font-size:12px;font-weight:600;}
+.signal-score{font-family:var(--mono);font-size:11px;color:var(--ink4);margin-top:2px;}
+
+/* ── SCORE RING ── */
+.score-ring{position:relative;width:72px;height:72px;flex-shrink:0;}
+.score-ring svg{width:72px;height:72px;}
+.score-ring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.score-num{font-family:var(--serif);font-size:18px;line-height:1;}
+.score-denom{font-size:9px;color:var(--ink5);}
+
+/* ── SCORE BARS ── */
+.score-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.score-bar-label{font-size:11px;color:var(--ink4);width:96px;flex-shrink:0;}
+.score-bar-track{flex:1;height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;}
+.score-bar-fill{height:100%;border-radius:2px;}
+.score-bar-val{font-family:var(--mono);font-size:11px;color:var(--ink3);width:24px;text-align:right;flex-shrink:0;}
+
+/* ── EXPORT ROW ── */
+.export-row{padding:10px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px;background:var(--surface2);}
+.exp-btn{padding:4px 10px;font-size:11px;font-weight:500;border:1px solid var(--border);background:var(--surface);border-radius:2px;color:var(--ink3);}
+.exp-btn.primary{background:var(--ink);color:#fff;border-color:var(--ink);}
+.exp-btn:hover{background:var(--bg2);}
+.exp-btn.primary:hover{background:var(--ink2);}
+
+/* ── LAYOUT HELPERS ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.panel-body canvas{max-height:240px;}
+
+/* ── DEMO BANNER ── */
+.demo-banner{padding:8px 16px;background:#1d4ed8;color:#fff;font-size:11px;font-weight:600;letter-spacing:.04em;text-align:center;flex-shrink:0;}
+
+/* ── REPORT CARDS ── */
+.report-card{background:var(--surface);border:1px solid var(--border);display:flex;flex-direction:column;transition:box-shadow .15s;}
+.report-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.08);}
+.rc-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);}
+.rc-type{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+.rc-title{font-family:var(--serif);font-size:17px;line-height:1.2;margin-bottom:5px;}
+.rc-meta{font-size:11px;color:var(--ink4);}
+.rc-body{padding:14px 20px;flex:1;}
+.rc-kpi-row{display:flex;gap:0;margin-bottom:12px;}
+.rc-kpi{flex:1;padding:0 10px;border-right:1px solid var(--border);}
+.rc-kpi:first-child{padding-left:0;}
+.rc-kpi:last-child{border-right:none;}
+.rc-kpi .rk-v{font-family:var(--serif);font-size:15px;}
+.rc-kpi .rk-l{font-size:10px;color:var(--ink5);text-transform:uppercase;letter-spacing:.07em;margin-top:2px;}
+.rc-footer{padding:10px 20px;border-top:1px solid var(--border);display:flex;gap:6px;align-items:center;}
+
+/* ── FULL REPORT OVERLAY ── */
+#report-view{position:fixed;inset:0;background:#f5f5f3;z-index:500;display:none;flex-direction:column;overflow:hidden;}
+#report-view.open{display:flex;}
+.rv-topbar{height:48px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;flex-shrink:0;}
+.rv-title{font-size:13px;font-weight:600;}
+.rv-actions{display:flex;gap:8px;}
+.rv-close{padding:5px 14px;border:1px solid var(--border);border-radius:2px;background:var(--surface);font-size:12px;cursor:pointer;}
+.rv-body{flex:1;overflow-y:auto;padding:40px;}
+.report-doc{max-width:820px;margin:0 auto;background:var(--surface);border:1px solid var(--border);}
+.rdoc-header{background:var(--ink);padding:40px 48px;}
+.rdoc-logo{font-family:var(--serif);font-size:13px;color:rgba(255,255,255,.35);margin-bottom:28px;letter-spacing:.04em;}
+.rdoc-kicker{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+.rdoc-title{font-family:var(--serif);font-size:34px;color:#fff;line-height:1.1;margin-bottom:8px;}
+.rdoc-sub{font-size:13.5px;color:rgba(255,255,255,.4);font-weight:300;line-height:1.6;max-width:520px;}
+.rdoc-meta{margin-top:28px;display:flex;gap:28px;padding-top:20px;border-top:1px solid rgba(255,255,255,.1);}
+.rdoc-meta-item{font-size:10.5px;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.07em;}
+.rdoc-meta-item strong{display:block;color:rgba(255,255,255,.55);font-size:12.5px;margin-bottom:3px;letter-spacing:0;}
+.rdoc-body{padding:36px 48px;}
+.rdoc-kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);margin:14px 0 28px;}
+.rdoc-kpi{background:var(--surface2);padding:14px 16px;}
+.rdoc-kpi .val{font-family:var(--serif);font-size:20px;margin-bottom:3px;}
+.rdoc-kpi .lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);}
+.rdoc-kpi .chg{font-family:var(--mono);font-size:11px;margin-top:3px;}
+.rdoc-section{margin-bottom:36px;}
+.rdoc-section h2{font-family:var(--serif);font-size:21px;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--border);}
+.rdoc-section p{font-size:13px;color:var(--ink3);line-height:1.8;font-weight:300;margin-bottom:12px;}
+.rdoc-disclaimer{margin:0 48px 32px;padding:14px 16px;background:var(--gold-pale);border:1px solid #e8d5a0;font-size:11.5px;color:#92400e;line-height:1.6;}
+
+/* ── PRINT ── */
+@media print{
+  .sidebar,.topbar,.rv-topbar,.rv-actions,button,.exp-btn,.pa-btn,.demo-banner{display:none!important;}
+  #report-view{position:static!important;}
+  .rv-body{padding:0!important;overflow:visible!important;}
+  .report-doc{border:none!important;max-width:none!important;}
+  body{background:#fff!important;}
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr);}.signal-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:960px){.two-col,.three-col{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="ld-logo">Ironwood <em>Intelligence</em></div>
+  <div class="ld-sub">Market Intelligence Terminal</div>
+  <div class="ld-bar"><div class="ld-fill" id="ld-fill"></div></div>
+  <div class="ld-msg" id="ld-msg">Initialising...</div>
+</div>
+
+<!-- EVIDENCE PANEL -->
+<div id="evidence-panel">
+  <div class="ep-head">
+    <div>
+      <div class="ep-title" id="ep-title">Evidence Panel</div>
+      <div class="ep-sub" id="ep-sub">Source data behind this metric</div>
+    </div>
+    <button class="ep-close" onclick="closeEvidence()">✕</button>
+  </div>
+  <div class="ep-body" id="ep-body">
+    <div class="ep-note" id="ep-note"></div>
+    <div id="ep-meta"></div>
+  </div>
+  <div class="ep-footer">
+    <button class="exp-btn primary" onclick="alert('Exporting source dataset...')">↓ Export Source Data</button>
+    <button class="exp-btn" onclick="closeEvidence()">Close</button>
+  </div>
+</div>
+
+<!-- REPORT VIEW -->
+<div id="report-view">
+  <div class="rv-topbar">
+    <div class="rv-title" id="rv-title">Market Report</div>
+    <div class="rv-actions">
+      <button class="exp-btn" onclick="window.print()">↓ Print / PDF</button>
+      <button class="exp-btn">⎘ Copy Link</button>
+      <button class="rv-close" onclick="closeReport()">✕ Close</button>
+    </div>
+  </div>
+  <div class="rv-body">
+    <div class="report-doc" id="report-doc"></div>
+  </div>
+</div>
+
+<div class="app">
+
+<!-- ════ SIDEBAR ════ -->
+<aside class="sidebar">
+  <div class="sb-head">
+    <div class="sb-wordmark">Ironwood <em>Intelligence</em></div>
+    <div class="sb-tag">Market Terminal · v3.0</div>
+  </div>
+  <div class="sb-mkt" id="sb-mkt-btn" onclick="toggleCountryDropdown()">
+    <span class="sb-mkt-name" id="sb-mkt-label">🇲🇦 Morocco</span>
+    <span class="sb-mkt-caret">▾</span>
+  </div>
+  <div id="country-dropdown" style="display:none;position:absolute;left:12px;right:12px;background:#fff;border:1px solid #e8e6e1;border-radius:6px;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.12);overflow:hidden;">
+    <div style="padding:8px 12px;font-size:10px;font-weight:700;color:#9c9994;letter-spacing:.08em;border-bottom:1px solid #e8e6e1;">ACTIVE COVERAGE</div>
+    <div class="country-opt active" id="copt-Morocco" onclick="switchCountry('Morocco')">
+      <span style="font-size:15px;">🇲🇦</span><span>Morocco</span><span style="margin-left:auto;font-size:10px;color:#6b7280;">62k listings</span>
+    </div>
+    <div class="country-opt" id="copt-Nigeria" onclick="switchCountry('Nigeria')">
+      <span style="font-size:15px;">🇳🇬</span><span>Nigeria</span><span style="margin-left:auto;font-size:10px;color:#6b7280;">28k listings</span>
+    </div>
+    <div style="padding:8px 12px;font-size:10px;font-weight:700;color:#9c9994;letter-spacing:.08em;border-top:1px solid #e8e6e1;border-bottom:1px solid #e8e6e1;margin-top:2px;">COMING SOON</div>
+    <div class="country-opt disabled" style="opacity:.4;cursor:not-allowed;">
+      <span style="font-size:15px;">🇸🇳</span><span>Senegal</span><span style="margin-left:auto;font-size:10px;color:#9c9994;">Pending</span>
+    </div>
+    <div class="country-opt disabled" style="opacity:.4;cursor:not-allowed;">
+      <span style="font-size:15px;">🇰🇪</span><span>Kenya</span><span style="margin-left:auto;font-size:10px;color:#9c9994;">Pending</span>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-lbl">Overview</div>
+    <div class="ni active" onclick="nav('market-terminal')"><span class="ni-icon">⬛</span>Market Terminal</div>
+    <div class="ni" onclick="nav('key-indicators')"><span class="ni-icon">◈</span>Key Indicators</div>
+    <div class="ni" onclick="nav('market-signals')"><span class="ni-icon">◉</span>Market Signals</div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-lbl">Markets</div>
+    <div class="ni" onclick="nav('countries')"><span class="ni-icon">🌍</span>Countries</div>
+    <div class="ni" onclick="nav('cities')"><span class="ni-icon">◫</span>Cities</div>
+    <div class="ni" onclick="nav('districts')"><span class="ni-icon">◪</span>Districts</div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-lbl">Data</div>
+    <div class="ni" onclick="nav('listings')"><span class="ni-icon">≡</span>Listings</div>
+    <div class="ni" onclick="nav('transactions')"><span class="ni-icon">⟳</span>Transactions</div>
+    <div class="ni" onclick="nav('pipeline')"><span class="ni-icon">◱</span>Dev. Pipeline</div>
+    <div class="ni" onclick="nav('occupiers')"><span class="ni-icon">◧</span>Corp. Occupiers</div>
+    <div class="ni" onclick="nav('infrastructure')"><span class="ni-icon">⬡</span>Infrastructure</div>
+    <div class="ni" onclick="nav('macro-indicators')"><span class="ni-icon">◐</span>Macro Indicators</div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-lbl">Analytics</div>
+    <div class="ni" onclick="nav('price-trends')"><span class="ni-icon">∿</span>Price Trends</div>
+    <div class="ni" onclick="nav('liquidity-index')"><span class="ni-icon">◎</span>Liquidity Index</div>
+    <div class="ni" onclick="nav('investment-radar')"><span class="ni-icon">◉</span>Investment Radar</div>
+    <div class="ni" onclick="nav('yield-estimates')"><span class="ni-icon">%</span>Yield Estimates</div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-lbl">Map</div>
+    <div class="ni" onclick="nav('map-view')"><span class="ni-icon">⊕</span>Market Map</div>
+    <div class="ni" onclick="nav('heatmaps')"><span class="ni-icon">▦</span>Heatmaps</div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-lbl">Research</div>
+    <div class="ni" onclick="nav('market-reports')"><span class="ni-icon">▤</span>Market Reports</div>
+    <div class="ni" onclick="nav('insights')"><span class="ni-icon">◈</span>Insights</div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-lbl">Tools</div>
+    <div class="ni" onclick="nav('data-explorer')"><span class="ni-icon">⊞</span>Data Explorer</div>
+    <div class="ni" onclick="nav('exports')"><span class="ni-icon">↓</span>Exports</div>
+    <div class="ni" onclick="nav('api-access')"><span class="ni-icon">⚡</span>API Access</div>
+  </div>
+
+  <div class="sb-foot">
+    <div class="sb-live" id="sb-live-indicator"><div class="live-dot"></div>Morocco · Updated March 2026</div>
+    <div class="sb-user">
+      <div class="sb-avatar" id="sb-av">—</div>
+      <div class="sb-uname" id="sb-un">Loading...</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ════ MAIN ════ -->
+<div class="main">
+  <div class="demo-banner">⚠ DEMO DATA — NOT REAL · All figures are illustrative placeholders. Do not use for investment decisions.</div>
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-breadcrumb" id="tb-bc">Overview <span>/ Market Terminal</span></div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-conf">
+        <span>Confidence:</span>
+        <span class="conf conf-h"><span class="conf-dot"></span>High</span>
+        <span class="conf conf-m"><span class="conf-dot"></span>Med.</span>
+        <span class="conf conf-e"><span class="conf-dot"></span>Est.</span>
+      </div>
+      <div class="tb-filter">
+        <span>Asset:</span>
+        <select id="asset-filter" onchange="applyFilters()">
+          <option value="all">All Classes</option>
+          <option value="apartments">Apartments</option>
+          <option value="offices">Offices</option>
+          <option value="retail">Retail</option>
+          <option value="villas">Villas</option>
+          <option value="land">Land</option>
+        </select>
+      </div>
+      <div class="tb-filter">
+        <span>Period:</span>
+        <select id="period-filter" onchange="applyFilters()">
+          <option value="latest">Mar 2026</option>
+          <option value="q4-2025">Q4 2025</option>
+          <option value="q3-2025">Q3 2025</option>
+        </select>
+      </div>
+      <button class="tb-export" onclick="nav('exports')">↓ Export</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content" id="content">
+
+    <!-- ══════════════════════════════════════════════
+         MARKET TERMINAL
+    ══════════════════════════════════════════════ -->
+    <div class="pg active" id="pg-market-terminal">
+      <div class="eyebrow">Overview</div>
+      <div class="pg-title">Market Terminal</div>
+      <div class="pg-sub" id="mt-subtitle">Morocco real estate intelligence — March 2026. Click any metric to view the evidence behind it. All indicators show source classification and confidence level.</div>
+
+      <!-- KPI Snapshot -->
+      <div class="kpi-grid">
+        <div class="kpi" onclick="showEvidence('prime-rent')" style="cursor:pointer;" title="Click to view evidence">
+          <div class="kpi-lbl">Prime Office Rent <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
+          <div class="kpi-val">DH 142</div>
+          <div class="kpi-sub">per m²/mo · Casablanca CBD</div>
+          <div class="kpi-chg chg pos">▲ +4.4% 12M</div>
+          <div style="margin-top:6px;"><span class="ds-tag ds-listings">Listings-derived</span></div>
+        </div>
+        <div class="kpi" onclick="showEvidence('median-price')" style="cursor:pointer;">
+          <div class="kpi-lbl">Median Sale Price <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
+          <div class="kpi-val" id="kpi-median-price">DH 18,400</div>
+          <div class="kpi-sub">per m² · Apts national</div>
+          <div class="kpi-chg chg pos" id="kpi-price-growth">▲ +6.1% 12M</div>
+          <div style="margin-top:6px;"><span class="ds-tag ds-listings">Listings-derived</span></div>
+        </div>
+        <div class="kpi" onclick="showEvidence('listings-volume')" style="cursor:pointer;">
+          <div class="kpi-lbl">Active Listings <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
+          <div class="kpi-val" id="kpi-active-listings">12,806</div>
+          <div class="kpi-sub">verified · all asset classes</div>
+          <div class="kpi-chg chg pos">▲ +8.3% MoM</div>
+          <div style="margin-top:6px;"><span class="ds-tag ds-listings">Listings-derived</span></div>
+        </div>
+        <div class="kpi" onclick="showEvidence('yield-estimate')" style="cursor:pointer;">
+          <div class="kpi-lbl">Yield Estimate <span class="conf conf-e"><span class="conf-dot"></span>Est.</span></div>
+          <div class="kpi-val" id="kpi-yield">5.8%</div>
+          <div class="kpi-sub">gross · Casablanca resi.</div>
+          <div class="kpi-chg" style="color:var(--ink4);">→ Stable</div>
+          <div style="margin-top:6px;"><span class="ds-tag ds-model">Modelled</span></div>
+        </div>
+        <div class="kpi" onclick="showEvidence('liquidity')" style="cursor:pointer;">
+          <div class="kpi-lbl">Liquidity Score <span class="conf conf-m"><span class="conf-dot"></span>Med.</span></div>
+          <div class="kpi-val" id="kpi-liquidity">6.4<span style="font-size:14px;color:var(--ink4);">/10</span></div>
+          <div class="kpi-sub">Ironwood Liquidity Index</div>
+          <div class="kpi-chg chg pos">▲ +0.3 pts MoM</div>
+          <div style="margin-top:6px;"><span class="ds-tag ds-model">Modelled</span></div>
+        </div>
+        <div class="kpi" onclick="showEvidence('pipeline')" style="cursor:pointer;">
+          <div class="kpi-lbl">Pipeline Supply <span class="conf conf-m"><span class="conf-dot"></span>Med.</span></div>
+          <div class="kpi-val" id="kpi-pipeline">~340k</div>
+          <div class="kpi-sub">m² GFA · 33 tracked projects</div>
+          <div class="kpi-chg" style="color:var(--amber);">⚠ Elevated</div>
+          <div style="margin-top:6px;"><span class="ds-tag ds-pipeline">Pipeline</span></div>
+        </div>
+      </div>
+
+      <!-- Market Signals -->
+      <div class="sec-div"><span class="sd-label">Market Signals</span></div>
+      <div class="signal-grid">
+        <div class="signal-card">
+          <div class="signal-name">Rent Momentum</div>
+          <div class="signal-bar-track"><div class="signal-bar-fill" style="width:74%;background:var(--green);"></div></div>
+          <div class="signal-rating" style="color:var(--green);">Strong ▲</div>
+          <div class="signal-score">Score: 7.4/10 · Listings-derived</div>
+        </div>
+        <div class="signal-card">
+          <div class="signal-name">Supply Pressure</div>
+          <div class="signal-bar-track"><div class="signal-bar-fill" style="width:68%;background:var(--amber);"></div></div>
+          <div class="signal-rating" style="color:var(--amber);">Elevated ⚠</div>
+          <div class="signal-score">Score: 6.8/10 · Pipeline data</div>
+        </div>
+        <div class="signal-card">
+          <div class="signal-name">Pipeline Risk</div>
+          <div class="signal-bar-track"><div class="signal-bar-fill" style="width:62%;background:var(--amber);"></div></div>
+          <div class="signal-rating" style="color:var(--amber);">Moderate ⚠</div>
+          <div class="signal-score">Score: 6.2/10 · Pipeline data</div>
+        </div>
+        <div class="signal-card">
+          <div class="signal-name">Investment Liquidity</div>
+          <div class="signal-bar-track"><div class="signal-bar-fill" style="width:64%;background:var(--blue);"></div></div>
+          <div class="signal-rating" style="color:var(--blue);">Good ◎</div>
+          <div class="signal-score">Score: 6.4/10 · Modelled</div>
+        </div>
+      </div>
+
+      <!-- Ranked City Table + Recent Transactions -->
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-hd">
+            <div>
+              <div class="panel-title">City Rankings</div>
+              <div class="panel-sub">By prime rent · March 2026 · <span class="ds-tag ds-listings">Listings-derived</span></div>
+            </div>
+            <button class="pa-btn" onclick="exportTable('city-rank-table')">↓ CSV</button>
+          </div>
+          <table class="dt" id="city-rank-table">
+            <thead><tr><th>#</th><th>City</th><th>Prime Rent DH/m²</th><th>12M Chg</th><th>Listings</th><th>Liq. Score</th></tr></thead>
+            <tbody id="city-rank-body">
+              <tr><td class="dt-rank">01</td><td class="dt-city">Casablanca</td><td class="mono">142</td><td class="chg pos">+4.4%</td><td class="mono">4,218</td><td class="mono">7.0</td></tr>
+              <tr><td class="dt-rank">02</td><td class="dt-city">Marrakech</td><td class="mono">118</td><td class="chg pos">+8.4%</td><td class="mono">2,847</td><td class="mono">6.8</td></tr>
+              <tr><td class="dt-rank">03</td><td class="dt-city">Rabat</td><td class="mono">98</td><td class="chg pos">+2.6%</td><td class="mono">2,340</td><td class="mono">6.0</td></tr>
+              <tr><td class="dt-rank">04</td><td class="dt-city">Tangiers</td><td class="mono">88</td><td class="chg pos">+1.3%</td><td class="mono">1,509</td><td class="mono">5.2</td></tr>
+              <tr><td class="dt-rank">05</td><td class="dt-city">Fez</td><td class="mono">72</td><td class="chg neg">-2.1%</td><td class="mono">892</td><td class="mono">3.8</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="panel">
+          <div class="panel-hd">
+            <div>
+              <div class="panel-title">Recent Transactions</div>
+              <div class="panel-sub">Last 30 days · <span class="ds-tag ds-transaction">Observed</span></div>
+            </div>
+            <button class="pa-btn" onclick="exportTable('recent-txn-table')">↓ CSV</button>
+          </div>
+          <table class="dt" id="recent-txn-table">
+            <thead><tr><th>Date</th><th>City</th><th>Asset</th><th>DH/m²</th><th>Confidence</th></tr></thead>
+            <tbody>
+              <tr><td class="mono dt-muted">Mar 10</td><td class="dt-city">Casablanca</td><td>Office</td><td class="mono">18,200</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+              <tr><td class="mono dt-muted">Mar 08</td><td class="dt-city">Marrakech</td><td>Riad</td><td class="mono">38,500</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+              <tr><td class="mono dt-muted">Mar 06</td><td class="dt-city">Rabat</td><td>Apartment</td><td class="mono">15,400</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+              <tr><td class="mono dt-muted">Mar 03</td><td class="dt-city">Tangiers</td><td>Villa</td><td class="mono">12,100</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+              <tr><td class="mono dt-muted">Feb 28</td><td class="dt-city">Casablanca</td><td>Retail</td><td class="mono">22,800</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pipeline Summary -->
+      <div class="panel">
+        <div class="panel-hd">
+          <div>
+            <div class="panel-title">Development Pipeline Summary</div>
+            <div class="panel-sub">Active tracked projects · Morocco · <span class="ds-tag ds-pipeline">Pipeline data</span></div>
+          </div>
+          <button class="pa-btn" onclick="nav('pipeline')">View Full Pipeline →</button>
+        </div>
+        <table class="dt">
+          <thead><tr><th>City</th><th>Projects</th><th>Total GFA m²</th><th>2026 Completions</th><th>2027 Completions</th><th>Risk Level</th></tr></thead>
+          <tbody>
+            <tr><td class="dt-city">Casablanca</td><td class="mono">14</td><td class="mono">~190,000</td><td class="mono">52,000</td><td class="mono">84,000</td><td><span class="sig sig-dn">High</span></td></tr>
+            <tr><td class="dt-city">Marrakech</td><td class="mono">8</td><td class="mono">~85,000</td><td class="mono">32,000</td><td class="mono">38,000</td><td><span class="sig sig-warn">Moderate</span></td></tr>
+            <tr><td class="dt-city">Rabat</td><td class="mono">5</td><td class="mono">~42,000</td><td class="mono">24,000</td><td class="mono">18,000</td><td><span class="sig sig-up">Low</span></td></tr>
+            <tr><td class="dt-city">Tangiers</td><td class="mono">4</td><td class="mono">~71,000</td><td class="mono">0</td><td class="mono">48,000</td><td><span class="sig sig-warn">Moderate</span></td></tr>
+            <tr><td class="dt-city">Fez</td><td class="mono">2</td><td class="mono">~12,000</td><td class="mono">0</td><td class="mono">0</td><td><span class="sig sig-up">Low</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div><!-- /pg-market-terminal -->
+
+    <!-- ══════════════════════════════════════════════
+         KEY INDICATORS
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-key-indicators">
+      <div class="eyebrow">Overview</div>
+      <div class="pg-title">Key Indicators</div>
+      <div class="pg-sub">Full indicator set by city and asset class. All metrics carry source classification and confidence scoring.</div>
+      <div class="panel">
+        <div class="panel-hd">
+          <div><div class="panel-title">Asking Price Indicators — All Cities</div><div class="panel-sub">Listings-derived · Median asking prices · March 2026 · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+          <button class="pa-btn gold" onclick="exportTable('indicators-table','xlsx')">↓ Excel</button>
+        </div>
+        <table class="dt" id="indicators-table">
+          <thead><tr><th>City</th><th>Asset Class</th><th>Listing Type</th><th>Median DH/m²</th><th>Observations</th><th>12M Change</th><th>Confidence</th><th>As Of</th></tr></thead>
+          <tbody>
+            <tr><td class="dt-city">Casablanca</td><td>Apartments</td><td>Sale</td><td class="mono">18,420</td><td class="mono">2,104</td><td class="chg pos">+6.2%</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td><td class="mono dt-muted">Mar 2026</td></tr>
+            <tr><td class="dt-city">Casablanca</td><td>Offices</td><td>Rent</td><td class="mono">142/mo</td><td class="mono">418</td><td class="chg pos">+4.4%</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td><td class="mono dt-muted">Mar 2026</td></tr>
+            <tr><td class="dt-city">Casablanca</td><td>Villas</td><td>Sale</td><td class="mono">24,800</td><td class="mono">312</td><td class="chg pos">+3.1%</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td><td class="mono dt-muted">Mar 2026</td></tr>
+            <tr><td class="dt-city">Marrakech</td><td>Apartments</td><td>Sale</td><td class="mono">17,800</td><td class="mono">1,842</td><td class="chg pos">+8.4%</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td><td class="mono dt-muted">Mar 2026</td></tr>
+            <tr><td class="dt-city">Marrakech</td><td>Riads</td><td>Sale</td><td class="mono">38,200</td><td class="mono">284</td><td class="chg pos">+12.1%</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td><td class="mono dt-muted">Mar 2026</td></tr>
+            <tr><td class="dt-city">Rabat</td><td>Apartments</td><td>Sale</td><td class="mono">15,200</td><td class="mono">1,104</td><td class="chg pos">+2.6%</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td><td class="mono dt-muted">Mar 2026</td></tr>
+            <tr><td class="dt-city">Tangiers</td><td>Apartments</td><td>Sale</td><td class="mono">12,800</td><td class="mono">684</td><td class="chg pos">+1.3%</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td><td class="mono dt-muted">Mar 2026</td></tr>
+            <tr><td class="dt-city">Fez</td><td>Apartments</td><td>Sale</td><td class="mono">10,400</td><td class="mono">524</td><td class="chg neg">-2.1%</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td><td class="mono dt-muted">Mar 2026</td></tr>
+          </tbody>
+        </table>
+        <div class="export-row">
+          <button class="exp-btn primary" onclick="exportTable('indicators-table')">↓ CSV</button>
+          <button class="exp-btn" onclick="exportTable('indicators-table','xlsx')">↓ Excel</button>
+          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">All figures are asking price indicators — not achieved transaction prices · Source: Ironwood listing database</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         MARKET SIGNALS
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-market-signals">
+      <div class="eyebrow">Overview</div>
+      <div class="pg-title">Market Signals</div>
+      <div class="pg-sub">Derived signal indicators for Morocco markets. Each signal references its source dataset. Signals are modelled outputs — not direct observations.</div>
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-hd"><div class="panel-title">Signal Registry</div><div class="panel-sub">Morocco · March 2026 · <span class="ds-tag ds-model">Modelled</span></div></div>
+        <table class="dt">
+          <thead><tr><th>Signal</th><th>City</th><th>Score</th><th>Direction</th><th>Source Dataset</th><th>Last Updated</th><th>Confidence</th></tr></thead>
+          <tbody>
+            <tr><td class="dt-city">Rent Momentum</td><td>Casablanca</td><td class="mono">7.4/10</td><td><span class="sig sig-up">▲ Strong</span></td><td><span class="ds-tag ds-listings">Listings</span></td><td class="mono dt-muted">Mar 2026</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+            <tr><td class="dt-city">Rent Momentum</td><td>Marrakech</td><td class="mono">8.4/10</td><td><span class="sig sig-up">▲ Very Strong</span></td><td><span class="ds-tag ds-listings">Listings</span></td><td class="mono dt-muted">Mar 2026</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+            <tr><td class="dt-city">Supply Pressure</td><td>Casablanca</td><td class="mono">6.8/10</td><td><span class="sig sig-warn">⚠ Elevated</span></td><td><span class="ds-tag ds-pipeline">Pipeline</span></td><td class="mono dt-muted">Mar 2026</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+            <tr><td class="dt-city">Pipeline Risk</td><td>Casablanca</td><td class="mono">6.2/10</td><td><span class="sig sig-warn">⚠ Moderate</span></td><td><span class="ds-tag ds-pipeline">Pipeline</span></td><td class="mono dt-muted">Mar 2026</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+            <tr><td class="dt-city">Inv. Liquidity</td><td>National</td><td class="mono">6.4/10</td><td><span class="sig sig-neutral">→ Stable</span></td><td><span class="ds-tag ds-model">Modelled</span></td><td class="mono dt-muted">Mar 2026</td><td><span class="conf conf-e"><span class="conf-dot"></span>Est.</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         COUNTRIES
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-countries">
+      <div class="eyebrow">Markets</div>
+      <div class="pg-title">Countries</div>
+      <div class="pg-sub">Country-level coverage status. Live markets have active data collection. Expanding markets are in pipeline.</div>
+      <div class="panel">
+        <div class="panel-hd"><div class="panel-title">Coverage Registry</div><div class="panel-sub">Ironwood Intelligence · March 2026</div></div>
+        <table class="dt">
+          <thead><tr><th>Country</th><th>Region</th><th>Status</th><th>Cities Covered</th><th>Listing Records</th><th>Asset Classes</th><th>Data Since</th></tr></thead>
+          <tbody>
+            <tr><td class="dt-city">🇲🇦 Morocco</td><td>North Africa</td><td><span class="sig sig-up">● Live</span></td><td class="mono">5</td><td class="mono">62,052</td><td class="mono">8</td><td class="mono dt-muted">2023</td></tr>
+            <tr><td class="dt-city">🇳🇬 Nigeria</td><td>West Africa</td><td><span class="sig sig-pos">● Live</span></td><td class="mono">5</td><td class="mono">28,400+</td><td class="mono">₦ 1,840,000</td><td class="mono">Mar 2026</td></tr>
+            <tr><td class="dt-city">🇸🇳 Senegal</td><td>West Africa</td><td><span class="sig sig-neutral">○ Planned</span></td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono dt-muted">2026 Q4</td></tr>
+            <tr><td class="dt-city">🇰🇪 Kenya</td><td>East Africa</td><td><span class="sig sig-neutral">○ Planned</span></td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono dt-muted">2027</td></tr>
+            <tr><td class="dt-city">🇬🇭 Ghana</td><td>West Africa</td><td><span class="sig sig-neutral">○ Planned</span></td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono dt-muted">2027</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         CITIES
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-cities">
+      <div class="eyebrow">Markets</div>
+      <div class="pg-title">Cities</div>
+      <div class="pg-sub">Full city market profiles for all covered markets. Select a city to view its complete intelligence dossier. All indicators are listings-derived unless otherwise noted.</div>
+
+      <!-- City selector tabs -->
+      <div id="city-tabs-bar" style="display:flex;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px;">
+        <button class="city-tab active-tab" onclick="switchCity(this,'casablanca')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:var(--ink);color:#fff;border:none;cursor:pointer;">Casablanca</button>
+        <button class="city-tab" onclick="switchCity(this,'marrakech')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:var(--surface);color:var(--ink3);border:none;cursor:pointer;">Marrakech</button>
+        <button class="city-tab" onclick="switchCity(this,'rabat')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:var(--surface);color:var(--ink3);border:none;cursor:pointer;">Rabat</button>
+        <button class="city-tab" onclick="switchCity(this,'tangiers')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:var(--surface);color:var(--ink3);border:none;cursor:pointer;">Tangiers</button>
+        <button class="city-tab" onclick="switchCity(this,'fez')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:var(--surface);color:var(--ink3);border:none;cursor:pointer;">Fez</button>
+      </div>
+
+      <!-- City profile panel — populated dynamically -->
+      <div id="city-profile">
+
+        <!-- Market Overview KPIs -->
+        <div class="kpi-grid" id="city-kpis">
+          <div class="kpi">
+            <div class="kpi-lbl">Median Apt. Price <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
+            <div class="kpi-val" id="c-med-price">DH 18,420</div>
+            <div class="kpi-sub">per m² · Asking price</div>
+            <div class="kpi-chg chg pos" id="c-price-chg">▲ +6.2% 12M</div>
+            <div style="margin-top:6px;"><span class="ds-tag ds-listings">Listings-derived</span></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-lbl">Prime Rent <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
+            <div class="kpi-val" id="c-prime-rent">DH 142</div>
+            <div class="kpi-sub">per m²/mo · Offices</div>
+            <div class="kpi-chg chg pos" id="c-rent-chg">▲ +4.4% 12M</div>
+            <div style="margin-top:6px;"><span class="ds-tag ds-listings">Listings-derived</span></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-lbl">Active Listings <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
+            <div class="kpi-val" id="c-listings">4,218</div>
+            <div class="kpi-sub">verified · all asset classes</div>
+            <div class="kpi-chg" id="c-list-chg" style="color:var(--ink4);">All types</div>
+            <div style="margin-top:6px;"><span class="ds-tag ds-listings">Listings-derived</span></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-lbl">Yield Estimate <span class="conf conf-e"><span class="conf-dot"></span>Est.</span></div>
+            <div class="kpi-val" id="c-yield">5.8%</div>
+            <div class="kpi-sub">gross · residential</div>
+            <div class="kpi-chg" style="color:var(--ink4);">→ Stable</div>
+            <div style="margin-top:6px;"><span class="ds-tag ds-model">Modelled</span></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-lbl">Liquidity Score <span class="conf conf-m"><span class="conf-dot"></span>Med.</span></div>
+            <div class="kpi-val" id="c-liq">7.0<span style="font-size:14px;color:var(--ink4);">/10</span></div>
+            <div class="kpi-sub">Ironwood Liquidity Index</div>
+            <div class="kpi-chg" id="c-liq-chg" style="color:var(--green);">→ Liquid</div>
+            <div style="margin-top:6px;"><span class="ds-tag ds-model">Modelled</span></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-lbl">Pipeline Supply <span class="conf conf-m"><span class="conf-dot"></span>Med.</span></div>
+            <div class="kpi-val" id="c-pipeline">~190k</div>
+            <div class="kpi-sub" id="c-pipe-sub">m² GFA · 14 projects</div>
+            <div class="kpi-chg" id="c-pipe-risk" style="color:var(--red);">⚠ High risk</div>
+            <div style="margin-top:6px;"><span class="ds-tag ds-pipeline">Pipeline data</span></div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <!-- Price Trends -->
+          <div class="panel">
+            <div class="panel-hd">
+              <div><div class="panel-title">Price Trend</div><div class="panel-sub" id="c-trend-sub">Apartments · Indexed 100 = Q1 2025 · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+              <button class="pa-btn" onclick="exportTable('city-trend-table')">↓ CSV</button>
+            </div>
+            <div class="panel-body"><div style="height:200px;"><canvas id="city-trend-chart"></canvas></div></div>
+          </div>
+
+          <!-- District Comparison -->
+          <div class="panel">
+            <div class="panel-hd">
+              <div><div class="panel-title">District Comparison</div><div class="panel-sub">Median asking price by sub-market · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+              <button class="pa-btn" onclick="exportTable('city-district-table')">↓ CSV</button>
+            </div>
+            <div class="panel-body"><div style="height:200px;"><canvas id="city-district-chart"></canvas></div></div>
+          </div>
+        </div>
+
+        <!-- Development Pipeline -->
+        <div class="panel">
+          <div class="panel-hd">
+            <div><div class="panel-title" id="c-pipe-title">Development Pipeline — Casablanca</div><div class="panel-sub">Active tracked projects · <span class="ds-tag ds-pipeline">Pipeline data</span></div></div>
+            <div class="panel-actions">
+              <button class="pa-btn gold" onclick="exportTable('city-pipeline-table','xlsx')">↓ Excel</button>
+            </div>
+          </div>
+          <table class="dt" id="city-pipeline-table">
+            <thead><tr><th>#</th><th>Project</th><th>Developer</th><th>District</th><th>Asset Class</th><th>GFA m²</th><th>Stage</th><th>Delivery</th><th>Risk</th></tr></thead>
+            <tbody id="city-pipe-body">
+              <tr><td class="dt-rank">01</td><td><strong>Marina Business Hub</strong></td><td class="dt-muted">Undisclosed</td><td class="dt-muted">Marina</td><td>Office</td><td class="mono">42,000</td><td><span class="sig sig-warn">Superstructure</span></td><td class="mono">Q3 2027</td><td><span class="sig sig-dn">High</span></td></tr>
+              <tr><td class="dt-rank">02</td><td><strong>Anfa Place Ph.3</strong></td><td class="dt-muted">Addoha</td><td class="dt-muted">Anfa</td><td>Mixed Use</td><td class="mono">38,000</td><td><span class="sig sig-neutral">Foundation</span></td><td class="mono">Q2 2028</td><td><span class="sig sig-warn">Moderate</span></td></tr>
+              <tr><td class="dt-rank">03</td><td><strong>CIL Towers</strong></td><td class="dt-muted">CDG Immobilier</td><td class="dt-muted">CIL</td><td>Residential</td><td class="mono">28,000</td><td><span class="sig sig-up">Topped Out</span></td><td class="mono">Q4 2026</td><td><span class="sig sig-up">Low</span></td></tr>
+            </tbody>
+          </table>
+          <div class="export-row">
+            <button class="exp-btn primary" onclick="exportTable('city-pipeline-table')">↓ CSV</button>
+            <span style="margin-left:auto;font-size:11px;color:var(--ink5);">DEMO DATA · Pipeline data · Estimates only</span>
+          </div>
+        </div>
+
+        <!-- Transaction Evidence + Investment Signals -->
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-hd">
+              <div><div class="panel-title">Transaction Evidence</div><div class="panel-sub"><span class="ds-tag ds-transaction">Observed transaction</span></div></div>
+              <button class="pa-btn" onclick="exportTable('city-txn-table')">↓ CSV</button>
+            </div>
+            <table class="dt" id="city-txn-table">
+              <thead><tr><th>Date</th><th>Asset</th><th>District</th><th>DH/m²</th><th>Source</th><th>Conf.</th></tr></thead>
+              <tbody id="city-txn-body">
+                <tr><td class="mono dt-muted">Mar 2026</td><td>Office</td><td class="dt-muted">Marina</td><td class="mono">18,200</td><td class="dt-muted">Press</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+                <tr><td class="mono dt-muted">Jan 2026</td><td>Retail</td><td class="dt-muted">Maarif</td><td class="mono">22,800</td><td class="dt-muted">Broker</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+                <tr><td class="mono dt-muted">Dec 2025</td><td>Apartment</td><td class="dt-muted">Ain Diab</td><td class="mono">26,400</td><td class="dt-muted">Land Reg.</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="panel">
+            <div class="panel-hd"><div><div class="panel-title">Investment Signals</div><div class="panel-sub"><span class="ds-tag ds-model">Modelled indicators</span></div></div></div>
+            <div class="panel-body">
+              <div class="score-bar-row"><span class="score-bar-label">Price Growth</span><div class="score-bar-track"><div class="score-bar-fill" id="c-sig-pg" style="width:62%;background:var(--blue);"></div></div><span class="score-bar-val" id="c-sig-pg-v">6.2</span></div>
+              <div class="score-bar-row"><span class="score-bar-label">Rent Growth</span><div class="score-bar-track"><div class="score-bar-fill" id="c-sig-rg" style="width:44%;background:var(--gold);"></div></div><span class="score-bar-val" id="c-sig-rg-v">4.4</span></div>
+              <div class="score-bar-row"><span class="score-bar-label">Liquidity</span><div class="score-bar-track"><div class="score-bar-fill" id="c-sig-lq" style="width:70%;background:var(--blue);"></div></div><span class="score-bar-val" id="c-sig-lq-v">7.0</span></div>
+              <div class="score-bar-row"><span class="score-bar-label">Pipeline Risk</span><div class="score-bar-track"><div class="score-bar-fill" id="c-sig-pr" style="width:52%;background:var(--gold);"></div></div><span class="score-bar-val" id="c-sig-pr-v">5.2</span></div>
+              <div class="score-bar-row"><span class="score-bar-label">Yield Est.</span><div class="score-bar-track"><div class="score-bar-fill" id="c-sig-ye" style="width:58%;background:var(--blue);"></div></div><span class="score-bar-val" id="c-sig-ye-v">5.8</span></div>
+              <div class="score-bar-row"><span class="score-bar-label">Pop. Growth</span><div class="score-bar-track"><div class="score-bar-fill" id="c-sig-po" style="width:62%;background:var(--blue);"></div></div><span class="score-bar-val" id="c-sig-po-v">6.2</span></div>
+              <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:11.5px;color:var(--ink4);">IOS Score</div>
+                <div style="display:flex;align-items:center;gap:8px;"><span id="c-ios" style="font-family:var(--serif);font-size:22px;">7.7</span><span class="opp-badge opp-strong" id="c-ios-badge">Attractive</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Price trend data table (exportable) -->
+        <div class="panel">
+          <div class="panel-hd">
+            <div><div class="panel-title" id="c-trend-tbl-title">Price Trend Data — Casablanca</div><div class="panel-sub">Quarterly median asking prices · DH/m² · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+            <button class="pa-btn gold" onclick="exportTable('city-trend-table','xlsx')">↓ Excel</button>
+          </div>
+          <table class="dt" id="city-trend-table">
+            <thead><tr><th>Period</th><th>Apartments</th><th>Offices (Rent /m²/mo)</th><th>Villas</th><th>Retail</th><th>Observations</th></tr></thead>
+            <tbody id="city-trend-body">
+              <tr><td class="mono dt-muted">Q1 2025</td><td class="mono">17,340</td><td class="mono">136</td><td class="mono">23,800</td><td class="mono">21,200</td><td class="mono">3,480</td></tr>
+              <tr><td class="mono dt-muted">Q2 2025</td><td class="mono">17,680</td><td class="mono">138</td><td class="mono">24,100</td><td class="mono">21,800</td><td class="mono">3,612</td></tr>
+              <tr><td class="mono dt-muted">Q3 2025</td><td class="mono">17,920</td><td class="mono">139</td><td class="mono">24,400</td><td class="mono">21,900</td><td class="mono">3,840</td></tr>
+              <tr><td class="mono dt-muted">Q4 2025</td><td class="mono">18,140</td><td class="mono">141</td><td class="mono">24,600</td><td class="mono">22,100</td><td class="mono">4,012</td></tr>
+              <tr><td class="mono dt-muted">Q1 2026</td><td class="mono">18,420</td><td class="mono">142</td><td class="mono">24,800</td><td class="mono">22,400</td><td class="mono">4,218</td></tr>
+            </tbody>
+          </table>
+          <div class="export-row">
+            <button class="exp-btn primary" onclick="exportTable('city-trend-table')">↓ CSV</button>
+            <button class="exp-btn" onclick="exportTable('city-trend-table','xlsx')">↓ Excel</button>
+            <span style="margin-left:auto;font-size:11px;color:var(--ink5);">Asking price indicators only · Listings-derived · DEMO DATA</span>
+          </div>
+        </div>
+
+      </div><!-- /city-profile -->
+    </div><!-- /pg-cities -->
+
+    <!-- ══════════════════════════════════════════════
+         DISTRICTS
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-districts">
+      <div class="eyebrow">Markets</div>
+      <div class="pg-title">Districts</div>
+      <div class="pg-sub">Sub-market district profiles. Includes median asking rent, median asking sale price, listing volume, development pipeline, and known corporate occupiers. Asking price indicators only.</div>
+
+      <!-- City filter -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <span style="font-size:11.5px;color:var(--ink4);font-weight:600;">City:</span>
+        <button class="pa-btn gold" onclick="filterDistricts(this,'casablanca')">Casablanca</button>
+        <button class="pa-btn" onclick="filterDistricts(this,'marrakech')">Marrakech</button>
+        <button class="pa-btn" onclick="filterDistricts(this,'rabat')">Rabat</button>
+        <button class="pa-btn" onclick="filterDistricts(this,'tangiers')">Tangiers</button>
+        <button class="pa-btn" onclick="filterDistricts(this,'fez')">Fez</button>
+        <div style="margin-left:auto;"><button class="pa-btn gold" onclick="exportTable('district-full-table','xlsx')">↓ Excel</button></div>
+      </div>
+
+      <!-- District comparison table — full spec fields -->
+      <div class="panel" style="margin-bottom:20px;">
+        <div class="panel-hd">
+          <div><div class="panel-title" id="district-table-title">District Profiles — Casablanca</div><div class="panel-sub">Median asking prices · March 2026 · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+        </div>
+        <table class="dt" id="district-full-table">
+          <thead>
+            <tr><th>District</th><th>City</th><th>Median Sale DH/m²</th><th>vs City Avg</th><th>Rent DH/m²/mo</th><th>Listings</th><th>12M Chg</th><th>Recent Txns</th><th>Dev. Projects</th><th>Key Occupiers</th><th>Confidence</th></tr>
+          </thead>
+          <tbody id="district-full-body">
+            <tr><td class="dt-city">Ain Diab</td><td class="dt-muted">Casablanca</td><td class="mono">26,200</td><td class="chg pos">+42%</td><td class="mono">180</td><td class="mono">284</td><td class="chg pos">+7.1%</td><td class="mono">3</td><td class="mono">1</td><td class="dt-muted">Residential</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-city">Anfa / CIL</td><td class="dt-muted">Casablanca</td><td class="mono">24,800</td><td class="chg pos">+35%</td><td class="mono">162</td><td class="mono">312</td><td class="chg pos">+5.8%</td><td class="mono">5</td><td class="mono">2</td><td class="dt-muted">OCP HQ</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-city">Maarif</td><td class="dt-muted">Casablanca</td><td class="mono">20,400</td><td class="chg pos">+11%</td><td class="mono">148</td><td class="mono">528</td><td class="chg pos">+6.4%</td><td class="mono">8</td><td class="mono">0</td><td class="dt-muted">Mixed use</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-city">Marina CBD</td><td class="dt-muted">Casablanca</td><td class="mono">19,800</td><td class="chg pos">+7%</td><td class="mono">158</td><td class="mono">186</td><td class="chg pos">+5.2%</td><td class="mono">4</td><td class="mono">3</td><td class="dt-muted">Attijariwafa</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-city">Sidi Maarouf</td><td class="dt-muted">Casablanca</td><td class="mono">16,400</td><td class="chg neg">-11%</td><td class="mono">128</td><td class="mono">412</td><td class="chg pos">+3.1%</td><td class="mono">2</td><td class="mono">1</td><td class="dt-muted">Capgemini</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-city">Hay Hassani</td><td class="dt-muted">Casablanca</td><td class="mono">12,400</td><td class="chg neg">-33%</td><td class="mono">88</td><td class="mono">604</td><td class="chg pos">+2.8%</td><td class="mono">1</td><td class="mono">0</td><td class="dt-muted">Residential</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+          </tbody>
+        </table>
+        <div class="export-row">
+          <button class="exp-btn primary" onclick="exportTable('district-full-table')">↓ CSV</button>
+          <button class="exp-btn" onclick="exportTable('district-full-table','xlsx')">↓ Excel</button>
+          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">DEMO DATA · Asking prices only · Transactions and occupiers are indicative</span>
+        </div>
+      </div>
+
+      <!-- District spotlight — click-to-expand detail panel -->
+      <div class="sec-div"><span class="sd-label">District Spotlight — Ain Diab, Casablanca</span></div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-hd"><div class="panel-title">Asking Price Summary</div><div class="panel-sub">Ain Diab · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+          <div class="panel-body">
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Median Sale Price</span><span class="ep-meta-val">DH 26,200/m²</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">vs City Median</span><span class="ep-meta-val" style="color:var(--green);">+42% premium</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Median Rent</span><span class="ep-meta-val">DH 180/m²/mo</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Yield Estimate</span><span class="ep-meta-val">8.2% <span class="ds-tag ds-model" style="font-size:8.5px;">Modelled</span></span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Active Listings</span><span class="ep-meta-val">284</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">12M Price Change</span><span class="ep-meta-val" style="color:var(--green);">+7.1%</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Primary Asset Type</span><span class="ep-meta-val">Villas · High-end residential</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Confidence</span><span class="ep-meta-val"><span class="conf conf-h"><span class="conf-dot"></span>High</span></span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd"><div class="panel-title">Pipeline + Occupiers</div><div class="panel-sub">Ain Diab · Combined sources</div></div>
+          <div class="panel-body">
+            <div style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);margin-bottom:8px;">Development Pipeline <span class="ds-tag ds-pipeline">Pipeline</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Active Projects</span><span class="ep-meta-val">1 tracked project</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Total GFA</span><span class="ep-meta-val">~4,200 m² (residential)</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Risk Level</span><span class="ep-meta-val"><span class="sig sig-up">Low</span></span></div>
+            <div style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);margin:14px 0 8px;">Corporate Occupiers <span class="ds-tag ds-occupier">Observed</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Tracked</span><span class="ep-meta-val">Predominantly residential</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Major tenants</span><span class="ep-meta-val">—</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Recent Transactions</span><span class="ep-meta-val">3 tracked (2025–2026)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         LISTINGS
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-listings">
+      <div class="eyebrow">Data</div>
+      <div class="pg-title">Listings Database</div>
+      <div class="pg-sub">Raw listings observations. This is the base dataset — immutable, append-only, never overwritten by analytics logic. All asking price metrics derive from this layer.</div>
+
+      <div style="padding:10px 14px;background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:2px;margin-bottom:16px;font-size:12px;color:var(--blue);">
+        <strong>Data Layer:</strong> Raw Data Layer · Listings-derived only · Read-only · Append-only · Source: Mubawab Morocco scrape · 62,052 records ingested
+      </div>
+
+      <div class="panel">
+        <div class="panel-hd">
+          <div>
+            <div class="panel-title">Listings Registry</div>
+            <div class="panel-sub" id="listings-sub">Morocco · All asset classes · <span class="ds-tag ds-listings">Listings-derived</span></div>
+          </div>
+          <div class="panel-actions">
+            <button class="pa-btn" onclick="applyFilters()">Filter</button>
+            <button class="pa-btn gold" onclick="exportTable('listings-table','xlsx')">↓ Excel</button>
+          </div>
+        </div>
+        <table class="dt" id="listings-table">
+          <thead>
+            <tr><th>#</th><th>City</th><th>District</th><th>Asset Class</th><th>Type</th><th>Price DH</th><th>DH/m²</th><th>Size m²</th><th>Listed</th><th>Source</th><th>Confidence</th></tr>
+          </thead>
+          <tbody id="listings-body">
+            <tr><td class="dt-rank">1</td><td class="dt-city">Casablanca</td><td class="dt-muted">Maarif</td><td>Apartment</td><td>Sale</td><td class="mono">1,850,000</td><td class="mono">18,500</td><td class="mono">100</td><td class="mono dt-muted">Mar 2026</td><td class="dt-muted">Mubawab</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-rank">2</td><td class="dt-city">Marrakech</td><td class="dt-muted">Gueliz</td><td>Apartment</td><td>Sale</td><td class="mono">2,140,000</td><td class="mono">17,833</td><td class="mono">120</td><td class="mono dt-muted">Mar 2026</td><td class="dt-muted">Mubawab</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-rank">3</td><td class="dt-city">Casablanca</td><td class="dt-muted">Ain Diab</td><td>Villa</td><td>Sale</td><td class="mono">6,200,000</td><td class="mono">26,086</td><td class="mono">238</td><td class="mono dt-muted">Feb 2026</td><td class="dt-muted">Mubawab</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-rank">4</td><td class="dt-city">Rabat</td><td class="dt-muted">Agdal</td><td>Office</td><td>Rent</td><td class="mono">98,000/yr</td><td class="mono">98/mo</td><td class="mono">83</td><td class="mono dt-muted">Mar 2026</td><td class="dt-muted">Mubawab</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-rank">5</td><td class="dt-city">Marrakech</td><td class="dt-muted">Palmeraie</td><td>Riad</td><td>Sale</td><td class="mono">4,584,000</td><td class="mono">38,200</td><td class="mono">120</td><td class="mono dt-muted">Feb 2026</td><td class="dt-muted">Mubawab</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+          </tbody>
+        </table>
+        <div class="export-row">
+          <button class="exp-btn primary" onclick="exportTable('listings-table')">↓ CSV</button>
+          <button class="exp-btn" onclick="exportTable('listings-table','xlsx')">↓ Excel</button>
+          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">Raw Data Layer · Read-only · 62,052 total records · Showing sample</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         TRANSACTIONS
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-transactions">
+      <div class="eyebrow">Data</div>
+      <div class="pg-title">Transactions</div>
+      <div class="pg-sub">Observed transaction evidence. Sourced from land registries, corporate announcements, broker reports, and press. Each record carries a confidence score.</div>
+      <div style="padding:10px 14px;background:var(--green-bg);border:1px solid #bbf7d0;border-radius:2px;margin-bottom:16px;font-size:12px;color:var(--green);">
+        <strong>Data Layer:</strong> Raw Data Layer · Observed External Data · Read-only · Append-only · Source: land registries · corporate announcements · broker reports
+      </div>
+      <div class="panel">
+        <div class="panel-hd">
+          <div><div class="panel-title">Transaction Register</div><div class="panel-sub">Morocco · All cities · <span class="ds-tag ds-transaction">Observed transaction</span></div></div>
+          <button class="pa-btn gold" onclick="exportTable('txn-table','xlsx')">↓ Excel</button>
+        </div>
+        <table class="dt" id="txn-table">
+          <thead><tr><th>Date</th><th>City</th><th>District</th><th>Asset Type</th><th>Buyer Type</th><th>Seller Type</th><th>Price DH</th><th>DH/m²</th><th>Size m²</th><th>Source</th><th>Confidence</th></tr></thead>
+          <tbody>
+            <tr><td class="mono dt-muted">Mar 2026</td><td class="dt-city">Casablanca</td><td class="dt-muted">Marina</td><td>Office</td><td class="dt-muted">Institutional</td><td class="dt-muted">Developer</td><td class="mono">42,000,000</td><td class="mono">18,200</td><td class="mono">2,308</td><td class="dt-muted">Press</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+            <tr><td class="mono dt-muted">Feb 2026</td><td class="dt-city">Marrakech</td><td class="dt-muted">Palmeraie</td><td>Riad</td><td class="dt-muted">Private HNW</td><td class="dt-muted">Private</td><td class="mono">4,620,000</td><td class="mono">38,500</td><td class="mono">120</td><td class="dt-muted">Broker</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+            <tr><td class="mono dt-muted">Feb 2026</td><td class="dt-city">Rabat</td><td class="dt-muted">Agdal</td><td>Apartment</td><td class="dt-muted">Private</td><td class="dt-muted">Developer</td><td class="mono">1,848,000</td><td class="mono">15,400</td><td class="mono">120</td><td class="dt-muted">Land Registry</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="mono dt-muted">Jan 2026</td><td class="dt-city">Tangiers</td><td class="dt-muted">Free Zone</td><td>Land</td><td class="dt-muted">Corporate</td><td class="dt-muted">Government</td><td class="mono">8,400,000</td><td class="mono">840/m²</td><td class="mono">10,000</td><td class="dt-muted">Corp. Ann.</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="mono dt-muted">Jan 2026</td><td class="dt-city">Casablanca</td><td class="dt-muted">Maarif</td><td>Retail</td><td class="dt-muted">Institutional</td><td class="dt-muted">Private</td><td class="mono">27,360,000</td><td class="mono">22,800</td><td class="mono">1,200</td><td class="dt-muted">Broker</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+          </tbody>
+        </table>
+        <div class="export-row">
+          <button class="exp-btn primary" onclick="exportTable('txn-table')">↓ CSV</button>
+          <button class="exp-btn" onclick="exportTable('txn-table','xlsx')">↓ Excel</button>
+          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">DEMO DATA · Observed external data · Not investment advice</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         PIPELINE
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-pipeline">
+      <div class="eyebrow">Data</div>
+      <div class="pg-title">Development Pipeline</div>
+      <div class="pg-sub">Active, approved, and proposed development projects. Sources include developer announcements, planning authorities, and construction reports.</div>
+      <div style="padding:10px 14px;background:#fff7ed;border:1px solid #fed7aa;border-radius:2px;margin-bottom:16px;font-size:12px;color:#c2410c;">
+        <strong>Data Layer:</strong> Raw Data Layer · Pipeline data · Sources: developer announcements · planning authorities · municipal permits · press
+      </div>
+      <div class="panel">
+        <div class="panel-hd">
+          <div><div class="panel-title">Pipeline Register</div><div class="panel-sub">Morocco · All cities · <span class="ds-tag ds-pipeline">Pipeline data</span></div></div>
+          <button class="pa-btn gold" onclick="exportTable('pipeline-full-table','xlsx')">↓ Excel</button>
+        </div>
+        <table class="dt" id="pipeline-full-table">
+          <thead><tr><th>#</th><th>Project</th><th>Developer</th><th>City</th><th>District</th><th>Asset Class</th><th>GFA m²</th><th>Stage</th><th>Delivery</th><th>Source</th><th>Risk</th><th>Confidence</th></tr></thead>
+          <tbody>
+            <tr><td class="dt-rank">01</td><td><strong>Marina Business Hub</strong></td><td class="dt-muted">Undisclosed</td><td class="dt-city">Casablanca</td><td class="dt-muted">Marina</td><td>Office</td><td class="mono">42,000</td><td><span class="sig sig-warn">Superstructure</span></td><td class="mono">Q3 2027</td><td class="dt-muted">Press</td><td><span class="sig sig-dn">High</span></td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+            <tr><td class="dt-rank">02</td><td><strong>Anfa Place Ph.3</strong></td><td class="dt-muted">Addoha</td><td class="dt-city">Casablanca</td><td class="dt-muted">Anfa</td><td>Mixed Use</td><td class="mono">38,000</td><td><span class="sig sig-neutral">Foundation</span></td><td class="mono">Q2 2028</td><td class="dt-muted">Developer</td><td><span class="sig sig-warn">Moderate</span></td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+            <tr><td class="dt-rank">03</td><td><strong>Tangiers FZ Hub</strong></td><td class="dt-muted">TFZ Authority</td><td class="dt-city">Tangiers</td><td class="dt-muted">Free Zone</td><td>Office/Ind.</td><td class="mono">48,000</td><td><span class="sig sig-warn">Superstructure</span></td><td class="mono">Q4 2027</td><td class="dt-muted">Authority</td><td><span class="sig sig-warn">Moderate</span></td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+            <tr><td class="dt-rank">04</td><td><strong>CIL Towers</strong></td><td class="dt-muted">CDG Immobilier</td><td class="dt-city">Casablanca</td><td class="dt-muted">CIL</td><td>Residential</td><td class="mono">28,000</td><td><span class="sig sig-up">Topped Out</span></td><td class="mono">Q4 2026</td><td class="dt-muted">Developer</td><td><span class="sig sig-up">Low</span></td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-rank">05</td><td><strong>Palmeraie Villas Ph.5</strong></td><td class="dt-muted">Palmeraie Group</td><td class="dt-city">Marrakech</td><td class="dt-muted">Palmeraie</td><td>Villas</td><td class="mono">32,000</td><td><span class="sig sig-warn">Superstructure</span></td><td class="mono">Q1 2027</td><td class="dt-muted">Developer</td><td><span class="sig sig-up">Low</span></td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-rank">06</td><td><strong>Agdal Mixed-Use Tower</strong></td><td class="dt-muted">Immolog</td><td class="dt-city">Rabat</td><td class="dt-muted">Agdal</td><td>Mixed Use</td><td class="mono">24,000</td><td><span class="sig sig-up">Topped Out</span></td><td class="mono">Q3 2026</td><td class="dt-muted">Developer</td><td><span class="sig sig-up">Low</span></td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+          </tbody>
+        </table>
+        <div class="export-row">
+          <button class="exp-btn primary" onclick="exportTable('pipeline-full-table')">↓ CSV</button>
+          <button class="exp-btn" onclick="exportTable('pipeline-full-table','xlsx')">↓ Excel</button>
+          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">DEMO DATA · Pipeline data · Confidence varies by source · March 2026</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         CORPORATE OCCUPIERS
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-occupiers">
+      <div class="eyebrow">Data</div>
+      <div class="pg-title">Corporate Occupiers</div>
+      <div class="pg-sub">Major corporate tenants and office occupiers by city. Sources include Google Maps, LinkedIn, business directories, free zone registers, and building directories.</div>
+      <div style="padding:10px 14px;background:#fdf2f8;border:1px solid #fbcfe8;border-radius:2px;margin-bottom:16px;font-size:12px;color:#9d174d;">
+        <strong>Data Layer:</strong> Raw Data Layer · Observed external data · Sources: Google Maps · LinkedIn · business directories · free zone tenant lists
+      </div>
+      <div class="panel">
+        <div class="panel-hd">
+          <div><div class="panel-title">Occupier Register</div><div class="panel-sub">Morocco · <span class="ds-tag ds-occupier">Observed occupier data</span></div></div>
+          <button class="pa-btn gold" onclick="exportTable('occupiers-table','xlsx')">↓ Excel</button>
+        </div>
+        <table class="dt" id="occupiers-table">
+          <thead><tr><th>Company</th><th>Industry</th><th>City</th><th>District</th><th>Building</th><th>Size Est. m²</th><th>Source</th><th>Verified</th><th>Confidence</th></tr></thead>
+          <tbody>
+            <tr><td class="dt-city">OCP Group</td><td class="dt-muted">Mining/Chem.</td><td>Casablanca</td><td class="dt-muted">CIL</td><td class="dt-muted">OCP HQ</td><td class="mono">~12,000</td><td class="dt-muted">Corp. website</td><td class="mono dt-muted">Jan 2026</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-city">Attijariwafa Bank</td><td class="dt-muted">Banking</td><td>Casablanca</td><td class="dt-muted">CBD</td><td class="dt-muted">Attijariwafa Tower</td><td class="mono">~8,400</td><td class="dt-muted">Corp. website</td><td class="mono dt-muted">Jan 2026</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-city">Maroc Telecom</td><td class="dt-muted">Telecom</td><td>Rabat</td><td class="dt-muted">Agdal</td><td class="dt-muted">MT HQ</td><td class="mono">~6,200</td><td class="dt-muted">LinkedIn</td><td class="mono dt-muted">Feb 2026</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+            <tr><td class="dt-city">Capgemini Morocco</td><td class="dt-muted">IT Services</td><td>Casablanca</td><td class="dt-muted">Sidi Maarouf</td><td class="dt-muted">CasaNearshore</td><td class="mono">~3,800</td><td class="dt-muted">Free Zone List</td><td class="mono dt-muted">Feb 2026</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+            <tr><td class="dt-city">Club Med</td><td class="dt-muted">Tourism/Hosp.</td><td>Marrakech</td><td class="dt-muted">Palmeraie</td><td class="dt-muted">Club Med Palmeraie</td><td class="mono">~28,000</td><td class="dt-muted">Corp. website</td><td class="mono dt-muted">Jan 2026</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+          </tbody>
+        </table>
+        <div class="export-row">
+          <button class="exp-btn primary" onclick="exportTable('occupiers-table')">↓ CSV</button>
+          <button class="exp-btn">↓ Excel</button>
+          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">DEMO DATA · Size estimates only · Verification date shown</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         INFRASTRUCTURE
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-infrastructure">
+      <div class="eyebrow">Data</div>
+      <div class="pg-title">Infrastructure Projects</div>
+      <div class="pg-sub">Major infrastructure developments affecting real estate demand. Sources include transport ministries, port authorities, and government infrastructure plans.</div>
+      <div style="padding:10px 14px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:2px;margin-bottom:16px;font-size:12px;color:#075985;">
+        <strong>Data Layer:</strong> Raw Data Layer · Observed external data · Sources: transport ministries · port authorities · government plans · DFIs
+      </div>
+      <div class="panel">
+        <div class="panel-hd">
+          <div><div class="panel-title">Infrastructure Register</div><div class="panel-sub">Morocco · <span class="ds-tag ds-infra">Infrastructure data</span></div></div>
+          <button class="pa-btn gold" onclick="exportTable('infra-table','xlsx')">↓ Excel</button>
+        </div>
+        <table class="dt" id="infra-table">
+          <thead><tr><th>Project</th><th>Type</th><th>City</th><th>District</th><th>Value (DH B)</th><th>Sponsor</th><th>Timeline</th><th>Status</th><th>RE Impact</th><th>Source</th></tr></thead>
+          <tbody>
+            <tr><td class="dt-city">Grand Stade Hassan II</td><td>Stadium</td><td>Casablanca</td><td class="dt-muted">Bouskoura</td><td class="mono">4.5B</td><td class="dt-muted">State</td><td class="mono">2025–2028</td><td><span class="sig sig-warn">Under Construction</span></td><td><span class="sig sig-up">High</span></td><td class="dt-muted">Gov. press</td></tr>
+            <tr><td class="dt-city">Tangiers Med Port Ph.2</td><td>Port Expansion</td><td>Tangiers</td><td class="dt-muted">Port Zone</td><td class="mono">3.2B</td><td class="dt-muted">TMSA</td><td class="mono">2024–2027</td><td><span class="sig sig-warn">Under Construction</span></td><td><span class="sig sig-up">High</span></td><td class="dt-muted">TMSA</td></tr>
+            <tr><td class="dt-city">Casablanca Metro Line 3</td><td>Metro</td><td>Casablanca</td><td class="dt-muted">Multiple</td><td class="mono">2.8B</td><td class="dt-muted">CDG</td><td class="mono">2025–2030</td><td><span class="sig sig-neutral">Planning</span></td><td><span class="sig sig-up">High</span></td><td class="dt-muted">Gov. press</td></tr>
+            <tr><td class="dt-city">Marrakech Airport Ph.4</td><td>Airport</td><td>Marrakech</td><td class="dt-muted">Menara</td><td class="mono">1.4B</td><td class="dt-muted">ONDA</td><td class="mono">2024–2026</td><td><span class="sig sig-up">Completing</span></td><td><span class="sig sig-warn">Moderate</span></td><td class="dt-muted">ONDA</td></tr>
+            <tr><td class="dt-city">Rabat Tram Extension</td><td>Tram</td><td>Rabat</td><td class="dt-muted">Hay Riad</td><td class="mono">0.6B</td><td class="dt-muted">Municipality</td><td class="mono">2025–2027</td><td><span class="sig sig-warn">Under Construction</span></td><td><span class="sig sig-warn">Moderate</span></td><td class="dt-muted">Gov. press</td></tr>
+          </tbody>
+        </table>
+        <div class="export-row">
+          <button class="exp-btn primary" onclick="exportTable('infra-table')">↓ CSV</button>
+          <button class="exp-btn">↓ Excel</button>
+          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">DEMO DATA · Infrastructure data · RE impact is indicative assessment</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         PRICE TRENDS
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-price-trends">
+      <div class="eyebrow">Analytics</div>
+      <div class="pg-title">Price Trends</div>
+      <div class="pg-sub">Derived analytics from the listings database. Trend lines are smoothed medians — not individual transactions.</div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-hd">
+            <div><div class="panel-title">Apartment Price Index</div><div class="panel-sub">Indexed to 100 = Q1 2025 · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+            <button class="pa-btn" onclick="exportTable('trend-table')">↓ CSV</button>
+          </div>
+          <div class="panel-body"><div style="height:220px;"><canvas id="trends-chart"></canvas></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd">
+            <div><div class="panel-title">12M Growth by City</div><div class="panel-sub">Apartments · asking prices · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+          </div>
+          <div class="panel-body"><div style="height:220px;"><canvas id="growth-chart"></canvas></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-hd"><div class="panel-title">Price Trend Data Table</div><div class="panel-sub">Quarterly medians · DH/m² · Apartments</div></div>
+        <table class="dt" id="trend-table">
+          <thead><tr><th>Period</th><th>Casablanca</th><th>Marrakech</th><th>Rabat</th><th>Tangiers</th><th>Fez</th><th>National Avg</th></tr></thead>
+          <tbody>
+            <tr><td class="mono dt-muted">Q1 2025</td><td class="mono">17,340</td><td class="mono">16,420</td><td class="mono">14,820</td><td class="mono">12,640</td><td class="mono">10,620</td><td class="mono">14,368</td></tr>
+            <tr><td class="mono dt-muted">Q2 2025</td><td class="mono">17,680</td><td class="mono">16,890</td><td class="mono">14,980</td><td class="mono">12,710</td><td class="mono">10,540</td><td class="mono">14,560</td></tr>
+            <tr><td class="mono dt-muted">Q3 2025</td><td class="mono">17,920</td><td class="mono">17,200</td><td class="mono">15,020</td><td class="mono">12,760</td><td class="mono">10,480</td><td class="mono">14,676</td></tr>
+            <tr><td class="mono dt-muted">Q4 2025</td><td class="mono">18,140</td><td class="mono">17,510</td><td class="mono">15,100</td><td class="mono">12,790</td><td class="mono">10,430</td><td class="mono">14,794</td></tr>
+            <tr><td class="mono dt-muted">Q1 2026</td><td class="mono">18,420</td><td class="mono">17,800</td><td class="mono">15,200</td><td class="mono">12,800</td><td class="mono">10,400</td><td class="mono">14,924</td></tr>
+          </tbody>
+        </table>
+        <div class="export-row">
+          <button class="exp-btn primary" onclick="exportTable('trend-table')">↓ CSV</button>
+          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">Derived analytics · Listings-derived · Asking prices only</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         LIQUIDITY INDEX
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-liquidity-index">
+      <div class="eyebrow">Analytics</div>
+      <div class="pg-title">Liquidity Index</div>
+      <div class="pg-sub">Ironwood proprietary liquidity scoring. Composite of listing volume, price dispersion, transaction frequency, and investor activity. Scored 0–100. <span class="ds-tag ds-model">Modelled</span></div>
+      <div id="liq-gauges" style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px;"></div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-hd"><div class="panel-title">Liquidity Trend — 6 Months</div><div class="panel-sub">All cities · <span class="ds-tag ds-model">Modelled</span></div></div>
+          <div class="panel-body"><div style="height:220px;"><canvas id="liq-trend-chart"></canvas></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd"><div class="panel-title">Component Scores</div><div class="panel-sub">By driver · March 2026</div></div>
+          <div class="panel-body"><div style="height:220px;"><canvas id="liq-component-chart"></canvas></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-hd">
+          <div><div class="panel-title">Liquidity Rankings</div><div class="panel-sub">Morocco · Scored 0–100 · <span class="ds-tag ds-model">Modelled</span></div></div>
+          <button class="pa-btn gold" onclick="exportTable('liq-full-table','xlsx')">↓ Excel</button>
+        </div>
+        <table class="dt" id="liq-full-table">
+          <thead><tr><th>#</th><th>City</th><th>Overall</th><th>Listing Volume</th><th>Price Dispersion</th><th>Txn Frequency</th><th>Investor Activity</th><th>MoM</th><th>Rating</th></tr></thead>
+          <tbody>
+            <tr><td class="dt-rank">01</td><td class="dt-city">Casablanca</td><td><div style="display:flex;align-items:center;gap:8px;"><div style="width:80px;height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;"><div style="width:70%;height:100%;background:var(--green);"></div></div><span class="mono" style="font-weight:600;">70</span></div></td><td class="mono">82</td><td class="mono">68</td><td class="mono">64</td><td class="mono">71</td><td class="chg pos">+2 pts</td><td><span class="sig sig-up">Liquid</span></td></tr>
+            <tr><td class="dt-rank">02</td><td class="dt-city">Marrakech</td><td><div style="display:flex;align-items:center;gap:8px;"><div style="width:80px;height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;"><div style="width:68%;height:100%;background:var(--green);"></div></div><span class="mono" style="font-weight:600;">68</span></div></td><td class="mono">74</td><td class="mono">72</td><td class="mono">58</td><td class="mono">80</td><td class="chg pos">+4 pts</td><td><span class="sig sig-up">Liquid</span></td></tr>
+            <tr><td class="dt-rank">03</td><td class="dt-city">Rabat</td><td><div style="display:flex;align-items:center;gap:8px;"><div style="width:80px;height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;"><div style="width:60%;height:100%;background:var(--gold);"></div></div><span class="mono" style="font-weight:600;">60</span></div></td><td class="mono">62</td><td class="mono">58</td><td class="mono">54</td><td class="mono">66</td><td class="chg pos">+1 pt</td><td><span class="sig sig-neutral">Moderate</span></td></tr>
+            <tr><td class="dt-rank">04</td><td class="dt-city">Tangiers</td><td><div style="display:flex;align-items:center;gap:8px;"><div style="width:80px;height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;"><div style="width:52%;height:100%;background:var(--gold);"></div></div><span class="mono" style="font-weight:600;">52</span></div></td><td class="mono">48</td><td class="mono">54</td><td class="mono">44</td><td class="mono">62</td><td class="chg pos">+1 pt</td><td><span class="sig sig-neutral">Moderate</span></td></tr>
+            <tr><td class="dt-rank">05</td><td class="dt-city">Fez</td><td><div style="display:flex;align-items:center;gap:8px;"><div style="width:80px;height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;"><div style="width:38%;height:100%;background:var(--red);"></div></div><span class="mono" style="font-weight:600;">38</span></div></td><td class="mono">36</td><td class="mono">44</td><td class="mono">32</td><td class="mono">42</td><td class="chg neg">-3 pts</td><td><span class="sig sig-dn">Illiquid</span></td></tr>
+          </tbody>
+        </table>
+        <div class="export-row">
+          <button class="exp-btn primary" onclick="exportTable('liq-full-table')">↓ CSV</button>
+          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">Ironwood Liquidity Index · Modelled indicator · March 2026</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         INVESTMENT RADAR
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-investment-radar">
+      <div class="eyebrow">Analytics</div>
+      <div class="pg-title">Investment Radar</div>
+      <div class="pg-sub">Composite investment opportunity scoring. Derived from 6 weighted components. <span class="ds-tag ds-model">Modelled indicator</span> — not investment advice.</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px;">
+        <div style="background:var(--surface);padding:22px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;">🥇 #1 — Marrakech</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+            <div class="score-ring"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="28" fill="none" stroke="#ebebea" stroke-width="7"/><circle cx="36" cy="36" r="28" fill="none" stroke="#166534" stroke-width="7" stroke-dasharray="148 177" stroke-dashoffset="44" stroke-linecap="round"/></svg><div class="score-ring-inner"><div class="score-num">8.4</div><div class="score-denom">/10</div></div></div>
+            <div><div style="font-family:var(--serif);font-size:18px;">Marrakech</div><span class="opp-badge opp-strong" style="margin-top:5px;display:inline-flex;">Strong Buy</span></div>
+          </div>
+          <div class="score-bar-row"><span class="score-bar-label">Price Growth</span><div class="score-bar-track"><div class="score-bar-fill" style="width:84%;background:var(--green);"></div></div><span class="score-bar-val">8.4</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Rent Growth</span><div class="score-bar-track"><div class="score-bar-fill" style="width:71%;background:var(--green);"></div></div><span class="score-bar-val">7.1</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Liquidity</span><div class="score-bar-track"><div class="score-bar-fill" style="width:68%;background:var(--gold);"></div></div><span class="score-bar-val">6.8</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Pipeline Risk</span><div class="score-bar-track"><div class="score-bar-fill" style="width:62%;background:var(--gold);"></div></div><span class="score-bar-val">6.2</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Yield Est.</span><div class="score-bar-track"><div class="score-bar-fill" style="width:64%;background:var(--green);"></div></div><span class="score-bar-val">6.4</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Pop. Growth</span><div class="score-bar-track"><div class="score-bar-fill" style="width:75%;background:var(--green);"></div></div><span class="score-bar-val">7.5</span></div>
+        </div>
+        <div style="background:var(--surface);padding:22px;border-left:1px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink4);margin-bottom:12px;">🥈 #2 — Casablanca</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+            <div class="score-ring"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="28" fill="none" stroke="#ebebea" stroke-width="7"/><circle cx="36" cy="36" r="28" fill="none" stroke="#1d4ed8" stroke-width="7" stroke-dasharray="136 177" stroke-dashoffset="44" stroke-linecap="round"/></svg><div class="score-ring-inner"><div class="score-num">7.7</div><div class="score-denom">/10</div></div></div>
+            <div><div style="font-family:var(--serif);font-size:18px;">Casablanca</div><span class="opp-badge opp-strong" style="margin-top:5px;display:inline-flex;">Attractive</span></div>
+          </div>
+          <div class="score-bar-row"><span class="score-bar-label">Price Growth</span><div class="score-bar-track"><div class="score-bar-fill" style="width:62%;background:var(--blue);"></div></div><span class="score-bar-val">6.2</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Rent Growth</span><div class="score-bar-track"><div class="score-bar-fill" style="width:44%;background:var(--gold);"></div></div><span class="score-bar-val">4.4</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Liquidity</span><div class="score-bar-track"><div class="score-bar-fill" style="width:70%;background:var(--blue);"></div></div><span class="score-bar-val">7.0</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Pipeline Risk</span><div class="score-bar-track"><div class="score-bar-fill" style="width:52%;background:var(--gold);"></div></div><span class="score-bar-val">5.2</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Yield Est.</span><div class="score-bar-track"><div class="score-bar-fill" style="width:58%;background:var(--blue);"></div></div><span class="score-bar-val">5.8</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Pop. Growth</span><div class="score-bar-track"><div class="score-bar-fill" style="width:62%;background:var(--blue);"></div></div><span class="score-bar-val">6.2</span></div>
+        </div>
+        <div style="background:var(--surface);padding:22px;border-left:1px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink4);margin-bottom:12px;">🥉 #3 — Tangiers</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+            <div class="score-ring"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="28" fill="none" stroke="#ebebea" stroke-width="7"/><circle cx="36" cy="36" r="28" fill="none" stroke="#b8933f" stroke-width="7" stroke-dasharray="120 177" stroke-dashoffset="44" stroke-linecap="round"/></svg><div class="score-ring-inner"><div class="score-num">6.8</div><div class="score-denom">/10</div></div></div>
+            <div><div style="font-family:var(--serif);font-size:18px;">Tangiers</div><span class="opp-badge opp-moderate" style="margin-top:5px;display:inline-flex;">Emerging</span></div>
+          </div>
+          <div class="score-bar-row"><span class="score-bar-label">Price Growth</span><div class="score-bar-track"><div class="score-bar-fill" style="width:13%;background:var(--gold);"></div></div><span class="score-bar-val">1.3</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Rent Growth</span><div class="score-bar-track"><div class="score-bar-fill" style="width:28%;background:var(--gold);"></div></div><span class="score-bar-val">2.8</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Liquidity</span><div class="score-bar-track"><div class="score-bar-fill" style="width:52%;background:var(--gold);"></div></div><span class="score-bar-val">5.2</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Pipeline Risk</span><div class="score-bar-track"><div class="score-bar-fill" style="width:78%;background:var(--green);"></div></div><span class="score-bar-val">7.8</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Yield Est.</span><div class="score-bar-track"><div class="score-bar-fill" style="width:48%;background:var(--gold);"></div></div><span class="score-bar-val">4.8</span></div>
+          <div class="score-bar-row"><span class="score-bar-label">Pop. Growth</span><div class="score-bar-track"><div class="score-bar-fill" style="width:82%;background:var(--green);"></div></div><span class="score-bar-val">8.2</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-hd">
+          <div><div class="panel-title">Investment Opportunity Scores — Full Ranking</div><div class="panel-sub">Morocco · <span class="ds-tag ds-model">Modelled indicator</span> · Not investment advice</div></div>
+          <button class="pa-btn gold" onclick="exportTable('radar-table','xlsx')">↓ Excel</button>
+        </div>
+        <table class="dt" id="radar-table">
+          <thead><tr><th>#</th><th>City</th><th>IOS Score</th><th>Price Growth</th><th>Rent Growth</th><th>Liquidity</th><th>Pipeline Risk</th><th>Yield</th><th>Pop. Growth</th><th>Signal</th></tr></thead>
+          <tbody>
+            <tr><td class="dt-rank">01</td><td class="dt-city">Marrakech</td><td><div style="display:flex;align-items:center;gap:6px;"><div style="width:50px;height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;"><div style="width:84%;height:100%;background:var(--green);"></div></div><span class="mono" style="color:var(--green);font-weight:600;">8.4</span></div></td><td class="chg pos">+8.4%</td><td class="chg pos">+7.1%</td><td class="mono">6.8</td><td class="mono" style="color:var(--green);">Low</td><td class="mono">6.4%</td><td class="mono">7.5</td><td><span class="opp-badge opp-strong">Strong Buy</span></td></tr>
+            <tr><td class="dt-rank">02</td><td class="dt-city">Casablanca</td><td><div style="display:flex;align-items:center;gap:6px;"><div style="width:50px;height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;"><div style="width:77%;height:100%;background:var(--blue);"></div></div><span class="mono" style="color:var(--blue);font-weight:600;">7.7</span></div></td><td class="chg pos">+6.2%</td><td class="chg pos">+4.4%</td><td class="mono">7.0</td><td class="mono" style="color:var(--amber);">Moderate</td><td class="mono">5.8%</td><td class="mono">6.2</td><td><span class="opp-badge opp-strong">Attractive</span></td></tr>
+            <tr><td class="dt-rank">03</td><td class="dt-city">Tangiers</td><td><div style="display:flex;align-items:center;gap:6px;"><div style="width:50px;height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;"><div style="width:68%;height:100%;background:var(--gold);"></div></div><span class="mono" style="color:var(--gold);font-weight:600;">6.8</span></div></td><td class="chg pos">+1.3%</td><td class="chg pos">+2.8%</td><td class="mono">5.2</td><td class="mono" style="color:var(--green);">Low</td><td class="mono">4.8%</td><td class="mono">8.2</td><td><span class="opp-badge opp-moderate">Emerging</span></td></tr>
+            <tr><td class="dt-rank">04</td><td class="dt-city">Rabat</td><td><div style="display:flex;align-items:center;gap:6px;"><div style="width:50px;height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;"><div style="width:61%;height:100%;background:var(--gold);"></div></div><span class="mono" style="color:var(--gold);font-weight:600;">6.1</span></div></td><td class="chg pos">+2.6%</td><td class="chg pos">+3.1%</td><td class="mono">6.0</td><td class="mono" style="color:var(--green);">Low</td><td class="mono">5.2%</td><td class="mono">5.4</td><td><span class="opp-badge opp-moderate">Neutral</span></td></tr>
+            <tr><td class="dt-rank">05</td><td class="dt-city">Fez</td><td><div style="display:flex;align-items:center;gap:6px;"><div style="width:50px;height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;"><div style="width:34%;height:100%;background:var(--red);"></div></div><span class="mono" style="color:var(--red);font-weight:600;">3.4</span></div></td><td class="chg neg">-2.1%</td><td class="chg neg">-1.4%</td><td class="mono">3.8</td><td class="mono" style="color:var(--green);">Low</td><td class="mono">4.1%</td><td class="mono">3.2</td><td><span class="opp-badge opp-weak">Underweight</span></td></tr>
+          </tbody>
+        </table>
+        <div class="export-row">
+          <button class="exp-btn primary" onclick="exportTable('radar-table')">↓ CSV</button>
+          <button class="exp-btn" onclick="exportTable('radar-table','xlsx')">↓ Excel</button>
+          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">IOS = Ironwood Investment Opportunity Score · Modelled · Not investment advice</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         YIELD ESTIMATES
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-yield-estimates">
+      <div class="eyebrow">Analytics</div>
+      <div class="pg-title">Yield Estimates</div>
+      <div class="pg-sub">Gross yield estimates derived from median asking rents and sale prices. These are estimated indicators — not achieved investment returns.</div>
+      <div style="padding:10px 14px;background:var(--amber-bg);border:1px solid #fcd34d;border-radius:2px;margin-bottom:16px;font-size:12px;color:var(--amber);">
+        ⚠ <strong>Important:</strong> Yield figures are estimated from asking-price ratios only. They do not reflect achieved transaction yields, vacancy, management costs, or financing. <span class="ds-tag ds-model">Modelled</span>
+      </div>
+      <div class="panel">
+        <div class="panel-hd"><div class="panel-title">Gross Yield Estimates by City and Asset Class</div><div class="panel-sub">Morocco · March 2026 · Listings-derived inputs · <span class="ds-tag ds-model">Modelled output</span></div></div>
+        <table class="dt" id="yield-table">
+          <thead><tr><th>City</th><th>Asset Class</th><th>Median Sale DH/m²</th><th>Median Rent DH/m²/mo</th><th>Gross Yield Est.</th><th>Confidence</th></tr></thead>
+          <tbody>
+            <tr><td class="dt-city">Casablanca</td><td>Apartments</td><td class="mono">18,420</td><td class="mono">90</td><td class="mono" style="color:var(--green);font-weight:600;">5.8%</td><td><span class="conf conf-e"><span class="conf-dot"></span>Est.</span></td></tr>
+            <tr><td class="dt-city">Casablanca</td><td>Offices</td><td class="mono">22,000</td><td class="mono">142</td><td class="mono" style="color:var(--green);font-weight:600;">7.7%</td><td><span class="conf conf-e"><span class="conf-dot"></span>Est.</span></td></tr>
+            <tr><td class="dt-city">Marrakech</td><td>Apartments</td><td class="mono">17,800</td><td class="mono">95</td><td class="mono" style="color:var(--green);font-weight:600;">6.4%</td><td><span class="conf conf-e"><span class="conf-dot"></span>Est.</span></td></tr>
+            <tr><td class="dt-city">Marrakech</td><td>Riads</td><td class="mono">38,200</td><td class="mono">220</td><td class="mono" style="color:var(--green);font-weight:600;">6.9%</td><td><span class="conf conf-e"><span class="conf-dot"></span>Est.</span></td></tr>
+            <tr><td class="dt-city">Rabat</td><td>Apartments</td><td class="mono">15,200</td><td class="mono">66</td><td class="mono" style="color:var(--gold);font-weight:600;">5.2%</td><td><span class="conf conf-e"><span class="conf-dot"></span>Est.</span></td></tr>
+            <tr><td class="dt-city">Tangiers</td><td>Apartments</td><td class="mono">12,800</td><td class="mono">51</td><td class="mono" style="color:var(--gold);font-weight:600;">4.8%</td><td><span class="conf conf-e"><span class="conf-dot"></span>Est.</span></td></tr>
+            <tr><td class="dt-city">Fez</td><td>Apartments</td><td class="mono">10,400</td><td class="mono">36</td><td class="mono" style="color:var(--red);font-weight:600;">4.1%</td><td><span class="conf conf-e"><span class="conf-dot"></span>Est.</span></td></tr>
+          </tbody>
+        </table>
+        <div class="export-row">
+          <button class="exp-btn primary" onclick="exportTable('yield-table')">↓ CSV</button>
+          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">DEMO DATA · Modelled estimates · Not investment advice · Gross only</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         MAP VIEW
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-map-view">
+      <div class="eyebrow">Map</div>
+      <div class="pg-title">Market Map</div>
+      <div class="pg-sub">Interactive map showing city clusters, listing density, and liquidity scores. Circle size = listing volume. Color = liquidity (dark = high).</div>
+      <div class="panel">
+        <div class="panel-hd">
+          <div class="panel-title">Morocco — Market Map</div>
+          <div class="panel-actions">
+            <button class="pa-btn" onclick="updateMapView('price')">Price Overlay</button>
+            <button class="pa-btn" onclick="updateMapView('liquidity')">Liquidity</button>
+            <button class="pa-btn" onclick="updateMapView('pipeline')">Pipeline</button>
+          </div>
+        </div>
+        <div style="height:520px;" id="map-container"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         HEATMAPS
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-heatmaps">
+      <div class="eyebrow">Map</div>
+      <div class="pg-title">Heatmaps</div>
+      <div class="pg-sub">Price and liquidity heatmaps by district. Urban expansion visualisation. Geospatial data sourced from OpenStreetMap and listing geolocation.</div>
+      <div style="padding:40px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:2px;">
+        <div style="font-size:32px;margin-bottom:12px;opacity:.2;">▦</div>
+        <div style="font-family:var(--serif);font-size:18px;margin-bottom:6px;">District Heatmaps</div>
+        <div style="font-size:13px;color:var(--ink4);">Available with district-level geospatial data integration. Requires OpenStreetMap district boundary data.</div>
+        <div style="margin-top:16px;"><span class="sig sig-warn">Coming in v3.1</span></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         MARKET REPORTS
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-market-reports">
+      <div class="eyebrow">Research</div>
+      <div class="pg-title">Market Reports</div>
+      <div class="pg-sub">Automated institutional research generated from platform data. Each report references source datasets and confidence levels explicitly.</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+        <div class="report-card">
+          <div class="rc-header"><div class="rc-type">Country Overview</div><div class="rc-title">Morocco Real Estate Market Overview</div><div class="rc-meta">March 2026 · 12 pages · <span class="ds-tag ds-listings">Listings</span> <span class="ds-tag ds-pipeline">Pipeline</span></div></div>
+          <div class="rc-body">
+            <div class="rc-kpi-row"><div class="rc-kpi"><div class="rk-v">+6.1%</div><div class="rk-l">Natl. Growth</div></div><div class="rc-kpi"><div class="rk-v">12,806</div><div class="rk-l">Listings</div></div><div class="rc-kpi"><div class="rk-v">5.8%</div><div class="rk-l">Yield Est.</div></div></div>
+            <div style="font-size:12px;color:var(--ink3);line-height:1.65;">Morocco shows broad-based price growth led by Marrakech (+8.4%) and Casablanca (+6.2%), supported by improving liquidity and sustained urbanisation demand.</div>
+          </div>
+          <div class="rc-footer"><button class="exp-btn primary" onclick="openReport('morocco-overview')">View Report →</button><button class="exp-btn" onclick="window.print()">↓ PDF</button></div>
+        </div>
+        <div class="report-card">
+          <div class="rc-header"><div class="rc-type">City Market Brief</div><div class="rc-title">Casablanca Office Market Brief</div><div class="rc-meta">Q1 2026 · 8 pages · <span class="ds-tag ds-listings">Listings</span> <span class="ds-tag ds-pipeline">Pipeline</span></div></div>
+          <div class="rc-body">
+            <div class="rc-kpi-row"><div class="rc-kpi"><div class="rk-v">DH 142</div><div class="rk-l">Prime Rent</div></div><div class="rc-kpi"><div class="rk-v">+4.4%</div><div class="rk-l">12M Growth</div></div><div class="rc-kpi"><div class="rk-v">5.8%</div><div class="rk-l">Yield Est.</div></div></div>
+            <div style="font-size:12px;color:var(--ink3);line-height:1.65;">Prime Casablanca office rents at DH 142/m²/month. Elevated pipeline risk with ~64,000 m² entering 2027–2028. Near-term demand fundamentals remain supportive.</div>
+          </div>
+          <div class="rc-footer"><button class="exp-btn primary" onclick="openReport('casa-offices')">View Report →</button><button class="exp-btn" onclick="window.print()">↓ PDF</button></div>
+        </div>
+        <div class="report-card">
+          <div class="rc-header"><div class="rc-type">City Market Brief</div><div class="rc-title">Marrakech Residential Market Brief</div><div class="rc-meta">Q1 2026 · 8 pages · <span class="ds-tag ds-listings">Listings</span></div></div>
+          <div class="rc-body">
+            <div class="rc-kpi-row"><div class="rc-kpi"><div class="rk-v">DH 17,800</div><div class="rk-l">Median/m²</div></div><div class="rc-kpi"><div class="rk-v">+8.4%</div><div class="rk-l">12M Growth</div></div><div class="rc-kpi"><div class="rk-v">6.4%</div><div class="rk-l">Yield Est.</div></div></div>
+            <div style="font-size:12px;color:var(--ink3);line-height:1.65;">Strongest performing market in Morocco. Riad yields highest in country at 6.4%. Tourism-driven demand supporting a two-speed market.</div>
+          </div>
+          <div class="rc-footer"><button class="exp-btn primary" onclick="openReport('marrakech-residential')">View Report →</button><button class="exp-btn" onclick="window.print()">↓ PDF</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         INSIGHTS
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-insights">
+      <div class="eyebrow">Research</div>
+      <div class="pg-title">Insights</div>
+      <div class="pg-sub">Platform-generated analytical observations from data movements. Updated when significant data changes are detected.</div>
+      <div class="panel">
+        <div class="panel-hd"><div class="panel-title">Latest Insights</div><div class="panel-sub">March 2026 · Auto-generated from data layer</div></div>
+        <div style="padding:14px 18px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:flex-start;gap:12px;">
+            <span class="sig sig-up" style="flex-shrink:0;margin-top:2px;">▲ Signal</span>
+            <div><div style="font-weight:600;margin-bottom:4px;">Marrakech riad prices accelerating — 12.1% YoY</div><div style="font-size:12px;color:var(--ink3);line-height:1.6;">Median riad asking prices reached DH 38,200/m² in March 2026, up 12.1% year-on-year based on 284 verified listings. This outperforms apartment growth (+8.4%) and represents the strongest asset class growth in Morocco. Source: <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+          </div>
+        </div>
+        <div style="padding:14px 18px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:flex-start;gap:12px;">
+            <span class="sig sig-warn" style="flex-shrink:0;margin-top:2px;">⚠ Risk</span>
+            <div><div style="font-weight:600;margin-bottom:4px;">Casablanca office pipeline at 2027 delivery concentration risk</div><div style="font-size:12px;color:var(--ink3);line-height:1.6;">14 tracked office projects totalling ~190,000 m² are active in Casablanca, with majority targeting 2027–2028 delivery. Annual absorption estimated at 15,000–20,000 m². Supply overhang scenario should be modelled. Source: <span class="ds-tag ds-pipeline">Pipeline data</span></div></div>
+          </div>
+        </div>
+        <div style="padding:14px 18px;">
+          <div style="display:flex;align-items:flex-start;gap:12px;">
+            <span class="sig sig-dn" style="flex-shrink:0;margin-top:2px;">▼ Watch</span>
+            <div><div style="font-weight:600;margin-bottom:4px;">Fez asking prices contracting — only declining market in Morocco</div><div style="font-size:12px;color:var(--ink3);line-height:1.6;">Fez apartment prices fell -2.1% over 12 months to March 2026 based on 524 listing observations. Rent data also declining at -1.4%. Liquidity score at 3.8/10, lowest in coverage. Source: <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         DATA EXPLORER
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-data-explorer">
+      <div class="eyebrow">Tools</div>
+      <div class="pg-title">Data Explorer</div>
+      <div class="pg-sub">Cross-dataset querying tool. Filter by city, asset class, date range, and data layer. All results show source classification.</div>
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-hd"><div class="panel-title">Query Builder</div></div>
+        <div class="panel-body" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+          <div><div style="font-size:11px;color:var(--ink4);margin-bottom:4px;">Dataset</div><select style="border:1px solid var(--border);padding:5px 8px;font-size:12px;font-family:var(--sans);border-radius:2px;"><option>Listings (Raw)</option><option>Transactions (Raw)</option><option>Pipeline (Raw)</option><option>Occupiers (Raw)</option><option>Infrastructure (Raw)</option><option>Price Trends (Derived)</option><option>Liquidity Index (Derived)</option></select></div>
+          <div><div style="font-size:11px;color:var(--ink4);margin-bottom:4px;">City</div><select style="border:1px solid var(--border);padding:5px 8px;font-size:12px;font-family:var(--sans);border-radius:2px;"><option>All Cities</option><option>Casablanca</option><option>Marrakech</option><option>Rabat</option><option>Tangiers</option><option>Fez</option></select></div>
+          <div><div style="font-size:11px;color:var(--ink4);margin-bottom:4px;">Asset Class</div><select style="border:1px solid var(--border);padding:5px 8px;font-size:12px;font-family:var(--sans);border-radius:2px;"><option>All Classes</option><option>Apartments</option><option>Offices</option><option>Villas</option><option>Retail</option><option>Land</option></select></div>
+          <div><div style="font-size:11px;color:var(--ink4);margin-bottom:4px;">Period</div><select style="border:1px solid var(--border);padding:5px 8px;font-size:12px;font-family:var(--sans);border-radius:2px;"><option>All time</option><option>2026</option><option>2025</option><option>Q1 2026</option></select></div>
+          <button class="pa-btn gold" style="margin-bottom:0;">Run Query</button>
+        </div>
+      </div>
+      <div style="padding:40px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:2px;">
+        <div style="font-size:11px;color:var(--ink5);">Select a dataset and filters above, then click Run Query to explore data.</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         EXPORTS
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-exports">
+      <div class="eyebrow">Tools</div>
+      <div class="pg-title">Data Exports</div>
+      <div class="pg-sub">Export any dataset as CSV or Excel. All exports include source metadata, confidence scores, and data layer classification.</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+        <div class="panel" style="margin:0;">
+          <div class="panel-hd"><div><div class="panel-title">Listings Database</div><div class="panel-sub"><span class="ds-tag ds-listings">Raw · Listings</span></div></div></div>
+          <div class="panel-body"><div style="font-size:12px;color:var(--ink3);margin-bottom:12px;">Full listing records — city, district, price, DH/m², size, type, date, source. 62,052 records.</div></div>
+          <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:6px;">
+            <button class="exp-btn primary">↓ CSV</button><button class="exp-btn">↓ Excel</button>
+          </div>
+        </div>
+        <div class="panel" style="margin:0;">
+          <div class="panel-hd"><div><div class="panel-title">Transaction Register</div><div class="panel-sub"><span class="ds-tag ds-transaction">Raw · Observed</span></div></div></div>
+          <div class="panel-body"><div style="font-size:12px;color:var(--ink3);margin-bottom:12px;">Observed transactions with buyer/seller type, price, source, confidence scoring.</div></div>
+          <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:6px;">
+            <button class="exp-btn primary">↓ CSV</button><button class="exp-btn">↓ Excel</button>
+          </div>
+        </div>
+        <div class="panel" style="margin:0;">
+          <div class="panel-hd"><div><div class="panel-title">Development Pipeline</div><div class="panel-sub"><span class="ds-tag ds-pipeline">Raw · Pipeline</span></div></div></div>
+          <div class="panel-body"><div style="font-size:12px;color:var(--ink3);margin-bottom:12px;">All tracked projects — developer, GFA, stage, delivery date, risk score, source.</div></div>
+          <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:6px;">
+            <button class="exp-btn primary">↓ CSV</button><button class="exp-btn">↓ Excel</button>
+          </div>
+        </div>
+        <div class="panel" style="margin:0;">
+          <div class="panel-hd"><div><div class="panel-title">Corporate Occupiers</div><div class="panel-sub"><span class="ds-tag ds-occupier">Raw · Observed</span></div></div></div>
+          <div class="panel-body"><div style="font-size:12px;color:var(--ink3);margin-bottom:12px;">Occupier register — company, industry, city, district, size estimate, source.</div></div>
+          <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:6px;">
+            <button class="exp-btn primary">↓ CSV</button><button class="exp-btn">↓ Excel</button>
+          </div>
+        </div>
+        <div class="panel" style="margin:0;">
+          <div class="panel-hd"><div><div class="panel-title">Price Trend Series</div><div class="panel-sub"><span class="ds-tag ds-model">Derived · Analytics</span></div></div></div>
+          <div class="panel-body"><div style="font-size:12px;color:var(--ink3);margin-bottom:12px;">Quarterly median price series by city and asset class. Listings-derived inputs.</div></div>
+          <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:6px;">
+            <button class="exp-btn primary">↓ CSV</button><button class="exp-btn">↓ Excel</button>
+          </div>
+        </div>
+        <div class="panel" style="margin:0;">
+          <div class="panel-hd"><div><div class="panel-title">Investment Scores</div><div class="panel-sub"><span class="ds-tag ds-model">Derived · Modelled</span></div></div></div>
+          <div class="panel-body"><div style="font-size:12px;color:var(--ink3);margin-bottom:12px;">IOS and Liquidity Index scores by city with component breakdowns. Not investment advice.</div></div>
+          <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:6px;">
+            <button class="exp-btn primary">↓ CSV</button><button class="exp-btn">↓ Excel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         API ACCESS
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-api-access">
+      <div class="eyebrow">Tools</div>
+      <div class="pg-title">API Access</div>
+      <div class="pg-sub">Programmatic access to all three data layers. Raw data, derived analytics, and market signals available via REST API.</div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-hd"><div class="panel-title">Endpoints</div></div>
+          <div class="panel-body">
+            <table class="dt">
+              <thead><tr><th>Endpoint</th><th>Layer</th><th>Returns</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">/v1/listings</td><td><span class="ds-tag ds-listings">Raw</span></td><td class="dt-muted">Listing records</td></tr>
+                <tr><td class="mono">/v1/transactions</td><td><span class="ds-tag ds-transaction">Raw</span></td><td class="dt-muted">Transaction records</td></tr>
+                <tr><td class="mono">/v1/pipeline</td><td><span class="ds-tag ds-pipeline">Raw</span></td><td class="dt-muted">Pipeline projects</td></tr>
+                <tr><td class="mono">/v1/occupiers</td><td><span class="ds-tag ds-occupier">Raw</span></td><td class="dt-muted">Occupier records</td></tr>
+                <tr><td class="mono">/v1/analytics/prices</td><td><span class="ds-tag ds-model">Derived</span></td><td class="dt-muted">Price trend series</td></tr>
+                <tr><td class="mono">/v1/analytics/liquidity</td><td><span class="ds-tag ds-model">Derived</span></td><td class="dt-muted">Liquidity scores</td></tr>
+                <tr><td class="mono">/v1/analytics/radar</td><td><span class="ds-tag ds-model">Derived</span></td><td class="dt-muted">Investment scores</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd"><div class="panel-title">Quick Start</div></div>
+          <div class="panel-body">
+            <div style="background:var(--ink);border-radius:3px;padding:16px;font-family:var(--mono);font-size:11.5px;color:#e5e7eb;line-height:1.8;">
+              <div style="color:#9ca3af;margin-bottom:8px;"># Get Casablanca apartment listings</div>
+              <div>curl -H <span style="color:#86efac;">"Authorization: Bearer YOUR_KEY"</span> \</div>
+              <div style="padding-left:12px;"><span style="color:#93c5fd;">https://api.ironwoodintelligence.com</span>/v1/listings</div>
+              <div style="padding-left:12px;">?city=casablanca&asset_class=apartments</div>
+              <div style="padding-left:12px;">&limit=100&format=json</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         MACRO INDICATORS
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-macro-indicators">
+      <div class="eyebrow">Data</div>
+      <div class="pg-title">Macro Indicators</div>
+      <div class="pg-sub">Macroeconomic and demographic indicators relevant to real estate demand. Sources include World Bank, national statistics agencies, and central banks. All macro figures are observed external data.</div>
+
+      <div style="padding:10px 14px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:2px;margin-bottom:16px;font-size:12px;color:#075985;">
+        <strong>Data Layer:</strong> Raw Data Layer · <span class="ds-tag ds-macro">Macro / observed</span> · Sources: World Bank · HCP Morocco · Bank Al-Maghrib · ONMT
+      </div>
+
+      <!-- Source Registry -->
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-hd"><div class="panel-title">Source Registry</div><div class="panel-sub">Macro data sources · Morocco</div></div>
+        <table class="dt">
+          <thead><tr><th>Dataset</th><th>Source</th><th>Indicator Type</th><th>Update Cadence</th><th>URL</th><th>Confidence</th></tr></thead>
+          <tbody>
+            <tr><td class="dt-city">Population &amp; Demographics</td><td class="dt-muted">HCP Morocco</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Annual / Census</td><td class="mono dt-muted">hcp.ma</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-city">GDP &amp; Growth</td><td class="dt-muted">World Bank / HCP</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Annual</td><td class="mono dt-muted">data.worldbank.org</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-city">Interest Rates / Monetary</td><td class="dt-muted">Bank Al-Maghrib</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Monthly</td><td class="mono dt-muted">bkam.ma</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-city">Tourism Arrivals</td><td class="dt-muted">ONMT (Observatoire)</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Monthly</td><td class="mono dt-muted">onmt.ma</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="dt-city">Household Formation</td><td class="dt-muted">HCP Morocco</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Census / Est.</td><td class="mono dt-muted">hcp.ma</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+            <tr><td class="dt-city">Income Levels</td><td class="dt-muted">World Bank / HCP</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Annual</td><td class="mono dt-muted">data.worldbank.org</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Macro data table — full spec fields -->
+      <div class="panel">
+        <div class="panel-hd">
+          <div><div class="panel-title">Macro Indicators Register</div><div class="panel-sub">Morocco · <span class="ds-tag ds-macro">Macro / observed</span> · Fields: population, GDP growth, household formation, tourism arrivals, income levels</div></div>
+          <button class="pa-btn gold" onclick="exportTable('macro-table','xlsx')">↓ Excel</button>
+        </div>
+        <table class="dt" id="macro-table">
+          <thead>
+            <tr><th>Year</th><th>Population</th><th>Pop. Growth %</th><th>GDP Growth %</th><th>Household Formation</th><th>Tourism Arrivals</th><th>GDP/Capita (USD)</th><th>Source</th><th>Confidence</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono dt-muted">2020</td><td class="mono">36.0M</td><td class="mono chg neg">+0.9%</td><td class="mono chg neg">-6.3%</td><td class="mono">~240k/yr</td><td class="mono">~1.3M</td><td class="mono">3,280</td><td class="dt-muted">World Bank / HCP</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="mono dt-muted">2021</td><td class="mono">36.3M</td><td class="mono chg pos">+0.8%</td><td class="mono chg pos">+7.9%</td><td class="mono">~244k/yr</td><td class="mono">~2.4M</td><td class="mono">3,440</td><td class="dt-muted">World Bank / HCP</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="mono dt-muted">2022</td><td class="mono">36.6M</td><td class="mono chg pos">+0.9%</td><td class="mono chg pos">+1.3%</td><td class="mono">~248k/yr</td><td class="mono">~9.8M</td><td class="mono">3,680</td><td class="dt-muted">World Bank / HCP</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="mono dt-muted">2023</td><td class="mono">36.8M</td><td class="mono chg pos">+0.9%</td><td class="mono chg pos">+3.4%</td><td class="mono">~252k/yr</td><td class="mono">~14.5M</td><td class="mono">3,840</td><td class="dt-muted">World Bank / HCP</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
+            <tr><td class="mono dt-muted">2024</td><td class="mono">37.1M</td><td class="mono chg pos">+0.9%</td><td class="mono chg pos">+3.1%</td><td class="mono">~256k/yr</td><td class="mono">~17.4M</td><td class="mono">4,020</td><td class="dt-muted">World Bank / HCP</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+            <tr><td class="mono dt-muted">2025E</td><td class="mono">37.4M</td><td class="mono chg pos">+0.9%</td><td class="mono chg pos">~3.8%</td><td class="mono">~260k/yr</td><td class="mono">~19M (est.)</td><td class="mono">~4,200</td><td class="dt-muted">IMF / HCP estimate</td><td><span class="conf conf-e"><span class="conf-dot"></span>Est.</span></td></tr>
+          </tbody>
+        </table>
+        <div class="export-row">
+          <button class="exp-btn primary" onclick="exportTable('macro-table')">↓ CSV</button>
+          <button class="exp-btn" onclick="exportTable('macro-table','xlsx')">↓ Excel</button>
+          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">Macro indicators · Observed external data · 2025E = estimate · Not investment advice</span>
+        </div>
+      </div>
+
+      <!-- City-level demographic snapshot -->
+      <div class="sec-div"><span class="sd-label">City-Level Demographics — Morocco</span></div>
+      <div class="panel">
+        <div class="panel-hd">
+          <div><div class="panel-title">City Population &amp; Household Data</div><div class="panel-sub">Estimates · <span class="ds-tag ds-macro">Macro / observed</span> · Source: HCP Morocco</div></div>
+          <button class="pa-btn gold" onclick="exportTable('city-macro-table','xlsx')">↓ Excel</button>
+        </div>
+        <table class="dt" id="city-macro-table">
+          <thead><tr><th>City</th><th>Population Est.</th><th>Pop. Growth (5yr)</th><th>Households Est.</th><th>Urbanisation Rate</th><th>Median Age</th><th>GDP Share</th><th>Source</th></tr></thead>
+          <tbody>
+            <tr><td class="dt-city">Casablanca</td><td class="mono">4.4M</td><td class="chg pos">+8.2%</td><td class="mono">~1.1M</td><td class="mono">98%</td><td class="mono">32</td><td class="mono">~35% national</td><td class="dt-muted">HCP 2024</td></tr>
+            <tr><td class="dt-city">Rabat</td><td class="mono">1.9M</td><td class="chg pos">+6.4%</td><td class="mono">~480k</td><td class="mono">97%</td><td class="mono">33</td><td class="mono">~12% national</td><td class="dt-muted">HCP 2024</td></tr>
+            <tr><td class="dt-city">Fez</td><td class="mono">1.2M</td><td class="chg pos">+3.1%</td><td class="mono">~290k</td><td class="mono">88%</td><td class="mono">28</td><td class="mono">~5% national</td><td class="dt-muted">HCP 2024</td></tr>
+            <tr><td class="dt-city">Marrakech</td><td class="mono">1.1M</td><td class="chg pos">+9.8%</td><td class="mono">~260k</td><td class="mono">92%</td><td class="mono">30</td><td class="mono">~6% national</td><td class="dt-muted">HCP 2024</td></tr>
+            <tr><td class="dt-city">Tangiers</td><td class="mono">1.1M</td><td class="chg pos">+12.4%</td><td class="mono">~255k</td><td class="mono">95%</td><td class="mono">29</td><td class="mono">~7% national</td><td class="dt-muted">HCP 2024</td></tr>
+          </tbody>
+        </table>
+        <div class="export-row">
+          <button class="exp-btn primary" onclick="exportTable('city-macro-table')">↓ CSV</button>
+          <button class="exp-btn" onclick="exportTable('city-macro-table','xlsx')">↓ Excel</button>
+          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">DEMO DATA · Estimates from HCP Morocco · Not investment advice</span>
+        </div>
+      </div>
+
+      <!-- RE demand drivers -->
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-hd"><div class="panel-title">Key RE Demand Drivers</div><div class="panel-sub">Morocco · Macro context for real estate demand</div></div>
+          <div class="panel-body">
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Annual HH Formation</span><span class="ep-meta-val">~260,000 / year</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Urban pop. share</span><span class="ep-meta-val">~63% (2024)</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Tourism growth</span><span class="ep-meta-val">+19% YoY (2024E)</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Diaspora remittances</span><span class="ep-meta-val">~USD 11B/year</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">FDI inflows</span><span class="ep-meta-val">~USD 2.8B (2024E)</span></div>
+            <div class="ep-meta-row"><span class="ep-meta-lbl">Policy rate (BAM)</span><span class="ep-meta-val">2.75% (Q1 2026)</span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd"><div class="panel-title">Macro-to-RE Signal</div><div class="panel-sub">Derived signal · <span class="ds-tag ds-model">Modelled</span></div></div>
+          <div class="panel-body">
+            <div class="score-bar-row"><span class="score-bar-label">Demand Trend</span><div class="score-bar-track"><div class="score-bar-fill" style="width:78%;background:var(--green);"></div></div><span class="score-bar-val">7.8</span></div>
+            <div class="score-bar-row"><span class="score-bar-label">Affordability</span><div class="score-bar-track"><div class="score-bar-fill" style="width:52%;background:var(--gold);"></div></div><span class="score-bar-val">5.2</span></div>
+            <div class="score-bar-row"><span class="score-bar-label">Tourism Support</span><div class="score-bar-track"><div class="score-bar-fill" style="width:84%;background:var(--green);"></div></div><span class="score-bar-val">8.4</span></div>
+            <div class="score-bar-row"><span class="score-bar-label">GDP Momentum</span><div class="score-bar-track"><div class="score-bar-fill" style="width:64%;background:var(--blue);"></div></div><span class="score-bar-val">6.4</span></div>
+            <div class="score-bar-row"><span class="score-bar-label">Pop. Growth</span><div class="score-bar-track"><div class="score-bar-fill" style="width:58%;background:var(--blue);"></div></div><span class="score-bar-val">5.8</span></div>
+            <div style="margin-top:10px;font-size:11px;color:var(--ink5);line-height:1.6;">Modelled composite · Source: macro_indicators_raw · Derived analytics layer</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+const SB_URL='https://ujhqkirhfmumvvnfvgnz.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik';
+let sb=null;
+let _map=null,_chartsBuilt=false;
+
+// ── COUNTRY CONFIG ──
+const COUNTRIES={
+  Morocco:{flag:'🇲🇦',label:'Morocco',cities:['Casablanca','Marrakech','Rabat','Tangiers','Fez'],listingCount:'—',
+    kpis:{medianPrice:'Loading…',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
+    currency:'MAD',region:'North Africa',updated:'Live',
+    cityData:{}
+  },
+  Nigeria:{flag:'🇳🇬',label:'Nigeria',cities:['Lagos','Abuja','Port Harcourt','Kano','Ibadan'],listingCount:'—',
+    kpis:{medianPrice:'Loading…',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
+    currency:'NGN',region:'West Africa',updated:'Live',
+    cityData:{}
+  },
+  Senegal:{flag:'🇸🇳',label:'Senegal',cities:['Dakar'],listingCount:'Pending',
+    kpis:{medianPrice:'—',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
+    currency:'CFA',region:'West Africa',updated:'Coming Soon',cityData:{}
+  }
+};
+let ACTIVE_COUNTRY='Morocco';
+
+function toggleCountryDropdown(){
+  var dd=document.getElementById('country-dropdown');
+  dd.style.display=dd.style.display==='none'?'block':'none';
+}
+document.addEventListener('click',function(e){
+  var btn=document.getElementById('sb-mkt-btn');
+  var dd=document.getElementById('country-dropdown');
+  if(dd&&btn&&!btn.contains(e.target)&&!dd.contains(e.target)){dd.style.display='none';}
+});
+
+function switchCountry(name){
+  if(!COUNTRIES[name]){return;}
+  ACTIVE_COUNTRY=name;
+  var c=COUNTRIES[name];
+  // Update sidebar label
+  document.getElementById('sb-mkt-label').textContent=c.flag+' '+c.label;
+  // Update live indicator
+  var liveEl=document.querySelector('.sb-live');
+  if(liveEl)liveEl.innerHTML='<div class="live-dot"></div>'+c.label+' · Updated '+c.updated;
+  // Highlight active in dropdown
+  document.querySelectorAll('.country-opt').forEach(el=>el.classList.remove('active'));
+  var activeOpt=document.getElementById('copt-'+name);
+  if(activeOpt)activeOpt.classList.add('active');
+  // Close dropdown
+  document.getElementById('country-dropdown').style.display='none';
+  // Update all page content
+  updateAllPagesForCountry(c);
+  // Load live KPIs from Supabase (overwrites hardcoded values)
+  loadLiveKPIs(name);
+  // Rebuild charts for new country
+  _chartsBuilt=false;
+  buildCharts();
+}
+
+function updateAllPagesForCountry(c){
+  var name=c.label;
+  // Update KPI cards
+  var kpis=c.kpis;
+  safeSet('kpi-median-price',kpis.medianPrice);
+  safeSet('kpi-price-growth',kpis.priceGrowth);
+  safeSet('kpi-active-listings',kpis.activeListings);
+  safeSet('kpi-yield',kpis.yieldEst);
+  safeSet('kpi-pipeline',kpis.pipeline);
+  safeSet('kpi-liquidity',kpis.liquidityScore);
+  // Update market terminal subtitle
+  var mtSub=document.getElementById('mt-subtitle');
+  if(mtSub) mtSub.textContent=name+' real estate intelligence — '+c.updated+'. Click any metric to view the evidence behind it.';
+  // Update city rankings table
+  var cityBody=document.getElementById('city-rank-body');
+  if(cityBody){
+    var cityArr=Object.entries(c.cityData).sort((a,b)=>b[1].price-a[1].price);
+    if(cityArr.length){
+      cityBody.innerHTML=cityArr.map(([cname,d],i)=>`
+        <tr>
+          <td class="dt-rank">${String(i+1).padStart(2,'0')}</td>
+          <td class="dt-city">${cname}</td>
+          <td class="mono">${d.price.toLocaleString()}</td>
+          <td class="chg ${d.growth>0?'pos':'neg'}">${d.growth>0?'+':''}${d.growth}%</td>
+          <td class="mono">${d.listings.toLocaleString()}</td>
+          <td class="mono">${(d.yield*1.1).toFixed(1)}</td>
+        </tr>`).join('');
+    }
+  }
+  // Update cities list in cities page
+  updateCitiesPage(c);
+  // Update listings subtitle
+  var listSub=document.getElementById('listings-sub');
+  if(listSub) listSub.textContent=name+' · listings-derived';
+  // Update sidebar live indicator
+  var liveEl=document.getElementById('sb-live-indicator');
+  if(liveEl) liveEl.innerHTML='<div class="live-dot"></div>'+name+' · Updated '+c.updated;
+}
+function safeSet(id,val){var el=document.getElementById(id);if(el)el.textContent=val;}
+
+// ── LIVE KPI LOADER — calculates everything from Supabase properties table ──
+async function loadLiveKPIs(country){
+  if(!sb) return;
+  var c=COUNTRIES[country];
+  if(!c) return;
+
+  // Show loading state
+  safeSet('kpi-median-price','Loading…');
+  safeSet('kpi-active-listings','…');
+  safeSet('kpi-price-growth','…');
+
+  try {
+    // Fetch all rows for this country (price_per_sqm + city)
+    // We page through in batches of 1000 to get everything
+    var allRows=[], from=0, bsz=1000;
+    while(true){
+      var {data,error}=await sb.from('properties')
+        .select('city,price_per_sqm,transaction_type,scraped_at')
+        .eq('country',country)
+        .not('price_per_sqm','is',null)
+        .gt('price_per_sqm',0)
+        .range(from, from+bsz-1);
+      if(error||!data||!data.length) break;
+      allRows=allRows.concat(data);
+      from+=bsz;
+      if(data.length<bsz) break;
+    }
+
+    if(!allRows.length){
+      safeSet('kpi-median-price','No data');
+      safeSet('kpi-active-listings','0');
+      return;
+    }
+
+    // ── Median price/m² (country-wide) ──
+    var prices=allRows.map(r=>r.price_per_sqm).filter(v=>v>0).sort((a,b)=>a-b);
+    var mid=Math.floor(prices.length/2);
+    var medianPsm=prices.length%2===0?(prices[mid-1]+prices[mid])/2:prices[mid];
+    medianPsm=Math.round(medianPsm);
+
+    // ── Total listing count ──
+    var totalCount=allRows.length;
+
+    // ── City breakdown — median price + count per city ──
+    var cityMap={};
+    var CITY_COLORS=['#0d0d0d','#b8933f','#1d4ed8','#7c3aed','#dc2626','#059669','#d97706'];
+    allRows.forEach(function(r){
+      var city=(r.city||'Unknown').trim();
+      if(!cityMap[city]) cityMap[city]={prices:[],count:0};
+      cityMap[city].prices.push(r.price_per_sqm);
+      cityMap[city].count++;
+    });
+
+    // Build cityData sorted by median price desc
+    var cityArr=Object.entries(cityMap)
+      .filter(([k])=>k&&k!=='Unknown')
+      .map(function([name,d],i){
+        var sp=d.prices.sort((a,b)=>a-b);
+        var cm=Math.floor(sp.length/2);
+        var med=sp.length%2===0?(sp[cm-1]+sp[cm])/2:sp[cm];
+        return {name,price:Math.round(med),listings:d.count,color:CITY_COLORS[i%CITY_COLORS.length]};
+      })
+      .sort((a,b)=>b.price-a.price);
+
+    // Rebuild cityData on COUNTRIES object
+    var newCityData={};
+    cityArr.forEach(function(d){
+      newCityData[d.name]={price:d.price,growth:0,listings:d.listings,yield:0,color:d.color};
+    });
+    c.cityData=newCityData;
+    c.listingCount=totalCount.toLocaleString();
+
+    // ── Format median price with currency symbol ──
+    var sym=c.currency==='MAD'?'MAD ':c.currency==='NGN'?'₦ ':c.currency+' ';
+    var fmtMedian=sym+medianPsm.toLocaleString()+'/m²';
+
+    // ── Update KPI cards ──
+    safeSet('kpi-median-price', fmtMedian);
+    safeSet('kpi-active-listings', totalCount.toLocaleString());
+    safeSet('kpi-price-growth', '— (live data)');
+    safeSet('kpi-yield', '—');
+    safeSet('kpi-pipeline', '—');
+    safeSet('kpi-liquidity', '—');
+
+    // Update updated timestamp
+    var now=new Date();
+    var nowStr=now.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    c.updated=nowStr;
+
+    // Update subtitle
+    var mtSub=document.getElementById('mt-subtitle');
+    if(mtSub) mtSub.textContent=country+' real estate intelligence — calculated from '+totalCount.toLocaleString()+' live listings. Updated '+nowStr+'.';
+
+    // Update live indicator
+    var liveEl=document.querySelector('.sb-live');
+    if(liveEl) liveEl.innerHTML='<div class="live-dot"></div>'+country+' · '+totalCount.toLocaleString()+' listings · '+nowStr;
+
+    // Rebuild city rankings table
+    var cityBody=document.getElementById('city-rank-body');
+    if(cityBody && cityArr.length){
+      cityBody.innerHTML=cityArr.map(function(d,i){
+        return '<tr>'
+          +'<td class="dt-rank">'+String(i+1).padStart(2,'0')+'</td>'
+          +'<td class="dt-city">'+d.name+'</td>'
+          +'<td class="mono">'+d.price.toLocaleString()+'</td>'
+          +'<td class="chg">—</td>'
+          +'<td class="mono">'+d.listings.toLocaleString()+'</td>'
+          +'<td class="mono">—</td>'
+          +'</tr>';
+      }).join('');
+    }
+
+    // Rebuild city tabs and charts with live data
+    updateCitiesPage(c);
+    _chartsBuilt=false;
+    buildCharts();
+
+  } catch(err){
+    console.error('loadLiveKPIs error:', err);
+    safeSet('kpi-median-price','Error');
+  }
+}
+function updateCitiesPage(c){
+  var wrap=document.getElementById('cities-list-wrap');
+  if(!wrap)return;
+  var cityArr=Object.entries(c.cityData);
+  if(!cityArr.length){wrap.innerHTML='<div style="color:var(--ink4);padding:24px;text-align:center;">Data pending for '+c.label+'</div>';return;}
+  wrap.innerHTML=cityArr.map(([city,d])=>`
+    <div class="city-card" onclick="selectCity('${city}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div style="font-weight:600;font-size:13.5px;">${city}</div>
+        <span class="sig ${d.growth>0?'sig-up':'sig-dn'}">${d.growth>0?'▲':'▼'} ${Math.abs(d.growth)}%</span>
+      </div>
+      <div class="city-stat-row"><span class="city-stat-label">Median /m²</span><span class="city-stat-val mono">${c.currency} ${d.price.toLocaleString()}</span></div>
+      <div class="city-stat-row"><span class="city-stat-label">Active Listings</span><span class="city-stat-val mono">${d.listings.toLocaleString()}</span></div>
+      <div class="city-stat-row"><span class="city-stat-label">Yield Est.</span><span class="city-stat-val mono">${d.yield}%</span></div>
+    </div>
+  `).join('');
+}
+
+// ── LOADER ──
+function loadProgress(pct,msg){
+  document.getElementById('ld-fill').style.width=pct+'%';
+  document.getElementById('ld-msg').textContent=msg;
+}
+function hideLoader(){
+  document.getElementById('loader').classList.add('out');
+  setTimeout(()=>document.getElementById('loader').style.display='none',700);
+}
+
+// ── BOOT ──
+async function boot(){
+  try{ sb=supabase.createClient(SB_URL,SB_KEY); }catch(e){ sb=null; }
+  const safetyTimer=setTimeout(()=>{ hideLoader(); buildCharts(); },4000);
+  try{
+    if(!sb) throw new Error('Supabase unavailable');
+    loadProgress(20,'Authenticating...');
+    const{data:sess}=await sb.auth.getSession();
+    const user=sess?.session?.user;
+    if(!user){
+      clearTimeout(safetyTimer);
+      hideLoader();
+      window.location.href='https://www.ironwoodintelligence.com/#login';
+      return;
+    }
+    const name=user.user_metadata?.full_name||user.email.split('@')[0];
+    const initials=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    document.getElementById('sb-av').textContent=initials;
+    document.getElementById('sb-un').textContent=name;
+    loadProgress(50,'Loading market data...');
+    await loadListings();
+    await loadLiveKPIs(ACTIVE_COUNTRY);
+    loadProgress(90,'Ready.');
+    clearTimeout(safetyTimer);
+    setTimeout(hideLoader,300);
+    buildCharts();
+  }catch(e){
+    console.warn('Boot:',e);
+    clearTimeout(safetyTimer);
+    hideLoader();
+    buildCharts();
+  }
+}
+
+// ── NAVIGATION ──
+function nav(id){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  const ni=document.querySelector(`.ni[onclick*="'${id}'"]`);
+  if(ni) ni.classList.add('active');
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('active'));
+  const pg=document.getElementById('pg-'+id);
+  if(pg) pg.classList.add('active');
+  const titles={
+    'market-terminal':'Overview / Market Terminal','key-indicators':'Overview / Key Indicators',
+    'market-signals':'Overview / Market Signals','countries':'Markets / Countries',
+    'cities':'Markets / Cities','districts':'Markets / Districts',
+    'listings':'Data / Listings','transactions':'Data / Transactions',
+    'pipeline':'Data / Development Pipeline','occupiers':'Data / Corporate Occupiers',
+    'infrastructure':'Data / Infrastructure','macro-indicators':'Data / Macro Indicators','price-trends':'Analytics / Price Trends',
+    'liquidity-index':'Analytics / Liquidity Index','investment-radar':'Analytics / Investment Radar',
+    'yield-estimates':'Analytics / Yield Estimates','map-view':'Map / Market Map',
+    'heatmaps':'Map / Heatmaps','market-reports':'Research / Market Reports',
+    'insights':'Research / Insights','data-explorer':'Tools / Data Explorer',
+    'exports':'Tools / Exports','api-access':'Tools / API Access',
+  };
+  const t=titles[id]||id;
+  const parts=t.split('/');
+  document.getElementById('tb-bc').innerHTML=parts[0]+'<span>/'+parts.slice(1).join('/')+'</span>';
+  if(id==='map-view') setTimeout(initMap,100);
+  if(id==='liquidity-index'){ buildLiquidityGauges(); setTimeout(buildLiquidityCharts,150); }
+}
+
+// ── LOAD LISTINGS ──
+async function loadListings(){
+  try{
+    if(!sb) throw new Error('no sb');
+    const{data,error}=await sb.from('market_averages').select('*').eq('country',ACTIVE_COUNTRY).order('city').limit(200);
+    if(error||!data||data.length===0) throw new Error('no data');
+    document.getElementById('listings-sub').textContent=`${ACTIVE_COUNTRY} · ${data.length} records loaded from Supabase · Listings-derived`;
+  }catch(e){
+    console.warn('Listings fallback:',e);
+  }
+}
+
+// ── CHARTS ──
+function destroyChart(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  const existing=Chart.getChart(el);
+  if(existing) existing.destroy();
+}
+function buildCharts(){
+  if(_chartsBuilt) return;
+  _chartsBuilt=true;
+  const c=COUNTRIES[ACTIVE_COUNTRY];
+  const cityData=c?c.cityData:{};
+  const cityNames=Object.keys(cityData);
+  const CHART_DEFAULTS={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:11},color:'#8c8c8c',boxWidth:8,padding:10}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:11},color:'#8c8c8c'}}}};
+
+  // ── Price trends (country-specific) ──
+  destroyChart('trends-chart');
+  const tc=document.getElementById('trends-chart');
+  if(tc&&cityNames.length){
+    // Build indexed trend lines from city growth data
+    const datasets=cityNames.slice(0,5).map(name=>{
+      const d=cityData[name];
+      const g=d.growth/100;
+      const pts=[100, 100+g*0.25*100, 100+g*0.5*100, 100+g*0.75*100, 100+g*100].map(v=>Math.round(v*10)/10);
+      return {label:name,data:pts,borderColor:d.color||'#8c8c8c',borderWidth:2,tension:.3,pointRadius:0,fill:false};
+    });
+    new Chart(tc,{type:'line',data:{labels:['Q1 25','Q2 25','Q3 25','Q4 25','Q1 26'],datasets},options:{...CHART_DEFAULTS,scales:{...CHART_DEFAULTS.scales,y:{...CHART_DEFAULTS.scales.y,ticks:{...CHART_DEFAULTS.scales.y.ticks,callback:v=>v}}}}});
+  }
+
+  // ── Growth chart (country-specific) ──
+  destroyChart('growth-chart');
+  const gc=document.getElementById('growth-chart');
+  if(gc&&cityNames.length){
+    const sorted=[...cityNames].sort((a,b)=>cityData[b].growth-cityData[a].growth);
+    new Chart(gc,{type:'bar',data:{
+      labels:sorted,
+      datasets:[{label:'12M Growth %',data:sorted.map(n=>cityData[n].growth),backgroundColor:sorted.map(n=>cityData[n].color||'#8c8c8c'),borderWidth:0,borderRadius:2}]
+    },options:{...CHART_DEFAULTS,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:11},color:'#8c8c8c',callback:v=>v+'%'}}}}});
+  }
+
+  // ── City tabs — rebuild for active country ──
+  buildCityTabs();
+
+  // ── Default city charts ──
+  setTimeout(()=>{
+    const firstCity=cityNames[0]||'Casablanca';
+    const fd=cityData[firstCity];
+    if(fd) buildCityTrendChart(firstCity,[fd.price*.94,fd.price*.96,fd.price*.97,fd.price*.99,fd.price].map(v=>Math.round(v)));
+    else buildCityTrendChart('Casablanca',[17340,17680,17920,18140,18420]);
+    buildCityDistrictChart((firstCity||'casablanca').toLowerCase());
+  },200);
+}
+
+function buildCityTabs(){
+  const c=COUNTRIES[ACTIVE_COUNTRY];
+  if(!c) return;
+  const tabBar=document.getElementById('city-tabs-bar');
+  if(!tabBar) return;
+  const cityNames=Object.keys(c.cityData);
+  if(!cityNames.length) return;
+  tabBar.innerHTML=cityNames.map((name,i)=>
+    `<button class="city-tab${i===0?' active-tab':''}" onclick="switchCity(this,'${name.toLowerCase()}')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:${i===0?'var(--ink)':'var(--surface)'};color:${i===0?'#fff':'var(--ink3)'};border:none;cursor:pointer;">${name}</button>`
+  ).join('');
+}
+
+// ── LIQUIDITY GAUGES ──
+function buildLiquidityGauges(){
+  const cities=[
+    {name:'Casablanca',score:70,color:'#166534',rating:'Liquid'},
+    {name:'Marrakech',score:68,color:'#166534',rating:'Liquid'},
+    {name:'Rabat',score:60,color:'#b8933f',rating:'Moderate'},
+    {name:'Tangiers',score:52,color:'#b8933f',rating:'Moderate'},
+    {name:'Fez',score:38,color:'#dc2626',rating:'Illiquid'},
+  ];
+  const wrap=document.getElementById('liq-gauges');
+  if(!wrap) return;
+  wrap.innerHTML='';
+  cities.forEach((c,i)=>{
+    const circ=2*Math.PI*28;
+    const div=document.createElement('div');
+    div.style.cssText='background:var(--surface);padding:18px 14px;text-align:center;'+(i>0?'border-left:1px solid var(--border);':'');
+    div.innerHTML=`<div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink4);margin-bottom:10px;">${c.name}</div>
+      <div style="position:relative;width:72px;height:72px;margin:0 auto 8px;">
+        <svg width="72" height="72" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r="28" fill="none" stroke="#ebebea" stroke-width="7"/>
+          <circle cx="36" cy="36" r="28" fill="none" stroke="${c.color}" stroke-width="7"
+            stroke-dasharray="${circ*c.score/100} ${circ*(1-c.score/100)}"
+            stroke-dashoffset="${circ*0.25}" stroke-linecap="round"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <span style="font-family:var(--serif);font-size:19px;line-height:1;">${c.score}</span>
+          <span style="font-size:9px;color:var(--ink5);">/100</span>
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:600;color:${c.color};">${c.rating}</div>`;
+    wrap.appendChild(div);
+  });
+}
+
+function buildLiquidityCharts(){
+  const months=['Oct','Nov','Dec','Jan','Feb','Mar'];
+  const tc=document.getElementById('liq-trend-chart');
+  if(tc&&!tc._built){
+    tc._built=true;
+    new Chart(tc,{type:'line',data:{labels:months,datasets:[
+      {label:'Casablanca',data:[64,65,67,68,68,70],borderColor:'#0d0d0d',borderWidth:2,tension:.3,pointRadius:0,fill:false},
+      {label:'Marrakech',data:[60,61,63,65,64,68],borderColor:'#b8933f',borderWidth:2,tension:.3,pointRadius:0,fill:false},
+      {label:'Rabat',data:[57,58,58,59,59,60],borderColor:'#1d4ed8',borderWidth:1.5,tension:.3,pointRadius:0,fill:false},
+      {label:'Fez',data:[44,43,42,41,39,38],borderColor:'#dc2626',borderWidth:1.5,tension:.3,pointRadius:0,fill:false},
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:11},color:'#8c8c8c',boxWidth:8,padding:10}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8c8c8c'}},y:{min:30,max:80,grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:11},color:'#8c8c8c'}}}}});
+  }
+  const cc=document.getElementById('liq-component-chart');
+  if(cc&&!cc._built){
+    cc._built=true;
+    new Chart(cc,{type:'bar',data:{labels:['Casablanca','Marrakech','Rabat','Tangiers','Fez'],datasets:[
+      {label:'Listing Vol.',data:[82,74,62,48,36],backgroundColor:'#0d0d0d',borderWidth:0,borderRadius:1},
+      {label:'Price Disp.',data:[68,72,58,54,44],backgroundColor:'#b8933f',borderWidth:0,borderRadius:1},
+      {label:'Txn Freq.',data:[64,58,54,44,32],backgroundColor:'#1d4ed8',borderWidth:0,borderRadius:1},
+      {label:'Inv. Activity',data:[71,80,66,62,42],backgroundColor:'#e5e5e2',borderWidth:0,borderRadius:1},
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:10},color:'#8c8c8c',boxWidth:8,padding:8}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:10},color:'#8c8c8c'}}}}});
+  }
+}
+
+// ── MAP ──
+function initMap(){
+  if(_map) return;
+  const el=document.getElementById('map-container');
+  if(!el) return;
+  _map=L.map('map-container',{zoomControl:true}).setView([32,-5],5.4);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap · © CARTO',maxZoom:18}).addTo(_map);
+  const cities=[
+    {name:'Casablanca',lat:33.5731,lng:-7.5898,price:'18,420',chg:'+6.2%',listings:4218,liq:7.0},
+    {name:'Marrakech',lat:31.6295,lng:-7.9811,price:'17,800',chg:'+8.4%',listings:2847,liq:6.8},
+    {name:'Rabat',lat:33.9716,lng:-6.8498,price:'15,200',chg:'+2.6%',listings:2340,liq:6.0},
+    {name:'Tangiers',lat:35.7595,lng:-5.8340,price:'12,800',chg:'+1.3%',listings:1509,liq:5.2},
+    {name:'Fez',lat:34.0333,lng:-5.0003,price:'10,400',chg:'-2.1%',listings:892,liq:3.8},
+  ];
+  cities.forEach(c=>{
+    const col=c.liq>=6.5?'#0d0d0d':c.liq>=5?'#b8933f':'#dc2626';
+    const marker=L.circleMarker([c.lat,c.lng],{radius:Math.sqrt(c.listings/40),fillColor:col,color:'#fff',weight:1.5,fillOpacity:.85}).addTo(_map);
+    marker.bindPopup(`<div style="font-family:'DM Sans',sans-serif;min-width:160px;"><div style="font-weight:700;font-size:13px;margin-bottom:6px;">${c.name}</div><div style="font-size:11px;color:#5a5a5a;margin-bottom:3px;">Median Apt: <strong>DH ${c.price}/m²</strong></div><div style="font-size:11px;color:#5a5a5a;margin-bottom:3px;">12M Change: <strong>${c.chg}</strong></div><div style="font-size:11px;color:#5a5a5a;">Active Listings: <strong>${c.listings.toLocaleString()}</strong></div></div>`);
+  });
+}
+function updateMapView(v){ console.log('Map view:',v); }
+
+// ── EVIDENCE PANEL ──
+const EVIDENCE_DATA={
+  'prime-rent':{title:'Prime Office Rent — Casablanca',sub:'Evidence behind this metric',note:'Prime rent estimate based on median asking rents from 418 verified office listings across Casablanca CBD and Maarif sub-markets. Asking prices only — not achieved transaction rents.',meta:[['Dataset','Listings database (Raw layer)'],['Source classification','Listings-derived'],['Observation count','418 listings'],['City / Market','Casablanca · CBD · Maarif'],['Metric type','Median asking rent'],['Confidence','High'],['As of','March 2026'],['Important','Asking prices — not achieved rents']]},
+  'median-price':{title:'Median Apartment Sale Price',sub:'Evidence behind this metric',note:'National median calculated from 5,476 apartment sale listings across all 5 Morocco cities. Weighted by listing volume. Asking price indicator — not transaction evidence.',meta:[['Dataset','Listings database (Raw layer)'],['Source classification','Listings-derived'],['Observation count','5,476 listings'],['Coverage','5 cities · Morocco'],['Metric type','Median asking price'],['Confidence','High'],['As of','March 2026']]},
+  'listings-volume':{title:'Active Listings — Morocco',sub:'Evidence behind this metric',note:'Total verified active listings across Morocco as of March 2026. De-duplicated. Includes all asset classes.',meta:[['Dataset','Listings database (Raw layer)'],['Source classification','Listings-derived'],['Total records','12,806 active listings'],['Asset classes','8'],['Cities','5'],['Confidence','High'],['As of','March 2026']]},
+  'yield-estimate':{title:'Gross Yield Estimate — Casablanca',sub:'Evidence behind this metric',note:'Yield estimated from ratio of median asking rent to median asking sale price. Not an achieved investment return. Does not account for vacancy, costs, or financing.',meta:[['Dataset','Derived analytics (Derived layer)'],['Source classification','Modelled indicator'],['Inputs','Listing median rent · Listing median sale price'],['Method','Annualised rent / sale price'],['Confidence','Estimated'],['As of','March 2026'],['Important','Not investment advice — estimated only']]},
+  'liquidity':{title:'Liquidity Score — Morocco',sub:'Evidence behind this metric',note:'Ironwood Liquidity Index is a proprietary composite of 4 components: listing volume, price dispersion, transaction frequency proxy, and investor activity proxy. Modelled output — not a direct observation.',meta:[['Dataset','Derived analytics (Derived layer)'],['Source classification','Modelled indicator'],['Components','Listing volume · Price dispersion · Txn frequency · Investor activity'],['Method','Weighted composite — normalised 0–10'],['Confidence','Medium / Estimated'],['As of','March 2026']]},
+  'pipeline':{title:'Pipeline Supply — Morocco',sub:'Evidence behind this metric',note:'Sum of tracked GFA across 33 development projects in Morocco. Based on developer announcements, planning data, and press. Figures are estimates — actual completions may differ.',meta:[['Dataset','Development pipeline (Raw layer)'],['Source classification','Pipeline data'],['Projects tracked','33'],['Source types','Developer announcements · Press · Planning'],['GFA estimate','~340,000 m²'],['Confidence','Medium'],['As of','March 2026'],['Important','Estimates only — subject to delivery delays']]},
+};
+
+function showEvidence(key){
+  const d=EVIDENCE_DATA[key];
+  if(!d) return;
+  document.getElementById('ep-title').textContent=d.title;
+  document.getElementById('ep-sub').textContent=d.sub;
+  document.getElementById('ep-note').textContent=d.note;
+  document.getElementById('ep-meta').innerHTML=d.meta.map(([l,v])=>`<div class="ep-meta-row"><span class="ep-meta-lbl">${l}</span><span class="ep-meta-val">${v}</span></div>`).join('');
+  document.getElementById('evidence-panel').classList.add('open');
+}
+function closeEvidence(){ document.getElementById('evidence-panel').classList.remove('open'); }
+
+// ── EXPORT ──
+function exportTable(id,fmt='csv'){
+  const tbl=document.getElementById(id);
+  if(!tbl){alert('Table not found: '+id);return;}
+  const rows=[...tbl.querySelectorAll('tr')].map(r=>[...r.querySelectorAll('th,td')].map(c=>c.textContent.trim().replace(/[\n\t]+/g,' ')).join(','));
+  const csv=rows.join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`ironwood-${id}-${new Date().toISOString().slice(0,10)}.csv`;a.click();
+}
+function applyFilters(){ console.log('Filters applied'); }
+
+// ── REPORTS ──
+const REPORTS={
+  'morocco-overview':{title:'Morocco Real Estate Market Overview',type:'Country Overview',date:'March 2026',kpis:[{val:'+6.1%',lbl:'Natl. Price Growth',chg:'12M',pos:true},{val:'12,806',lbl:'Active Listings',chg:'▲ +8.3%',pos:true},{val:'5.8%',lbl:'Yield Estimate',chg:'Modelled',pos:null},{val:'~340k m²',lbl:'Pipeline Supply',chg:'Elevated',pos:false}],sections:[{h2:'Executive Summary',body:`Morocco's real estate market demonstrates broad-based price growth across all major cities in the twelve months to March 2026. National median apartment prices rose an estimated 6.1% year-on-year, supported by sustained urbanisation demand and limited residential supply additions.\n\nMarrakech leads national performance with apartment prices up 8.4% and riad yields reaching an estimated 6.4%. Casablanca prime office rents reached DH 142/m² per month, up 4.4% over twelve months.`},{h2:'Data Notes',body:`All price metrics are derived from listing observations and represent asking prices, not achieved transaction prices. Yield estimates are modelled from asking-price ratios. Pipeline data is sourced from developer announcements and press — actual delivery may vary. All figures carry appropriate confidence scoring in the platform data layer.\n\nThis report is produced for informational purposes only and does not constitute investment advice.`}]},
+  'casa-offices':{title:'Casablanca Office Market Brief',type:'City Market Brief',date:'Q1 2026',kpis:[{val:'DH 142',lbl:'Prime Rent /m²/mo',chg:'▲ +4.4%',pos:true},{val:'418',lbl:'Active Listings',chg:'▲ +11%',pos:true},{val:'5.8%',lbl:'Yield Estimate',chg:'Modelled',pos:null},{val:'~64k m²',lbl:'2027 Supply',chg:'Risk',pos:false}],sections:[{h2:'Market Summary',body:`Casablanca prime office rents reached DH 142/m² per month in Q1 2026, up 4.4% year-on-year based on 418 active office listings. Active office listings total 418, up 11% year-on-year.\n\nPipeline risk is elevated. Ironwood Intelligence tracks 12 office and mixed-use projects totalling approximately 126,000 m² of office GFA in Casablanca, with the majority targeting delivery 2027–2028.`},{h2:'Data Notes',body:`All rent figures are asking-price indicators from the listings database. Transaction evidence is limited and carries medium confidence. Pipeline data is sourced from developer announcements and press. This report does not constitute investment advice.`}]},
+  'marrakech-residential':{title:'Marrakech Residential Market Brief',type:'City Market Brief',date:'Q1 2026',kpis:[{val:'DH 17,800',lbl:'Median Apt /m²',chg:'▲ +8.4%',pos:true},{val:'DH 38,200',lbl:'Median Riad /m²',chg:'▲ +12.1%',pos:true},{val:'6.4%',lbl:'Yield Est.',chg:'Modelled',pos:null},{val:'2,847',lbl:'Active Listings',chg:'▲ +14%',pos:true}],sections:[{h2:'Market Summary',body:`Marrakech is the strongest performing real estate market in Morocco. Apartment prices reached DH 17,800/m² in Q1 2026, up 8.4% over twelve months based on 1,842 listing observations. Riad prices increased to a median of DH 38,200/m², a 12.1% year-on-year increase.\n\nThe market scores 8.4/10 on Ironwood's Investment Opportunity Score — the highest of any covered Morocco market.`},{h2:'Data Notes',body:`All figures are asking-price indicators from the listings database. Riad sample size (284 listings) is smaller than apartments — treat with appropriate caution. Yield estimates are modelled from asking-price ratios. This report does not constitute investment advice.`}]}
+};
+
+function openReport(id){
+  const r=REPORTS[id];
+  if(!r){alert('Report not available.');return;}
+  document.getElementById('rv-title').textContent=r.title;
+  const kpiHtml=r.kpis.map(k=>`<div class="rdoc-kpi"><div class="val">${k.val}</div><div class="lbl">${k.lbl}</div><div class="chg ${k.pos===true?'pos':k.pos===false?'neg':''}">${k.chg}</div></div>`).join('');
+  const sectionsHtml=r.sections.map(s=>`<div class="rdoc-section"><h2>${s.h2}</h2>${s.body.split('\n\n').map(p=>`<p>${p}</p>`).join('')}</div>`).join('');
+  document.getElementById('report-doc').innerHTML=`
+    <div class="rdoc-header">
+      <div class="rdoc-logo">IRONWOOD INTELLIGENCE · MARKET INTELLIGENCE PLATFORM</div>
+      <div class="rdoc-kicker">${r.type}</div>
+      <div class="rdoc-title">${r.title}</div>
+      <div class="rdoc-sub">Prepared by Ironwood Intelligence. Based on verified listing and transactional evidence. DEMO DATA — NOT REAL.</div>
+      <div class="rdoc-meta">
+        <div class="rdoc-meta-item"><strong>${r.date}</strong>Publication Date</div>
+        <div class="rdoc-meta-item"><strong>Morocco</strong>Market</div>
+        <div class="rdoc-meta-item"><strong>Restricted</strong>Distribution</div>
+      </div>
+    </div>
+    <div class="rdoc-body">
+      <div class="rdoc-kpi-grid">${kpiHtml}</div>
+      ${sectionsHtml}
+      <div class="rdoc-disclaimer"><strong>Disclaimer.</strong> This report is produced for informational purposes only. All data is based on listing-derived evidence unless otherwise stated. Yield and growth figures are estimates — not achieved transaction outcomes. This report does not constitute investment advice, a valuation opinion, or a solicitation to buy or sell any asset. DEMO DATA — NOT REAL.</div>
+    </div>`;
+  document.getElementById('report-view').classList.add('open');
+}
+function closeReport(){ document.getElementById('report-view').classList.remove('open'); }
+
+// ── CITY SWITCHER ──
+const CITY_DATA={
+  casablanca:{medPrice:'DH 18,420',priceChg:'▲ +6.2% 12M',primeRent:'DH 142',rentChg:'▲ +4.4% 12M',listings:'4,218',listChg:'All types',yield:'5.8%',liq:'7.0',liqChg:'→ Liquid',pipeline:'~190k',pipeSub:'m² GFA · 14 projects',pipeRisk:'⚠ High risk',sig:{pg:62,rg:44,lq:70,pr:52,ye:58,po:62},iosSc:'7.7',iosBadge:'Attractive',iosClass:'opp-strong',
+    trendData:[17340,17680,17920,18140,18420],pipeTitle:'Development Pipeline — Casablanca',trendTitle:'Price Trend Data — Casablanca',
+    pipeRows:`<tr><td class="dt-rank">01</td><td><strong>Marina Business Hub</strong></td><td class="dt-muted">Undisclosed</td><td class="dt-muted">Marina</td><td>Office</td><td class="mono">42,000</td><td><span class="sig sig-warn">Superstructure</span></td><td class="mono">Q3 2027</td><td><span class="sig sig-dn">High</span></td></tr>
+    <tr><td class="dt-rank">02</td><td><strong>Anfa Place Ph.3</strong></td><td class="dt-muted">Addoha</td><td class="dt-muted">Anfa</td><td>Mixed Use</td><td class="mono">38,000</td><td><span class="sig sig-neutral">Foundation</span></td><td class="mono">Q2 2028</td><td><span class="sig sig-warn">Moderate</span></td></tr>
+    <tr><td class="dt-rank">03</td><td><strong>CIL Towers</strong></td><td class="dt-muted">CDG Immobilier</td><td class="dt-muted">CIL</td><td>Residential</td><td class="mono">28,000</td><td><span class="sig sig-up">Topped Out</span></td><td class="mono">Q4 2026</td><td><span class="sig sig-up">Low</span></td></tr>`,
+    txnRows:`<tr><td class="mono dt-muted">Mar 2026</td><td>Office</td><td class="dt-muted">Marina</td><td class="mono">18,200</td><td class="dt-muted">Press</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+    <tr><td class="mono dt-muted">Jan 2026</td><td>Retail</td><td class="dt-muted">Maarif</td><td class="mono">22,800</td><td class="dt-muted">Broker</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+    <tr><td class="mono dt-muted">Dec 2025</td><td>Apartment</td><td class="dt-muted">Ain Diab</td><td class="mono">26,400</td><td class="dt-muted">Land Reg.</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>`,
+    trendRows:`<tr><td class="mono dt-muted">Q1 2025</td><td class="mono">17,340</td><td class="mono">136</td><td class="mono">23,800</td><td class="mono">21,200</td><td class="mono">3,480</td></tr>
+    <tr><td class="mono dt-muted">Q2 2025</td><td class="mono">17,680</td><td class="mono">138</td><td class="mono">24,100</td><td class="mono">21,800</td><td class="mono">3,612</td></tr>
+    <tr><td class="mono dt-muted">Q3 2025</td><td class="mono">17,920</td><td class="mono">139</td><td class="mono">24,400</td><td class="mono">21,900</td><td class="mono">3,840</td></tr>
+    <tr><td class="mono dt-muted">Q4 2025</td><td class="mono">18,140</td><td class="mono">141</td><td class="mono">24,600</td><td class="mono">22,100</td><td class="mono">4,012</td></tr>
+    <tr><td class="mono dt-muted">Q1 2026</td><td class="mono">18,420</td><td class="mono">142</td><td class="mono">24,800</td><td class="mono">22,400</td><td class="mono">4,218</td></tr>`},
+  marrakech:{medPrice:'DH 17,800',priceChg:'▲ +8.4% 12M',primeRent:'DH 118',rentChg:'▲ +7.1% 12M',listings:'2,847',listChg:'All types',yield:'6.4%',liq:'6.8',liqChg:'→ Liquid',pipeline:'~85k',pipeSub:'m² GFA · 8 projects',pipeRisk:'⚠ Moderate risk',sig:{pg:84,rg:71,lq:68,pr:62,ye:64,po:75},iosSc:'8.4',iosBadge:'Strong Buy',iosClass:'opp-strong',
+    trendData:[16420,16890,17200,17510,17800],pipeTitle:'Development Pipeline — Marrakech',trendTitle:'Price Trend Data — Marrakech',
+    pipeRows:`<tr><td class="dt-rank">01</td><td><strong>Palmeraie Villas Ph.5</strong></td><td class="dt-muted">Palmeraie Group</td><td class="dt-muted">Palmeraie</td><td>Villas</td><td class="mono">32,000</td><td><span class="sig sig-warn">Superstructure</span></td><td class="mono">Q1 2027</td><td><span class="sig sig-up">Low</span></td></tr>
+    <tr><td class="dt-rank">02</td><td><strong>Hivernage Hotel Dev.</strong></td><td class="dt-muted">Undisclosed</td><td class="dt-muted">Hivernage</td><td>Hotel/Resi</td><td class="mono">18,000</td><td><span class="sig sig-neutral">Foundation</span></td><td class="mono">Q3 2027</td><td><span class="sig sig-up">Low</span></td></tr>`,
+    txnRows:`<tr><td class="mono dt-muted">Feb 2026</td><td>Riad</td><td class="dt-muted">Palmeraie</td><td class="mono">38,500</td><td class="dt-muted">Broker</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
+    <tr><td class="mono dt-muted">Jan 2026</td><td>Villa</td><td class="dt-muted">Palmeraie</td><td class="mono">28,400</td><td class="dt-muted">Broker</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>`,
+    trendRows:`<tr><td class="mono dt-muted">Q1 2025</td><td class="mono">16,420</td><td class="mono">110</td><td class="mono">26,200</td><td class="mono">—</td><td class="mono">2,482</td></tr>
+    <tr><td class="mono dt-muted">Q2 2025</td><td class="mono">16,890</td><td class="mono">112</td><td class="mono">27,100</td><td class="mono">—</td><td class="mono">2,614</td></tr>
+    <tr><td class="mono dt-muted">Q3 2025</td><td class="mono">17,200</td><td class="mono">114</td><td class="mono">27,800</td><td class="mono">—</td><td class="mono">2,710</td></tr>
+    <tr><td class="mono dt-muted">Q4 2025</td><td class="mono">17,510</td><td class="mono">116</td><td class="mono">28,200</td><td class="mono">—</td><td class="mono">2,780</td></tr>
+    <tr><td class="mono dt-muted">Q1 2026</td><td class="mono">17,800</td><td class="mono">118</td><td class="mono">28,600</td><td class="mono">—</td><td class="mono">2,847</td></tr>`},
+  rabat:{medPrice:'DH 15,200',priceChg:'▲ +2.6% 12M',primeRent:'DH 98',rentChg:'▲ +3.1% 12M',listings:'2,340',listChg:'All types',yield:'5.2%',liq:'6.0',liqChg:'→ Moderate',pipeline:'~42k',pipeSub:'m² GFA · 5 projects',pipeRisk:'→ Low risk',sig:{pg:26,rg:31,lq:60,pr:78,ye:52,po:54},iosSc:'6.1',iosBadge:'Neutral',iosClass:'opp-moderate',trendData:[14820,14980,15020,15100,15200],pipeTitle:'Development Pipeline — Rabat',trendTitle:'Price Trend Data — Rabat',
+    pipeRows:`<tr><td class="dt-rank">01</td><td><strong>Agdal Mixed-Use Tower</strong></td><td class="dt-muted">Immolog</td><td class="dt-muted">Agdal</td><td>Mixed Use</td><td class="mono">24,000</td><td><span class="sig sig-up">Topped Out</span></td><td class="mono">Q3 2026</td><td><span class="sig sig-up">Low</span></td></tr>`,
+    txnRows:`<tr><td class="mono dt-muted">Feb 2026</td><td>Apartment</td><td class="dt-muted">Agdal</td><td class="mono">15,400</td><td class="dt-muted">Land Reg.</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>`,
+    trendRows:`<tr><td class="mono dt-muted">Q1 2025</td><td class="mono">14,820</td><td class="mono">95</td><td class="mono">—</td><td class="mono">—</td><td class="mono">2,104</td></tr>
+    <tr><td class="mono dt-muted">Q1 2026</td><td class="mono">15,200</td><td class="mono">98</td><td class="mono">—</td><td class="mono">—</td><td class="mono">2,340</td></tr>`},
+  tangiers:{medPrice:'DH 12,800',priceChg:'▲ +1.3% 12M',primeRent:'DH 88',rentChg:'▲ +2.8% 12M',listings:'1,509',listChg:'All types',yield:'4.8%',liq:'5.2',liqChg:'→ Moderate',pipeline:'~71k',pipeSub:'m² GFA · 4 projects',pipeRisk:'⚠ Moderate risk',sig:{pg:13,rg:28,lq:52,pr:78,ye:48,po:82},iosSc:'6.8',iosBadge:'Emerging',iosClass:'opp-moderate',trendData:[12640,12710,12760,12790,12800],pipeTitle:'Development Pipeline — Tangiers',trendTitle:'Price Trend Data — Tangiers',
+    pipeRows:`<tr><td class="dt-rank">01</td><td><strong>Tangiers FZ Hub</strong></td><td class="dt-muted">TFZ Authority</td><td class="dt-muted">Free Zone</td><td>Office/Ind.</td><td class="mono">48,000</td><td><span class="sig sig-warn">Superstructure</span></td><td class="mono">Q4 2027</td><td><span class="sig sig-warn">Moderate</span></td></tr>`,
+    txnRows:`<tr><td class="mono dt-muted">Jan 2026</td><td>Land</td><td class="dt-muted">Free Zone</td><td class="mono">840/m²</td><td class="dt-muted">Corp. Ann.</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>`,
+    trendRows:`<tr><td class="mono dt-muted">Q1 2025</td><td class="mono">12,640</td><td class="mono">86</td><td class="mono">—</td><td class="mono">—</td><td class="mono">1,380</td></tr>
+    <tr><td class="mono dt-muted">Q1 2026</td><td class="mono">12,800</td><td class="mono">88</td><td class="mono">—</td><td class="mono">—</td><td class="mono">1,509</td></tr>`},
+  fez:{medPrice:'DH 10,400',priceChg:'▼ -2.1% 12M',primeRent:'DH 72',rentChg:'▼ -1.4% 12M',listings:'892',listChg:'All types',yield:'4.1%',liq:'3.8',liqChg:'→ Illiquid',pipeline:'~12k',pipeSub:'m² GFA · 2 projects',pipeRisk:'→ Low risk',sig:{pg:-21,rg:-14,lq:38,pr:90,ye:41,po:32},iosSc:'3.4',iosBadge:'Underweight',iosClass:'opp-weak',trendData:[10620,10540,10480,10430,10400],pipeTitle:'Development Pipeline — Fez',trendTitle:'Price Trend Data — Fez',
+    pipeRows:`<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--ink5);">2 minor projects tracked · Low pipeline risk</td></tr>`,
+    txnRows:`<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--ink5);">No recent transactions tracked · Low transaction volume</td></tr>`,
+    trendRows:`<tr><td class="mono dt-muted">Q1 2025</td><td class="mono">10,620</td><td class="mono">74</td><td class="mono">—</td><td class="mono">—</td><td class="mono">980</td></tr>
+    <tr><td class="mono dt-muted">Q1 2026</td><td class="mono">10,400</td><td class="mono">72</td><td class="mono">—</td><td class="mono">—</td><td class="mono">892</td></tr>`},
+};
+
+let _cityChart=null,_cityDistChart=null;
+
+function switchCity(btn,cityId){
+  document.querySelectorAll('.city-tab').forEach(t=>{t.style.background='var(--surface)';t.style.color='var(--ink3)';});
+  btn.style.background='var(--ink)';btn.style.color='#fff';
+  const c=CITY_DATA[cityId];if(!c)return;
+  document.getElementById('c-med-price').textContent=c.medPrice;
+  document.getElementById('c-price-chg').textContent=c.priceChg;
+  document.getElementById('c-prime-rent').textContent=c.primeRent;
+  document.getElementById('c-rent-chg').textContent=c.rentChg;
+  document.getElementById('c-listings').textContent=c.listings;
+  document.getElementById('c-yield').textContent=c.yield;
+  document.getElementById('c-liq').innerHTML=c.liq+'<span style="font-size:14px;color:var(--ink4);">/10</span>';
+  document.getElementById('c-pipeline').textContent=c.pipeline;
+  document.getElementById('c-pipe-sub').textContent=c.pipeSub;
+  document.getElementById('c-pipe-risk').textContent=c.pipeRisk;
+  document.getElementById('c-pipe-title').textContent=c.pipeTitle;
+  document.getElementById('c-trend-tbl-title').textContent=c.trendTitle;
+  document.getElementById('city-pipe-body').innerHTML=c.pipeRows;
+  document.getElementById('city-txn-body').innerHTML=c.txnRows;
+  document.getElementById('city-trend-body').innerHTML=c.trendRows;
+  // Signals
+  ['pg','rg','lq','pr','ye','po'].forEach(k=>{
+    const v=c.sig[k];const abs=Math.abs(v);
+    document.getElementById('c-sig-'+k).style.width=abs+'%';
+    document.getElementById('c-sig-'+k+'-v').textContent=v<0?v:v;
+  });
+  document.getElementById('c-ios').textContent=c.iosSc;
+  document.getElementById('c-ios-badge').textContent=c.iosBadge;
+  document.getElementById('c-ios-badge').className='opp-badge '+c.iosClass;
+  // Rebuild city chart
+  const name=btn.textContent.trim();
+  buildCityTrendChart(name,c.trendData);
+  buildCityDistrictChart(cityId);
+}
+
+function buildCityTrendChart(cityName,data){
+  const ctx=document.getElementById('city-trend-chart');
+  if(!ctx)return;
+  if(_cityChart){_cityChart.destroy();_cityChart=null;}
+  _cityChart=new Chart(ctx,{type:'line',data:{labels:['Q1 25','Q2 25','Q3 25','Q4 25','Q1 26'],datasets:[{label:cityName,data:data,borderColor:'#0d0d0d',borderWidth:2,tension:.3,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:11},color:'#8c8c8c'}}}}});
+}
+
+const CITY_DISTRICTS={
+  casablanca:{labels:['Ain Diab','Anfa/CIL','Maarif','Marina','Sidi Maarouf','Hay Hassani'],data:[26200,24800,20400,19800,16400,12400]},
+  marrakech:{labels:['Palmeraie','Hivernage','Gueliz','Medina','Semlalia'],data:[32800,24400,19200,15800,13400]},
+  rabat:{labels:['Souissi','Agdal','Hay Riad','Hassan','Akkari'],data:[22400,18600,16200,14800,11200]},
+  tangiers:{labels:['Malabata','Centre Ville','Cap Malabata','Tangiers Med'],data:[16200,13400,14800,9800]},
+  fez:{labels:['Saïss','Centre','Ain Kadous','Route Imouzzer'],data:[13200,10400,9800,8600]},
+};
+
+function buildCityDistrictChart(cityId){
+  const ctx=document.getElementById('city-district-chart');
+  if(!ctx)return;
+  if(_cityDistChart){_cityDistChart.destroy();_cityDistChart=null;}
+  const d=CITY_DISTRICTS[cityId]||CITY_DISTRICTS.casablanca;
+  _cityDistChart=new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[{label:'DH/m²',data:d.data,backgroundColor:'#0d0d0d',borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:10},color:'#8c8c8c'}},y:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#5a5a5a'}}}}});
+}
+
+// ── DISTRICT FILTER ──
+const DISTRICT_DATA={
+  casablanca:[
+    ['Ain Diab','Casablanca','26,200','+42%','180','284','+7.1%','3','1','Residential'],
+    ['Anfa / CIL','Casablanca','24,800','+35%','162','312','+5.8%','5','2','OCP HQ'],
+    ['Maarif','Casablanca','20,400','+11%','148','528','+6.4%','8','0','Mixed use'],
+    ['Marina CBD','Casablanca','19,800','+7%','158','186','+5.2%','4','3','Attijariwafa'],
+    ['Sidi Maarouf','Casablanca','16,400','-11%','128','412','+3.1%','2','1','Capgemini'],
+    ['Hay Hassani','Casablanca','12,400','-33%','88','604','+2.8%','1','0','Residential'],
+  ],
+  marrakech:[
+    ['Palmeraie','Marrakech','32,800','+84%','220','342','+14.2%','3','1','Club Med'],
+    ['Hivernage','Marrakech','24,400','+37%','168','218','+9.1%','2','0','Hotels'],
+    ['Gueliz','Marrakech','19,200','+8%','128','684','+7.8%','4','2','Mixed'],
+    ['Medina','Marrakech','15,800','-11%','—','412','+12.1% (riads)','2','0','—'],
+  ],
+  rabat:[
+    ['Souissi','Rabat','22,400','+47%','148','184','+3.8%','1','0','Embassies'],
+    ['Agdal','Rabat','18,600','+22%','120','684','+2.6%','3','1','Maroc Telecom'],
+    ['Hay Riad','Rabat','16,200','+7%','98','812','+2.1%','2','0','Gov. offices'],
+  ],
+  tangiers:[
+    ['Malabata','Tangiers','16,200','+27%','112','284','+4.2%','1','0','Residential'],
+    ['Centre Ville','Tangiers','13,400','+5%','88','612','+1.3%','0','1','Mixed'],
+    ['Tangiers Med','Tangiers','9,800','-23%','—','124','n/a','1','2','Logistics'],
+  ],
+  fez:[
+    ['Saïss','Fez','13,200','+27%','—','184','-0.8%','0','0','Residential'],
+    ['Centre','Fez','10,400','Avg','74','412','-2.1%','0','0','Mixed'],
+  ],
+};
+
+function filterDistricts(btn,cityId){
+  document.querySelectorAll('.pa-btn').forEach(b=>b.classList.remove('gold'));
+  btn.classList.add('gold');
+  const rows=DISTRICT_DATA[cityId]||DISTRICT_DATA.casablanca;
+  const confMap={'+':' conf-h','-':' conf-m','n':' conf-e'};
+  document.getElementById('district-table-title').textContent='District Profiles — '+btn.textContent.trim();
+  document.getElementById('district-full-body').innerHTML=rows.map(r=>{
+    const chgClass=r[3].startsWith('+')?'chg pos':'chg neg';
+    const chg12mClass=r[6].startsWith('+')?'chg pos':'chg neg';
+    return `<tr><td class="dt-city">${r[0]}</td><td class="dt-muted">${r[1]}</td><td class="mono">${r[2]}</td><td class="${chgClass}">${r[3]}</td><td class="mono">${r[4]}</td><td class="mono">${r[5]}</td><td class="${chg12mClass}">${r[6]}</td><td class="mono">${r[7]}</td><td class="mono">${r[8]}</td><td class="dt-muted">${r[9]}</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>`;
+  }).join('');
+}
+
+window.addEventListener('load', boot);
+</script>
+</body>
+</html>

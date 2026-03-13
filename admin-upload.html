@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ironwood Intelligence — Admin Upload</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh;padding:40px;}
+h1{font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;}
+.subtitle{font-size:13px;color:#888;margin-bottom:32px;}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:28px;margin-bottom:20px;}
+.card h2{font-size:15px;font-weight:700;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.badge{background:#2a2d3a;padding:3px 10px;border-radius:20px;font-size:11px;color:#888;font-weight:600;}
+/* Config */
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.fg{margin-bottom:0;}
+.fg label{font-size:12px;color:#888;display:block;margin-bottom:5px;}
+.fg input{width:100%;padding:9px 12px;background:#0f1117;border:1px solid #2a2d3a;border-radius:7px;font-size:13px;color:#fff;outline:none;}
+.fg input:focus{border-color:#5865f2;}
+.fg input::placeholder{color:#555;}
+.btn-save-config{margin-top:16px;padding:9px 20px;background:#5865f2;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-save-config:hover{background:#4752c4;}
+.config-status{margin-top:10px;font-size:12px;color:#4ade80;display:none;}
+/* Upload tabs */
+.tabs{display:flex;gap:4px;margin-bottom:20px;}
+.tab{padding:8px 16px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid #2a2d3a;background:#0f1117;color:#888;}
+.tab.active{background:#5865f2;color:#fff;border-color:#5865f2;}
+.upload-section{display:none;}
+.upload-section.active{display:block;}
+/* Drop zone */
+.dropzone{border:2px dashed #2a2d3a;border-radius:10px;padding:40px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:16px;}
+.dropzone:hover,.dropzone.drag{border-color:#5865f2;background:#1f2235;}
+.dropzone .dz-icon{font-size:36px;margin-bottom:12px;}
+.dropzone h3{font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;}
+.dropzone p{font-size:13px;color:#666;}
+.dropzone input{display:none;}
+/* Template */
+.template-info{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:16px;margin-bottom:16px;}
+.template-info h4{font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;}
+.col-list{display:flex;flex-wrap:wrap;gap:6px;}
+.col-tag{background:#1a1d27;border:1px solid #2a2d3a;padding:4px 10px;border-radius:20px;font-size:11px;color:#aaa;}
+.col-tag.required{border-color:#5865f2;color:#8b9cf7;}
+.btn-template{padding:8px 16px;background:#2a2d3a;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;margin-top:12px;}
+.btn-template:hover{background:#383c52;}
+/* Preview table */
+.preview-wrap{overflow-x:auto;margin-bottom:16px;display:none;}
+.preview-wrap h4{font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{background:#2a2d3a;color:#aaa;padding:8px 12px;text-align:left;font-weight:600;white-space:nowrap;}
+td{padding:8px 12px;border-bottom:1px solid #1f2235;color:#ccc;white-space:nowrap;}
+tr:hover td{background:#1f2235;}
+.preview-count{font-size:12px;color:#888;margin-bottom:8px;}
+/* Upload button */
+.btn-upload{width:100%;padding:12px;background:#4ade80;color:#111;border:none;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;display:none;}
+.btn-upload:hover{background:#22c55e;}
+.btn-upload:disabled{background:#2a2d3a;color:#555;cursor:not-allowed;}
+/* Progress */
+.progress-wrap{display:none;margin-top:16px;}
+.progress-bar-bg{background:#0f1117;border-radius:20px;height:8px;overflow:hidden;margin-bottom:8px;}
+.progress-bar{background:#4ade80;height:100%;width:0%;transition:width 0.3s;border-radius:20px;}
+.progress-text{font-size:12px;color:#888;text-align:center;}
+/* Results */
+.result-box{display:none;margin-top:16px;padding:16px;border-radius:8px;font-size:13px;}
+.result-box.success{background:#052e16;border:1px solid #166534;color:#4ade80;}
+.result-box.error{background:#2d0a0a;border:1px solid #7f1d1d;color:#f87171;}
+.result-box h4{font-weight:700;margin-bottom:6px;}
+.result-box ul{list-style:none;margin-top:8px;}
+.result-box ul li{padding:3px 0;font-size:12px;}
+/* Recent uploads */
+.upload-log{margin-top:8px;}
+.log-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #1f2235;font-size:13px;}
+.log-row:last-child{border-bottom:none;}
+.log-badge{padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.log-badge.properties{background:#1e3a5f;color:#60a5fa;}
+.log-badge.prices{background:#1a2e1a;color:#4ade80;}
+.log-badge.averages{background:#2d1f3d;color:#c084fc;}
+.log-time{font-size:11px;color:#555;}
+</style>
+</head>
+<body>
+
+<h1>🌍 Ironwood Intelligence — Admin Portal</h1>
+<p class="subtitle">Upload property data directly to your Supabase database</p>
+
+<!-- CONFIG CARD -->
+<div class="card">
+  <h2>⚙️ Supabase Connection <span class="badge">Required once</span></h2>
+  <div class="config-grid">
+    <div class="fg">
+      <label>Project URL</label>
+      <input type="text" id="supabase-url" placeholder="https://xxxx.supabase.co"/>
+    </div>
+    <div class="fg">
+      <label>Anon Key</label>
+      <input type="text" id="supabase-key" placeholder="eyJhbGciOiJ..."/>
+    </div>
+  </div>
+  <button class="btn-save-config" onclick="saveConfig()">Save Connection</button>
+  <div class="config-status" id="config-status">✅ Connection saved!</div>
+</div>
+
+<!-- UPLOAD CARD -->
+<div class="card">
+  <h2>📤 Upload Data</h2>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('properties')">Properties</div>
+    <div class="tab" onclick="switchTab('prices')">Price Records</div>
+    <div class="tab" onclick="switchTab('averages')">Market Averages</div>
+  </div>
+
+  <!-- PROPERTIES TAB -->
+  <div class="upload-section active" id="tab-properties">
+    <div class="template-info">
+      <h4>Required columns in your Excel file:</h4>
+      <div class="col-list">
+        <span class="col-tag required">country ★</span>
+        <span class="col-tag required">city ★</span>
+        <span class="col-tag required">asset_class ★</span>
+        <span class="col-tag required">listing_type ★</span>
+        <span class="col-tag">property_name</span>
+        <span class="col-tag">submarket</span>
+        <span class="col-tag">size_sqm</span>
+        <span class="col-tag">source_url</span>
+        <span class="col-tag">source_name</span>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:#666;">
+        ★ Required &nbsp;|&nbsp; asset_class: Office, Retail, Residential, Industrial, Hospitality, Land &nbsp;|&nbsp; listing_type: For Sale, For Rent, Both
+      </div>
+      <button class="btn-template" onclick="downloadTemplate('properties')">⬇ Download Template</button>
+    </div>
+    <div class="dropzone" id="dz-properties" onclick="document.getElementById('file-properties').click()" 
+         ondragover="dragOver(event,'properties')" ondragleave="dragLeave(event,'properties')" ondrop="dropFile(event,'properties')">
+      <input type="file" id="file-properties" accept=".xlsx,.xls" onchange="handleFile(event,'properties')"/>
+      <div class="dz-icon">📊</div>
+      <h3>Drop your Excel file here</h3>
+      <p>or click to browse — .xlsx files only</p>
+    </div>
+    <div class="preview-wrap" id="preview-properties">
+      <h4>Preview <span id="preview-count-properties" class="preview-count"></span></h4>
+      <div id="preview-table-properties"></div>
+    </div>
+    <button class="btn-upload" id="btn-properties" onclick="uploadData('properties')">⬆ Upload Properties to Database</button>
+    <div class="progress-wrap" id="progress-properties">
+      <div class="progress-bar-bg"><div class="progress-bar" id="pbar-properties"></div></div>
+      <div class="progress-text" id="ptext-properties">Uploading...</div>
+    </div>
+    <div class="result-box" id="result-properties"></div>
+  </div>
+
+  <!-- PRICE RECORDS TAB -->
+  <div class="upload-section" id="tab-prices">
+    <div class="template-info">
+      <h4>Required columns in your Excel file:</h4>
+      <div class="col-list">
+        <span class="col-tag required">country ★</span>
+        <span class="col-tag required">city ★</span>
+        <span class="col-tag required">asset_class ★</span>
+        <span class="col-tag required">date_recorded ★</span>
+        <span class="col-tag">submarket</span>
+        <span class="col-tag">property_name</span>
+        <span class="col-tag">asking_rent_sqm</span>
+        <span class="col-tag">sale_price</span>
+        <span class="col-tag">sale_price_sqm</span>
+        <span class="col-tag">quarter</span>
+        <span class="col-tag">year</span>
+        <span class="col-tag">currency</span>
+        <span class="col-tag">notes</span>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:#666;">
+        ★ Required &nbsp;|&nbsp; date_recorded format: YYYY-MM-DD (e.g. 2025-01-15) &nbsp;|&nbsp; quarter: Q1 2025
+      </div>
+      <button class="btn-template" onclick="downloadTemplate('prices')">⬇ Download Template</button>
+    </div>
+    <div class="dropzone" id="dz-prices" onclick="document.getElementById('file-prices').click()"
+         ondragover="dragOver(event,'prices')" ondragleave="dragLeave(event,'prices')" ondrop="dropFile(event,'prices')">
+      <input type="file" id="file-prices" accept=".xlsx,.xls" onchange="handleFile(event,'prices')"/>
+      <div class="dz-icon">💰</div>
+      <h3>Drop your Excel file here</h3>
+      <p>or click to browse — .xlsx files only</p>
+    </div>
+    <div class="preview-wrap" id="preview-prices">
+      <h4>Preview <span id="preview-count-prices" class="preview-count"></span></h4>
+      <div id="preview-table-prices"></div>
+    </div>
+    <button class="btn-upload" id="btn-prices" onclick="uploadData('prices')">⬆ Upload Price Records to Database</button>
+    <div class="progress-wrap" id="progress-prices">
+      <div class="progress-bar-bg"><div class="progress-bar" id="pbar-prices"></div></div>
+      <div class="progress-text" id="ptext-prices">Uploading...</div>
+    </div>
+    <div class="result-box" id="result-prices"></div>
+  </div>
+
+  <!-- MARKET AVERAGES TAB -->
+  <div class="upload-section" id="tab-averages">
+    <div class="template-info">
+      <h4>Required columns in your Excel file:</h4>
+      <div class="col-list">
+        <span class="col-tag required">country ★</span>
+        <span class="col-tag required">city ★</span>
+        <span class="col-tag required">asset_class ★</span>
+        <span class="col-tag required">quarter ★</span>
+        <span class="col-tag required">year ★</span>
+        <span class="col-tag">submarket</span>
+        <span class="col-tag">avg_rent_sqm</span>
+        <span class="col-tag">avg_sale_price_sqm</span>
+        <span class="col-tag">vacancy_rate</span>
+        <span class="col-tag">total_listings</span>
+        <span class="col-tag">currency</span>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:#666;">
+        ★ Required &nbsp;|&nbsp; quarter: Q1 2025 &nbsp;|&nbsp; vacancy_rate: number e.g. 10.5 (means 10.5%)
+      </div>
+      <button class="btn-template" onclick="downloadTemplate('averages')">⬇ Download Template</button>
+    </div>
+    <div class="dropzone" id="dz-averages" onclick="document.getElementById('file-averages').click()"
+         ondragover="dragOver(event,'averages')" ondragleave="dragLeave(event,'averages')" ondrop="dropFile(event,'averages')">
+      <input type="file" id="file-averages" accept=".xlsx,.xls" onchange="handleFile(event,'averages')"/>
+      <div class="dz-icon">📈</div>
+      <h3>Drop your Excel file here</h3>
+      <p>or click to browse — .xlsx files only</p>
+    </div>
+    <div class="preview-wrap" id="preview-averages">
+      <h4>Preview <span id="preview-count-averages" class="preview-count"></span></h4>
+      <div id="preview-table-averages"></div>
+    </div>
+    <button class="btn-upload" id="btn-averages" onclick="uploadData('averages')">⬆ Upload Market Averages to Database</button>
+    <div class="progress-wrap" id="progress-averages">
+      <div class="progress-bar-bg"><div class="progress-bar" id="pbar-averages"></div></div>
+      <div class="progress-text" id="ptext-averages">Uploading...</div>
+    </div>
+    <div class="result-box" id="result-averages"></div>
+  </div>
+</div>
+
+<!-- RECENT UPLOADS LOG -->
+<div class="card">
+  <h2>📋 Upload History</h2>
+  <div class="upload-log" id="upload-log">
+    <div style="font-size:13px;color:#555;text-align:center;padding:20px 0;">No uploads yet this session</div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+var parsedData = { properties: [], prices: [], averages: [] };
+var SUPABASE_URL = '';
+var SUPABASE_KEY = '';
+var uploadLog = [];
+
+// ── TABLE NAMES ──
+var TABLE_MAP = {
+  properties: 'properties',
+  prices: 'price_records',
+  averages: 'market_averages'
+};
+
+// ── TEMPLATES ──
+var TEMPLATES = {
+  properties: [
+    ['country','city','submarket','asset_class','listing_type','property_name','size_sqm','source_url','source_name'],
+    ['Nigeria','Lagos','Victoria Island','Office','For Rent','Lagos Business Tower',1200,'https://example.com','PropertyPro'],
+    ['Kenya','Nairobi','Westlands','Retail','For Sale','Westlands Mall Unit',450,'https://example.com','BuyRentKenya'],
+    ['South Africa','Cape Town','Sea Point','Residential','For Rent','Sea Point Apartments',85,'','Private']
+  ],
+  prices: [
+    ['country','city','submarket','asset_class','property_name','asking_rent_sqm','sale_price','sale_price_sqm','date_recorded','quarter','year','currency','notes'],
+    ['Nigeria','Lagos','Victoria Island','Office','Lagos Business Tower',25,'','',  '2025-01-15','Q1 2025',2025,'USD',''],
+    ['Kenya','Nairobi','Westlands','Retail','Westlands Mall Unit','',850000,1888,'2025-01-20','Q1 2025',2025,'USD',''],
+    ['South Africa','Cape Town','Sea Point','Residential','Sea Point Apartments',18,'','','2025-02-01','Q1 2025',2025,'USD','']
+  ],
+  averages: [
+    ['country','city','submarket','asset_class','quarter','year','avg_rent_sqm','avg_sale_price_sqm','vacancy_rate','total_listings','currency'],
+    ['Nigeria','Lagos','Victoria Island','Office','Q1 2025',2025,22,1800,12.5,45,'USD'],
+    ['Kenya','Nairobi','Westlands','Retail','Q1 2025',2025,18,1500,8.2,30,'USD'],
+    ['South Africa','Cape Town','','Residential','Q1 2025',2025,20,2200,5.5,120,'USD']
+  ]
+};
+
+// ── CONFIG ──
+function saveConfig() {
+  SUPABASE_URL = document.getElementById('supabase-url').value.trim().replace(/\/$/, '');
+  SUPABASE_KEY = document.getElementById('supabase-key').value.trim();
+  if (!SUPABASE_URL || !SUPABASE_KEY) { alert('Please enter both URL and Key'); return; }
+  localStorage.setItem('iw_url', SUPABASE_URL);
+  localStorage.setItem('iw_key', SUPABASE_KEY);
+  var s = document.getElementById('config-status');
+  s.style.display = 'block';
+  setTimeout(() => s.style.display = 'none', 3000);
+}
+
+// load saved config
+window.onload = function() {
+  var u = localStorage.getItem('iw_url');
+  var k = localStorage.getItem('iw_key');
+  if (u) { document.getElementById('supabase-url').value = u; SUPABASE_URL = u; }
+  if (k) { document.getElementById('supabase-key').value = k; SUPABASE_KEY = k; }
+};
+
+// ── TABS ──
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.upload-section').forEach(s => s.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── DRAG & DROP ──
+function dragOver(e, name) { e.preventDefault(); document.getElementById('dz-' + name).classList.add('drag'); }
+function dragLeave(e, name) { document.getElementById('dz-' + name).classList.remove('drag'); }
+function dropFile(e, name) {
+  e.preventDefault();
+  dragLeave(e, name);
+  var file = e.dataTransfer.files[0];
+  if (file) processFile(file, name);
+}
+
+// ── FILE HANDLING ──
+function handleFile(e, name) {
+  var file = e.target.files[0];
+  if (file) processFile(file, name);
+}
+
+function processFile(file, name) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true });
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var data = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      parsedData[name] = data;
+      showPreview(name, data);
+    } catch(err) {
+      alert('Error reading file: ' + err.message);
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+function showPreview(name, data) {
+  if (!data.length) { alert('No data found in file'); return; }
+  var cols = Object.keys(data[0]);
+  var previewRows = data.slice(0, 5);
+  var html = '<table><thead><tr>' + cols.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>';
+  previewRows.forEach(function(row) {
+    html += '<tr>' + cols.map(c => '<td>' + (row[c] || '') + '</td>').join('') + '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('preview-table-' + name).innerHTML = html;
+  document.getElementById('preview-count-' + name).textContent = '(' + data.length + ' rows — showing first 5)';
+  document.getElementById('preview-' + name).style.display = 'block';
+  document.getElementById('btn-' + name).style.display = 'block';
+  document.getElementById('dz-' + name).innerHTML = '<div class="dz-icon">✅</div><h3>' + data.length + ' rows ready to upload</h3><p>' + name + '.xlsx loaded</p>';
+}
+
+// ── UPLOAD ──
+async function uploadData(name) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    alert('Please save your Supabase connection first!');
+    return;
+  }
+  var data = parsedData[name];
+  if (!data.length) { alert('No data to upload'); return; }
+
+  var btn = document.getElementById('btn-' + name);
+  var progressWrap = document.getElementById('progress-' + name);
+  var pbar = document.getElementById('pbar-' + name);
+  var ptext = document.getElementById('ptext-' + name);
+  var resultBox = document.getElementById('result-' + name);
+
+  btn.disabled = true;
+  progressWrap.style.display = 'block';
+  resultBox.style.display = 'none';
+
+  var tableName = TABLE_MAP[name];
+  var batchSize = 50;
+  var total = data.length;
+  var uploaded = 0;
+  var errors = [];
+
+  for (var i = 0; i < total; i += batchSize) {
+    var batch = data.slice(i, i + batchSize);
+
+    // Clean data
+    batch = batch.map(function(row) {
+      var clean = {};
+      Object.keys(row).forEach(function(k) {
+        var val = row[k];
+        if (val === '' || val === null || val === undefined) return;
+        // convert date objects
+        if (val instanceof Date) {
+          clean[k] = val.toISOString().split('T')[0];
+        } else {
+          clean[k] = val;
+        }
+      });
+      return clean;
+    });
+
+    try {
+      var response = await fetch(SUPABASE_URL + '/rest/v1/' + tableName, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(batch)
+      });
+
+      if (!response.ok) {
+        var err = await response.json();
+        errors.push('Rows ' + (i+1) + '-' + Math.min(i+batchSize, total) + ': ' + (err.message || JSON.stringify(err)));
+      } else {
+        uploaded += batch.length;
+      }
+    } catch(e) {
+      errors.push('Network error on rows ' + (i+1) + '-' + Math.min(i+batchSize, total));
+    }
+
+    // update progress
+    var pct = Math.round(((i + batchSize) / total) * 100);
+    pbar.style.width = Math.min(pct, 100) + '%';
+    ptext.textContent = 'Uploading... ' + Math.min(uploaded, total) + ' / ' + total + ' rows';
+  }
+
+  btn.disabled = false;
+  progressWrap.style.display = 'none';
+
+  if (errors.length === 0) {
+    resultBox.className = 'result-box success';
+    resultBox.innerHTML = '<h4>✅ Upload complete!</h4>' + uploaded + ' rows successfully added to ' + tableName + '.';
+    addLog(name, uploaded, 'success');
+  } else {
+    resultBox.className = 'result-box error';
+    resultBox.innerHTML = '<h4>⚠️ Upload finished with errors</h4>' + uploaded + ' rows uploaded. ' + errors.length + ' batches failed:<ul>' + errors.map(e => '<li>' + e + '</li>').join('') + '</ul>';
+    addLog(name, uploaded, 'error');
+  }
+  resultBox.style.display = 'block';
+}
+
+// ── LOG ──
+function addLog(type, count, status) {
+  var log = document.getElementById('upload-log');
+  var time = new Date().toLocaleTimeString();
+  var label = { properties: 'Properties', prices: 'Price Records', averages: 'Market Averages' }[type];
+  var icon = status === 'success' ? '✅' : '⚠️';
+  var html = '<div class="log-row"><div><span class="log-badge ' + type + '">' + label + '</span> &nbsp;' + icon + ' ' + count + ' rows uploaded</div><span class="log-time">' + time + '</span></div>';
+  if (log.innerHTML.includes('No uploads')) log.innerHTML = '';
+  log.innerHTML = html + log.innerHTML;
+}
+
+// ── DOWNLOAD TEMPLATE ──
+function downloadTemplate(name) {
+  var data = TEMPLATES[name];
+  var ws = XLSX.utils.aoa_to_sheet(data);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Template');
+  XLSX.writeFile(wb, 'ironwood_' + name + '_template.xlsx');
+}
+</script>
+</body>
+</html>
