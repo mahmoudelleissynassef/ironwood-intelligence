@@ -346,10 +346,10 @@ button{cursor:pointer;font-family:var(--sans);}
     <div class="country-opt active" id="copt-Morocco" onclick="switchCountry('Morocco')">
       <span style="font-size:15px;">🇲🇦</span><span>Morocco</span><span style="margin-left:auto;font-size:10px;color:#6b7280;">62k listings</span>
     </div>
-    <div style="padding:8px 12px;font-size:10px;font-weight:700;color:#9c9994;letter-spacing:.08em;border-top:1px solid #e8e6e1;border-bottom:1px solid #e8e6e1;margin-top:2px;">COMING SOON</div>
-    <div class="country-opt disabled" style="opacity:.4;cursor:not-allowed;">
-      <span style="font-size:15px;">🇳🇬</span><span>Nigeria</span><span style="margin-left:auto;font-size:10px;color:#9c9994;">Pending</span>
+    <div class="country-opt" id="copt-Nigeria" onclick="switchCountry('Nigeria')">
+      <span style="font-size:15px;">🇳🇬</span><span>Nigeria</span><span style="margin-left:auto;font-size:10px;color:#6b7280;">28k listings</span>
     </div>
+    <div style="padding:8px 12px;font-size:10px;font-weight:700;color:#9c9994;letter-spacing:.08em;border-top:1px solid #e8e6e1;border-bottom:1px solid #e8e6e1;margin-top:2px;">COMING SOON</div>
     <div class="country-opt disabled" style="opacity:.4;cursor:not-allowed;">
       <span style="font-size:15px;">🇸🇳</span><span>Senegal</span><span style="margin-left:auto;font-size:10px;color:#9c9994;">Pending</span>
     </div>
@@ -675,7 +675,7 @@ button{cursor:pointer;font-family:var(--sans);}
           <thead><tr><th>Country</th><th>Region</th><th>Status</th><th>Cities Covered</th><th>Listing Records</th><th>Asset Classes</th><th>Data Since</th></tr></thead>
           <tbody>
             <tr><td class="dt-city">🇲🇦 Morocco</td><td>North Africa</td><td><span class="sig sig-up">● Live</span></td><td class="mono">5</td><td class="mono">62,052</td><td class="mono">8</td><td class="mono dt-muted">2023</td></tr>
-            <tr><td class="dt-city">🇳🇬 Nigeria</td><td>West Africa</td><td><span class="sig sig-warn">◑ Expanding</span></td><td class="mono">2</td><td class="mono">—</td><td class="mono">—</td><td class="mono dt-muted">2026 Q3</td></tr>
+            <tr><td class="dt-city">🇳🇬 Nigeria</td><td>West Africa</td><td><span class="sig sig-pos">● Live</span></td><td class="mono">5</td><td class="mono">28,400+</td><td class="mono">₦ 1,840,000</td><td class="mono">Mar 2026</td></tr>
             <tr><td class="dt-city">🇸🇳 Senegal</td><td>West Africa</td><td><span class="sig sig-neutral">○ Planned</span></td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono dt-muted">2026 Q4</td></tr>
             <tr><td class="dt-city">🇰🇪 Kenya</td><td>East Africa</td><td><span class="sig sig-neutral">○ Planned</span></td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono dt-muted">2027</td></tr>
             <tr><td class="dt-city">🇬🇭 Ghana</td><td>West Africa</td><td><span class="sig sig-neutral">○ Planned</span></td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono dt-muted">2027</td></tr>
@@ -1619,20 +1619,15 @@ let _map=null,_chartsBuilt=false;
 
 // ── COUNTRY CONFIG ──
 const COUNTRIES={
-  Morocco:{flag:'🇲🇦',label:'Morocco',cities:['Casablanca','Marrakech','Rabat','Tangiers','Fez'],listingCount:'62,052',
-    kpis:{medianPrice:'DH 12,400/m²',priceGrowth:'+6.1%',activeListings:'12,806',yieldEst:'5.8%',pipeline:'~340k m²',liquidityScore:'6.4/10'},
-    currency:'DH',region:'North Africa',updated:'March 2026',
-    cityData:{
-      Casablanca:{price:18420,growth:6.2,listings:4120,yield:5.1,color:'#0d0d0d'},
-      Marrakech:{price:17800,growth:8.4,listings:2847,yield:6.4,color:'#b8933f'},
-      Rabat:{price:14200,growth:2.6,listings:2340,yield:4.8,color:'#1d4ed8'},
-      Tangiers:{price:11800,growth:1.3,listings:1890,yield:5.2,color:'#7c3aed'},
-      Fez:{price:9200,growth:-2.1,listings:1609,yield:4.3,color:'#dc2626'}
-    }
+  Morocco:{flag:'🇲🇦',label:'Morocco',cities:['Casablanca','Marrakech','Rabat','Tangiers','Fez'],listingCount:'—',
+    kpis:{medianPrice:'Loading…',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
+    currency:'MAD',region:'North Africa',updated:'Live',
+    cityData:{}
   },
-  Nigeria:{flag:'🇳🇬',label:'Nigeria',cities:['Lagos','Abuja','Port Harcourt'],listingCount:'Pending',
-    kpis:{medianPrice:'—',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
-    currency:'₦',region:'West Africa',updated:'Coming Soon',cityData:{}
+  Nigeria:{flag:'🇳🇬',label:'Nigeria',cities:['Lagos','Abuja','Port Harcourt','Kano','Ibadan'],listingCount:'—',
+    kpis:{medianPrice:'Loading…',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
+    currency:'NGN',region:'West Africa',updated:'Live',
+    cityData:{}
   },
   Senegal:{flag:'🇸🇳',label:'Senegal',cities:['Dakar'],listingCount:'Pending',
     kpis:{medianPrice:'—',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
@@ -1668,6 +1663,8 @@ function switchCountry(name){
   document.getElementById('country-dropdown').style.display='none';
   // Update all page content
   updateAllPagesForCountry(c);
+  // Load live KPIs from Supabase (overwrites hardcoded values)
+  loadLiveKPIs(name);
   // Rebuild charts for new country
   _chartsBuilt=false;
   buildCharts();
@@ -1712,6 +1709,129 @@ function updateAllPagesForCountry(c){
   if(liveEl) liveEl.innerHTML='<div class="live-dot"></div>'+name+' · Updated '+c.updated;
 }
 function safeSet(id,val){var el=document.getElementById(id);if(el)el.textContent=val;}
+
+// ── LIVE KPI LOADER — calculates everything from Supabase properties table ──
+async function loadLiveKPIs(country){
+  if(!sb) return;
+  var c=COUNTRIES[country];
+  if(!c) return;
+
+  // Show loading state
+  safeSet('kpi-median-price','Loading…');
+  safeSet('kpi-active-listings','…');
+  safeSet('kpi-price-growth','…');
+
+  try {
+    // Fetch all rows for this country (price_per_sqm + city)
+    // We page through in batches of 1000 to get everything
+    var allRows=[], from=0, bsz=1000;
+    while(true){
+      var {data,error}=await sb.from('properties')
+        .select('city,price_per_sqm,transaction_type,scraped_at')
+        .eq('country',country)
+        .not('price_per_sqm','is',null)
+        .gt('price_per_sqm',0)
+        .range(from, from+bsz-1);
+      if(error||!data||!data.length) break;
+      allRows=allRows.concat(data);
+      from+=bsz;
+      if(data.length<bsz) break;
+    }
+
+    if(!allRows.length){
+      safeSet('kpi-median-price','No data');
+      safeSet('kpi-active-listings','0');
+      return;
+    }
+
+    // ── Median price/m² (country-wide) ──
+    var prices=allRows.map(r=>r.price_per_sqm).filter(v=>v>0).sort((a,b)=>a-b);
+    var mid=Math.floor(prices.length/2);
+    var medianPsm=prices.length%2===0?(prices[mid-1]+prices[mid])/2:prices[mid];
+    medianPsm=Math.round(medianPsm);
+
+    // ── Total listing count ──
+    var totalCount=allRows.length;
+
+    // ── City breakdown — median price + count per city ──
+    var cityMap={};
+    var CITY_COLORS=['#0d0d0d','#b8933f','#1d4ed8','#7c3aed','#dc2626','#059669','#d97706'];
+    allRows.forEach(function(r){
+      var city=(r.city||'Unknown').trim();
+      if(!cityMap[city]) cityMap[city]={prices:[],count:0};
+      cityMap[city].prices.push(r.price_per_sqm);
+      cityMap[city].count++;
+    });
+
+    // Build cityData sorted by median price desc
+    var cityArr=Object.entries(cityMap)
+      .filter(([k])=>k&&k!=='Unknown')
+      .map(function([name,d],i){
+        var sp=d.prices.sort((a,b)=>a-b);
+        var cm=Math.floor(sp.length/2);
+        var med=sp.length%2===0?(sp[cm-1]+sp[cm])/2:sp[cm];
+        return {name,price:Math.round(med),listings:d.count,color:CITY_COLORS[i%CITY_COLORS.length]};
+      })
+      .sort((a,b)=>b.price-a.price);
+
+    // Rebuild cityData on COUNTRIES object
+    var newCityData={};
+    cityArr.forEach(function(d){
+      newCityData[d.name]={price:d.price,growth:0,listings:d.listings,yield:0,color:d.color};
+    });
+    c.cityData=newCityData;
+    c.listingCount=totalCount.toLocaleString();
+
+    // ── Format median price with currency symbol ──
+    var sym=c.currency==='MAD'?'MAD ':c.currency==='NGN'?'₦ ':c.currency+' ';
+    var fmtMedian=sym+medianPsm.toLocaleString()+'/m²';
+
+    // ── Update KPI cards ──
+    safeSet('kpi-median-price', fmtMedian);
+    safeSet('kpi-active-listings', totalCount.toLocaleString());
+    safeSet('kpi-price-growth', '— (live data)');
+    safeSet('kpi-yield', '—');
+    safeSet('kpi-pipeline', '—');
+    safeSet('kpi-liquidity', '—');
+
+    // Update updated timestamp
+    var now=new Date();
+    var nowStr=now.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    c.updated=nowStr;
+
+    // Update subtitle
+    var mtSub=document.getElementById('mt-subtitle');
+    if(mtSub) mtSub.textContent=country+' real estate intelligence — calculated from '+totalCount.toLocaleString()+' live listings. Updated '+nowStr+'.';
+
+    // Update live indicator
+    var liveEl=document.querySelector('.sb-live');
+    if(liveEl) liveEl.innerHTML='<div class="live-dot"></div>'+country+' · '+totalCount.toLocaleString()+' listings · '+nowStr;
+
+    // Rebuild city rankings table
+    var cityBody=document.getElementById('city-rank-body');
+    if(cityBody && cityArr.length){
+      cityBody.innerHTML=cityArr.map(function(d,i){
+        return '<tr>'
+          +'<td class="dt-rank">'+String(i+1).padStart(2,'0')+'</td>'
+          +'<td class="dt-city">'+d.name+'</td>'
+          +'<td class="mono">'+d.price.toLocaleString()+'</td>'
+          +'<td class="chg">—</td>'
+          +'<td class="mono">'+d.listings.toLocaleString()+'</td>'
+          +'<td class="mono">—</td>'
+          +'</tr>';
+      }).join('');
+    }
+
+    // Rebuild city tabs and charts with live data
+    updateCitiesPage(c);
+    _chartsBuilt=false;
+    buildCharts();
+
+  } catch(err){
+    console.error('loadLiveKPIs error:', err);
+    safeSet('kpi-median-price','Error');
+  }
+}
 function updateCitiesPage(c){
   var wrap=document.getElementById('cities-list-wrap');
   if(!wrap)return;
@@ -1761,6 +1881,7 @@ async function boot(){
     document.getElementById('sb-un').textContent=name;
     loadProgress(50,'Loading market data...');
     await loadListings();
+    await loadLiveKPIs(ACTIVE_COUNTRY);
     loadProgress(90,'Ready.');
     clearTimeout(safetyTimer);
     setTimeout(hideLoader,300);
