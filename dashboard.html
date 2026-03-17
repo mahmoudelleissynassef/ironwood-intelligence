@@ -420,7 +420,7 @@ button{cursor:pointer;font-family:var(--sans);}
 
 <!-- ════ MAIN ════ -->
 <div class="main">
-  <div class="demo-banner">⚠ DEMO DATA — NOT REAL · All figures are illustrative placeholders. Do not use for investment decisions.</div>
+  <!-- Demo banner removed: data is now live from Supabase -->
 
   <!-- TOPBAR -->
   <div class="topbar">
@@ -646,6 +646,7 @@ button{cursor:pointer;font-family:var(--sans);}
     <div class="pg" id="pg-market-signals">
       <div class="eyebrow">Overview</div>
       <div class="pg-title">Market Signals</div>
+<div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:4px;padding:9px 14px;margin-bottom:18px;font-size:12px;color:#92400e;font-weight:600;">⚠ Sample / Illustrative Data — This section shows representative data. Live updates coming soon.</div>
       <div class="pg-sub">Derived signal indicators for Morocco markets. Each signal references its source dataset. Signals are modelled outputs — not direct observations.</div>
       <div class="panel" style="margin-bottom:16px;">
         <div class="panel-hd"><div class="panel-title">Signal Registry</div><div class="panel-sub">Morocco · March 2026 · <span class="ds-tag ds-model">Modelled</span></div></div>
@@ -976,7 +977,8 @@ button{cursor:pointer;font-family:var(--sans);}
     ══════════════════════════════════════════════ -->
     <div class="pg" id="pg-transactions">
       <div class="eyebrow">Data</div>
-      <div class="pg-title">Transactions</div>
+      <div class="pg-title">Asking Price Evidence</div>
+    <div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:4px;padding:9px 14px;margin-bottom:18px;font-size:12px;color:#1d4ed8;font-weight:600;">ℹ Asking Price Evidence — These are listed asking prices, not confirmed transaction prices. Use as indicative market benchmarks only.</div>
       <div class="pg-sub">Observed transaction evidence. Sourced from land registries, corporate announcements, broker reports, and press. Each record carries a confidence score.</div>
       <div style="padding:10px 14px;background:var(--green-bg);border:1px solid #bbf7d0;border-radius:2px;margin-bottom:16px;font-size:12px;color:var(--green);">
         <strong>Data Layer:</strong> Raw Data Layer · Observed External Data · Read-only · Append-only · Source: land registries · corporate announcements · broker reports
@@ -1010,6 +1012,7 @@ button{cursor:pointer;font-family:var(--sans);}
     <div class="pg" id="pg-pipeline">
       <div class="eyebrow">Data</div>
       <div class="pg-title">Development Pipeline</div>
+    <div style="background:#fef2f2;border:1px solid #f87171;border-radius:4px;padding:9px 14px;margin-bottom:18px;font-size:12px;color:#991b1b;font-weight:600;">⚠ Illustrative Data — Development pipeline data is not yet sourced live. This represents indicative market activity.</div>
       <div class="pg-sub">Active, approved, and proposed development projects. Sources include developer announcements, planning authorities, and construction reports.</div>
       <div style="padding:10px 14px;background:#fff7ed;border:1px solid #fed7aa;border-radius:2px;margin-bottom:16px;font-size:12px;color:#c2410c;">
         <strong>Data Layer:</strong> Raw Data Layer · Pipeline data · Sources: developer announcements · planning authorities · municipal permits · press
@@ -1191,6 +1194,7 @@ button{cursor:pointer;font-family:var(--sans);}
     <div class="pg" id="pg-investment-radar">
       <div class="eyebrow">Analytics</div>
       <div class="pg-title">Investment Radar</div>
+    <div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:4px;padding:9px 14px;margin-bottom:18px;font-size:12px;color:#92400e;font-weight:600;">⚠ Sample / Illustrative Data — This section shows representative data. Live updates coming soon.</div>
       <div class="pg-sub">Composite investment opportunity scoring. Derived from 6 weighted components. <span class="ds-tag ds-model">Modelled indicator</span> — not investment advice.</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px;">
         <div style="background:var(--surface);padding:22px;">
@@ -1618,23 +1622,101 @@ let sb=null;
 let _map=null,_chartsBuilt=false;
 
 // ── COUNTRY CONFIG ──
-const COUNTRIES={
-  Morocco:{flag:'🇲🇦',label:'Morocco',cities:['Casablanca','Marrakech','Rabat','Tangiers','Fez'],listingCount:'—',
-    kpis:{medianPrice:'Loading…',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
-    currency:'MAD',region:'North Africa',updated:'Live',
-    cityData:{}
-  },
-  Nigeria:{flag:'🇳🇬',label:'Nigeria',cities:['Lagos','Abuja','Port Harcourt','Kano','Ibadan'],listingCount:'—',
-    kpis:{medianPrice:'Loading…',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
-    currency:'NGN',region:'West Africa',updated:'Live',
-    cityData:{}
-  },
-  Senegal:{flag:'🇸🇳',label:'Senegal',cities:['Dakar'],listingCount:'Pending',
-    kpis:{medianPrice:'—',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
-    currency:'CFA',region:'West Africa',updated:'Coming Soon',cityData:{}
+// Full African country metadata — used for any country that appears in Supabase
+const COUNTRY_META={
+  Morocco:{flag:'🇲🇦',currency:'MAD',region:'North Africa'},
+  Nigeria:{flag:'🇳🇬',currency:'NGN',region:'West Africa'},
+  Senegal:{flag:'🇸🇳',currency:'CFA',region:'West Africa'},
+  Kenya:{flag:'🇰🇪',currency:'KES',region:'East Africa'},
+  Ghana:{flag:'🇬🇭',currency:'GHS',region:'West Africa'},
+  Egypt:{flag:'🇪🇬',currency:'EGP',region:'North Africa'},
+  'South Africa':{flag:'🇿🇦',currency:'ZAR',region:'Southern Africa'},
+  Ethiopia:{flag:'🇪🇹',currency:'ETB',region:'East Africa'},
+  Tanzania:{flag:'🇹🇿',currency:'TZS',region:'East Africa'},
+  Uganda:{flag:'🇺🇬',currency:'UGX',region:'East Africa'},
+  Rwanda:{flag:'🇷🇼',currency:'RWF',region:'East Africa'},
+  Côte:{flag:'🇨🇮',currency:'CFA',region:'West Africa'},
+  Cameroon:{flag:'🇨🇲',currency:'CFA',region:'Central Africa'},
+  Angola:{flag:'🇦🇴',currency:'AOA',region:'Southern Africa'},
+  Mozambique:{flag:'🇲🇿',currency:'MZN',region:'Southern Africa'},
+  Zambia:{flag:'🇿🇲',currency:'ZMW',region:'Southern Africa'},
+  Zimbabwe:{flag:'🇿🇼',currency:'ZWL',region:'Southern Africa'},
+  Tunisia:{flag:'🇹🇳',currency:'TND',region:'North Africa'},
+  Algeria:{flag:'🇩🇿',currency:'DZD',region:'North Africa'},
+  Libya:{flag:'🇱🇾',currency:'LYD',region:'North Africa'},
+  Sudan:{flag:'🇸🇩',currency:'SDG',region:'East Africa'},
+  'Ivory Coast':{flag:'🇨🇮',currency:'CFA',region:'West Africa'},
+  Botswana:{flag:'🇧🇼',currency:'BWP',region:'Southern Africa'},
+  Namibia:{flag:'🇳🇦',currency:'NAD',region:'Southern Africa'},
+};
+function getCountryMeta(name){
+  // Try exact match, then partial match for compound names
+  if(COUNTRY_META[name]) return COUNTRY_META[name];
+  for(var k of Object.keys(COUNTRY_META)){
+    if(name.toLowerCase().includes(k.toLowerCase())||k.toLowerCase().includes(name.toLowerCase()))
+      return COUNTRY_META[k];
   }
+  return {flag:'🌍',currency:'USD',region:'Africa'};
+}
+function makeCountryEntry(name){
+  var m=getCountryMeta(name);
+  return {flag:m.flag,label:name,cities:[],listingCount:'—',
+    kpis:{medianPrice:'Loading…',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
+    currency:m.currency,region:m.region,updated:'Live',cityData:{}
+  };
+}
+// COUNTRIES is built dynamically — starts with known markets, extended from DB on boot
+var COUNTRIES={
+  Morocco:makeCountryEntry('Morocco'),
+  Nigeria:makeCountryEntry('Nigeria'),
 };
 let ACTIVE_COUNTRY='Morocco';
+
+// ── DYNAMIC COUNTRY DISCOVERY ──
+// Called on boot — fetches distinct countries from Supabase, rebuilds dropdown
+async function discoverCountries(){
+  if(!sb) return;
+  try{
+    // Get all distinct countries with their listing counts
+    const {data:cdata}=await sb.from('properties').select('country');
+    if(!cdata) return;
+    // Count by country
+    var counts={};
+    cdata.forEach(r=>{ if(r.country){ counts[r.country]=(counts[r.country]||0)+1; } });
+    var liveCountries=Object.keys(counts).filter(c=>counts[c]>0).sort();
+    // Extend COUNTRIES map
+    liveCountries.forEach(name=>{
+      if(!COUNTRIES[name]) COUNTRIES[name]=makeCountryEntry(name);
+      COUNTRIES[name].listingCount=counts[name].toLocaleString();
+    });
+    // Set first active country if current is missing
+    if(!COUNTRIES[ACTIVE_COUNTRY]&&liveCountries.length>0) ACTIVE_COUNTRY=liveCountries[0];
+    // Rebuild the dropdown UI
+    rebuildCountryDropdown(liveCountries, counts);
+  }catch(e){ console.warn('discoverCountries:', e); }
+}
+
+function rebuildCountryDropdown(liveCountries, counts){
+  var dd=document.getElementById('country-dropdown');
+  if(!dd) return;
+  var html='<div style="padding:8px 12px;font-size:10px;font-weight:700;color:#9c9994;letter-spacing:.08em;border-bottom:1px solid #e8e6e1;">ACTIVE COVERAGE</div>';
+  liveCountries.forEach(name=>{
+    var m=getCountryMeta(name);
+    var n=counts[name]||0;
+    var nStr=n>1000?(Math.round(n/1000)+'k'):n;
+    var isActive=name===ACTIVE_COUNTRY?' active':'';
+    html+=`<div class="country-opt${isActive}" id="copt-${name.replace(/ /g,'_')}" onclick="switchCountry('${name}')">
+      <span style="font-size:15px;">${m.flag}</span><span>${name}</span><span style="margin-left:auto;font-size:10px;color:#6b7280;">${nStr} listings</span>
+    </div>`;
+  });
+  // Also update label for current country
+  var cur=COUNTRIES[ACTIVE_COUNTRY];
+  if(cur){
+    var lbl=document.getElementById('sb-mkt-label');
+    if(lbl) lbl.textContent=cur.flag+' '+cur.label;
+  }
+  dd.innerHTML=html;
+}
 
 function toggleCountryDropdown(){
   var dd=document.getElementById('country-dropdown');
@@ -1654,7 +1736,7 @@ function switchCountry(name){
   // ── Immediate UI updates (sync) ──
   document.getElementById('sb-mkt-label').textContent=c.flag+' '+c.label;
   document.querySelectorAll('.country-opt').forEach(el=>el.classList.remove('active'));
-  var activeOpt=document.getElementById('copt-'+name);
+  var activeOpt=document.getElementById('copt-'+name.replace(/ /g,'_'));
   if(activeOpt) activeOpt.classList.add('active');
   document.getElementById('country-dropdown').style.display='none';
 
@@ -1705,14 +1787,14 @@ function safeSet(id,val){var el=document.getElementById(id);if(el)el.textContent
 // Called on boot and on every country switch.
 async function loadLiveKPIs(country){
   if(!sb){ console.warn('loadLiveKPIs: no supabase client'); return; }
+  // Auto-create entry if country was just discovered
+  if(!COUNTRIES[country]) COUNTRIES[country]=makeCountryEntry(country);
   var c=COUNTRIES[country];
-  if(!c){ console.warn('loadLiveKPIs: unknown country', country); return; }
 
   // ── Currency helpers ──
   function sym(cur){
-    if(cur==='MAD') return 'MAD ';
-    if(cur==='NGN') return '₦';
-    return cur+' ';
+    var syms={'MAD':'MAD ','NGN':'₦','KES':'KSh ','GHS':'GH₵ ','EGP':'EGP ','ZAR':'R ','CFA':'CFA ','ETB':'Br ','TZS':'TZS ','TND':'TND ','DZD':'DZD '};
+    return syms[cur]||(cur+' ');
   }
   var S=sym(c.currency);
 
@@ -2225,7 +2307,9 @@ async function boot(){
     const initials=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
     document.getElementById('sb-av').textContent=initials;
     document.getElementById('sb-un').textContent=name;
-    loadProgress(50,'Loading market data...');
+    loadProgress(40,'Discovering markets...');
+    await discoverCountries();
+    loadProgress(60,'Loading market data...');
     await loadListings();
     await loadLiveKPIs(ACTIVE_COUNTRY);
     loadProgress(90,'Ready.');
