@@ -430,6 +430,181 @@ footer{background:var(--black);padding:64px 0 32px;}
 .footer-bottom-links{display:flex;gap:24px;}
 .footer-bottom-links a{font-size:12px;color:rgba(255,255,255,.2);transition:color .15s;}
 .footer-bottom-links a:hover{color:rgba(255,255,255,.55);}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE — MOBILE / TABLET
+   ═══════════════════════════════════════════ */
+
+/* ─── TABLET  ≤1024px ─────────────────────── */
+@media (max-width: 1024px) {
+  /* Stats grid: 2 columns */
+  .stats-grid { grid-template-columns: repeat(2,1fr); }
+
+  /* Markets grid: 2 columns */
+  .markets-grid { grid-template-columns: repeat(2,1fr); }
+
+  /* Plans / pricing: 2 columns */
+  .plans { grid-template-columns: repeat(2,1fr); }
+
+  /* Properties grid: 2 columns */
+  .pgrid { grid-template-columns: repeat(2,1fr); }
+
+  /* Why grid: 2 columns */
+  .why-grid { grid-template-columns: repeat(2,1fr); }
+}
+
+/* ─── MOBILE LANDSCAPE / LARGE PHONE  ≤768px ─ */
+@media (max-width: 768px) {
+  /* === NAV === */
+  .nav-inner { padding: 0 20px; }
+  .nav-links  { display: none; }
+  .nav-actions { display: none; }
+  .nav-hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+  .nav-hamburger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--white);
+    border-radius: 2px;
+  }
+
+  /* === HERO === */
+  .hero-content { padding: 60px 20px; }
+  .hero h1 { font-size: 40px; }
+  .hero-sub { font-size: 14px; }
+  .hero-stats {
+    flex-direction: column;
+    gap: 24px;
+  }
+  .hstat {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 20px;
+    border-right: none;
+    border-top: 1px solid rgba(255,255,255,.08);
+  }
+
+  /* === STRIP === */
+  .strip-inner { padding: 0 20px; overflow-x: auto; }
+
+  /* === STATS GRID === */
+  .stats-grid { grid-template-columns: 1fr; }
+  .scell { padding: 28px 24px; }
+
+  /* === SPLIT SECTIONS === */
+  .split-sec { padding: 60px 0; }
+  .split-inner {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    padding: 0 20px;
+  }
+  .split-inner.rev { direction: ltr; }
+  .split-img { height: 260px; }
+  .split-txt h2 { font-size: 28px; }
+
+  /* === MARKETS === */
+  .markets-sec { padding: 60px 0; }
+  .markets-inner { padding: 0 20px; }
+  .markets-hdr {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .markets-hdr-right { text-align: left; max-width: none; }
+  .markets-hdr-left h2 { font-size: 28px; }
+  .mcard { height: 200px; }
+
+  /* === SERVICES === */
+  .services-sec { padding: 60px 0; }
+  .services-inner { padding: 0 20px; }
+  .svc-grid { grid-template-columns: 1fr; }
+  .how-grid { grid-template-columns: 1fr; }
+  .sec-hdr h2 { font-size: 28px; }
+
+  /* === CTA === */
+  .cta-inner {
+    flex-direction: column;
+    padding: 0 20px;
+    gap: 30px;
+  }
+
+  /* === DATA SERVICES (inner pages) === */
+  .data-svc-grid { grid-template-columns: 1fr; }
+  .data-split-wrap {
+    grid-template-columns: 1fr;
+    padding: 0 20px;
+  }
+
+  /* === ANALYTICS === */
+  .analytics-wrap { grid-template-columns: 1fr; }
+  .a-bottom { grid-template-columns: 1fr; }
+
+  /* === PROPERTIES === */
+  .props-hdr {
+    padding: 28px 20px;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .pgrid {
+    grid-template-columns: repeat(2,1fr);
+    padding: 16px 20px;
+  }
+  .frow { flex-direction: column; }
+
+  /* === PLANS / PRICING === */
+  .plans { grid-template-columns: 1fr; max-width: 100%; }
+  .why-grid { grid-template-columns: repeat(2,1fr); }
+
+  /* === FOOTER === */
+  .footer-inner { padding: 0 20px; }
+  .footer-bottom { flex-direction: column; gap: 16px; text-align: center; }
+  .footer-bottom-links { flex-wrap: wrap; justify-content: center; }
+
+  /* === GENERAL h2 scale-down === */
+  h2 { font-size: 28px !important; }
+}
+
+/* ─── SMALL PHONE  ≤480px ─────────────────── */
+@media (max-width: 480px) {
+  /* === HERO === */
+  .hero h1 { font-size: 32px; }
+  .hero-btns { flex-direction: column; width: 100%; }
+  .hero-btns .btn,
+  .hero-btns a { width: 100%; text-align: center; }
+
+  /* === MARKETS === */
+  .markets-grid { grid-template-columns: 1fr; }
+
+  /* === PROPERTIES === */
+  .pgrid { grid-template-columns: 1fr; }
+
+  /* === PLANS / PRICING === */
+  .why-grid { grid-template-columns: 1fr; }
+
+  /* === CTA BUTTONS === */
+  .cta-btns { flex-direction: column; width: 100%; }
+  .cta-btns .btn,
+  .cta-btns a { width: 100%; text-align: center; }
+
+  /* === INNER HERO BUTTONS === */
+  .inner-hero-btns { flex-direction: column; width: 100%; }
+  .inner-hero-btns .btn,
+  .inner-hero-btns a { width: 100%; text-align: center; }
+
+  /* === GENERAL: full-width buttons === */
+  .btn { width: 100%; text-align: center; }
+}
 </style>
 </head>
 <body>
