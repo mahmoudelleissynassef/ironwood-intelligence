@@ -283,6 +283,92 @@ button{cursor:pointer;font-family:var(--sans);}
 /* ── RESPONSIVE ── */
 @media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr);}.signal-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:960px){.two-col,.three-col{grid-template-columns:1fr;}}
+
+/* ── MOBILE SIDEBAR TOGGLE ── */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:150;}
+.sidebar-overlay.open{display:block;}
+.mobile-nav-btn{display:none;background:none;border:none;cursor:pointer;padding:4px;flex-direction:column;gap:4px;}
+.mobile-nav-btn span{display:block;width:18px;height:2px;background:var(--ink3);}
+
+@media(max-width:960px){
+  /* Sidebar: off-canvas on mobile */
+  .sidebar{
+    position:fixed;left:-240px;top:0;bottom:0;z-index:200;
+    transition:left .25s ease;width:228px;overflow-y:auto;
+  }
+  .sidebar.open{left:0;}
+  .sidebar-overlay{display:none;}
+  .sidebar-overlay.open{display:block;}
+
+  /* Show mobile hamburger in topbar */
+  .mobile-nav-btn{display:flex;}
+
+  /* Main takes full width */
+  .app{display:block;}
+  .main{width:100%;min-width:0;}
+
+  /* Topbar: compress */
+  .topbar{padding:0 14px;gap:8px;flex-wrap:wrap;height:auto;min-height:44px;padding-top:8px;padding-bottom:8px;}
+  .tb-breadcrumb{font-size:11px;}
+  .tb-right{gap:8px;flex-wrap:wrap;}
+  .tb-conf{display:none;}
+  .tb-filter select{font-size:11px;padding:2px 4px;}
+  .tb-export{padding:4px 10px;font-size:11px;}
+
+  /* Content padding */
+  .pg{padding:16px 16px 32px;}
+
+  /* KPI grid: 3 columns then 2 */
+  .kpi-grid{grid-template-columns:repeat(3,1fr);}
+  .signal-grid{grid-template-columns:repeat(2,1fr);}
+  .two-col{grid-template-columns:1fr;}
+  .three-col{grid-template-columns:1fr;}
+
+  /* Tables: allow horizontal scroll */
+  .panel{overflow-x:auto;}
+  .dt{min-width:500px;}
+
+  /* Evidence panel: full screen on mobile */
+  #evidence-panel{width:100%;left:0;right:0;}
+
+  /* Score ring grids */
+  .signal-grid{grid-template-columns:repeat(2,1fr);}
+
+  /* Page titles */
+  .pg-title{font-size:22px;}
+
+  /* Demo banner */
+  .demo-banner{font-size:10px;padding:6px 12px;}
+}
+
+@media(max-width:600px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .signal-grid{grid-template-columns:1fr;}
+  .topbar{padding:8px 12px;}
+  .tb-filter{display:none;}
+  .tb-export{display:none;}
+  .pg{padding:12px 12px 24px;}
+  .pg-title{font-size:20px;}
+  .kpi{padding:12px 14px;}
+  .kpi-val{font-size:18px;}
+
+  /* City tabs: scroll horizontally */
+  #city-tabs-bar{overflow-x:auto;flex-wrap:nowrap;}
+  #city-tabs-bar button{flex-shrink:0;font-size:11px;padding:8px 12px;}
+
+  /* Panel headers: stack */
+  .panel-hd{flex-direction:column;align-items:flex-start;gap:8px;}
+  .panel-actions{flex-wrap:wrap;}
+
+  /* Export rows */
+  .export-row{flex-wrap:wrap;gap:6px;}
+  .export-row span{display:none;}
+
+  /* Three-col investment radar: single col */
+  .pg #pg-investment-radar > div[style*="grid-template-columns:repeat(3"]{
+    grid-template-columns:1fr!important;
+  }
+}
 </style>
 </head>
 <body>
@@ -332,6 +418,7 @@ button{cursor:pointer;font-family:var(--sans);}
 <div class="app">
 
 <!-- ════ SIDEBAR ════ -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 <aside class="sidebar">
   <div class="sb-head">
     <div class="sb-wordmark">Ironwood <em>Intelligence</em></div>
@@ -424,6 +511,9 @@ button{cursor:pointer;font-family:var(--sans);}
 
   <!-- TOPBAR -->
   <div class="topbar">
+    <button class="mobile-nav-btn" onclick="toggleSidebar()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
     <div class="tb-left">
       <div class="tb-breadcrumb" id="tb-bc">Overview <span>/ Market Terminal</span></div>
     </div>
@@ -2641,6 +2731,15 @@ function filterDistricts(btn,cityId){
 }
 
 window.addEventListener('load', boot);
+
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
 </script>
 </body>
 </html>
