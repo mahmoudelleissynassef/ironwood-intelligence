@@ -1,6 +1,13 @@
 {
   "rewrites": [
-    { "source": "/dashboard", "destination": "/dashboard.html" },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "admin.ironwoodintelligence.com" }],
+      "destination": "/admin/index.html"
+    },
+    { "source": "/admin",    "destination": "/admin/index.html" },
+    { "source": "/admin/",   "destination": "/admin/index.html" },
+    { "source": "/dashboard",  "destination": "/dashboard.html" },
     { "source": "/dashboard/", "destination": "/dashboard.html" }
   ]
 }
