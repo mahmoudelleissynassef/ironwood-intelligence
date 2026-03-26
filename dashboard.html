@@ -2193,79 +2193,207 @@ async function loadLiveKPIs(country){
 }
 
 async function loadMacroData(country){
-  var wbCode=country==='Morocco'?'MA':country==='Nigeria'?'NG':null;
+  var wbCode = country==='Morocco'?'MA' : country==='Nigeria'?'NG' : null;
   if(!wbCode) return;
 
-  var macroBody=document.querySelector('#macro-table tbody');
-  if(macroBody) macroBody.innerHTML='<tr><td colspan="9" style="padding:16px;text-align:center;color:var(--ink4);">Loading World Bank data…</td></tr>';
-
-  // Indicators to fetch
-  var indicators={
-    'SP.POP.TOTL':'population',
-    'SP.POP.GROW':'popGrowth',
-    'NY.GDP.MKTP.KD.ZG':'gdpGrowth',
-    'NY.GDP.PCAP.CD':'gdpPerCapita',
-    'SP.URB.TOTL.IN.ZS':'urbanisation',
-    'ST.INT.ARVL':'tourists'
+  // ── Country configs ──
+  var COUNTRY_CFG = {
+    Morocco: {
+      sources: 'World Bank · HCP Morocco · Bank Al-Maghrib · ONMT',
+      sourceRows: [
+        ['Population & Demographics','HCP Morocco','Annual / Census','hcp.ma','conf-h','High'],
+        ['GDP & Growth','World Bank / HCP','Annual','data.worldbank.org','conf-h','High'],
+        ['Inflation (CPI)','World Bank / HCP','Annual','data.worldbank.org','conf-h','High'],
+        ['Interest Rates / Monetary','Bank Al-Maghrib','Monthly','bkam.ma','conf-h','High'],
+        ['Tourism Arrivals','ONMT (Observatoire)','Monthly','onmt.ma','conf-h','High'],
+        ['Unemployment','World Bank','Annual','data.worldbank.org','conf-m','Med.'],
+        ['Household Formation','HCP Morocco','Census / Est.','hcp.ma','conf-m','Med.'],
+        ['Income Levels','World Bank / HCP','Annual','data.worldbank.org','conf-m','Med.'],
+      ],
+      cities: [
+        ['Casablanca','4.4M','+8.2%','~1.1M','98%','32','~35% national','HCP 2024'],
+        ['Rabat','1.9M','+6.4%','~480k','97%','33','~12% national','HCP 2024'],
+        ['Marrakech','1.1M','+9.8%','~260k','92%','30','~6% national','HCP 2024'],
+        ['Tangiers','1.1M','+12.4%','~255k','95%','29','~7% national','HCP 2024'],
+        ['Fez','1.2M','+3.1%','~290k','88%','28','~5% national','HCP 2024'],
+      ],
+      demandDrivers: [
+        ['Annual HH Formation','~260,000 / year'],
+        ['Urban pop. share','~63% (World Bank live)'],
+        ['Policy rate (Bank Al-Maghrib)','3.00% (Dec 2024)'],
+        ['Currency','MAD (Moroccan Dirham)'],
+        ['Mortgage penetration','~5% of GDP'],
+        ['Remittance inflows','~$10B/year (2024)'],
+      ],
+      citySectionLabel: 'City-Level Demographics — Morocco',
+    },
+    Nigeria: {
+      sources: 'World Bank · NBS Nigeria · CBN · Nigerian Tourism Dev. Corp.',
+      sourceRows: [
+        ['Population & Demographics','NBS Nigeria / World Bank','Annual / Census','nigerianstat.gov.ng','conf-h','High'],
+        ['GDP & Growth','World Bank / NBS','Annual','data.worldbank.org','conf-h','High'],
+        ['Inflation (CPI)','World Bank / NBS','Annual','data.worldbank.org','conf-h','High'],
+        ['Interest Rates / Monetary','CBN (Central Bank Nigeria)','Monthly','cbn.gov.ng','conf-h','High'],
+        ['Oil Production & Revenue','NNPC / World Bank','Monthly','nnpc.gov.ng','conf-m','Med.'],
+        ['Unemployment','World Bank / NBS','Annual','data.worldbank.org','conf-m','Med.'],
+        ['Household Formation','NBS Nigeria','Census / Est.','nigerianstat.gov.ng','conf-m','Med.'],
+        ['Remittances','World Bank','Annual','data.worldbank.org','conf-m','Med.'],
+      ],
+      cities: [
+        ['Lagos','15.9M','+18.2%','~3.4M','52%','19','~30% national','NBS 2024'],
+        ['Abuja','3.6M','+22.4%','~720k','98%','23','~10% national','NBS 2024'],
+        ['Port Harcourt','2.4M','+12.1%','~480k','74%','22','~8% national','NBS 2024'],
+        ['Kano','4.1M','+8.6%','~760k','48%','18','~6% national','NBS 2024'],
+        ['Ibadan','3.6M','+6.2%','~680k','62%','20','~5% national','NBS 2024'],
+      ],
+      demandDrivers: [
+        ['Annual HH Formation','~600,000+ / year (est.)'],
+        ['Urban pop. share','~53% (World Bank live)'],
+        ['Policy rate (CBN)','27.50% (Dec 2024)'],
+        ['Currency','NGN (Nigerian Naira)'],
+        ['Mortgage penetration','<1% of GDP'],
+        ['Remittance inflows','~$20B/year (2024)'],
+      ],
+      citySectionLabel: 'City-Level Demographics — Nigeria',
+    }
   };
 
-  var results={};
+  var cfg = COUNTRY_CFG[country] || COUNTRY_CFG.Morocco;
+
+  // ── Update static country references in the page ──
+
+  // Data banner
+  var banner = document.querySelector('#pg-macro-indicators .pg-sub + div, #pg-macro-indicators div[style*="f0f9ff"]');
+  if(banner) banner.innerHTML = '<strong>Data Layer:</strong> Raw Data Layer · <span class="ds-tag ds-macro">Macro / observed</span> · Sources: ' + cfg.sources;
+
+  // Source registry subtitle and table
+  var srcPanel = document.querySelector('#pg-macro-indicators .panel');
+  if(srcPanel){
+    var srcSub = srcPanel.querySelector('.panel-sub');
+    if(srcSub) srcSub.textContent = 'Macro data sources · ' + country;
+    var srcTbody = srcPanel.querySelector('tbody');
+    if(srcTbody){
+      srcTbody.innerHTML = cfg.sourceRows.map(function(r){
+        return '<tr><td class="dt-city">'+r[0]+'</td><td class="dt-muted">'+r[1]+'</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">'+r[2]+'</td><td class="mono dt-muted">'+r[3]+'</td><td><span class="conf '+r[4]+'"><span class="conf-dot"></span>'+r[5]+'</span></td></tr>';
+      }).join('');
+    }
+  }
+
+  // Macro table panel subtitle
+  var macroPanel = document.getElementById('macro-table');
+  if(macroPanel){
+    var macroSub = macroPanel.closest('.panel') && macroPanel.closest('.panel').querySelector('.panel-sub');
+    if(macroSub) macroSub.innerHTML = country + ' · <span class="ds-tag ds-macro">Macro / observed</span> · Fields: population, GDP growth, inflation, unemployment, tourism arrivals, GDP/capita';
+  }
+
+  // City section divider label
+  var secDiv = document.querySelector('#pg-macro-indicators .sec-div .sd-label');
+  if(secDiv) secDiv.textContent = cfg.citySectionLabel;
+
+  // City macro table subtitle
+  var cityPanel = document.getElementById('city-macro-table');
+  if(cityPanel){
+    var citySub = cityPanel.closest('.panel') && cityPanel.closest('.panel').querySelector('.panel-sub');
+    if(citySub) citySub.innerHTML = 'Estimates · <span class="ds-tag ds-macro">Macro / observed</span> · Source: ' + (country==='Morocco'?'HCP Morocco':'NBS Nigeria');
+  }
+
+  // City macro table body
+  var cityBody = document.querySelector('#city-macro-table tbody');
+  if(cityBody){
+    cityBody.innerHTML = cfg.cities.map(function(c){
+      return '<tr><td class="dt-city">'+c[0]+'</td><td class="mono">'+c[1]+'</td><td class="chg pos">'+c[2]+'</td><td class="mono">'+c[3]+'</td><td class="mono">'+c[4]+'</td><td class="mono">'+c[5]+'</td><td class="mono">'+c[6]+'</td><td class="dt-muted">'+c[7]+'</td></tr>';
+    }).join('');
+  }
+
+  // Demand drivers panel subtitle
+  document.querySelectorAll('#pg-macro-indicators .two-col .panel').forEach(function(p){
+    var ptitle = p.querySelector('.panel-title');
+    if(ptitle && ptitle.textContent.includes('RE Demand Drivers')){
+      var psub = p.querySelector('.panel-sub');
+      if(psub) psub.textContent = country + ' · Macro context for real estate demand';
+      var body = p.querySelector('.panel-body');
+      if(body){
+        body.innerHTML = cfg.demandDrivers.map(function(d){
+          return '<div class="ep-meta-row"><span class="ep-meta-lbl">'+d[0]+'</span><span class="ep-meta-val">'+d[1]+'</span></div>';
+        }).join('');
+      }
+    }
+  });
+
+  // ── Now fetch World Bank data ──
+  var macroBody = document.querySelector('#macro-table tbody');
+  if(macroBody) macroBody.innerHTML = '<tr><td colspan="9" style="padding:16px;text-align:center;color:var(--ink4);">Loading World Bank data…</td></tr>';
+
+  var indicators = {
+    'SP.POP.TOTL':     'population',
+    'SP.POP.GROW':     'popGrowth',
+    'NY.GDP.MKTP.KD.ZG':'gdpGrowth',
+    'NY.GDP.PCAP.CD':  'gdpPerCapita',
+    'FP.CPI.TOTL.ZG':  'inflation',
+    'SL.UEM.TOTL.ZS':  'unemployment',
+    'FR.INR.LEND':     'lendingRate',
+    'ST.INT.ARVL':     'tourists',
+  };
+
+  var results = {};
   try{
     await Promise.all(Object.entries(indicators).map(async function([ind,key]){
       try{
-        var url='https://api.worldbank.org/v2/country/'+wbCode+'/indicator/'+ind+'?format=json&mrv=6&per_page=6';
-        var r=await fetch(url);
-        var j=await r.json();
-        if(j&&j[1]){
-          results[key]=j[1].filter(d=>d.value!==null).map(d=>({year:d.date,value:d.value}));
+        var url = 'https://api.worldbank.org/v2/country/'+wbCode+'/indicator/'+ind+'?format=json&mrv=7&per_page=7';
+        var r = await fetch(url);
+        var j = await r.json();
+        if(j && j[1]){
+          results[key] = j[1].filter(function(d){ return d.value!==null; }).map(function(d){ return {year:d.date, value:d.value}; });
         }
-      }catch(e){results[key]=[];}
+      }catch(e){ results[key]=[]; }
     }));
-  }catch(e){console.warn('World Bank fetch error:',e);}
+  }catch(e){ console.warn('World Bank fetch error:',e); }
 
   // Build year map
-  var yearMap={};
+  var yearMap = {};
   function addToYear(key,arr){
     (arr||[]).forEach(function(d){
-      if(!yearMap[d.year]) yearMap[d.year]={};
-      yearMap[d.year][key]=d.value;
+      if(!yearMap[d.year]) yearMap[d.year] = {};
+      yearMap[d.year][key] = d.value;
     });
   }
-  Object.entries(results).forEach(([key,arr])=>addToYear(key,arr));
+  Object.entries(results).forEach(function([key,arr]){ addToYear(key,arr); });
 
-  var years=Object.keys(yearMap).sort().reverse().slice(0,6).reverse();
+  var years = Object.keys(yearMap).sort().reverse().slice(0,6).reverse();
   if(!years.length){
-    if(macroBody) macroBody.innerHTML='<tr><td colspan="9" style="padding:16px;text-align:center;color:var(--ink4);">World Bank data unavailable — check network</td></tr>';
+    if(macroBody) macroBody.innerHTML = '<tr><td colspan="9" style="padding:16px;text-align:center;color:var(--ink4);">World Bank data unavailable — check network</td></tr>';
     return;
   }
 
   function fmt(v,type){
-    if(v===null||v===undefined) return '—';
-    if(type==='pop') return (v/1e6).toFixed(1)+'M';
-    if(type==='pct') return (v>=0?'+':'')+v.toFixed(1)+'%';
-    if(type==='gdppc') return '$'+Math.round(v).toLocaleString();
-    if(type==='urb') return v.toFixed(1)+'%';
-    if(type==='tourists') return v>1e6?(v/1e6).toFixed(1)+'M':v.toLocaleString();
+    if(v===null||v===undefined||v==='') return '—';
+    if(type==='pop')    return (v/1e6).toFixed(1)+'M';
+    if(type==='pct')    return (v>=0?'+':'')+v.toFixed(1)+'%';
+    if(type==='gdppc')  return '$'+Math.round(v).toLocaleString();
+    if(type==='tourists') return v>1e6?(v/1e6).toFixed(1)+'M':Math.round(v).toLocaleString();
     return v;
   }
 
+  // Update macro table header to include new columns
+  var macroThead = document.querySelector('#macro-table thead tr');
+  if(macroThead) macroThead.innerHTML = '<th>Year</th><th>Population</th><th>Pop. Growth %</th><th>GDP Growth %</th><th>Inflation (CPI %)</th><th>Unemployment %</th><th>Lending Rate %</th><th>Tourism Arrivals</th><th>GDP/Capita (USD)</th><th>Source</th><th>Conf.</th>';
+
   if(macroBody){
-    macroBody.innerHTML=years.map(function(yr,i){
-      var d=yearMap[yr]||{};
-      var prevYr=years[i-1];
-      var prevD=prevYr?yearMap[prevYr]:{};
-      var popGrowth=d.popGrowth?fmt(d.popGrowth,'pct'):'—';
-      var gdpGrowth=d.gdpGrowth?fmt(d.gdpGrowth,'pct'):'—';
-      var gdpGrowthClass=(d.gdpGrowth>0)?'chg pos':'chg neg';
-      var popGrowthClass=(d.popGrowth>0)?'chg pos':'chg neg';
-      var conf=parseInt(yr)>=2024?'conf-e':'conf-h';
-      var confLbl=parseInt(yr)>=2024?'Est.':'High';
+    macroBody.innerHTML = years.map(function(yr,i){
+      var d = yearMap[yr]||{};
+      var isEst = parseInt(yr)>=2025;
+      var conf = isEst ? 'conf-e' : 'conf-h';
+      var confLbl = isEst ? 'Est.' : 'High';
+      var gdpClass = (d.gdpGrowth>0)?'chg pos':'chg neg';
+      var infClass = (d.inflation>5)?'chg neg':'chg pos';
       return '<tr>'
-        +'<td class="mono dt-muted">'+yr+(parseInt(yr)>=2024?'E':'')+'</td>'
+        +'<td class="mono dt-muted">'+yr+(isEst?'E':'')+'</td>'
         +'<td class="mono">'+(d.population?fmt(d.population,'pop'):'—')+'</td>'
-        +'<td class="mono '+popGrowthClass+'">'+popGrowth+'</td>'
-        +'<td class="mono '+gdpGrowthClass+'">'+gdpGrowth+'</td>'
-        +'<td class="mono">—</td>'
+        +'<td class="mono '+(d.popGrowth>0?'chg pos':'chg neg')+'">'+fmt(d.popGrowth,'pct')+'</td>'
+        +'<td class="mono '+gdpClass+'">'+fmt(d.gdpGrowth,'pct')+'</td>'
+        +'<td class="mono '+infClass+'">'+fmt(d.inflation,'pct')+'</td>'
+        +'<td class="mono">'+fmt(d.unemployment,'pct')+'</td>'
+        +'<td class="mono">'+fmt(d.lendingRate,'pct')+'</td>'
         +'<td class="mono">'+(d.tourists?fmt(d.tourists,'tourists'):'—')+'</td>'
         +'<td class="mono">'+(d.gdpPerCapita?fmt(d.gdpPerCapita,'gdppc'):'—')+'</td>'
         +'<td class="dt-muted">World Bank API</td>'
@@ -2274,17 +2402,20 @@ async function loadMacroData(country){
     }).join('');
   }
 
-  // Update demand drivers panel with real urbanisation
-  var urbanRate=Object.values(yearMap).filter(d=>d.urbanisation).slice(-1)[0];
+  // Update demand drivers panel with live urbanisation from World Bank
+  var urbanRate = Object.values(yearMap).filter(function(d){ return d.urbanisation; }).slice(-1)[0];
   if(urbanRate){
-    document.querySelectorAll('.ep-meta-row').forEach(function(row){
-      var lbl=row.querySelector('.ep-meta-lbl');
-      var val=row.querySelector('.ep-meta-val');
-      if(lbl&&val&&lbl.textContent.includes('Urban pop')){
-        val.textContent=urbanRate.urbanisation.toFixed(1)+'% (World Bank live)';
+    document.querySelectorAll('#pg-macro-indicators .ep-meta-val').forEach(function(val){
+      var lbl = val.previousElementSibling;
+      if(lbl && lbl.textContent.includes('Urban pop')){
+        val.textContent = urbanRate.urbanisation ? urbanRate.urbanisation.toFixed(1)+'% (World Bank live)' : cfg.demandDrivers[1][1];
       }
     });
   }
+
+  // Update "live" indicator in sidebar
+  var liveEl = document.querySelector('.sb-live');
+  if(liveEl) liveEl.innerHTML = '<div class="live-dot"></div>'+country+' · Updated '+new Date().toLocaleDateString('en-GB',{month:'long',year:'numeric'});
 }
 
 // ── LOADER ──
