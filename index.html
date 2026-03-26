@@ -606,6 +606,22 @@ footer{background:var(--black);padding:64px 0 32px;}
   /* === GENERAL: full-width buttons === */
   .btn { width: 100%; text-align: center; }
 }
+.mobile-menu{display:none;position:fixed;top:64px;left:0;right:0;bottom:0;background:var(--white);z-index:999;padding:16px 20px;flex-direction:column;gap:0;overflow-y:auto;border-top:1px solid var(--rule);}
+.mobile-menu.open{display:flex;}
+.mobile-menu a{display:block;padding:16px 0;font-size:15px;font-weight:500;color:var(--ink);border-bottom:1px solid var(--off-white);cursor:pointer;}
+.mobile-menu a:hover{color:var(--gold);}
+.mobile-menu-actions{display:flex;flex-direction:column;gap:10px;margin-top:24px;}
+.mobile-menu-actions .btn-ng,.mobile-menu-actions .btn-np{width:100%;text-align:center;padding:13px 20px;font-size:14px;}
+.nav-hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px;}
+.nav-hamburger span{display:block;width:22px;height:2px;background:var(--black);transition:all .2s;}
+.nav-hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.nav-hamburger.open span:nth-child(2){opacity:0;}
+.nav-hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+@media(max-width:768px){.nav-hamburger{display:flex;}}
+.btn-lang{padding:6px 12px;background:transparent;border:1px solid var(--rule);font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--mid);cursor:pointer;font-family:var(--font);transition:all .15s;}
+.btn-lang:hover{border-color:var(--gold);color:var(--gold);}
+.btn-lang.fr-active{background:var(--gold);border-color:var(--gold);color:var(--black);}
+.mobile-lang-row{padding:12px 0;border-bottom:1px solid var(--off-white);margin-bottom:4px;}
 </style>
 </head>
 <body>
@@ -621,29 +637,48 @@ footer{background:var(--black);padding:64px 0 32px;}
       </div>
     </div>
     <div class="nav-links">
-      <a onclick="go('home')">Home</a>
-      <a onclick="go('about')">About</a>
-      <a onclick="go('data')">Data</a>
-      <a onclick="go('contact')">Contact</a>
+      <a onclick="go('home')" data-i18n="nav.home">Home</a>
+      <a onclick="go('about')" data-i18n="nav.about">About</a>
+      <a onclick="go('data')" data-i18n="nav.data">Data</a>
+      <a onclick="go('contact')" data-i18n="nav.contact">Contact</a>
       <div class="nav-more">
         <button class="nav-more-btn" onclick="toggleDD(event)">
-          More
+          <span data-i18n="nav.more">More</span>
           <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
         </button>
         <div class="dropdown" id="dd">
-          <a onclick="go('properties')">Properties</a>
-          <a onclick="go('analytics')">Analytics</a>
-          <a href="/dashboard">Dashboard</a>
-          <a onclick="go('subscription')">Pricing</a>
+          <a onclick="go('properties')" data-i18n="nav.properties">Properties</a>
+          <a onclick="go('analytics')" data-i18n="nav.analytics">Analytics</a>
+          <a href="/dashboard" data-i18n="nav.dashboard">Dashboard</a>
+          <a onclick="go('subscription')" data-i18n="nav.pricing">Pricing</a>
         </div>
       </div>
     </div>
     <div class="nav-actions">
-      <button class="btn-ng" onclick="go('login')">Sign In</button>
-      <button class="btn-np" onclick="go('register')">Get Started</button>
+      <button class="btn-lang" id="lang-toggle" onclick="toggleLang()">FR</button>
+      <button class="btn-ng" onclick="go('login')" data-i18n="nav.signin">Sign In</button>
+      <button class="btn-np" onclick="go('register')" data-i18n="nav.getstarted">Get Started</button>
     </div>
+    <button class="nav-hamburger" id="nav-hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
+<div id="mobile-menu" class="mobile-menu">
+  <div class="mobile-lang-row"><button class="btn-lang" onclick="toggleLang()">FR</button></div>
+  <a onclick="go('home');closeMobileMenu()" data-i18n="nav.home">Home</a>
+  <a onclick="go('about');closeMobileMenu()" data-i18n="nav.about">About</a>
+  <a onclick="go('data');closeMobileMenu()" data-i18n="nav.data">Data</a>
+  <a onclick="go('contact');closeMobileMenu()" data-i18n="nav.contact">Contact</a>
+  <a onclick="go('properties');closeMobileMenu()" data-i18n="nav.properties">Properties</a>
+  <a onclick="go('analytics');closeMobileMenu()" data-i18n="nav.analytics">Analytics</a>
+  <a href="/dashboard" data-i18n="nav.dashboard">Dashboard</a>
+  <a onclick="go('subscription');closeMobileMenu()" data-i18n="nav.pricing">Pricing</a>
+  <div class="mobile-menu-actions">
+    <button class="btn-ng" onclick="go('login');closeMobileMenu()" data-i18n="nav.signin">Sign In</button>
+    <button class="btn-np" onclick="go('register');closeMobileMenu()" data-i18n="nav.getstarted">Get Started</button>
+  </div>
+</div>
 
 <!-- ═══════════════════ HOME ═══════════════════ -->
 <div id="page-home" class="page active">
@@ -655,7 +690,7 @@ footer{background:var(--black);padding:64px 0 32px;}
     <div class="hero-content">
       <div class="hero-tag">
         <div class="hero-tag-dot"></div>
-        <span>Africa's Premier Real Estate Intelligence Platform</span>
+        <span data-i18n="hero.tag">Africa's Premier Real Estate Intelligence Platform</span>
       </div>
       <h1>Data-Driven Decisions<br/>Across <em>35+ African</em><br/>Markets</h1>
       <p class="hero-sub">Institutional-grade property data, market analytics, and transaction intelligence for investors, developers, and financial institutions.</p>
@@ -912,8 +947,8 @@ footer{background:var(--black);padding:64px 0 32px;}
         <p>Join investors and analysts already using Ironwood Intelligence.</p>
       </div>
       <div class="cta-btns">
-        <button class="btn-gold" onclick="go('register')">Start Free Trial</button>
-        <button class="btn-gw" onclick="go('contact')">Talk to Sales</button>
+        <button class="btn-gold" onclick="go('register')" data-i18n="cta.btn1">Start Free Trial</button>
+        <button class="btn-gw" onclick="go('contact')" data-i18n="cta.btn2">Talk to Sales</button>
       </div>
     </div>
   </section>
@@ -1355,19 +1390,48 @@ footer{background:var(--black);padding:64px 0 32px;}
 <script>
 var mapDone = false;
 
+var PAGE_MAP = { 'home':'home','about':'about','data':'data','contact':'contact','properties':'properties','analytics':'analytics','pricing':'subscription','subscription':'subscription','login':'login','register':'register','dashboard':'dashboard' };
+var HASH_MAP = { 'home':'home','about':'about','data':'data','contact':'contact','properties':'properties','analytics':'analytics','subscription':'pricing','login':'login','register':'register','dashboard':'dashboard' };
+
 function go(name) {
   document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-  var el = document.getElementById('page-' + name);
+  var pageId = PAGE_MAP[name] || name;
+  var el = document.getElementById('page-' + pageId);
   if (!el) return;
   el.classList.add('active');
   window.scrollTo(0, 0);
   closeDD();
+  var hash = HASH_MAP[name] || name;
+  if (hash === 'home') {
+    history.pushState(null, '', '/');
+  } else {
+    history.pushState(null, '', '/#' + hash);
+  }
   var slot = el.querySelector('.footer-slot');
   if (slot && !slot.hasChildNodes()) {
     slot.appendChild(document.importNode(document.getElementById('ftpl').content, true));
   }
-  if (name === 'analytics' && !mapDone) { setTimeout(initMap, 150); }
+  if (pageId === 'analytics' && !mapDone) { setTimeout(initMap, 150); }
 }
+
+// Route on load from hash
+window.addEventListener('DOMContentLoaded', function() {
+  var hash = window.location.hash.replace('#','');
+  if (hash && PAGE_MAP[hash]) {
+    go(hash);
+  } else {
+    go('home');
+  }
+});
+
+window.addEventListener('popstate', function() {
+  var hash = window.location.hash.replace('#','');
+  if (hash && PAGE_MAP[hash]) {
+    go(hash);
+  } else {
+    go('home');
+  }
+});
 
 function initMap() {
   try {
@@ -1406,7 +1470,66 @@ document.addEventListener('click', function(e) {
   if (!e.target.closest('.nav-more')) closeDD();
 });
 
-go('home');
+function toggleMobileMenu() {
+  var menu = document.getElementById('mobile-menu');
+  var btn = document.getElementById('nav-hamburger');
+  menu.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+function closeMobileMenu() {
+  document.getElementById('mobile-menu').classList.remove('open');
+  document.getElementById('nav-hamburger').classList.remove('open');
+}
+
+var LANG = 'en';
+var TRANSLATIONS = {
+  en: {
+    'nav.home': 'Home', 'nav.about': 'About', 'nav.data': 'Data', 'nav.contact': 'Contact',
+    'nav.more': 'More', 'nav.properties': 'Properties', 'nav.analytics': 'Analytics',
+    'nav.dashboard': 'Dashboard', 'nav.pricing': 'Pricing',
+    'nav.signin': 'Sign In', 'nav.getstarted': 'Get Started',
+    'hero.tag': 'African Real Estate Intelligence',
+    'hero.h1.1': 'The Data Layer for', 'hero.h1.em': 'African Real Estate',
+    'hero.sub': 'Institutional-grade property data across Morocco, Nigeria, and 33 emerging African markets. Built for investors, developers, and advisors.',
+    'hero.cta1': 'Start Free Trial', 'hero.cta2': 'Explore Data',
+    'footer.rights': '© 2026 Ironwood Intelligence. All rights reserved.',
+    'cta.title': 'Ready to access African real estate data?',
+    'cta.sub': 'Join institutional investors and advisors already using Ironwood Intelligence.',
+    'cta.btn1': 'Start Free Trial', 'cta.btn2': 'Talk to Sales',
+  },
+  fr: {
+    'nav.home': 'Accueil', 'nav.about': 'À propos', 'nav.data': 'Données', 'nav.contact': 'Contact',
+    'nav.more': 'Plus', 'nav.properties': 'Propriétés', 'nav.analytics': 'Analytique',
+    'nav.dashboard': 'Tableau de bord', 'nav.pricing': 'Tarifs',
+    'nav.signin': 'Connexion', 'nav.getstarted': 'Commencer',
+    'hero.tag': 'Intelligence Immobilière Africaine',
+    'hero.h1.1': "La Couche de Données pour l'", 'hero.h1.em': 'Immobilier Africain',
+    'hero.sub': "Données immobilières de qualité institutionnelle au Maroc, au Nigéria et dans 33 marchés africains émergents. Conçu pour les investisseurs, promoteurs et conseillers.",
+    'hero.cta1': 'Essai Gratuit', 'hero.cta2': 'Explorer les Données',
+    'footer.rights': '© 2026 Ironwood Intelligence. Tous droits réservés.',
+    'cta.title': 'Prêt à accéder aux données immobilières africaines ?',
+    'cta.sub': "Rejoignez les investisseurs institutionnels et conseillers qui utilisent déjà Ironwood Intelligence.",
+    'cta.btn1': 'Essai Gratuit', 'cta.btn2': 'Parler aux Ventes',
+  }
+};
+
+function t(key) { return (TRANSLATIONS[LANG] && TRANSLATIONS[LANG][key]) || (TRANSLATIONS.en[key]) || key; }
+
+function applyLang() {
+  var isFr = LANG === 'fr';
+  document.querySelectorAll('.btn-lang').forEach(function(b) {
+    b.textContent = isFr ? 'EN' : 'FR';
+    b.classList.toggle('fr-active', isFr);
+  });
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+}
+
+function toggleLang() {
+  LANG = LANG === 'en' ? 'fr' : 'en';
+  applyLang();
+}
 </script>
 </body>
 </html>
