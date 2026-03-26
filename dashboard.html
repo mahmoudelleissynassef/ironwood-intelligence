@@ -303,9 +303,10 @@ button{cursor:pointer;font-family:var(--sans);}
   /* Show mobile hamburger in topbar */
   .mobile-nav-btn{display:flex;}
 
-  /* Main takes full width */
-  .app{display:block;}
-  .main{width:100%;min-width:0;}
+  /* Main takes full width, allow scrolling */
+  .app{display:block;height:auto;overflow:visible;}
+  .main{width:100%;min-width:0;overflow:visible;height:auto;}
+  .content{overflow:visible;height:auto;}
 
   /* Topbar: compress */
   .topbar{padding:0 14px;gap:8px;flex-wrap:wrap;height:auto;min-height:44px;padding-top:8px;padding-bottom:8px;}
