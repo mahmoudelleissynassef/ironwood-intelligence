@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ironwoodintelligence.com/sitemap.xml
+
+# Block admin and API paths from indexing
+Disallow: /admin
+Disallow: /admin/
