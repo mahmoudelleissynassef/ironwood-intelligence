@@ -3,1967 +3,682 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Ironwood Intelligence — Data Operations</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>Ironwood Intelligence</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-:root{
-  --bg:#08090d;--surface:#0e1018;--surface2:#12151f;--surface3:#191c27;
-  --border:#1a1d27;--border2:#252836;
-  --ink:#f0f0f2;--ink2:#c8cad4;--ink3:#9a9cac;--ink4:#666880;--ink5:#3e4050;
-  --blue:#4f6ef7;--blue-d:#3d5ce0;--blue-dim:#1a1f3d;
-  --green:#22c55e;--green-d:#16a34a;--green-dim:#052e16;
-  --red:#f87171;--red-d:#dc2626;--red-dim:#2d0a0a;
-  --amber:#f59e0b;--amber-dim:#2d1a00;
-  --gold:#b8963a;--gold-dim:#1e1608;
-  --radius:3px;
-  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  --mono:'SF Mono','Fira Code',monospace;
-}
-body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;font-size:13px;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:14px;}
+a{text-decoration:none;color:inherit;cursor:pointer;}
 
-/* ── LOGIN ── */
-#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);}
-.login-box{background:var(--surface);border:1px solid var(--border2);padding:44px 40px;width:100%;max-width:380px;}
-.login-wordmark{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);margin-bottom:2px;}
-.login-sub{font-size:10px;color:var(--ink5);letter-spacing:.1em;text-transform:uppercase;margin-bottom:36px;}
-.login-box h2{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:24px;}
-.fg label{font-size:10.5px;font-weight:700;color:var(--ink4);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;}
+/* ── NAV ── */
+nav{background:#fff;border-bottom:1px solid #e5e5e5;padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;}
+.nav-logo{font-size:15px;font-weight:700;letter-spacing:.04em;color:#111;cursor:pointer;}
+.nav-links{display:flex;align-items:center;gap:28px;}
+.nav-links>a{font-size:14px;color:#444;}
+.nav-links>a:hover{color:#111;}
+/* dropdown */
+.nav-more{position:relative;}
+.nav-more-btn{display:flex;align-items:center;gap:4px;font-size:14px;color:#444;background:none;border:none;font-family:inherit;cursor:pointer;padding:0;}
+.nav-more-btn:hover{color:#111;}
+.dropdown{display:none;position:absolute;top:calc(100% + 12px);left:0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.1);min-width:160px;z-index:500;overflow:hidden;}
+.dropdown.open{display:block;}
+.dropdown a{display:block;padding:12px 18px;font-size:14px;color:#333;border-bottom:1px solid #f0f0f0;}
+.dropdown a:last-child{border-bottom:none;}
+.dropdown a:hover{background:#f7f7f7;}
+/* nav buttons */
+.nav-actions{display:flex;align-items:center;gap:10px;}
+.btn-join{padding:7px 18px;border:1.5px solid #ccc;border-radius:20px;background:#fff;font-size:13px;cursor:pointer;color:#333;}
+.btn-login{padding:7px 18px;border-radius:20px;background:#111;color:#fff;font-size:13px;cursor:pointer;border:none;}
+.btn-login:hover{background:#333;}
+
+/* ── PAGES ── */
+.page{display:none;}
+.page.active{display:block;}
+
+/* ── GRADIENT CARDS (replace photos) ── */
+.g-city   {background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);}
+.g-office {background:linear-gradient(135deg,#2c3e50,#4a6fa5,#68a0d0);}
+.g-meeting{background:linear-gradient(135deg,#134e5e,#3a7d6e,#71b280);}
+.g-dash   {background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);}
+.g-person {background:linear-gradient(135deg,#c79a6e,#e8c99a,#a67850);}
+.g-lagos  {background:linear-gradient(135deg,#1a3a2a,#2d6a4f,#40916c);}
+.g-nairobi{background:linear-gradient(135deg,#1b2838,#2a475e,#4a7da8);}
+.g-cape   {background:linear-gradient(135deg,#2d3561,#c05c7e,#f0a500);}
+.g-accra  {background:linear-gradient(135deg,#006400,#228B22,#5aab5a);}
+.g-joburg {background:linear-gradient(135deg,#3d0000,#8b0000,#cc4400);}
+.g-network{background:linear-gradient(135deg,#0d1117,#1a2332,#243447);}
+.g-build  {background:linear-gradient(135deg,#c9b08a,#a08060,#7a5c3a);}
+.grad-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;opacity:.3;}
+
+/* ── SHARED BUTTONS ── */
+.btn-dark   {padding:11px 24px;background:#111;color:#fff;border-radius:25px;font-size:14px;font-weight:600;border:none;cursor:pointer;}
+.btn-dark:hover{background:#333;}
+.btn-outline{padding:11px 24px;background:#fff;color:#111;border-radius:25px;font-size:14px;font-weight:500;border:1.5px solid #ccc;cursor:pointer;}
+.btn-outline:hover{border-color:#888;}
+.btn-sm-outline{padding:9px 20px;border:1.5px solid #ccc;border-radius:20px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+
+/* ── HOME HERO ── */
+.hero{background:#f5f5f5;padding:60px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;min-height:480px;}
+.hero h1{font-size:46px;font-weight:800;line-height:1.1;margin-bottom:18px;}
+.hero p{font-size:15px;color:#555;line-height:1.6;margin-bottom:28px;max-width:400px;}
+.hero-btns{display:flex;gap:12px;}
+.hero-img{border-radius:16px;overflow:hidden;height:320px;position:relative;}
+
+/* split section */
+.sec-split{padding:60px;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;background:#fff;}
+.split-img{height:280px;border-radius:12px;position:relative;overflow:hidden;}
+.sec-split h2{font-size:26px;font-weight:800;margin-bottom:14px;line-height:1.2;}
+.sec-split p{font-size:14px;color:#555;line-height:1.7;margin-bottom:16px;}
+.feat-row{display:flex;gap:12px;margin-bottom:14px;}
+.feat-row-icon{font-size:18px;margin-top:2px;}
+.feat-row strong{font-size:14px;font-weight:700;display:block;margin-bottom:3px;}
+.feat-row span{font-size:13px;color:#666;}
+
+/* 3-col cards */
+.sec-3col{padding:60px;background:#fff;}
+.sec-3col .eyebrow{text-align:center;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;font-weight:600;margin-bottom:8px;}
+.sec-3col h2{font-size:26px;font-weight:800;text-align:center;margin-bottom:8px;}
+.sec-3col .sub{font-size:14px;color:#666;text-align:center;margin-bottom:40px;max-width:600px;margin-left:auto;margin-right:auto;}
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.card3{background:#f5f5f5;border-radius:12px;padding:28px;text-align:center;}
+.card3 .icon{font-size:28px;margin-bottom:12px;}
+.card3 h3{font-size:15px;font-weight:700;margin-bottom:8px;}
+.card3 p{font-size:13px;color:#666;line-height:1.6;margin-bottom:14px;}
+.card3 a{font-size:13px;font-weight:600;}
+
+/* how-to-navigate */
+.sec-how{padding:60px;background:#f5f5f5;}
+.sec-how h2{font-size:26px;font-weight:800;text-align:center;margin-bottom:8px;}
+.sec-how .sub{font-size:14px;color:#666;text-align:center;margin-bottom:40px;}
+.how-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.how-card{background:#fff;border-radius:12px;overflow:hidden;}
+.how-card-img{height:160px;position:relative;}
+.how-card-body{padding:16px 20px 20px;}
+.how-card h3{font-size:14px;font-weight:700;margin-bottom:8px;}
+.how-card p{font-size:13px;color:#666;line-height:1.6;margin-bottom:12px;}
+.how-card a{font-size:13px;font-weight:600;}
+
+.cta-strip{display:flex;padding:36px 60px;background:#f5f5f5;border-top:1px solid #e5e5e5;}
+.cta-strip div{flex:1;text-align:center;font-size:13px;font-weight:600;}
+
+/* ── DATA PAGE ── */
+.data-hero{padding:50px 60px 40px;background:#f5f5f5;}
+.data-hero .eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:8px;}
+.data-hero h1{font-size:36px;font-weight:800;margin-bottom:12px;}
+.data-hero p{font-size:15px;color:#555;max-width:500px;margin-bottom:22px;}
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.svc-card{background:#f5f5f5;border-radius:12px;padding:28px;text-align:center;}
+.svc-card .icon{font-size:26px;margin-bottom:14px;}
+.svc-card h3{font-size:15px;font-weight:700;margin-bottom:8px;}
+.svc-card p{font-size:13px;color:#666;line-height:1.6;}
+.check-list{list-style:none;}
+.check-list li{font-size:14px;color:#333;padding:5px 0;display:flex;align-items:center;gap:8px;}
+.check-list li::before{content:'✅';font-size:13px;}
+
+/* ── ANALYTICS ── */
+.analytics-wrap{display:grid;grid-template-columns:260px 1fr;gap:20px;padding:20px;background:#f5f5f5;min-height:calc(100vh - 60px);}
+.sidebar-box{background:#fff;border-radius:10px;padding:20px;margin-bottom:16px;}
+.sidebar-box h3{font-size:15px;font-weight:700;margin-bottom:16px;}
 .fg{margin-bottom:14px;}
-.fg input{width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border2);font-size:13px;color:var(--ink);outline:none;font-family:var(--font);}
-.fg input:focus{border-color:var(--blue);}
-.fg input::placeholder{color:var(--ink5);}
-.login-btn{width:100%;padding:10px;background:var(--blue);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px;font-family:var(--font);}
-.login-btn:hover{background:var(--blue-d);}
-.login-btn:disabled{background:var(--surface3);color:var(--ink5);cursor:not-allowed;}
-.login-err{color:var(--red);font-size:12px;margin-top:10px;padding:8px 12px;background:var(--red-dim);border:1px solid #7f1d1d;display:none;}
+.fg label{font-size:12px;color:#666;display:block;margin-bottom:5px;}
+.fg select,.fg input{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;outline:none;}
+.btn-apply{width:100%;padding:9px;background:#333;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin-top:4px;}
+.mo-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px;}
+.mo-row:last-child{border-bottom:none;}
+.mo-row .lbl{color:#777;}
+.mo-row .val{font-weight:700;}
+#africa-map{height:340px;border-radius:10px;border:1px solid #ddd;margin-bottom:20px;}
+.a-bottom{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.a-card{background:#fff;border-radius:10px;padding:20px;}
+.a-card h3{font-size:15px;font-weight:700;margin-bottom:16px;}
+.rent-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f5f5f5;font-size:13px;}
+.rent-row:last-child{border-bottom:none;}
+.r-val{font-weight:700;}
+.r-up{color:#16a34a;font-size:12px;margin-left:5px;}
+.tr{padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:13px;overflow:hidden;}
+.tr:last-child{border-bottom:none;}
+.tr .ttype{font-weight:600;}
+.tr .tdate{color:#888;font-size:12px;}
+.tr .tprice{float:right;font-weight:700;}
+.vacancy-box{background:#fff;border-radius:10px;padding:20px;margin-top:20px;}
+.vacancy-box h3{font-size:15px;font-weight:700;margin-bottom:16px;}
+.chart{position:relative;height:180px;border-left:1px solid #ddd;border-bottom:1px solid #ddd;margin:0 16px 6px 28px;}
+.y-lbls{position:absolute;left:-26px;top:0;height:100%;display:flex;flex-direction:column;justify-content:space-between;font-size:11px;color:#888;}
+.x-lbls{display:flex;justify-content:space-around;font-size:11px;color:#888;margin:0 16px 0 28px;}
+svg.linechart{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;}
+.legend{display:flex;align-items:center;gap:6px;justify-content:center;margin-top:10px;font-size:12px;color:#666;}
+.ldot{width:8px;height:8px;border-radius:50%;background:#8b8bc8;display:inline-block;}
 
-/* ── APP CHROME ── */
-#app{display:none;}
-.topbar{height:48px;background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
-.tb-wordmark{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);}
-.tb-badge{background:var(--blue-dim);color:var(--blue);padding:2px 8px;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-left:10px;}
-.tb-right{display:flex;align-items:center;gap:16px;}
-.tb-user{font-size:11.5px;color:var(--ink4);}
-.tb-demo{background:var(--red-dim);border:1px solid var(--red-d);color:var(--red);padding:3px 12px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-right:8px;}
-.btn-logout{padding:5px 12px;background:transparent;border:1px solid var(--border2);font-size:11.5px;color:var(--ink4);cursor:pointer;font-family:var(--font);}
-.btn-logout:hover{border-color:var(--red);color:var(--red);}
+/* ── PROPERTIES ── */
+.props-hdr{padding:28px 40px 16px;background:#f5f5f5;display:flex;justify-content:space-between;align-items:center;}
+.props-hdr h1{font-size:28px;font-weight:800;margin-bottom:4px;}
+.props-hdr p{font-size:14px;color:#666;}
+.vtoggle{display:flex;gap:4px;}
+.vtoggle button{width:32px;height:32px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:15px;}
+.vtoggle button.act{background:#111;color:#fff;border-color:#111;}
+.filter-bar{padding:14px 40px;background:#fff;border-top:1px solid #eee;border-bottom:1px solid #eee;}
+.filter-bar h3{font-size:13px;font-weight:700;margin-bottom:10px;}
+.frow{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;}
+.fcol label{font-size:11px;color:#666;display:block;margin-bottom:3px;}
+.fcol select{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;min-width:110px;}
+.fcol input{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;width:80px;}
+.btn-clr{padding:6px 12px;border:1px solid #ddd;border-radius:6px;background:#fff;font-size:12px;cursor:pointer;}
+.pgrid{padding:16px 40px 40px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.pcard{background:#fff;border-radius:10px;overflow:hidden;border:1px solid #eee;}
+.pimg{height:160px;position:relative;overflow:hidden;}
+.poverlay{position:absolute;inset:0;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;}
+.plock{width:32px;height:32px;background:rgba(255,255,255,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:1.5px solid rgba(255,255,255,.5);}
+.pbadge{position:absolute;top:10px;right:10px;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;}
+.ba{background:rgba(34,197,94,.85);color:#fff;}
+.bo{background:rgba(107,114,128,.85);color:#fff;}
+.pbody{padding:14px 16px;}
+.ptype{float:right;font-size:11px;color:#888;}
+.pname{font-size:15px;font-weight:700;margin-bottom:4px;clear:both;}
+.ploc{font-size:12px;color:#888;margin-bottom:10px;}
+.pmeta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.pmv{font-size:14px;font-weight:700;}
+.pmk{font-size:11px;color:#888;}
+.pprow{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid #f0f0f0;}
+.ppv{font-size:16px;font-weight:800;}
+.ppm{font-size:11px;color:#888;}
+.btn-vd{padding:7px 14px;background:#111;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;}
+.psub{background:#fff8e6;padding:8px 16px;font-size:12px;color:#996600;text-align:center;}
+.unlock{background:#111;color:#fff;padding:40px;text-align:center;margin:0 40px 40px;border-radius:10px;}
+.unlock h2{font-size:22px;font-weight:700;margin-bottom:8px;}
+.unlock p{font-size:14px;color:#aaa;margin-bottom:20px;}
+.unlock-btns{display:flex;gap:12px;justify-content:center;}
+.btn-wo{padding:9px 20px;border:1.5px solid #fff;background:transparent;color:#fff;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-ws{padding:9px 20px;border:none;background:#fff;color:#111;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;}
 
-/* ── LAYOUT ── */
-.layout{display:grid;grid-template-columns:216px 1fr;min-height:calc(100vh - 48px);}
+/* ── SUBSCRIPTION ── */
+.sub-pg{padding:50px 40px;background:#f5f5f5;}
+.sub-pg h1{font-size:32px;font-weight:800;text-align:center;margin-bottom:10px;}
+.sub-desc{font-size:15px;color:#555;text-align:center;max-width:560px;margin:0 auto 40px;}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:960px;margin:0 auto 40px;}
+.plan{background:#fff;border-radius:12px;padding:32px;border:1.5px solid #e5e5e5;position:relative;}
+.plan.feat{border-color:#111;border-width:2px;}
+.pop-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:4px 16px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+.pln-name{font-size:20px;font-weight:800;margin-bottom:4px;}
+.pln-tag{font-size:13px;color:#777;margin-bottom:20px;}
+.pln-price{display:flex;align-items:baseline;gap:4px;margin-bottom:24px;}
+.pln-price .amt{font-size:40px;font-weight:900;}
+.pln-price .per{font-size:14px;color:#888;}
+.pln-feats{list-style:none;margin-bottom:28px;}
+.pln-feats li{font-size:13px;color:#444;padding:6px 0;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f5f5f5;}
+.pln-feats li:last-child{border-bottom:none;}
+.pln-feats li::before{content:'✓';color:#16a34a;font-weight:700;}
+.btn-sub{width:100%;padding:11px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:none;}
+.btn-sub-o{background:#f5f5f5;color:#333;}
+.btn-sub-d{background:#111;color:#fff;}
+.why-box{background:#fff;border-radius:12px;padding:40px;max-width:960px;margin:0 auto;}
+.why-box h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:32px;}
+.why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center;}
+.wi-badge{display:inline-flex;width:44px;height:44px;background:#111;color:#fff;border-radius:8px;align-items:center;justify-content:center;font-size:13px;font-weight:800;margin-bottom:10px;}
+.why-item h4{font-size:14px;font-weight:700;margin-bottom:5px;}
+.why-item p{font-size:12px;color:#777;}
 
-/* ── SIDEBAR ── */
-.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:16px 0;overflow-y:auto;}
-.sb-section{margin-bottom:4px;}
-.sb-lbl{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink5);padding:10px 18px 4px;}
-.sb-item{display:flex;align-items:center;gap:9px;padding:8px 18px;font-size:12.5px;color:var(--ink4);cursor:pointer;transition:all .12s;border-left:2px solid transparent;}
-.sb-item:hover{background:var(--surface2);color:var(--ink2);}
-.sb-item.active{background:var(--surface2);color:var(--ink);border-left-color:var(--blue);}
-.sb-icon{font-size:13px;width:18px;text-align:center;flex-shrink:0;}
-.sb-badge{margin-left:auto;background:var(--blue-dim);color:var(--blue);padding:1px 6px;font-size:9px;font-weight:700;letter-spacing:.06em;}
-.sb-badge-red{margin-left:auto;background:var(--red-dim);color:var(--red);padding:1px 6px;font-size:9px;font-weight:700;letter-spacing:.06em;}
+/* ── DASHBOARD LOCKED ── */
+.dlocked{min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px;background:#f5f5f5;}
+.dlocked .lbig{font-size:48px;margin-bottom:20px;color:#ccc;}
+.dlocked h1{font-size:28px;font-weight:800;margin-bottom:10px;}
+.dlocked p{font-size:14px;color:#666;margin-bottom:24px;}
+.dbtns{display:flex;gap:12px;justify-content:center;}
 
-/* ── MAIN ── */
-.main{padding:28px 32px;overflow-y:auto;background:var(--bg);}
-.pg{display:none;}
-.pg.active{display:block;}
-.pg-eyebrow{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink5);margin-bottom:6px;}
-.pg-title{font-size:22px;font-weight:800;color:var(--ink);margin-bottom:4px;letter-spacing:-.02em;}
-.pg-sub{font-size:13px;color:var(--ink4);margin-bottom:24px;line-height:1.6;}
+/* ── AUTH ── */
+.auth-pg{min-height:calc(100vh - 60px);background:#f5f5f5;display:flex;align-items:center;justify-content:center;padding:40px;}
+.auth-box{background:#fff;border-radius:12px;padding:40px;width:100%;max-width:400px;}
+.auth-logo{width:44px;height:44px;background:#111;color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;margin:0 auto 20px;}
+.auth-box h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:6px;}
+.auth-sub{font-size:13px;color:#888;text-align:center;margin-bottom:24px;}
+.auth-sub a{color:#111;font-weight:600;}
+.fg-auth{margin-bottom:16px;}
+.fg-auth label{font-size:13px;font-weight:600;display:block;margin-bottom:5px;}
+.fg-auth input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;outline:none;}
+.fg-auth input:focus{border-color:#888;}
+.pw{position:relative;}
+.pw input{padding-right:36px;}
+.pw-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:15px;color:#888;}
+.chk-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:16px;font-size:13px;color:#444;}
+.chk-row a{color:#111;font-weight:600;}
+.btn-submit{width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;}
+.auth-sw{text-align:center;font-size:13px;color:#666;}
+.auth-sw a{color:#111;font-weight:700;}
+.ftrial{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px 16px;margin-top:16px;}
+.ftrial .ft-t{font-size:13px;font-weight:700;color:#166534;margin-bottom:4px;}
+.ftrial p{font-size:12px;color:#166534;}
 
-/* ── METRICS GRID ── */
-.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:24px;}
-.metric{background:var(--surface);padding:18px 20px;}
-.metric-lbl{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink5);margin-bottom:8px;}
-.metric-val{font-size:26px;font-weight:800;color:var(--ink);letter-spacing:-.02em;line-height:1;}
-.metric-sub{font-size:11px;color:var(--ink5);margin-top:5px;}
-.metric-link{font-size:10.5px;color:var(--blue);cursor:pointer;margin-top:6px;display:block;}
-.metric-link:hover{text-decoration:underline;}
-.metric.warn .metric-val{color:var(--amber);}
-.metric.ok .metric-val{color:var(--green);}
-.metric.crit .metric-val{color:var(--red);}
+/* ── CONTACT ── */
+.cnt-hero{position:relative;height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;overflow:hidden;}
+.cnt-hero .eyebrow{position:relative;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#ccc;margin-bottom:8px;}
+.cnt-hero h1{position:relative;font-size:32px;font-weight:800;color:#fff;margin-bottom:10px;}
+.cnt-hero p{position:relative;font-size:14px;color:#ccc;max-width:480px;margin-bottom:20px;}
+.cnt-hero-btns{position:relative;display:flex;gap:10px;}
+.btn-wh{padding:9px 20px;background:#fff;color:#111;border-radius:6px;font-size:13px;font-weight:700;border:none;cursor:pointer;}
+.btn-ghw{padding:9px 20px;background:transparent;color:#fff;border-radius:6px;font-size:13px;font-weight:600;border:1.5px solid rgba(255,255,255,.4);cursor:pointer;}
+.cnt-info{padding:50px 60px;display:grid;grid-template-columns:1fr 1fr;gap:60px;background:#fff;}
+.cnt-info h2{font-size:22px;font-weight:800;margin-bottom:8px;}
+.cnt-info .ci-desc{font-size:14px;color:#666;margin-bottom:28px;}
+.ci-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:20px;}
+.ci-icon{font-size:20px;margin-top:1px;}
+.ci-lbl{font-size:13px;font-weight:700;margin-bottom:2px;}
+.ci-val{font-size:13px;color:#555;}
+.ci-imgbox{height:260px;border-radius:12px;overflow:hidden;border:1px solid #eee;position:relative;}
+.cnt-form-sec{padding:40px 60px 60px;background:#f5f5f5;}
+.cnt-form-sec h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:4px;}
+.cf-sub{font-size:14px;color:#666;text-align:center;margin-bottom:30px;}
+.cform{max-width:700px;margin:0 auto;}
+.frow2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.cform textarea{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;font-family:inherit;resize:vertical;min-height:120px;outline:none;}
 
-/* ── HEALTH GRID ── */
-.health-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:24px;}
-.health-cell{background:var(--surface);padding:14px 16px;}
-.health-lbl{font-size:10px;font-weight:600;color:var(--ink5);margin-bottom:6px;}
-.health-val{font-size:20px;font-weight:800;margin-bottom:2px;}
-.health-val.ok{color:var(--green);}
-.health-val.warn{color:var(--amber);}
-.health-val.crit{color:var(--red);}
-
-/* ── PANELS ── */
-.panel{background:var(--surface);border:1px solid var(--border);margin-bottom:16px;}
-.panel-hd{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.panel-title{font-size:13px;font-weight:700;color:var(--ink);}
-.panel-sub{font-size:11px;color:var(--ink5);margin-top:2px;}
-.panel-body{padding:18px;}
-.panel-actions{display:flex;gap:6px;align-items:center;}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
-.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
-
-/* ── TABLE ── */
-.table-wrap{overflow-x:auto;}
-table.dt{width:100%;border-collapse:collapse;font-size:12px;}
-table.dt thead tr{background:var(--surface2);}
-table.dt th{padding:8px 12px;text-align:left;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);border-bottom:1px solid var(--border);white-space:nowrap;}
-table.dt td{padding:9px 12px;border-bottom:1px solid var(--bg);color:var(--ink3);white-space:nowrap;}
-table.dt tr:hover td{background:var(--surface2);color:var(--ink2);}
-table.dt tr:last-child td{border-bottom:none;}
-.mono{font-family:var(--mono);font-size:11.5px;}
-
-/* ── BUTTONS ── */
-.btn{padding:7px 14px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .12s;}
-.btn-primary{background:var(--blue);color:#fff;}
-.btn-primary:hover{background:var(--blue-d);}
-.btn-success{background:var(--green-d);color:#fff;}
-.btn-success:hover{background:#15803d;}
-.btn-danger{background:transparent;border:1px solid var(--red);color:var(--red);}
-.btn-danger:hover{background:var(--red-dim);}
-.btn-secondary{background:var(--surface3);color:var(--ink3);border:1px solid var(--border2);}
-.btn-secondary:hover{background:var(--surface2);color:var(--ink);}
-.btn-xs{padding:3px 9px;font-size:11px;}
-.btn-sm{padding:5px 12px;font-size:11.5px;}
-.btn:disabled{background:var(--surface3);color:var(--ink5);cursor:not-allowed;border:none;}
-
-/* ── STATUS BADGES ── */
-.status{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;font-size:10.5px;font-weight:700;letter-spacing:.04em;}
-.status::before{content:'●';font-size:8px;}
-.status-success{background:var(--green-dim);color:var(--green);}
-.status-running{background:var(--blue-dim);color:var(--blue);}
-.status-running::before{content:'◌';animation:spin 1.5s linear infinite;}
-.status-failed{background:var(--red-dim);color:var(--red);}
-.status-warning{background:var(--amber-dim);color:var(--amber);}
-.status-pending{background:var(--surface3);color:var(--ink4);}
-@keyframes spin{to{transform:rotate(360deg);}}
-.badge{display:inline-block;padding:2px 8px;font-size:10.5px;font-weight:700;}
-.badge-admin{background:var(--blue-dim);color:var(--blue);}
-.badge-operator{background:var(--green-dim);color:var(--green);}
-.badge-viewer{background:var(--surface3);color:var(--ink4);}
-.badge-verified{background:var(--green-dim);color:var(--green);}
-.badge-unverified{background:var(--amber-dim);color:var(--amber);}
-.badge-review{background:var(--red-dim);color:var(--red);}
-
-/* ── FORMS ── */
-.fg2{margin-bottom:14px;}
-.fg2 label{font-size:10.5px;font-weight:700;color:var(--ink4);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;}
-.fg2 input,.fg2 select,.fg2 textarea{width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border2);font-size:13px;color:var(--ink);outline:none;font-family:var(--font);}
-.fg2 input:focus,.fg2 select:focus{border-color:var(--blue);}
-.fg2 select option{background:var(--surface);}
-.fg2 textarea{resize:vertical;min-height:70px;}
-.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
-
-/* ── UPLOAD ── */
-.dropzone{border:1px dashed var(--border2);padding:28px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px;}
-.dropzone:hover,.dropzone.drag{border-color:var(--blue);background:#0e1220;}
-.dropzone input{display:none;}
-.dz-icon{font-size:28px;margin-bottom:8px;}
-.dz-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:3px;}
-.dz-sub{font-size:11.5px;color:var(--ink5);}
-
-.template-box{background:var(--bg);border:1px solid var(--border);padding:14px 16px;margin-bottom:14px;}
-.template-box h4{font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;}
-.col-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
-.col-tag{padding:2px 8px;font-size:10.5px;background:var(--surface3);color:var(--ink4);}
-.col-tag.req{background:var(--blue-dim);border:1px solid rgba(79,110,247,.3);color:#8b9cf7;}
-
-.upload-mode-wrap{margin:14px 0;padding:14px;background:var(--bg);border:1px solid var(--border);}
-.upload-mode-wrap h4{font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;}
-.mode-options{display:flex;gap:8px;flex-wrap:wrap;}
-.mode-opt{display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:10px 12px;border:1px solid var(--border);flex:1;min-width:160px;transition:border-color .12s;}
-.mode-opt input{margin-top:2px;accent-color:var(--blue);}
-.mode-opt-title{font-size:12.5px;font-weight:700;color:var(--ink);display:block;}
-.mode-opt-sub{font-size:10.5px;color:var(--ink5);margin-top:2px;display:block;line-height:1.4;}
-
-.validation-preview{background:var(--bg);border:1px solid var(--border);padding:14px 16px;margin-bottom:14px;display:none;}
-.validation-preview h4{font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;}
-.vp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-.vp-cell{padding:10px 12px;border:1px solid var(--border);}
-.vp-label{font-size:10px;color:var(--ink5);margin-bottom:4px;font-weight:600;}
-.vp-val{font-size:18px;font-weight:800;}
-.vp-val.ok{color:var(--green);}
-.vp-val.warn{color:var(--amber);}
-.vp-val.crit{color:var(--red);}
-
-.preview-wrap{display:none;margin-bottom:14px;}
-.preview-wrap h4{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:8px;}
-.preview-count{font-size:11px;color:var(--ink5);font-weight:400;margin-left:6px;}
-
-.pbar-wrap{display:none;margin-bottom:10px;}
-.pbar-bg{background:var(--bg);height:4px;overflow:hidden;margin-bottom:5px;}
-.pbar{background:var(--blue);height:100%;width:0%;transition:width .3s;}
-.pbar-txt{font-size:11.5px;color:var(--ink5);}
-.pbar-success{background:var(--green-d);}
-
-.result-box{display:none;padding:12px 14px;font-size:12.5px;margin-top:6px;border:1px solid;}
-.result-box.ok{background:var(--green-dim);border-color:#166534;color:var(--green);}
-.result-box.err{background:var(--red-dim);border-color:#7f1d1d;color:var(--red);}
-.result-box h4{font-weight:700;margin-bottom:4px;}
-.result-box ul{padding-left:16px;margin-top:6px;}
-.result-box li{margin-bottom:2px;}
-
-.upload-actions{display:flex;gap:8px;margin-bottom:8px;}
-.btn-upload{display:none;background:var(--green-d);color:#fff;padding:9px 18px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);}
-.btn-upload:hover{background:#15803d;}
-.btn-upload:disabled{background:var(--surface3);color:var(--ink5);cursor:not-allowed;}
-.btn-cancel-upload{display:none;background:transparent;border:1px solid var(--red);color:var(--red);padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);}
-
-/* ── ACTIVITY LOG ── */
-.log-entry{display:flex;align-items:flex-start;gap:12px;padding:10px 16px;border-bottom:1px solid var(--bg);}
-.log-entry:hover{background:var(--surface2);}
-.log-time{font-family:var(--mono);font-size:11px;color:var(--ink5);flex-shrink:0;width:50px;}
-.log-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px;}
-.log-dot.info{background:var(--blue);}
-.log-dot.success{background:var(--green);}
-.log-dot.error{background:var(--red);}
-.log-dot.warning{background:var(--amber);}
-.log-text{color:var(--ink3);line-height:1.5;font-size:12.5px;}
-.log-user{font-size:10.5px;color:var(--ink5);margin-top:2px;}
-.log-dataset{display:inline-block;margin-left:6px;background:var(--surface3);padding:0 5px;font-size:10px;color:var(--ink5);}
-
-/* ── DATASET EXPLORER ── */
-.de-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:0;}
-.de-tab{padding:9px 16px;font-size:12px;font-weight:600;color:var(--ink5);cursor:pointer;border-bottom:2px solid transparent;transition:all .12s;}
-.de-tab:hover{color:var(--ink3);}
-.de-tab.active{color:var(--ink);border-bottom-color:var(--blue);}
-
-/* ── VERIFICATION ── */
-.vq-card{background:var(--surface);border:1px solid var(--border);padding:16px;margin-bottom:10px;}
-.vq-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-.vq-title{font-size:13px;font-weight:700;color:var(--ink);}
-.vq-meta{font-size:11px;color:var(--ink5);margin-top:3px;line-height:1.6;}
-.vq-actions{display:flex;gap:6px;flex-shrink:0;}
-
-/* ── ISSUE ROW ── */
-.issue-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--bg);}
-.issue-row:hover{background:var(--surface2);}
-.issue-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
-.issue-icon.warn{background:var(--amber-dim);color:var(--amber);}
-.issue-icon.crit{background:var(--red-dim);color:var(--red);}
-.issue-icon.ok{background:var(--green-dim);color:var(--green);}
-.issue-name{flex:1;font-size:12.5px;color:var(--ink2);font-weight:600;}
-.issue-sub{font-size:11px;color:var(--ink5);margin-top:1px;}
-.issue-count{font-family:var(--mono);font-size:13px;font-weight:700;padding:0 14px;flex-shrink:0;}
-.issue-count.warn{color:var(--amber);}
-.issue-count.crit{color:var(--red);}
-.issue-count.ok{color:var(--green);}
-
-/* ── SOURCE ROW ── */
-.source-row{display:flex;align-items:center;gap:16px;padding:12px 16px;border-bottom:1px solid var(--bg);}
-.source-row:hover{background:var(--surface2);}
-.source-icon{width:32px;height:32px;background:var(--surface3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
-.source-name{flex:1;}
-.source-name strong{font-size:13px;color:var(--ink);display:block;}
-.source-name span{font-size:11px;color:var(--ink5);}
-.source-stat{text-align:right;flex-shrink:0;}
-.source-stat-val{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink2);}
-.source-stat-lbl{font-size:10px;color:var(--ink5);}
-
-/* ── JOB ROW ── */
-.job-row{display:grid;grid-template-columns:1fr 100px 110px 90px 80px 100px;align-items:center;gap:0;padding:11px 16px;border-bottom:1px solid var(--bg);}
-.job-row:hover{background:var(--surface2);}
-.job-row.hdr{background:var(--surface2);padding:7px 16px;}
-.job-row.hdr span{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);}
-.job-name{font-size:13px;font-weight:600;color:var(--ink2);}
-.job-name span{font-size:11px;color:var(--ink5);display:block;font-weight:400;margin-top:1px;}
-
-/* ── API KEY ROW ── */
-.api-row{display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid var(--bg);}
-.api-key-val{font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--border);padding:4px 10px;color:var(--ink4);flex:1;}
-.api-meta{font-size:11px;color:var(--ink5);}
-
-/* ── DEMO BANNER ── */
-.demo-banner{background:var(--red-dim);border:1px solid #7f1d1d;padding:9px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--red);font-weight:600;}
-.demo-banner::before{content:'⚠';}
-
-/* ── SETTING ROW ── */
-.setting-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);}
-.setting-row:last-child{border-bottom:none;}
-.setting-info h4{font-size:13px;font-weight:600;color:var(--ink);}
-.setting-info p{font-size:11.5px;color:var(--ink5);margin-top:2px;}
-.setting-input{width:300px;padding:7px 10px;background:var(--bg);border:1px solid var(--border2);font-size:12.5px;color:var(--ink);outline:none;font-family:var(--font);}
-.setting-input:focus{border-color:var(--blue);}
-.toggle-wrap{display:flex;align-items:center;gap:8px;}
-.toggle{width:36px;height:20px;background:var(--surface3);border-radius:10px;cursor:pointer;position:relative;border:1px solid var(--border2);}
-.toggle.on{background:var(--blue);}
-.toggle::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .15s;}
-.toggle.on::after{transform:translateX(16px);}
-
-/* ── CONN STATUS ── */
-.conn-ok{color:var(--green);font-size:12px;}
-.conn-err{color:var(--red);font-size:12px;}
-
-/* ── TABS ── */
-.tabs{display:flex;gap:3px;margin-bottom:16px;background:var(--bg);padding:3px;border:1px solid var(--border);width:fit-content;}
-.tab{padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink5);transition:all .12s;}
-.tab.active{background:var(--blue);color:#fff;}
-.tab-content{display:none;}
-.tab-content.active{display:block;}
-
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar{width:5px;height:5px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--border2);}
-
-/* ── CONFIRM MODAL ── */
-#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:center;justify-content:center;}
-#modal-overlay.open{display:flex;}
-.modal{background:var(--surface);border:1px solid var(--border2);padding:28px 32px;max-width:440px;width:100%;}
-.modal h3{font-size:16px;font-weight:800;color:var(--ink);margin-bottom:8px;}
-.modal p{font-size:13px;color:var(--ink4);margin-bottom:20px;line-height:1.6;}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end;}
+/* ── FOOTER ── */
+footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
+.footer-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;gap:32px;margin-bottom:36px;}
+.fbrand .fb-name{font-size:14px;font-weight:800;letter-spacing:.04em;margin-bottom:8px;line-height:1.4;}
+.fbrand p{font-size:13px;color:#777;line-height:1.6;}
+.fcol h4{font-size:13px;font-weight:700;margin-bottom:14px;color:#333;}
+.fcol ul{list-style:none;}
+.fcol ul li{margin-bottom:8px;}
+.fcol ul li a{font-size:13px;color:#666;}
+.fcol ul li a:hover{color:#111;}
+.fcol select{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;}
+.footer-bottom{border-top:1px solid #eee;padding-top:20px;text-align:center;font-size:12px;color:#999;}
 </style>
 </head>
 <body>
 
-<!-- ── CONFIRM MODAL ── -->
-<div id="modal-overlay">
-  <div class="modal">
-    <h3 id="modal-title">Confirm Action</h3>
-    <p id="modal-body"></p>
-    <div class="modal-actions">
-      <button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-danger btn-sm" id="modal-confirm">Confirm</button>
+<!-- ═══ NAV ═══ -->
+<nav>
+  <div class="nav-logo" onclick="go('home')">IRONWOOD INTELLIGENCE</div>
+  <div class="nav-links">
+    <a onclick="go('home')">Home Page</a>
+    <a onclick="go('about')">About Us</a>
+    <a onclick="go('data')">Data</a>
+    <a onclick="go('contact')">Contact Us</a>
+    <div class="nav-more">
+      <button class="nav-more-btn" onclick="toggleDD(event)">
+        More Links
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+      </button>
+      <div class="dropdown" id="dd">
+        <a onclick="go('properties')">Properties</a>
+        <a onclick="go('analytics')">Analytics</a>
+        <a onclick="go('dashboard')">Dashboard</a>
+        <a onclick="go('subscription')">Pricing</a>
+      </div>
     </div>
   </div>
-</div>
-
-<!-- ── LOGIN ── -->
-<div id="login-screen">
-  <div class="login-box">
-    <div class="login-wordmark">Ironwood Intelligence</div>
-    <div class="login-sub">Data Operations Terminal</div>
-    <h2>Sign in to continue</h2>
-    <div class="fg"><label>Email</label><input type="email" id="login-email" placeholder="admin@ironwoodintelligence.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
-    <div class="fg"><label>Password</label><input type="password" id="login-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
-    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In</button>
-    <div class="login-err" id="login-err"></div>
+  <div class="nav-actions">
+    <button class="btn-join" onclick="go('register')">Join</button>
+    <button class="btn-login" onclick="go('login')">Login</button>
   </div>
-</div>
+</nav>
 
-<!-- ── APP ── -->
-<div id="app">
-  <div class="topbar">
+<!-- ═══ HOME ═══ -->
+<div id="page-home" class="page active">
+  <div class="hero">
     <div>
-      <span class="tb-wordmark">Ironwood Intelligence</span>
-      <span class="tb-badge">Data Ops</span>
+      <h1>Unlock Insights with Real Estate Analytics</h1>
+      <p>Discover the power of data-driven decisions in real estate. Our platform provides comprehensive analytics to help you make informed choices.</p>
+      <div class="hero-btns">
+        <button class="btn-dark">Learn More</button>
+        <button class="btn-outline" onclick="go('register')">Sign Up</button>
+      </div>
     </div>
-    <div class="tb-right">
-      <span class="tb-demo" id="demo-banner" style="display:none;">⚠ Demo Data Present</span>
-      <span class="tb-user" id="tb-user"></span>
-      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    <div class="hero-img g-city"><span class="grad-icon">🌆</span></div>
+  </div>
+
+  <div class="sec-split">
+    <div class="split-img g-office"><span class="grad-icon">🏢</span></div>
+    <div>
+      <h2>Unlock the Power of Real Estate Data at Your Fingertips</h2>
+      <p>Our platform offers comprehensive data analytics to help you make informed real estate decisions. Gain valuable property insights and stay ahead of market trends with ease.</p>
+      <div class="feat-row"><div class="feat-row-icon">📊</div><div><strong>Data Analytics</strong><span>Transform raw data into actionable insights for smarter investment strategies.</span></div></div>
+      <div class="feat-row"><div class="feat-row-icon">🔍</div><div><strong>Property Insights</strong><span>Discover detailed property information to enhance your buying or selling process.</span></div></div>
     </div>
   </div>
 
-  <div class="layout">
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-      <div class="sb-section">
-        <div class="sb-lbl">Overview</div>
-        <div class="sb-item active" onclick="showPg('dashboard',this)"><span class="sb-icon">◈</span>Dashboard</div>
-        <div class="sb-item" onclick="showPg('data-health',this)"><span class="sb-icon">⬛</span>Data Health <span class="sb-badge-red" id="badge-health" style="display:none;">0</span></div>
+  <div class="sec-3col">
+    <div class="eyebrow">SERVICES</div>
+    <h2>Unlock the Power of Real Estate Data with Our Advanced Analytics</h2>
+    <p class="sub">Our platform provides powerful tools to analyze market trends and make data-driven decisions.</p>
+    <div class="cards3">
+      <div class="card3"><div class="icon">⚡</div><h3>Stay Ahead with Real-Time Insights</h3><p>Comprehensive data analysis to empower your real estate decisions.</p><a>Learn More →</a></div>
+      <div class="card3"><div class="icon">🔍</div><h3>Get Tailored Property Investments</h3><p>Customized insights that align with your unique property goals.</p><a onclick="go('register')">Sign Up →</a></div>
+      <div class="card3"><div class="icon">📈</div><h3>Analyze Comprehensive Data</h3><p>Dive deep into the hidden potential of properties with our detailed analytics.</p><a onclick="go('analytics')">Explore →</a></div>
+    </div>
+  </div>
+
+  <div class="sec-how">
+    <h2>Discover How to Navigate Our Platform Effortlessly</h2>
+    <p class="sub">A simple, intuitive process to get you from sign-up to insights in minutes.</p>
+    <div class="how-cards">
+      <div class="how-card"><div class="how-card-img g-person"><span class="grad-icon">👤</span></div><div class="how-card-body"><h3>Unlock Powerful Insights with Our User-Friendly Data Tools</h3><p>Our platform simplifies the process of accessing and analyzing real estate data.</p><a>Get Started →</a></div></div>
+      <div class="how-card"><div class="how-card-img g-meeting"><span class="grad-icon">🤝</span></div><div class="how-card-body"><h3>Step 1: Create Your Account for Personalized Data Access</h3><p>Sign up to gain access to exclusive analytics tailored to your needs.</p><a onclick="go('register')">Join →</a></div></div>
+      <div class="how-card"><div class="how-card-img g-dash"><span class="grad-icon">📊</span></div><div class="how-card-body"><h3>Step 2: Explore Our Comprehensive Dashboard for Insights</h3><p>Utilize our intuitive dashboard to visualize trends and make informed decisions.</p><a onclick="go('analytics')">See More →</a></div></div>
+    </div>
+  </div>
+
+  <div class="cta-strip">
+    <div><a>Learn More →</a></div>
+    <div><a onclick="go('register')">Sign Up →</a></div>
+    <div><a onclick="go('analytics')">Explore →</a></div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
+
+<!-- ═══ DATA ═══ -->
+<div id="page-data" class="page">
+  <div class="data-hero">
+    <div class="eyebrow">INSIGHTS</div>
+    <h1>Data-Driven Solutions</h1>
+    <p>Unlock the power of real estate analytics with our comprehensive data solutions tailored for you.</p>
+    <div style="display:flex;gap:12px;"><button class="btn-dark">Learn More</button><button class="btn-outline" onclick="go('register')">Sign Up</button></div>
+  </div>
+  <div style="padding:60px;background:#fff;">
+    <div style="text-align:center;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:8px;">SERVICES</div>
+    <h2 style="font-size:26px;font-weight:800;text-align:center;margin-bottom:8px;">Explore Our Comprehensive Real Estate Services</h2>
+    <p style="font-size:14px;color:#666;text-align:center;margin-bottom:40px;max-width:560px;margin-left:auto;margin-right:auto;">Unlock the true potential of real estate with our expert services. We provide insights that drive informed decisions.</p>
+    <div class="svc-grid">
+      <div class="svc-card"><div class="icon">🗄️</div><h3>Property Data Analysis</h3><p>Gain deep insights into property values and market dynamics with our advanced data analysis.</p></div>
+      <div class="svc-card"><div class="icon">📊</div><h3>Market Trends Reporting</h3><p>Stay ahead of the curve with our detailed market analysis and reporting services.</p></div>
+      <div class="svc-card"><div class="icon">📈</div><h3>Investment Advisory Services</h3><p>Maximize your real estate investment strategy and achieve your goals.</p></div>
+    </div>
+    <div style="text-align:center;margin-top:32px;"><button class="btn-sm-outline">Learn More →</button></div>
+  </div>
+  <div style="padding:60px;background:#f5f5f5;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;">
+    <div>
+      <h2 style="font-size:26px;font-weight:800;margin-bottom:14px;">Unlock the Power of Property Data Analysis for Informed Real Estate Decisions</h2>
+      <p style="font-size:14px;color:#555;line-height:1.7;margin-bottom:18px;">Dive deep into our comprehensive data to make smarter, data-driven choices.</p>
+      <ul class="check-list"><li>Comprehensive market analysis</li><li>Accurate property valuations</li><li>Predictive investment modeling</li></ul>
+      <div style="margin-top:20px;"><button class="btn-sm-outline">Learn More →</button></div>
+    </div>
+    <div class="split-img g-dash" style="height:300px;border-radius:12px;position:relative;overflow:hidden;"><span class="grad-icon">📊</span></div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
+
+<!-- ═══ ANALYTICS ═══ -->
+<div id="page-analytics" class="page">
+  <div class="analytics-wrap">
+    <div>
+      <div class="sidebar-box">
+        <h3>Analytics Filter</h3>
+        <div class="fg"><label>City</label><select><option>All Cities</option><option>Lagos</option><option>Nairobi</option><option>Cape Town</option><option>Accra</option><option>Johannesburg</option></select></div>
+        <div class="fg"><label>Property Type</label><select><option>All Property Types</option><option>Office</option><option>Retail</option><option>Residential</option><option>Hospitality</option><option>Industrial</option></select></div>
+        <div class="fg"><label>Minimum Size (sqm)</label><input type="text" placeholder="e.g., 500"/></div>
+        <div class="fg"><label>Maximum Size (sqm)</label><input type="text" placeholder="e.g., 10000"/></div>
+        <button class="btn-apply">Apply Filters</button>
       </div>
-      <div class="sb-section">
-        <div class="sb-lbl">Data Pipeline</div>
-        <div class="sb-item" onclick="showPg('sources',this)"><span class="sb-icon">◉</span>Sources</div>
-        <div class="sb-item" onclick="showPg('ingestion',this)"><span class="sb-icon">⟳</span>Ingestion Jobs</div>
-        <div class="sb-item" onclick="showPg('drive-sync',this)"><span class="sb-icon">⟁</span>Drive Sync</div>
-        <div class="sb-item" onclick="showPg('upload',this)"><span class="sb-icon">↑</span>Upload Manager</div>
-        <div class="sb-item" onclick="showPg('download',this)"><span class="sb-icon">↓</span>Download Data</div>
-      </div>
-      <div class="sb-section">
-        <div class="sb-lbl">Data Quality</div>
-        <div class="sb-item" onclick="showPg('dataset-explorer',this)"><span class="sb-icon">≡</span>Dataset Explorer</div>
-        <div class="sb-item" onclick="showPg('validation',this)"><span class="sb-icon">✓</span>Data Validation</div>
-        <div class="sb-item" onclick="showPg('verification',this)"><span class="sb-icon">◎</span>Verification Queue <span class="sb-badge" id="badge-vq">3</span></div>
-      </div>
-      <div class="sb-section">
-        <div class="sb-lbl">Operations</div>
-        <div class="sb-item" onclick="showPg('activity',this)"><span class="sb-icon">≋</span>Activity Log</div>
-        <div class="sb-item" onclick="showPg('batch',this)"><span class="sb-icon">⊞</span>Batch Operations</div>
-        <div class="sb-item" onclick="showPg('manual',this)"><span class="sb-icon">✎</span>Manual Entry</div>
-      </div>
-      <div class="sb-section">
-        <div class="sb-lbl">Admin</div>
-        <div class="sb-item" onclick="showPg('users',this)"><span class="sb-icon">◫</span>Admin Users</div>
-        <div class="sb-item" onclick="showPg('api-mgmt',this)"><span class="sb-icon">⚡</span>API Management</div>
-        <div class="sb-item" onclick="showPg('settings',this)"><span class="sb-icon">⚙</span>Settings</div>
+      <div class="sidebar-box">
+        <h3>Market Overview</h3>
+        <div class="mo-row"><span class="lbl">Total Properties</span><span class="val">5</span></div>
+        <div class="mo-row"><span class="lbl">Avg. Rent/sqm</span><span class="val">$1570.00</span></div>
+        <div class="mo-row"><span class="lbl">Vacancy Rate</span><span class="val">10.0%</span></div>
       </div>
     </div>
-
-    <!-- MAIN -->
-    <div class="main">
-
-      <!-- ══ DASHBOARD ══ -->
-      <div class="pg active" id="pg-dashboard">
-        <div class="pg-eyebrow">Overview</div>
-        <div class="pg-title">Operations Dashboard</div>
-        <div class="pg-sub">Real-time data platform status. Last refreshed: <span id="dash-refresh">—</span> <button class="btn btn-secondary btn-xs" onclick="loadDashboard()" style="margin-left:8px;">↻ Refresh</button></div>
-
-        <!-- Operational Metrics -->
-        <div class="metrics-grid" id="ops-metrics">
-          <div class="metric"><div class="metric-lbl">Total Listings</div><div class="metric-val" id="st-listings">—</div><div class="metric-sub">in database</div><span class="metric-link" onclick="showPg('dataset-explorer',document.querySelector('.sb-item:nth-child(8)'))">View dataset →</span></div>
-          <div class="metric"><div class="metric-lbl">Added Today</div><div class="metric-val" id="st-today">—</div><div class="metric-sub">new records</div></div>
-          <div class="metric"><div class="metric-lbl">Added This Week</div><div class="metric-val" id="st-week">—</div><div class="metric-sub">new records</div></div>
-          <div class="metric"><div class="metric-lbl">Cities Covered</div><div class="metric-val" id="st-cities">—</div><div class="metric-sub">active markets</div></div>
-          <div class="metric"><div class="metric-lbl">Countries</div><div class="metric-val" id="st-countries">—</div><div class="metric-sub">covered</div></div>
-          <div class="metric"><div class="metric-lbl">Active Sources</div><div class="metric-val" id="st-sources">1</div><div class="metric-sub">data sources</div></div>
-          <div class="metric"><div class="metric-lbl">Price Records</div><div class="metric-val" id="st-prices">—</div><div class="metric-sub">historical entries</div></div>
-          <div class="metric"><div class="metric-lbl">Last Ingestion</div><div class="metric-val" id="st-lastrun" style="font-size:16px;">—</div><div class="metric-sub" id="st-lastrun-sub">no run recorded</div></div>
+    <div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:14px;">Property Dashboard</div>
+      <div id="africa-map"></div>
+      <div class="a-bottom">
+        <div class="a-card">
+          <h3>Average Rent by Property Type</h3>
+          <div class="rent-row"><span>Office</span><span><span class="r-val">$1800/sqm</span><span class="r-up">+5.2%</span></span></div>
+          <div class="rent-row"><span>Retail</span><span><span class="r-val">$1600/sqm</span><span class="r-up">+5.2%</span></span></div>
+          <div class="rent-row"><span>Residential</span><span><span class="r-val">$1500/sqm</span><span class="r-up">+5.2%</span></span></div>
+          <div class="rent-row"><span>Hospitality</span><span><span class="r-val">$1750/sqm</span><span class="r-up">+5.2%</span></span></div>
+          <div class="rent-row"><span>Industrial</span><span><span class="r-val">$1200/sqm</span><span class="r-up">+5.2%</span></span></div>
         </div>
-
-        <!-- Data Health Summary -->
-        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink5);margin-bottom:8px;">Data Health Summary</div>
-        <div class="health-grid" id="health-grid">
-          <div class="health-cell"><div class="health-lbl">Missing District</div><div class="health-val warn" id="hc-district">—</div><div style="font-size:10px;color:var(--ink5);">records</div></div>
-          <div class="health-cell"><div class="health-lbl">Missing Price</div><div class="health-val warn" id="hc-price">—</div><div style="font-size:10px;color:var(--ink5);">records</div></div>
-          <div class="health-cell"><div class="health-lbl">Missing Size</div><div class="health-val warn" id="hc-size">—</div><div style="font-size:10px;color:var(--ink5);">records</div></div>
-          <div class="health-cell"><div class="health-lbl">Duplicates Detected</div><div class="health-val crit" id="hc-dupes">—</div><div style="font-size:10px;color:var(--ink5);">estimated</div></div>
-          <div class="health-cell"><div class="health-lbl">Listings &gt; 90 Days</div><div class="health-val ok" id="hc-old">—</div><div style="font-size:10px;color:var(--ink5);">records</div></div>
-        </div>
-
-        <div class="two-col">
-          <!-- Quick Actions -->
-          <div class="panel">
-            <div class="panel-hd"><div><div class="panel-title">Quick Actions</div><div class="panel-sub">Common data operations</div></div></div>
-            <div class="panel-body" style="display:flex;flex-direction:column;gap:8px;">
-              <button class="btn btn-primary btn-sm" onclick="showPg('upload',null)" style="text-align:left;justify-content:flex-start;">↑ Upload New Dataset</button>
-              <button class="btn btn-secondary btn-sm" onclick="showPg('data-health',null)" style="text-align:left;">⬛ Run Data Health Scan</button>
-              <button class="btn btn-secondary btn-sm" onclick="showPg('verification',null)" style="text-align:left;">◎ Review Verification Queue</button>
-              <button class="btn btn-secondary btn-sm" onclick="showPg('dataset-explorer',null)" style="text-align:left;">≡ Browse Dataset Explorer</button>
-              <button class="btn btn-secondary btn-sm" onclick="showPg('download',null)" style="text-align:left;">↓ Download Full Export</button>
-            </div>
-          </div>
-          <!-- Connection -->
-          <div class="panel">
-            <div class="panel-hd"><div><div class="panel-title">Platform Status</div><div class="panel-sub">Supabase · Ironwood Intelligence</div></div></div>
-            <div class="panel-body">
-              <div id="conn-status" style="font-size:13px;color:var(--ink5);">Checking connection...</div>
-              <div style="margin-top:14px;">
-                <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bg);font-size:12px;">
-                  <span style="color:var(--ink5);">Supabase project</span><span class="mono" style="font-size:11px;color:var(--ink4);">ujhqkirhfm...</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bg);font-size:12px;">
-                  <span style="color:var(--ink5);">Region</span><span style="color:var(--ink4);">West EU (Paris)</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:12px;">
-                  <span style="color:var(--ink5);">Environment</span><span style="color:var(--amber);">Sandbox / Test</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recent Activity -->
-        <div class="panel">
-          <div class="panel-hd"><div class="panel-title">Recent Activity</div><button class="btn btn-secondary btn-xs" onclick="showPg('activity',null)">View full log →</button></div>
-          <div id="dash-activity">
-            <div class="log-entry"><div class="log-time">—</div><div class="log-dot info"></div><div class="log-text">Loading activity log...<div class="log-user"></div></div></div>
-          </div>
+        <div class="a-card">
+          <h3>Recent Transactions</h3>
+          <div class="tr"><span class="tprice">$450,000</span><div class="ttype">Apartment Sale</div><div class="tdate">15/01/2024</div></div>
+          <div class="tr"><span class="tprice">$280,000</span><div class="ttype">Apartment Sale</div><div class="tdate">20/02/2024</div></div>
+          <div class="tr"><span class="tprice">$1,200,000</span><div class="ttype">Office Sale</div><div class="tdate">05/03/2024</div></div>
         </div>
       </div>
-
-      <!-- ══ DATA HEALTH ══ -->
-      <div class="pg" id="pg-data-health">
-        <div class="pg-eyebrow">Data Quality</div>
-        <div class="pg-title">Data Health Monitor</div>
-        <div class="pg-sub">Automated scan of all datasets for missing fields, duplicates, stale data, and invalid values. <button class="btn btn-primary btn-sm" onclick="runHealthScan()" style="margin-left:4px;">▶ Run Full Scan</button></div>
-
-        <div class="panel">
-          <div class="panel-hd"><div><div class="panel-title">Issue Summary</div><div class="panel-sub" id="health-scan-time">Last scan: Not yet run</div></div>
-          <div class="panel-actions"><button class="btn btn-secondary btn-xs" onclick="exportHealthReport()">↓ Export Report</button></div></div>
-
-          <!-- Issues -->
-          <div id="health-issues">
-            <div class="issue-row"><div class="issue-icon warn">⚠</div><div><div class="issue-name">Missing District</div><div class="issue-sub">Listings with no district / submarket value</div></div><div class="issue-count warn" id="hi-district">—</div><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-xs" onclick="viewIssue('missing_district')">View</button><button class="btn btn-secondary btn-xs" onclick="exportIssue('missing_district')">Export</button></div></div>
-            <div class="issue-row"><div class="issue-icon crit">✕</div><div><div class="issue-name">Missing Price</div><div class="issue-sub">Listings with no price or price_per_sqm</div></div><div class="issue-count crit" id="hi-price">—</div><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-xs" onclick="viewIssue('missing_price')">View</button><button class="btn btn-secondary btn-xs" onclick="exportIssue('missing_price')">Export</button></div></div>
-            <div class="issue-row"><div class="issue-icon warn">⚠</div><div><div class="issue-name">Missing Size</div><div class="issue-sub">Listings with no size_sqm value</div></div><div class="issue-count warn" id="hi-size">—</div><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-xs" onclick="viewIssue('missing_size')">View</button><button class="btn btn-secondary btn-xs" onclick="exportIssue('missing_size')">Export</button></div></div>
-            <div class="issue-row"><div class="issue-icon warn">⚠</div><div><div class="issue-name">Missing Source URL</div><div class="issue-sub">Listings with no source URL for verification</div></div><div class="issue-count warn" id="hi-url">—</div><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-xs" onclick="viewIssue('missing_url')">View</button></div></div>
-            <div class="issue-row"><div class="issue-icon crit">⊞</div><div><div class="issue-name">Duplicate Records</div><div class="issue-sub">Estimated duplicates based on city + price + size matching</div></div><div class="issue-count crit" id="hi-dupes">—</div><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-xs" onclick="showPg('batch',null)">Deduplicate</button></div></div>
-            <div class="issue-row"><div class="issue-icon warn">⊙</div><div><div class="issue-name">Listings &gt; 90 Days Old</div><div class="issue-sub">Listings that may be stale and should be re-verified</div></div><div class="issue-count warn" id="hi-old">—</div><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-xs" onclick="viewIssue('stale')">View</button><button class="btn btn-secondary btn-xs" onclick="exportIssue('stale')">Export</button></div></div>
-            <div class="issue-row"><div class="issue-icon warn">?</div><div><div class="issue-name">Invalid Property Type</div><div class="issue-sub">Values not matching approved asset class taxonomy</div></div><div class="issue-count warn" id="hi-type">—</div><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-xs" onclick="viewIssue('invalid_type')">View</button></div></div>
-            <div class="issue-row"><div class="issue-icon ok">✓</div><div><div class="issue-name">Records in Review Queue</div><div class="issue-sub">Records flagged for manual verification</div></div><div class="issue-count ok" id="hi-review">3</div><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-xs" onclick="showPg('verification',null)">Review</button></div></div>
+      <div class="vacancy-box">
+        <h3>Vacancy Rate Trends</h3>
+        <div style="position:relative;">
+          <div class="chart">
+            <div class="y-lbls"><span>16</span><span>12</span><span>8</span><span>4</span><span>0</span></div>
+            <svg class="linechart" viewBox="0 0 400 180" preserveAspectRatio="none">
+              <line x1="0" y1="22" x2="400" y2="22" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="0" y1="67" x2="400" y2="67" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="0" y1="112" x2="400" y2="112" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="0" y1="157" x2="400" y2="157" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
+              <polyline points="0,45 133,112 266,9 400,140" fill="none" stroke="#8b8bc8" stroke-width="2.5"/>
+              <circle cx="0" cy="45" r="4" fill="#8b8bc8"/>
+              <circle cx="133" cy="112" r="4" fill="#8b8bc8"/>
+              <circle cx="266" cy="9" r="4" fill="#8b8bc8"/>
+              <circle cx="400" cy="140" r="4" fill="#8b8bc8"/>
+            </svg>
           </div>
         </div>
-
-        <div class="panel">
-          <div class="panel-hd"><div class="panel-title">Issue Records</div><div class="panel-sub" id="issue-view-lbl">Select an issue above to view records</div></div>
-          <div id="issue-records-wrap">
-            <div style="padding:28px;text-align:center;color:var(--ink5);font-size:13px;">Select an issue type to load records</div>
-          </div>
-        </div>
+        <div class="x-lbls"><span>Westlands</span><span>Sea Point</span><span>Airport City</span><span>Sandton</span></div>
+        <div class="legend"><span class="ldot"></span> Vacancy Rate</div>
       </div>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
 
-      <!-- ══ SOURCES ══ -->
-      <div class="pg" id="pg-sources">
-        <div class="pg-eyebrow">Data Pipeline</div>
-        <div class="pg-title">Source Registry</div>
-        <div class="pg-sub">All active data sources. Each source must be registered before data is ingested. Sources are immutable audit references.</div>
+<!-- ═══ PROPERTIES ═══ -->
+<div id="page-properties" class="page">
+  <div class="props-hdr">
+    <div><h1>Property Listings</h1><p>Explore 5 properties across African markets</p></div>
+    <div class="vtoggle"><button class="act">⊞</button><button>☰</button></div>
+  </div>
+  <div class="filter-bar">
+    <h3>Filter Properties</h3>
+    <div class="frow">
+      <div class="fcol"><label>Region</label><select><option>All Regions</option></select></div>
+      <div class="fcol"><label>Submarket</label><select><option>All Submarkets</option></select></div>
+      <div class="fcol"><label>Type</label><select><option>All Types</option><option>Office</option><option>Retail</option><option>Residential</option><option>Hospitality</option><option>Industrial</option></select></div>
+      <div class="fcol"><label>Min Size (sqm)</label><input type="text" placeholder="0"/></div>
+      <div class="fcol"><label>Max Size (sqm)</label><input type="text" placeholder="∞"/></div>
+      <div class="fcol"><label>Min Rent ($)</label><input type="text" placeholder="0"/></div>
+      <div class="fcol"><label>Max Rent ($)</label><input type="text" placeholder="∞"/></div>
+      <button class="btn-clr">Clear All Filters</button>
+    </div>
+  </div>
+  <div class="pgrid">
+    <div class="pcard"><div class="pimg g-lagos"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge ba">Available</span></div><div class="pbody"><div class="ptype">Office</div><div class="pname">Lagos Business District Tower</div><div class="ploc">📍 Lagos, Victoria Island</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
+    <div class="pcard"><div class="pimg g-nairobi"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge bo">Occupied</span></div><div class="pbody"><div class="ptype">Retail</div><div class="pname">Nairobi Commercial Center</div><div class="ploc">📍 Nairobi, Westlands</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
+    <div class="pcard"><div class="pimg g-cape"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge ba">Available</span></div><div class="pbody"><div class="ptype">Residential</div><div class="pname">Cape Town Residential Complex</div><div class="ploc">📍 Cape Town, Sea Point</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
+    <div class="pcard"><div class="pimg g-accra"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge bo">Occupied</span></div><div class="pbody"><div class="ptype">Hospitality</div><div class="pname">Accra Hotel &amp; Conference</div><div class="ploc">📍 Accra, Airport City</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
+    <div class="pcard"><div class="pimg g-joburg"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge bo">Occupied</span></div><div class="pbody"><div class="ptype">Industrial</div><div class="pname">Johannesburg Logistics Hub</div><div class="ploc">📍 Johannesburg, Sandton</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
+  </div>
+  <div class="unlock">
+    <h2>Unlock Full Property Details</h2>
+    <p>Subscribe to access complete property information, transaction history, and advanced market analytics.</p>
+    <div class="unlock-btns"><button class="btn-wo" onclick="go('subscription')">View Subscription Plans</button><button class="btn-ws" onclick="go('register')">Start Free Trial</button></div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
 
-        <div class="panel" style="margin-bottom:16px;">
-          <div class="panel-hd"><div class="panel-title">Active Sources</div><button class="btn btn-primary btn-sm" onclick="toggleAddSource()">+ Register Source</button></div>
-
-          <div id="add-source-form" style="display:none;padding:16px;border-bottom:1px solid var(--border);background:var(--bg);">
-            <div class="form-grid-3">
-              <div class="fg2"><label>Source Name ★</label><input type="text" id="ns-name" placeholder="e.g. Mubawab.ma"/></div>
-              <div class="fg2"><label>Source URL</label><input type="text" id="ns-url" placeholder="https://mubawab.ma"/></div>
-              <div class="fg2"><label>Country</label><input type="text" id="ns-country" placeholder="Morocco"/></div>
-            </div>
-            <div class="form-grid-3">
-              <div class="fg2"><label>Type</label><select id="ns-type"><option>Listing Portal</option><option>Agent Network</option><option>Land Registry</option><option>Corporate Announcement</option><option>Manual Upload</option><option>Scraper</option></select></div>
-              <div class="fg2"><label>Cadence</label><select id="ns-cadence"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Ad-hoc</option></select></div>
-              <div class="fg2"><label>Notes</label><input type="text" id="ns-notes" placeholder="Optional notes"/></div>
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="addSource()">Register Source</button>
-            <button class="btn btn-secondary btn-sm" onclick="toggleAddSource()">Cancel</button>
-          </div>
-
-          <!-- Source list -->
-          <div class="source-row" style="background:var(--surface2);">
-            <div style="width:32px;"></div>
-            <div style="flex:1;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Source</div>
-            <div style="width:100px;text-align:right;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Listings</div>
-            <div style="width:130px;text-align:right;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Last Ingestion</div>
-            <div style="width:80px;text-align:right;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Success</div>
-            <div style="width:60px;"></div>
-          </div>
-          <div id="sources-list">
-            <div class="source-row">
-              <div class="source-icon">🌐</div>
-              <div class="source-name"><strong>Mubawab.ma</strong><span>mubawab.ma · Listing Portal · Morocco · Weekly</span></div>
-              <div style="width:100px;text-align:right;"><div class="source-stat-val" id="src-mubawab-count">—</div><div class="source-stat-lbl">listings</div></div>
-              <div style="width:130px;text-align:right;"><div class="source-stat-val" style="font-size:11px;" id="src-mubawab-last">—</div><div class="source-stat-lbl">last run</div></div>
-              <div style="width:80px;text-align:right;"><div class="source-stat-val" style="color:var(--green);">98%</div><div class="source-stat-lbl">success</div></div>
-              <div style="width:60px;text-align:right;"><button class="btn btn-secondary btn-xs">Edit</button></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-hd"><div><div class="panel-title">Data Lineage Schema</div><div class="panel-sub">Required metadata fields on every raw record</div></div></div>
-          <div class="panel-body">
-            <table class="dt" style="width:100%;">
-              <thead><tr><th>Field</th><th>Type</th><th>Description</th><th>Required</th></tr></thead>
-              <tbody>
-                <tr><td>created_at</td><td class="mono">timestamptz</td><td>Record creation time (auto)</td><td><span class="status status-success">Yes</span></td></tr>
-                <tr><td>updated_at</td><td class="mono">timestamptz</td><td>Last modification time (auto)</td><td><span class="status status-success">Yes</span></td></tr>
-                <tr><td>source_type</td><td class="mono">text</td><td>Classification: Listings-derived / Observed / Modeled</td><td><span class="status status-success">Yes</span></td></tr>
-                <tr><td>source_url</td><td class="mono">text</td><td>Original URL of listing or document</td><td><span class="status status-warning">Recommended</span></td></tr>
-                <tr><td>verification_status</td><td class="mono">text</td><td>Verified / Unverified / Needs Review</td><td><span class="status status-success">Yes</span></td></tr>
-                <tr><td>created_by</td><td class="mono">uuid</td><td>Admin user who created/uploaded record</td><td><span class="status status-success">Yes</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+<!-- ═══ SUBSCRIPTION ═══ -->
+<div id="page-subscription" class="page">
+  <div class="sub-pg">
+    <h1>Choose Your Plan</h1>
+    <p class="sub-desc">Get access to comprehensive African real estate market data, analytics, and insights tailored to your investment needs.</p>
+    <div class="plans">
+      <div class="plan"><div class="pln-name">Basic</div><div class="pln-tag">Essential market data for small investors</div><div class="pln-price"><span class="amt">$99</span><span class="per">/month</span></div><ul class="pln-feats"><li>Access to property listings</li><li>Basic market analytics</li><li>Monthly market reports</li><li>Email support</li><li>Up to 50 property views/month</li></ul><button class="btn-sub btn-sub-o">Subscribe to Basic</button></div>
+      <div class="plan feat"><div class="pop-badge">⭐ Most Popular</div><div class="pln-name">Professional</div><div class="pln-tag">Advanced analytics for serious investors</div><div class="pln-price"><span class="amt">$299</span><span class="per">/month</span></div><ul class="pln-feats"><li>Everything in Basic</li><li>Advanced market analytics</li><li>Real-time data updates</li><li>Transaction history access</li><li>Unlimited property views</li><li>Priority support</li><li>Custom reports</li><li>API access</li></ul><button class="btn-sub btn-sub-d">Subscribe to Professional</button></div>
+      <div class="plan"><div class="pln-name">Enterprise</div><div class="pln-tag">Complete solution for large organizations</div><div class="pln-price"><span class="amt">$999</span><span class="per">/month</span></div><ul class="pln-feats"><li>Everything in Professional</li><li>Multi-user accounts</li><li>White-label solutions</li><li>Dedicated account manager</li><li>Custom integrations</li><li>Advanced security features</li><li>Training &amp; onboarding</li><li>SLA guarantee</li></ul><button class="btn-sub btn-sub-o">Subscribe to Enterprise</button></div>
+    </div>
+    <div class="why-box">
+      <h2>Why Choose Our Platform?</h2>
+      <div class="why-grid">
+        <div class="why-item"><div class="wi-badge">+35</div><h4>Countries Covered</h4><p>Comprehensive data across major African markets</p></div>
+        <div class="why-item"><div class="wi-badge">24/7</div><h4>Real-time Updates</h4><p>Live market data and instant notifications</p></div>
+        <div class="why-item"><div class="wi-badge">API</div><h4>Developer Friendly</h4><p>RESTful API for custom integrations</p></div>
+        <div class="why-item"><div class="wi-badge">99%</div><h4>Uptime Guarantee</h4><p>Reliable platform you can depend on</p></div>
       </div>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
 
-      <!-- ══ INGESTION JOBS ══ -->
-      <div class="pg" id="pg-ingestion">
-        <div class="pg-eyebrow">Data Pipeline</div>
-        <div class="pg-title">Ingestion Job Monitor</div>
-        <div class="pg-sub">Track scraper and data ingestion pipeline execution. All job history is append-only.</div>
+<!-- ═══ DASHBOARD ═══ -->
+<div id="page-dashboard" class="page">
+  <div class="dlocked">
+    <div class="lbig">🔒</div>
+    <h1>Subscriber Access Only</h1>
+    <p>This dashboard is part of our premium subscription. Please log in or join to access.</p>
+    <div class="dbtns"><button class="btn-dark" onclick="go('login')">Login</button><button class="btn-outline" onclick="go('register')">Join Now →</button></div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
 
-        <div class="panel" style="margin-bottom:16px;">
-          <div class="panel-hd"><div class="panel-title">Active &amp; Recent Jobs</div><button class="btn btn-secondary btn-xs" onclick="refreshJobs()">↻ Refresh</button></div>
-          <div class="job-row hdr">
-            <span>Job</span><span>Status</span><span>Last Run</span><span>Records</span><span>Errors</span><span>Action</span>
-          </div>
-          <div id="jobs-list">
-            <div class="job-row">
-              <div><div class="job-name">Mubawab Morocco Scraper<span>listings_raw · Automated</span></div></div>
-              <div><span class="status status-success">Success</span></div>
-              <div class="mono" style="font-size:11px;color:var(--ink4);" id="job-mubawab-time">—</div>
-              <div class="mono" style="font-size:12px;color:var(--ink3);" id="job-mubawab-rec">—</div>
-              <div class="mono" style="font-size:12px;color:var(--green);">0</div>
-              <div><button class="btn btn-secondary btn-xs">History</button></div>
-            </div>
-            <div class="job-row">
-              <div><div class="job-name">Admin Upload (Excel)<span>properties · Manual</span></div></div>
-              <div><span class="status status-pending">Idle</span></div>
-              <div class="mono" style="font-size:11px;color:var(--ink4);">—</div>
-              <div class="mono" style="font-size:12px;color:var(--ink4);">—</div>
-              <div class="mono" style="font-size:12px;color:var(--ink5);">—</div>
-              <div><button class="btn btn-secondary btn-xs" onclick="showPg('upload',null)">Run</button></div>
-            </div>
-            <div class="job-row">
-              <div><div class="job-name">Price Records Upload<span>price_records · Manual</span></div></div>
-              <div><span class="status status-pending">Idle</span></div>
-              <div class="mono" style="font-size:11px;color:var(--ink4);">—</div>
-              <div class="mono" style="font-size:12px;color:var(--ink4);">—</div>
-              <div class="mono" style="font-size:12px;color:var(--ink5);">—</div>
-              <div><button class="btn btn-secondary btn-xs" onclick="showPg('upload',null)">Run</button></div>
-            </div>
-          </div>
-        </div>
+<!-- ═══ LOGIN ═══ -->
+<div id="page-login" class="page">
+  <div class="auth-pg">
+    <div class="auth-box">
+      <h2>Sign in to your account</h2>
+      <div style="height:20px;"></div>
+      <div class="fg-auth"><label>Email address</label><input type="email"/></div>
+      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password"/><span class="pw-eye">👁</span></div></div>
+      <button class="btn-submit">Sign in</button>
+      <div class="auth-sw">Not a member? <a onclick="go('register')">Join now</a></div>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
 
-        <div class="panel">
-          <div class="panel-hd"><div class="panel-title">Ingestion Architecture</div><div class="panel-sub">Data flow: Source → Raw Layer → Derived Layer → Visualization</div></div>
-          <div class="panel-body">
-            <div style="display:flex;align-items:center;gap:0;overflow-x:auto;padding-bottom:4px;">
-              <div style="background:var(--surface3);border:1px solid var(--border2);padding:12px 16px;text-align:center;min-width:120px;">
-                <div style="font-size:9px;font-weight:700;color:var(--ink5);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Source</div>
-                <div style="font-size:12.5px;font-weight:700;color:var(--ink);">Mubawab / Excel</div>
-                <div style="font-size:10px;color:var(--ink5);">Listings portals</div>
-              </div>
-              <div style="padding:0 8px;color:var(--ink5);font-size:18px;">→</div>
-              <div style="background:var(--blue-dim);border:1px solid rgba(79,110,247,.3);padding:12px 16px;text-align:center;min-width:120px;">
-                <div style="font-size:9px;font-weight:700;color:var(--blue);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Raw Layer</div>
-                <div style="font-size:12.5px;font-weight:700;color:var(--ink);">listings_raw</div>
-                <div style="font-size:10px;color:var(--ink5);">Append-only · Immutable</div>
-              </div>
-              <div style="padding:0 8px;color:var(--ink5);font-size:18px;">→</div>
-              <div style="background:var(--green-dim);border:1px solid rgba(34,197,94,.2);padding:12px 16px;text-align:center;min-width:140px;">
-                <div style="font-size:9px;font-weight:700;color:var(--green);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Derived Layer</div>
-                <div style="font-size:12.5px;font-weight:700;color:var(--ink);">Analytics Tables</div>
-                <div style="font-size:10px;color:var(--ink5);">Medians · Trends · Scores</div>
-              </div>
-              <div style="padding:0 8px;color:var(--ink5);font-size:18px;">→</div>
-              <div style="background:var(--surface3);border:1px solid var(--border2);padding:12px 16px;text-align:center;min-width:120px;">
-                <div style="font-size:9px;font-weight:700;color:var(--ink5);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Viz Layer</div>
-                <div style="font-size:12.5px;font-weight:700;color:var(--ink);">Dashboard</div>
-                <div style="font-size:10px;color:var(--ink5);">Read-only queries</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+<!-- ═══ REGISTER ═══ -->
+<div id="page-register" class="page">
+  <div class="auth-pg">
+    <div class="auth-box">
+      <div class="auth-logo">RE</div>
+      <h2>Create your account</h2>
+      <p class="auth-sub">Or <a onclick="go('login')">sign in to your existing account</a></p>
+      <div class="fg-auth"><label>Full Name</label><input type="text" placeholder="Enter your full name"/></div>
+      <div class="fg-auth"><label>Email address</label><input type="email" placeholder="Enter your email"/></div>
+      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password" placeholder="Create a password"/><span class="pw-eye">👁</span></div></div>
+      <div class="fg-auth"><label>Confirm Password</label><div class="pw"><input type="password" placeholder="Confirm your password"/><span class="pw-eye">👁</span></div></div>
+      <div class="chk-row"><input type="checkbox"/><label>I agree to the <a>Terms of Service</a> and <a>Privacy Policy</a></label></div>
+      <button class="btn-submit">Create account</button>
+      <div class="ftrial"><div class="ft-t">Free Trial Included</div><p>Get 7 days of free access to all premium features when you create your account.</p></div>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
 
-      <!-- ══ UPLOAD MANAGER ══ -->
-      <!-- ══ DRIVE SYNC ══ -->
-      <div class="pg" id="pg-drive-sync">
-        <div class="pg-eyebrow">Data Pipeline</div>
-        <div class="pg-title">Drive Sync</div>
-        <div class="pg-sub">Automated sync from Google Drive to Supabase. One file per country. Each sync replaces only that country's rows — all other countries are untouched.</div>
+<!-- ═══ CONTACT ═══ -->
+<div id="page-contact" class="page">
+  <div class="cnt-hero g-network">
+    <div class="eyebrow">CONNECT</div>
+    <h1>Get in Touch</h1>
+    <p>We're here to answer your questions and help you with your real estate analytics needs.</p>
+    <div class="cnt-hero-btns"><button class="btn-wh">Learn More</button><button class="btn-ghw">Contact</button></div>
+  </div>
+  <div class="cnt-info">
+    <div>
+      <h2>Get in Touch</h2>
+      <p class="ci-desc">We're here to answer your questions and provide support. Reach out to us anytime!</p>
+      <div class="ci-item"><div class="ci-icon">✉️</div><div><div class="ci-lbl">Email</div><div class="ci-val">business@ironwoodintelligence.com</div></div></div>
+      <div class="ci-item"><div class="ci-icon">📞</div><div><div class="ci-lbl">Phone</div><div class="ci-val">+971 50 123 4567</div></div></div>
+      <div class="ci-item"><div class="ci-icon">📍</div><div><div class="ci-lbl">Office</div><div class="ci-val">Meydan Free Zone, Dubai, UAE</div></div></div>
+    </div>
+    <div class="ci-imgbox g-build"><span class="grad-icon">🏗️</span></div>
+  </div>
+  <div class="cnt-form-sec">
+    <h2>Send us a Message</h2>
+    <p class="cf-sub">We'd love to hear from you. Reach out today!</p>
+    <div class="cform">
+      <div class="frow2"><div class="fg-auth" style="margin:0;"><label>First Name</label><input type="text"/></div><div class="fg-auth" style="margin:0;"><label>Last Name</label><input type="text"/></div></div>
+      <div class="fg-auth"><label>Email</label><input type="email"/></div>
+      <div class="fg-auth"><label>Message</label><textarea></textarea></div>
+      <div style="text-align:center;"><button class="btn-dark" style="padding:12px 32px;border-radius:25px;">Send Message</button></div>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
 
-        <!-- How it works -->
-        <div class="panel" style="margin-bottom:16px;">
-          <div class="panel-hd"><div class="panel-title">How Country-Safe Replace Works</div></div>
-          <div class="panel-body">
-            <div style="display:flex;align-items:center;gap:0;overflow-x:auto;padding-bottom:8px;margin-bottom:16px;">
-              <div style="background:var(--surface3);border:1px solid var(--border2);padding:12px 16px;text-align:center;min-width:130px;">
-                <div style="font-size:9px;font-weight:700;color:var(--ink5);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Drive Folder</div>
-                <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px;">Morocco.xlsx</div>
-                <div style="font-size:10px;color:var(--ink5);">Multiple cities inside</div>
-              </div>
-              <div style="padding:0 10px;color:var(--ink5);font-size:20px;">→</div>
-              <div style="background:var(--red-dim);border:1px solid #7f1d1d;padding:12px 16px;text-align:center;min-width:160px;">
-                <div style="font-size:9px;font-weight:700;color:var(--red);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Step 1: Delete</div>
-                <div style="font-size:12px;font-weight:700;color:var(--ink);">WHERE country = 'Morocco'</div>
-                <div style="font-size:10px;color:var(--ink5);">Nigeria, Kenya untouched ✓</div>
-              </div>
-              <div style="padding:0 10px;color:var(--ink5);font-size:20px;">→</div>
-              <div style="background:var(--green-dim);border:1px solid rgba(34,197,94,.2);padding:12px 16px;text-align:center;min-width:160px;">
-                <div style="font-size:9px;font-weight:700;color:var(--green);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Step 2: Insert</div>
-                <div style="font-size:12px;font-weight:700;color:var(--ink);">All Morocco rows</div>
-                <div style="font-size:10px;color:var(--ink5);">All cities in one file</div>
-              </div>
-              <div style="padding:0 10px;color:var(--ink5);font-size:20px;">→</div>
-              <div style="background:var(--blue-dim);border:1px solid rgba(79,110,247,.3);padding:12px 16px;text-align:center;min-width:130px;">
-                <div style="font-size:9px;font-weight:700;color:var(--blue);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Result</div>
-                <div style="font-size:12px;font-weight:700;color:var(--ink);">Fresh Morocco data</div>
-                <div style="font-size:10px;color:var(--ink5);">All other countries safe</div>
-              </div>
-            </div>
-            <div style="font-size:12px;color:var(--ink5);line-height:1.8;">
-              <strong style="color:var(--ink);">File naming rule:</strong> Your file must be named after the country (e.g. <code style="background:var(--bg);padding:1px 6px;font-family:monospace;">Morocco.xlsx</code>, <code style="background:var(--bg);padding:1px 6px;font-family:monospace;">Nigeria.xlsx</code>). The script reads the filename to know which country's rows to replace. Each file can contain as many cities as you want — Casablanca, Marrakech, Rabat will all be in Morocco.xlsx.
-            </div>
-          </div>
-        </div>
+<!-- ═══ ABOUT ═══ -->
+<div id="page-about" class="page">
+  <div class="data-hero">
+    <h1>About Ironwood Intelligence</h1>
+    <p>Building the definitive real estate data platform for African markets.</p>
+  </div>
+  <div class="sec-split" style="background:#fff;">
+    <div class="split-img g-meeting"><span class="grad-icon">🤝</span></div>
+    <div>
+      <h2>Our Mission</h2>
+      <p>Ironwood Intelligence exists to bring transparency, data, and institutional-grade analytics to real estate markets across Africa. We aggregate, clean, and structure property data from 35+ countries so investors, developers, and institutions can make smarter decisions.</p>
+      <p style="margin-top:14px;font-size:14px;color:#555;line-height:1.7;">Based in Meydan Free Zone, Dubai, UAE — operating across the African continent, tracking thousands of properties in real time.</p>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
 
-        <!-- Sync status per country -->
-        <div class="panel" style="margin-bottom:16px;">
-          <div class="panel-hd">
-            <div><div class="panel-title">Country Sync Registry</div><div class="panel-sub">Each country is an independent sync unit</div></div>
-            <button class="btn btn-secondary btn-xs" onclick="refreshSyncStatus()">↻ Refresh</button>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 80px 100px 120px 80px 80px;background:var(--surface2);padding:7px 16px;border-bottom:1px solid var(--border);">
-            <span style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Country</span>
-            <span style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Cities</span>
-            <span style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Listings</span>
-            <span style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Last Sync</span>
-            <span style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Status</span>
-            <span style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Action</span>
-          </div>
-          <div id="sync-registry">
-            <div style="display:grid;grid-template-columns:1fr 80px 100px 120px 80px 80px;align-items:center;padding:11px 16px;border-bottom:1px solid var(--bg);">
-              <div><strong style="font-size:13px;color:var(--ink);">🇲🇦 Morocco</strong><div style="font-size:10px;color:var(--ink5);">Morocco.xlsx · Auto-sync active</div></div>
-              <div style="font-family:monospace;font-size:12px;color:var(--ink3);" id="sync-morocco-cities">—</div>
-              <div style="font-family:monospace;font-size:12px;color:var(--ink3);" id="sync-morocco-count">—</div>
-              <div style="font-size:11px;color:var(--ink5);" id="sync-morocco-last">—</div>
-              <div><span class="status status-success">Active</span></div>
-              <div><button class="btn btn-secondary btn-xs" onclick="triggerCountryUpload('Morocco')">Sync</button></div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 80px 100px 120px 80px 80px;align-items:center;padding:11px 16px;border-bottom:1px solid var(--bg);opacity:.5;">
-              <div><strong style="font-size:13px;color:var(--ink);">🇳🇬 Nigeria</strong><div style="font-size:10px;color:var(--ink5);">Nigeria.xlsx · Not yet configured</div></div>
-              <div style="font-family:monospace;font-size:12px;color:var(--ink5);">—</div>
-              <div style="font-family:monospace;font-size:12px;color:var(--ink5);">—</div>
-              <div style="font-size:11px;color:var(--ink5);">—</div>
-              <div><span class="status status-pending">Pending</span></div>
-              <div><button class="btn btn-secondary btn-xs" disabled>—</button></div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 80px 100px 120px 80px 80px;align-items:center;padding:11px 16px;opacity:.5;">
-              <div><strong style="font-size:13px;color:var(--ink);">🇸🇳 Senegal</strong><div style="font-size:10px;color:var(--ink5);">Senegal.xlsx · Not yet configured</div></div>
-              <div style="font-family:monospace;font-size:12px;color:var(--ink5);">—</div>
-              <div style="font-family:monospace;font-size:12px;color:var(--ink5);">—</div>
-              <div style="font-size:11px;color:var(--ink5);">—</div>
-              <div><span class="status status-pending">Pending</span></div>
-              <div><button class="btn btn-secondary btn-xs" disabled>—</button></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Setup instructions -->
-        <div class="panel">
-          <div class="panel-hd"><div class="panel-title">Setup Instructions</div><div class="panel-sub">One-time setup · ~10 minutes</div></div>
-          <div class="panel-body">
-            <div style="display:flex;flex-direction:column;gap:12px;">
-              <div style="display:flex;gap:12px;padding:12px;border:1px solid var(--border);">
-                <div style="width:24px;height:24px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">1</div>
-                <div><strong style="font-size:12.5px;color:var(--ink);">Go to script.google.com</strong><div style="font-size:11.5px;color:var(--ink5);margin-top:3px;">Create a new project. Delete the placeholder code. Paste the contents of <code style="background:var(--bg);padding:1px 5px;font-family:monospace;">ironwood_drive_sync.gs</code> (provided separately).</div></div>
-              </div>
-              <div style="display:flex;gap:12px;padding:12px;border:1px solid var(--border);">
-                <div style="width:24px;height:24px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">2</div>
-                <div><strong style="font-size:12.5px;color:var(--ink);">Fill in SUPABASE_SERVICE_KEY and FOLDER_ID</strong><div style="font-size:11.5px;color:var(--ink5);margin-top:3px;">Service Role Key: Supabase → Settings → API → service_role → Reveal. Folder ID: the long string in your Drive folder URL.</div></div>
-              </div>
-              <div style="display:flex;gap:12px;padding:12px;border:1px solid var(--border);">
-                <div style="width:24px;height:24px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">3</div>
-                <div><strong style="font-size:12.5px;color:var(--ink);">Enable Drive API</strong><div style="font-size:11.5px;color:var(--ink5);margin-top:3px;">In Apps Script editor: left sidebar → + next to Services → Google Drive API → Add.</div></div>
-              </div>
-              <div style="display:flex;gap:12px;padding:12px;border:1px solid var(--border);">
-                <div style="width:24px;height:24px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">4</div>
-                <div><strong style="font-size:12.5px;color:var(--ink);">Run testConnection, then syncAllCountries</strong><div style="font-size:11.5px;color:var(--ink5);margin-top:3px;">Select the function from the dropdown → click Run → check Logs. Once working, set a nightly Time-driven trigger on syncAllCountries.</div></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══ UPLOAD MANAGER ══ -->
-      <div class="pg" id="pg-upload">
-        <div class="pg-eyebrow">Data Pipeline</div>
-        <div class="pg-title">Upload Manager</div>
-        <div class="pg-sub">Upload a country sheet manually. The <strong>Country Replace</strong> mode deletes only that country's rows and reinserts — all other countries stay intact.</div>
-
-        <div class="tabs" id="up-tabs">
-          <div class="tab active" onclick="switchTab('ut','properties',this,'up-tabs')">Listings / Properties</div>
-          <div class="tab" onclick="switchTab('ut','prices',this,'up-tabs')">Price Records</div>
-          <div class="tab" onclick="switchTab('ut','averages',this,'up-tabs')">Market Averages</div>
-        </div>
-
-        <!-- PROPERTIES TAB -->
-        <div class="tab-content active" id="ut-properties">
-          <div class="template-box">
-            <h4>Required columns</h4>
-            <div class="col-tags"><span class="col-tag req">country ★</span><span class="col-tag req">city ★</span><span class="col-tag req">asset_class ★</span><span class="col-tag req">listing_type ★</span><span class="col-tag">district</span><span class="col-tag">price</span><span class="col-tag">price_per_sqm</span><span class="col-tag">size_sqm</span><span class="col-tag">property_type</span><span class="col-tag">listing_date</span><span class="col-tag">source_url</span><span class="col-tag">source_name</span><span class="col-tag">agent</span><span class="col-tag">geolocation</span></div>
-            <div style="font-size:10.5px;color:var(--ink5);margin-bottom:8px;">One file per country. Each file contains all cities for that country. Country column must be consistent throughout the file.</div>
-            <button class="btn btn-secondary btn-xs" onclick="dlTemplate('properties')">↓ Download Template</button>
-          </div>
-
-          <div class="upload-mode-wrap">
-            <h4>Upload Mode</h4>
-            <div class="mode-options">
-              <label class="mode-opt" id="mode-label-country_replace-properties">
-                <input type="radio" name="umode-properties" value="country_replace" checked onchange="updateModeUI('properties')"/>
-                <div>
-                  <span class="mode-opt-title" style="color:var(--amber);">🔄 Country Replace <span style="color:var(--blue);font-size:10px;font-weight:700;">RECOMMENDED</span></span>
-                  <span class="mode-opt-sub">Detects country from file. Deletes only that country's rows. Reinserts all rows from file. Other countries untouched.</span>
-                </div>
-              </label>
-              <label class="mode-opt" id="mode-label-append-properties">
-                <input type="radio" name="umode-properties" value="append" onchange="updateModeUI('properties')"/>
-                <div><span class="mode-opt-title">➕ Append</span><span class="mode-opt-sub">Add rows on top of existing. Use for truly incremental data only.</span></div>
-              </label>
-              <label class="mode-opt" id="mode-label-replace-properties">
-                <input type="radio" name="umode-properties" value="replace" onchange="updateModeUI('properties')"/>
-                <div><span class="mode-opt-title" style="color:var(--red);">⚠ Replace All</span><span class="mode-opt-sub">Wipes entire table. All countries deleted. Cannot be undone.</span></div>
-              </label>
-            </div>
-            <div id="country-replace-info-properties" style="margin-top:10px;padding:8px 12px;background:var(--amber-dim);border:1px solid var(--amber);font-size:11.5px;color:var(--amber);">
-              ✓ Country Replace: the country value will be auto-detected from your file's <strong>country</strong> column when you load it. Only rows matching that country will be deleted before re-insert.
-            </div>
-            <div id="replace-warn-properties" style="display:none;margin-top:10px;padding:8px 12px;background:var(--red-dim);border:1px solid #7f1d1d;font-size:11.5px;color:var(--red);">⚠ Replace All will permanently delete ALL rows across ALL countries in this table.</div>
-          </div>
-
-          <!-- Country detection display -->
-          <div id="country-detected-properties" style="display:none;margin-bottom:12px;padding:10px 14px;background:var(--green-dim);border:1px solid rgba(34,197,94,.3);font-size:12.5px;color:var(--green);display:flex;align-items:center;gap:10px;">
-            <span>✓ Country detected:</span><strong id="detected-country-properties" style="font-size:14px;"></strong>
-            <span style="color:var(--green);font-size:11px;margin-left:4px;">— only this country's rows will be replaced</span>
-          </div>
-
-          <div class="dropzone" id="dz-p" onclick="document.getElementById('f-p').click()" ondragover="dOv(event,'p')" ondragleave="dLv(event,'p')" ondrop="dDp(event,'p','properties')">
-            <input type="file" id="f-p" accept=".xlsx,.xls" onchange="handleFile(event,'properties')"/>
-            <div class="dz-icon">📋</div><div class="dz-title">Drop country sheet here</div><div class="dz-sub">e.g. Morocco.xlsx or Nigeria.xlsx · must have a <strong>country</strong> column</div>
-          </div>
-
-          <div class="validation-preview" id="vp-properties">
-            <h4>Upload Validation Preview</h4>
-            <div class="vp-grid">
-              <div class="vp-cell"><div class="vp-label">Rows Detected</div><div class="vp-val" id="vp-p-total">—</div></div>
-              <div class="vp-cell"><div class="vp-label">Valid Rows</div><div class="vp-val ok" id="vp-p-valid">—</div></div>
-              <div class="vp-cell"><div class="vp-label">Cities Found</div><div class="vp-val" id="vp-p-cities">—</div></div>
-              <div class="vp-cell"><div class="vp-label">Missing Required</div><div class="vp-val crit" id="vp-p-missing">—</div></div>
-            </div>
-            <div id="vp-p-city-list" style="margin-top:8px;font-size:11.5px;color:var(--ink5);"></div>
-            <div style="margin-top:10px;"><button class="btn btn-secondary btn-xs" onclick="exportValidationReport('properties')">↓ Download Validation Report</button></div>
-          </div>
-
-          <div class="preview-wrap" id="prev-properties"><h4>Data Preview<span class="preview-count" id="pc-properties"></span></h4><div class="table-wrap" id="pt-properties"></div></div>
-          <div class="upload-actions">
-            <button class="btn-upload" id="bup-properties" onclick="doUpload('properties','properties')">↑ Upload to Database</button>
-            <button class="btn-cancel-upload" id="cancel-properties" onclick="cancelUpload('properties')">✕ Cancel</button>
-          </div>
-          <div class="pbar-wrap" id="prog-properties"><div class="pbar-bg"><div class="pbar" id="pb-properties"></div></div><div class="pbar-txt" id="ptxt-properties"></div></div>
-          <div class="result-box" id="res-properties"></div>
-        </div>
-
-        <!-- PRICES TAB -->
-        <div class="tab-content" id="ut-prices">
-          <div class="template-box">
-            <h4>Required columns</h4>
-            <div class="col-tags"><span class="col-tag req">country ★</span><span class="col-tag req">city ★</span><span class="col-tag req">asset_class ★</span><span class="col-tag req">date_recorded ★</span><span class="col-tag">district</span><span class="col-tag">asking_rent_sqm</span><span class="col-tag">sale_price</span><span class="col-tag">sale_price_sqm</span><span class="col-tag">quarter</span><span class="col-tag">year</span><span class="col-tag">currency</span><span class="col-tag">notes</span></div>
-            <button class="btn btn-secondary btn-xs" onclick="dlTemplate('prices')">↓ Download Template</button>
-          </div>
-          <div class="upload-mode-wrap">
-            <h4>Upload Mode</h4>
-            <div class="mode-options">
-              <label class="mode-opt"><input type="radio" name="umode-prices" value="country_replace" checked onchange="updateModeUI('prices')"/><div><span class="mode-opt-title" style="color:var(--amber);">🔄 Country Replace <span style="color:var(--blue);font-size:10px;font-weight:700;">RECOMMENDED</span></span><span class="mode-opt-sub">Replaces only the detected country's price records.</span></div></label>
-              <label class="mode-opt"><input type="radio" name="umode-prices" value="append" onchange="updateModeUI('prices')"/><div><span class="mode-opt-title">➕ Append</span><span class="mode-opt-sub">Add on top of existing records.</span></div></label>
-            </div>
-          </div>
-          <div id="country-detected-prices" style="display:none;margin-bottom:12px;padding:10px 14px;background:var(--green-dim);border:1px solid rgba(34,197,94,.3);font-size:12.5px;color:var(--green);">✓ Country detected: <strong id="detected-country-prices"></strong></div>
-          <div class="dropzone" id="dz-pr" onclick="document.getElementById('f-pr').click()" ondragover="dOv(event,'pr')" ondragleave="dLv(event,'pr')" ondrop="dDp(event,'pr','prices')">
-            <input type="file" id="f-pr" accept=".xlsx,.xls" onchange="handleFile(event,'prices')"/>
-            <div class="dz-icon">💰</div><div class="dz-title">Drop country price sheet here</div><div class="dz-sub">or click to browse</div>
-          </div>
-          <div class="validation-preview" id="vp-prices">
-            <h4>Upload Validation Preview</h4>
-            <div class="vp-grid">
-              <div class="vp-cell"><div class="vp-label">Rows Detected</div><div class="vp-val" id="vp-pr-total">—</div></div>
-              <div class="vp-cell"><div class="vp-label">Valid Rows</div><div class="vp-val ok" id="vp-pr-valid">—</div></div>
-              <div class="vp-cell"><div class="vp-label">Cities Found</div><div class="vp-val" id="vp-pr-cities">—</div></div>
-              <div class="vp-cell"><div class="vp-label">Missing Required</div><div class="vp-val crit" id="vp-pr-missing">—</div></div>
-            </div>
-          </div>
-          <div class="preview-wrap" id="prev-prices"><h4>Data Preview<span class="preview-count" id="pc-prices"></span></h4><div class="table-wrap" id="pt-prices"></div></div>
-          <div class="upload-actions">
-            <button class="btn-upload" id="bup-prices" onclick="doUpload('prices','price_records')">↑ Upload Price Records</button>
-            <button class="btn-cancel-upload" id="cancel-prices" onclick="cancelUpload('prices')">✕ Cancel</button>
-          </div>
-          <div class="pbar-wrap" id="prog-prices"><div class="pbar-bg"><div class="pbar" id="pb-prices"></div></div><div class="pbar-txt" id="ptxt-prices"></div></div>
-          <div class="result-box" id="res-prices"></div>
-        </div>
-
-        <!-- AVERAGES TAB -->
-        <div class="tab-content" id="ut-averages">
-          <div class="template-box">
-            <h4>Required columns</h4>
-            <div class="col-tags"><span class="col-tag req">country ★</span><span class="col-tag req">city ★</span><span class="col-tag req">asset_class ★</span><span class="col-tag req">quarter ★</span><span class="col-tag req">year ★</span><span class="col-tag">district</span><span class="col-tag">avg_rent_sqm</span><span class="col-tag">avg_sale_price_sqm</span><span class="col-tag">vacancy_rate</span><span class="col-tag">total_listings</span><span class="col-tag">currency</span></div>
-            <button class="btn btn-secondary btn-xs" onclick="dlTemplate('averages')">↓ Download Template</button>
-          </div>
-          <div class="dropzone" id="dz-av" onclick="document.getElementById('f-av').click()" ondragover="dOv(event,'av')" ondragleave="dLv(event,'av')" ondrop="dDp(event,'av','averages')">
-            <input type="file" id="f-av" accept=".xlsx,.xls" onchange="handleFile(event,'averages')"/>
-            <div class="dz-icon">📈</div><div class="dz-title">Drop country averages sheet here</div><div class="dz-sub">or click to browse</div>
-          </div>
-          <div class="preview-wrap" id="prev-averages"><h4>Data Preview<span class="preview-count" id="pc-averages"></span></h4><div class="table-wrap" id="pt-averages"></div></div>
-          <div class="upload-actions">
-            <button class="btn-upload" id="bup-averages" onclick="doUpload('averages','market_averages')">↑ Upload Market Averages</button>
-            <button class="btn-cancel-upload" id="cancel-averages" onclick="cancelUpload('averages')">✕ Cancel</button>
-          </div>
-          <div class="pbar-wrap" id="prog-averages"><div class="pbar-bg"><div class="pbar" id="pb-averages"></div></div><div class="pbar-txt" id="ptxt-averages"></div></div>
-          <div class="result-box" id="res-averages"></div>
-        </div>
-      </div>
-
-      <!-- ══ DOWNLOAD ══ -->
-      <div class="pg" id="pg-download">
-        <div class="pg-eyebrow">Data Pipeline</div>
-        <div class="pg-title">Download Data</div>
-        <div class="pg-sub">Export datasets from the raw data layer. All exports are read-only and append timestamped filenames.</div>
-        <div class="demo-banner" id="dl-demo-banner" style="display:none;">Some datasets contain demo/placeholder data. Exports will include a warning sheet.</div>
-        <div class="three-col">
-          <div class="panel"><div class="panel-hd"><div class="panel-title">Properties / Listings</div></div><div class="panel-body"><div style="font-size:12px;color:var(--ink5);margin-bottom:12px;">All listing records including city, district, asset class, price, metadata.</div><button class="btn btn-primary btn-sm" onclick="downloadTable('properties','ironwood_listings')" style="width:100%;margin-bottom:8px;">↓ Download (.xlsx)</button><div class="pbar-wrap" id="dl-prog-properties"><div class="pbar-bg"><div class="pbar pbar-success" id="dl-pb-properties"></div></div><div class="pbar-txt" id="dl-ptxt-properties"></div></div></div></div>
-          <div class="panel"><div class="panel-hd"><div class="panel-title">Price Records</div></div><div class="panel-body"><div style="font-size:12px;color:var(--ink5);margin-bottom:12px;">Historical price records linked to properties over time.</div><button class="btn btn-primary btn-sm" onclick="downloadTable('price_records','ironwood_price_records')" style="width:100%;margin-bottom:8px;">↓ Download (.xlsx)</button><div class="pbar-wrap" id="dl-prog-price_records"><div class="pbar-bg"><div class="pbar pbar-success" id="dl-pb-price_records"></div></div><div class="pbar-txt" id="dl-ptxt-price_records"></div></div></div></div>
-          <div class="panel"><div class="panel-hd"><div class="panel-title">Market Averages</div></div><div class="panel-body"><div style="font-size:12px;color:var(--ink5);margin-bottom:12px;">Aggregated city / district market averages by period.</div><button class="btn btn-primary btn-sm" onclick="downloadTable('market_averages','ironwood_market_averages')" style="width:100%;margin-bottom:8px;">↓ Download (.xlsx)</button><div class="pbar-wrap" id="dl-prog-market_averages"><div class="pbar-bg"><div class="pbar pbar-success" id="dl-pb-market_averages"></div></div><div class="pbar-txt" id="dl-ptxt-market_averages"></div></div></div></div>
-        </div>
-        <div class="panel"><div class="panel-hd"><div class="panel-title">Full Database Export</div><div class="panel-sub">All tables · Single Excel file · Multiple sheets</div></div><div class="panel-body"><button class="btn btn-success" onclick="downloadAll()">↓ Download Full Export (.xlsx)</button><div class="pbar-wrap" id="dl-prog-all" style="margin-top:12px;"><div class="pbar-bg"><div class="pbar pbar-success" id="dl-pb-all"></div></div><div class="pbar-txt" id="dl-ptxt-all"></div></div></div></div>
-      </div>
-
-      <!-- ══ DATASET EXPLORER ══ -->
-      <div class="pg" id="pg-dataset-explorer">
-        <div class="pg-eyebrow">Data Quality</div>
-        <div class="pg-title">Dataset Explorer</div>
-        <div class="pg-sub">Browse, filter, and export records from any raw data table. Inline editing is available for verified records only.</div>
-
-        <div class="de-tabs">
-          <div class="de-tab active" onclick="loadExplorer('properties',this)">Listings</div>
-          <div class="de-tab" onclick="loadExplorer('price_records',this)">Price Records</div>
-          <div class="de-tab" onclick="loadExplorer('market_averages',this)">Market Averages</div>
-        </div>
-
-        <div class="panel" style="border-top:none;">
-          <div class="panel-hd">
-            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-              <select id="ex-city" style="padding:5px 9px;background:var(--bg);border:1px solid var(--border2);font-size:12px;color:var(--ink);font-family:var(--font);" onchange="applyExplorerFilters()">
-                <option value="">All Cities</option>
-                <option>Casablanca</option><option>Marrakech</option><option>Rabat</option><option>Tangiers</option><option>Fez</option>
-              </select>
-              <select id="ex-asset" style="padding:5px 9px;background:var(--bg);border:1px solid var(--border2);font-size:12px;color:var(--ink);font-family:var(--font);" onchange="applyExplorerFilters()">
-                <option value="">All Asset Classes</option>
-                <option>Apartments</option><option>Villas</option><option>Offices</option><option>Retail</option><option>Land</option>
-              </select>
-              <input type="text" id="ex-search" placeholder="Search..." style="padding:5px 9px;background:var(--bg);border:1px solid var(--border2);font-size:12px;color:var(--ink);font-family:var(--font);width:160px;" oninput="applyExplorerFilters()"/>
-              <button class="btn btn-secondary btn-xs" onclick="applyExplorerFilters()">Apply</button>
-            </div>
-            <div class="panel-actions">
-              <button class="btn btn-secondary btn-xs" onclick="exportExplorer()">↓ CSV</button>
-              <button class="btn btn-secondary btn-xs" onclick="exportExplorer('xlsx')">↓ Excel</button>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table class="dt" id="explorer-table">
-              <thead><tr id="explorer-head"></tr></thead>
-              <tbody id="explorer-body"><tr><td colspan="10" style="text-align:center;padding:28px;color:var(--ink5);">Select a table to begin browsing</td></tr></tbody>
-            </table>
-          </div>
-          <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-            <span style="font-size:11.5px;color:var(--ink5);" id="ex-count">—</span>
-            <div style="display:flex;gap:6px;">
-              <button class="btn btn-secondary btn-xs" id="ex-prev" onclick="explorerPage(-1)">← Prev</button>
-              <span style="font-size:11.5px;color:var(--ink5);padding:3px 8px;" id="ex-page">Page 1</span>
-              <button class="btn btn-secondary btn-xs" id="ex-next" onclick="explorerPage(1)">Next →</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══ DATA VALIDATION ══ -->
-      <div class="pg" id="pg-validation">
-        <div class="pg-eyebrow">Data Quality</div>
-        <div class="pg-title">Data Validation</div>
-        <div class="pg-sub">Pre-ingestion and post-ingestion validation rules. Every uploaded record must pass validation before being promoted to verified status.</div>
-
-        <div class="panel" style="margin-bottom:16px;">
-          <div class="panel-hd"><div class="panel-title">Validation Rules — listings_raw</div><div class="panel-sub">Applied on every upload</div></div>
-          <table class="dt" style="width:100%;">
-            <thead><tr><th>Rule</th><th>Field</th><th>Type</th><th>Action on Fail</th><th>Status</th></tr></thead>
-            <tbody>
-              <tr><td>City is required</td><td class="mono">city</td><td>Required field</td><td>Reject row</td><td><span class="status status-success">Active</span></td></tr>
-              <tr><td>Country is required</td><td class="mono">country</td><td>Required field</td><td>Reject row</td><td><span class="status status-success">Active</span></td></tr>
-              <tr><td>Asset class must be valid</td><td class="mono">asset_class</td><td>Enum validation</td><td>Flag for review</td><td><span class="status status-success">Active</span></td></tr>
-              <tr><td>Price must be positive</td><td class="mono">price / price_per_sqm</td><td>Numeric validation</td><td>Flag for review</td><td><span class="status status-success">Active</span></td></tr>
-              <tr><td>Size must be positive</td><td class="mono">size_sqm</td><td>Numeric validation</td><td>Flag for review</td><td><span class="status status-success">Active</span></td></tr>
-              <tr><td>Source URL format</td><td class="mono">source_url</td><td>URL format check</td><td>Warn</td><td><span class="status status-success">Active</span></td></tr>
-              <tr><td>Date format valid</td><td class="mono">listing_date</td><td>Date validation</td><td>Warn</td><td><span class="status status-success">Active</span></td></tr>
-              <tr><td>Duplicate detection</td><td class="mono">city + price + size_sqm</td><td>Dedup check</td><td>Flag as duplicate</td><td><span class="status status-warning">Beta</span></td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="panel">
-          <div class="panel-hd"><div class="panel-title">Asset Class Taxonomy</div><div class="panel-sub">Approved values for property_type / asset_class field</div></div>
-          <div class="panel-body">
-            <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              <span style="background:var(--blue-dim);color:var(--blue);padding:3px 10px;font-size:11px;font-weight:700;">Apartments</span>
-              <span style="background:var(--blue-dim);color:var(--blue);padding:3px 10px;font-size:11px;font-weight:700;">Villas / Luxury homes</span>
-              <span style="background:var(--blue-dim);color:var(--blue);padding:3px 10px;font-size:11px;font-weight:700;">Houses</span>
-              <span style="background:var(--blue-dim);color:var(--blue);padding:3px 10px;font-size:11px;font-weight:700;">Offices</span>
-              <span style="background:var(--blue-dim);color:var(--blue);padding:3px 10px;font-size:11px;font-weight:700;">Retail</span>
-              <span style="background:var(--blue-dim);color:var(--blue);padding:3px 10px;font-size:11px;font-weight:700;">Land</span>
-              <span style="background:var(--blue-dim);color:var(--blue);padding:3px 10px;font-size:11px;font-weight:700;">Riads</span>
-              <span style="background:var(--blue-dim);color:var(--blue);padding:3px 10px;font-size:11px;font-weight:700;">Industrial</span>
-              <span style="background:var(--blue-dim);color:var(--blue);padding:3px 10px;font-size:11px;font-weight:700;">Farms</span>
-              <span style="background:var(--blue-dim);color:var(--blue);padding:3px 10px;font-size:11px;font-weight:700;">Hospitality</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══ VERIFICATION QUEUE ══ -->
-      <div class="pg" id="pg-verification">
-        <div class="pg-eyebrow">Data Quality</div>
-        <div class="pg-title">Verification Queue</div>
-        <div class="pg-sub">Records pending manual review. Verify or reject each record before it is marked as confirmed data. Verified records are used in analytics.</div>
-
-        <div style="display:flex;gap:8px;margin-bottom:16px;">
-          <button class="btn btn-secondary btn-sm" style="border-color:var(--amber);color:var(--amber);">Needs Review (3)</button>
-          <button class="btn btn-secondary btn-sm">Unverified (—)</button>
-          <button class="btn btn-secondary btn-sm">Verified (—)</button>
-        </div>
-
-        <div id="vq-list">
-          <div class="vq-card">
-            <div class="vq-hd">
-              <div>
-                <div class="vq-title">Casablanca · Office · DH 142/m²/month <span class="badge badge-review">Needs Review</span></div>
-                <div class="vq-meta">Source: Mubawab.ma · Collected: Mar 2026 · Size: 850 m² · District: Maarif<br>Confidence: Medium · <a href="#" style="color:var(--blue);text-decoration:none;">View source URL →</a></div>
-              </div>
-              <div class="vq-actions">
-                <button class="btn btn-success btn-sm" onclick="verifyRecord(this,'verified')">✓ Verify</button>
-                <button class="btn btn-danger btn-sm" onclick="verifyRecord(this,'rejected')">✕ Reject</button>
-                <button class="btn btn-secondary btn-sm">Edit</button>
-              </div>
-            </div>
-            <div style="display:flex;gap:16px;font-size:11.5px;color:var(--ink5);">
-              <span>Field flags: None</span>
-              <span>Validation: Passed</span>
-              <span>Duplicate check: No match</span>
-            </div>
-          </div>
-          <div class="vq-card">
-            <div class="vq-hd">
-              <div>
-                <div class="vq-title">Marrakech · Villa · DH 4,800,000 <span class="badge badge-review">Needs Review</span></div>
-                <div class="vq-meta">Source: Mubawab.ma · Collected: Mar 2026 · Size: 280 m² · District: Palmeraie<br>Confidence: High · <a href="#" style="color:var(--blue);text-decoration:none;">View source URL →</a></div>
-              </div>
-              <div class="vq-actions">
-                <button class="btn btn-success btn-sm" onclick="verifyRecord(this,'verified')">✓ Verify</button>
-                <button class="btn btn-danger btn-sm" onclick="verifyRecord(this,'rejected')">✕ Reject</button>
-                <button class="btn btn-secondary btn-sm">Edit</button>
-              </div>
-            </div>
-            <div style="display:flex;gap:16px;font-size:11.5px;color:var(--ink5);">
-              <span>Field flags: None</span>
-              <span>Validation: Passed</span>
-              <span>Duplicate check: 1 possible match</span>
-            </div>
-          </div>
-          <div class="vq-card">
-            <div class="vq-hd">
-              <div>
-                <div class="vq-title">Rabat · Apartment · DH 11,200/m² <span class="badge badge-review">Needs Review</span></div>
-                <div class="vq-meta">Source: Mubawab.ma · Collected: Mar 2026 · Size: 95 m² · District: Agdal<br>Confidence: High · <a href="#" style="color:var(--blue);text-decoration:none;">View source URL →</a></div>
-              </div>
-              <div class="vq-actions">
-                <button class="btn btn-success btn-sm" onclick="verifyRecord(this,'verified')">✓ Verify</button>
-                <button class="btn btn-danger btn-sm" onclick="verifyRecord(this,'rejected')">✕ Reject</button>
-                <button class="btn btn-secondary btn-sm">Edit</button>
-              </div>
-            </div>
-            <div style="display:flex;gap:16px;font-size:11.5px;color:var(--ink5);">
-              <span>Field flags: Missing source_url</span>
-              <span>Validation: 1 warning</span>
-              <span>Duplicate check: No match</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══ ACTIVITY LOG ══ -->
-      <div class="pg" id="pg-activity">
-        <div class="pg-eyebrow">Operations</div>
-        <div class="pg-title">Activity Log</div>
-        <div class="pg-sub">Complete audit trail of all platform actions. Append-only. Cannot be modified or deleted.</div>
-
-        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-          <select id="log-filter-type" style="padding:6px 10px;background:var(--bg);border:1px solid var(--border2);font-size:12px;color:var(--ink);font-family:var(--font);" onchange="renderLog()">
-            <option value="">All Actions</option>
-            <option value="upload">Uploads</option>
-            <option value="login">Logins</option>
-            <option value="edit">Edits</option>
-            <option value="error">Errors</option>
-            <option value="ingestion">Ingestion</option>
-          </select>
-          <button class="btn btn-secondary btn-xs" onclick="exportLog()">↓ Export Log</button>
-          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">Append-only · Read-only</span>
-        </div>
-
-        <div class="panel">
-          <div id="activity-log-list"></div>
-        </div>
-      </div>
-
-      <!-- ══ BATCH OPERATIONS ══ -->
-      <div class="pg" id="pg-batch">
-        <div class="pg-eyebrow">Operations</div>
-        <div class="pg-title">Batch Operations</div>
-        <div class="pg-sub">Large-scale corrections and data operations. All batch actions require confirmation and are logged to the activity log.</div>
-
-        <div class="two-col">
-          <div class="panel">
-            <div class="panel-hd"><div class="panel-title">Update District</div><div class="panel-sub">Assign district to records missing it</div></div>
-            <div class="panel-body">
-              <div class="fg2"><label>City</label><select id="batch-city"><option>Casablanca</option><option>Marrakech</option><option>Rabat</option><option>Tangiers</option><option>Fez</option></select></div>
-              <div class="fg2"><label>Set District To</label><input type="text" id="batch-district" placeholder="e.g. Maarif"/></div>
-              <div class="fg2"><label>Only records where district is</label><select id="batch-district-filter"><option value="">Empty / Missing</option><option value="any">Any value</option></select></div>
-              <button class="btn btn-primary btn-sm" onclick="confirmBatch('update_district')">Update District</button>
-              <div style="font-size:11px;color:var(--ink5);margin-top:8px;">This will update all matching records. Action is logged and reversible by re-uploading.</div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-hd"><div class="panel-title">Update Asset Class</div><div class="panel-sub">Standardise property type values</div></div>
-            <div class="panel-body">
-              <div class="fg2"><label>Current Value</label><input type="text" id="batch-from" placeholder="e.g. apartment"/></div>
-              <div class="fg2"><label>Replace With</label><select id="batch-to"><option>Apartments</option><option>Villas / Luxury homes</option><option>Houses</option><option>Offices</option><option>Retail</option><option>Land</option><option>Riads</option><option>Industrial</option></select></div>
-              <button class="btn btn-primary btn-sm" onclick="confirmBatch('update_asset')">Update Asset Class</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="two-col">
-          <div class="panel">
-            <div class="panel-hd"><div class="panel-title">Delete Duplicates</div><div class="panel-sub">Remove estimated duplicate records</div></div>
-            <div class="panel-body">
-              <div style="font-size:13px;color:var(--ink3);margin-bottom:14px;line-height:1.7;">Duplicates are detected by matching on: <strong>city + price_per_sqm + size_sqm + property_type</strong>. The most recent record is kept.</div>
-              <div style="font-size:13px;color:var(--ink4);margin-bottom:16px;">Estimated duplicates: <span style="color:var(--amber);font-weight:700;" id="batch-dupe-count">—</span></div>
-              <button class="btn btn-danger btn-sm" onclick="confirmBatch('delete_dupes')">Delete Duplicates</button>
-              <div style="font-size:11px;color:var(--red);margin-top:8px;">Destructive action. Cannot be undone. Export first.</div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-hd"><div class="panel-title">Bulk Verification</div><div class="panel-sub">Set verification status in bulk</div></div>
-            <div class="panel-body">
-              <div class="fg2"><label>City</label><select id="batch-veri-city"><option value="">All Cities</option><option>Casablanca</option><option>Marrakech</option><option>Rabat</option><option>Tangiers</option><option>Fez</option></select></div>
-              <div class="fg2"><label>Set Status To</label><select id="batch-veri-status"><option>Verified</option><option>Unverified</option><option>Needs Review</option></select></div>
-              <button class="btn btn-primary btn-sm" onclick="confirmBatch('bulk_verify')">Apply to City</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══ MANUAL ENTRY ══ -->
-      <div class="pg" id="pg-manual">
-        <div class="pg-eyebrow">Operations</div>
-        <div class="pg-title">Manual Entry</div>
-        <div class="pg-sub">Add a single verified record directly. Used for bespoke data points not captured by automated ingestion.</div>
-
-        <div class="tabs" id="me-tabs">
-          <div class="tab active" onclick="switchTab('mt','prop',this,'me-tabs')">Property</div>
-          <div class="tab" onclick="switchTab('mt','price',this,'me-tabs')">Price Record</div>
-          <div class="tab" onclick="switchTab('mt','avg',this,'me-tabs')">Market Average</div>
-        </div>
-
-        <div class="tab-content active" id="mt-prop">
-          <div class="panel"><div class="panel-body">
-            <div class="form-grid-3">
-              <div class="fg2"><label>Country ★</label><input type="text" id="m-country" placeholder="Morocco"/></div>
-              <div class="fg2"><label>City ★</label><input type="text" id="m-city" placeholder="Casablanca"/></div>
-              <div class="fg2"><label>District</label><input type="text" id="m-sub" placeholder="Maarif"/></div>
-            </div>
-            <div class="form-grid-3">
-              <div class="fg2"><label>Asset Class ★</label><select id="m-asset"><option value="">Select...</option><option>Apartments</option><option>Offices</option><option>Retail</option><option>Villas / Luxury homes</option><option>Land</option><option>Houses</option><option>Riads</option><option>Industrial</option></select></div>
-              <div class="fg2"><label>Listing Type ★</label><select id="m-listing"><option value="">Select...</option><option>For Rent</option><option>For Sale</option><option>Both</option></select></div>
-              <div class="fg2"><label>Property Name</label><input type="text" id="m-name" placeholder="Optional"/></div>
-            </div>
-            <div class="form-grid-3">
-              <div class="fg2"><label>Price (DH)</label><input type="number" id="m-price" placeholder="e.g. 1500000"/></div>
-              <div class="fg2"><label>Price / m² (DH)</label><input type="number" id="m-psqm" placeholder="e.g. 18000"/></div>
-              <div class="fg2"><label>Size (m²)</label><input type="number" id="m-size" placeholder="e.g. 85"/></div>
-            </div>
-            <div class="form-grid-2">
-              <div class="fg2"><label>Source Name</label><input type="text" id="m-src" placeholder="Mubawab.ma"/></div>
-              <div class="fg2"><label>Source URL</label><input type="text" id="m-url" placeholder="https://..."/></div>
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="manualInsert('property')">Add Property</button>
-            <div id="es-property" style="display:none;margin-top:10px;padding:8px 12px;background:var(--green-dim);border:1px solid #166534;color:var(--green);font-size:12.5px;">✅ Property added successfully!</div>
-          </div></div>
-        </div>
-
-        <div class="tab-content" id="mt-price">
-          <div class="panel"><div class="panel-body">
-            <div class="form-grid-3">
-              <div class="fg2"><label>Country ★</label><input type="text" id="mp-country" placeholder="Morocco"/></div>
-              <div class="fg2"><label>City ★</label><input type="text" id="mp-city" placeholder="Casablanca"/></div>
-              <div class="fg2"><label>District</label><input type="text" id="mp-sub" placeholder="Maarif"/></div>
-            </div>
-            <div class="form-grid-3">
-              <div class="fg2"><label>Asset Class ★</label><select id="mp-asset"><option value="">Select...</option><option>Apartments</option><option>Offices</option><option>Retail</option><option>Land</option></select></div>
-              <div class="fg2"><label>Date Recorded ★</label><input type="date" id="mp-date"/></div>
-              <div class="fg2"><label>Quarter</label><input type="text" id="mp-q" placeholder="Q1 2026"/></div>
-            </div>
-            <div class="form-grid-3">
-              <div class="fg2"><label>Asking Rent / m²</label><input type="number" id="mp-rent" placeholder="e.g. 142"/></div>
-              <div class="fg2"><label>Sale Price / m²</label><input type="number" id="mp-salepsqm" placeholder="e.g. 18400"/></div>
-              <div class="fg2"><label>Currency</label><select id="mp-cur"><option>MAD</option><option>USD</option><option>EUR</option><option>NGN</option><option>KES</option></select></div>
-            </div>
-            <div class="fg2"><label>Notes</label><textarea id="mp-notes" placeholder="Optional notes..."></textarea></div>
-            <button class="btn btn-primary btn-sm" onclick="manualInsert('price')">Add Price Record</button>
-            <div id="es-price" style="display:none;margin-top:10px;padding:8px 12px;background:var(--green-dim);border:1px solid #166534;color:var(--green);font-size:12.5px;">✅ Price record added!</div>
-          </div></div>
-        </div>
-
-        <div class="tab-content" id="mt-avg">
-          <div class="panel"><div class="panel-body">
-            <div class="form-grid-3">
-              <div class="fg2"><label>Country ★</label><input type="text" id="ma-country" placeholder="Morocco"/></div>
-              <div class="fg2"><label>City ★</label><input type="text" id="ma-city" placeholder="Casablanca"/></div>
-              <div class="fg2"><label>District</label><input type="text" id="ma-sub" placeholder="Optional"/></div>
-            </div>
-            <div class="form-grid-3">
-              <div class="fg2"><label>Asset Class ★</label><select id="ma-asset"><option value="">Select...</option><option>Apartments</option><option>Offices</option><option>Retail</option><option>Land</option></select></div>
-              <div class="fg2"><label>Quarter ★</label><input type="text" id="ma-q" placeholder="Q1 2026"/></div>
-              <div class="fg2"><label>Year ★</label><input type="number" id="ma-yr" placeholder="2026"/></div>
-            </div>
-            <div class="form-grid-3">
-              <div class="fg2"><label>Avg Rent / m²</label><input type="number" id="ma-rent"/></div>
-              <div class="fg2"><label>Avg Sale Price / m²</label><input type="number" id="ma-sale"/></div>
-              <div class="fg2"><label>Vacancy Rate (%)</label><input type="number" id="ma-vac"/></div>
-            </div>
-            <div class="fg2"><label>Total Listings</label><input type="number" id="ma-total"/></div>
-            <button class="btn btn-primary btn-sm" onclick="manualInsert('average')">Add Market Average</button>
-            <div id="es-average" style="display:none;margin-top:10px;padding:8px 12px;background:var(--green-dim);border:1px solid #166534;color:var(--green);font-size:12.5px;">✅ Market average added!</div>
-          </div></div>
-        </div>
-      </div>
-
-      <!-- ══ ADMIN USERS ══ -->
-      <div class="pg" id="pg-users">
-        <div class="pg-eyebrow">Admin</div>
-        <div class="pg-title">Admin Users</div>
-        <div class="pg-sub">Manage platform access. Roles control which sections and operations each user can access.</div>
-
-        <div class="two-col">
-          <div class="panel">
-            <div class="panel-hd"><div class="panel-title">Create New Admin</div></div>
-            <div class="panel-body">
-              <div class="fg2"><label>Email</label><input type="email" id="new-admin-email" placeholder="colleague@example.com"/></div>
-              <div class="fg2"><label>Password</label><input type="password" id="new-admin-pw" placeholder="Min 8 characters"/></div>
-              <div class="fg2"><label>Role</label><select id="new-admin-role"><option>Admin</option><option>Data Operator</option><option>Viewer</option></select></div>
-              <button class="btn btn-primary btn-sm" onclick="addAdmin()">Create User</button>
-              <div id="es-admin" style="display:none;margin-top:10px;padding:8px 12px;background:var(--green-dim);border:1px solid #166534;color:var(--green);font-size:12.5px;">✅ Admin user created!</div>
-              <div class="result-box err" id="err-admin" style="margin-top:8px;"></div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-hd"><div class="panel-title">Role Permissions</div></div>
-            <div class="panel-body">
-              <table class="dt" style="width:100%;">
-                <thead><tr><th>Role</th><th>Datasets</th><th>Upload</th><th>Edit</th><th>Admin</th></tr></thead>
-                <tbody>
-                  <tr><td><span class="badge badge-admin">Admin</span></td><td>✓ All</td><td>✓</td><td>✓</td><td>✓</td></tr>
-                  <tr><td><span class="badge badge-operator">Data Operator</span></td><td>✓ All</td><td>✓</td><td>✓</td><td>✗</td></tr>
-                  <tr><td><span class="badge badge-viewer">Viewer</span></td><td>✓ Read</td><td>✗</td><td>✗</td><td>✗</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-hd"><div class="panel-title">Current Users</div></div>
-          <table class="dt" style="width:100%;" id="users-table">
-            <thead><tr><th>Email</th><th>Role</th><th>Created</th><th>Last Login</th><th>Status</th></tr></thead>
-            <tbody id="admin-users-list"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--ink5);">Loading...</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- ══ API MANAGEMENT ══ -->
-      <div class="pg" id="pg-api-mgmt">
-        <div class="pg-eyebrow">Admin</div>
-        <div class="pg-title">API Management</div>
-        <div class="pg-sub">Manage API keys for developer and institutional access to the Ironwood Intelligence data platform.</div>
-
-        <div class="panel" style="margin-bottom:16px;">
-          <div class="panel-hd"><div class="panel-title">API Keys</div><button class="btn btn-primary btn-sm" onclick="generateApiKey()">+ Generate New Key</button></div>
-          <div id="api-keys-list">
-            <div class="api-row">
-              <div style="font-size:10px;font-weight:700;color:var(--ink5);width:80px;text-transform:uppercase;letter-spacing:.06em;">Default</div>
-              <div class="api-key-val">iw_••••••••••••••••••••••••••••••••</div>
-              <div class="api-meta">Created: Jan 2026 &nbsp;|&nbsp; Usage: 0 req/day &nbsp;|&nbsp; Rate limit: 1,000/day</div>
-              <span class="status status-success" style="flex-shrink:0;">Active</span>
-              <button class="btn btn-danger btn-xs">Revoke</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-hd"><div class="panel-title">API Configuration</div></div>
-          <div class="panel-body">
-            <div class="setting-row">
-              <div class="setting-info"><h4>Rate Limiting</h4><p>Maximum requests per day per API key</p></div>
-              <input class="setting-input" type="number" value="1000" style="width:120px;"/>
-            </div>
-            <div class="setting-row">
-              <div class="setting-info"><h4>Endpoint Base URL</h4><p>Base URL for API access</p></div>
-              <code style="font-size:12px;color:var(--blue);background:var(--bg);padding:4px 10px;border:1px solid var(--border);">https://www.ironwoodintelligence.com/api/v1</code>
-            </div>
-            <div class="setting-row">
-              <div class="setting-info"><h4>Require Authentication</h4><p>All API requests must include a valid API key</p></div>
-              <div class="toggle-wrap"><div class="toggle on"></div><span style="font-size:12px;color:var(--ink4);">Enabled</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══ SETTINGS ══ -->
-      <div class="pg" id="pg-settings">
-        <div class="pg-eyebrow">Admin</div>
-        <div class="pg-title">Settings</div>
-        <div class="pg-sub">Admin panel configuration. Supabase credentials are stored in localStorage.</div>
-
-        <div class="panel" style="margin-bottom:16px;">
-          <div class="panel-hd"><div class="panel-title">Supabase Connection</div><div id="conn-badge"></div></div>
-          <div class="panel-body">
-            <div class="setting-row">
-              <div class="setting-info"><h4>Project URL</h4><p>Your Supabase project URL</p></div>
-              <input class="setting-input" type="text" id="s-url" placeholder="https://xxxx.supabase.co"/>
-            </div>
-            <div class="setting-row">
-              <div class="setting-info"><h4>Anon Key</h4><p>Supabase anon public key (eyJhbG...)</p></div>
-              <input class="setting-input" type="text" id="s-key" placeholder="eyJhbG..."/>
-            </div>
-            <div style="margin-top:14px;display:flex;gap:8px;align-items:center;">
-              <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save & Reconnect</button>
-              <span id="settings-saved" style="font-size:12px;color:var(--green);display:none;">✓ Saved</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-hd"><div class="panel-title">Platform Settings</div></div>
-          <div class="panel-body">
-            <div class="setting-row">
-              <div class="setting-info"><h4>Stale Listing Threshold</h4><p>Days after which a listing is considered stale</p></div>
-              <input class="setting-input" type="number" value="90" style="width:80px;"/>
-            </div>
-            <div class="setting-row">
-              <div class="setting-info"><h4>Demo Data Warning</h4><p>Show warning banner when demo data is present</p></div>
-              <div class="toggle-wrap"><div class="toggle on" id="toggle-demo"></div><span style="font-size:12px;color:var(--ink4);">Enabled</span></div>
-            </div>
-            <div class="setting-row">
-              <div class="setting-info"><h4>Verification Required</h4><p>Require manual verification before records used in analytics</p></div>
-              <div class="toggle-wrap"><div class="toggle on"></div><span style="font-size:12px;color:var(--ink4);">Enabled</span></div>
-            </div>
-            <div class="setting-row">
-              <div class="setting-info"><h4>Activity Logging</h4><p>Log all admin actions to the activity log</p></div>
-              <div class="toggle-wrap"><div class="toggle on"></div><span style="font-size:12px;color:var(--ink4);">Always On</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /main -->
-  </div><!-- /layout -->
-</div><!-- /app -->
+<!-- FOOTER TEMPLATE -->
+<template id="ftpl">
+  <footer>
+    <div class="footer-grid">
+      <div class="fbrand"><div class="fb-name">IRONWOOD<br/>INTELLIGENCE</div><p>Data-driven decisions for real estate.</p></div>
+      <div class="fcol"><h4>Platform</h4><ul><li><a onclick="go('properties')">Properties</a></li><li><a onclick="go('analytics')">Analytics</a></li><li><a onclick="go('subscription')">Pricing</a></li></ul></div>
+      <div class="fcol"><h4>Company</h4><ul><li><a onclick="go('about')">About Us</a></li><li><a onclick="go('contact')">Contact Us</a></li></ul></div>
+      <div class="fcol"><h4>Legal</h4><ul><li><a>Privacy Policy</a></li><li><a>Terms of Service</a></li></ul></div>
+      <div class="fcol"><h4>Language</h4><select><option>🌐 English</option><option>Français</option><option>Português</option><option>العربية</option></select></div>
+    </div>
+    <div class="footer-bottom">© 2026 Ironwood Intelligence. All rights reserved.</div>
+  </footer>
+</template>
 
 <script>
-var SB_URL=localStorage.getItem('iw_url')||'https://ujhqkirhfmumvvnfvgnz.supabase.co';
-var SB_KEY=localStorage.getItem('iw_key')||'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik';
-var sb=null;
-var parsed={properties:[],prices:[],averages:[]};
-var _cancelUpload={};
-var ACTIVITY_LOG=[
-  {time:'03:14',type:'success',text:'12,806 listings imported from Excel upload',user:'mahmoud.nassef@heirstoneconsulting.com',dataset:'properties'},
-  {time:'03:02',text:'Admin panel accessed',type:'info',user:'mahmoud.nassef@heirstoneconsulting.com',dataset:'—'},
-  {time:'02:40',text:'Data health scan completed — 0 critical issues',type:'success',user:'system',dataset:'properties'},
-];
-var EXPLORER_DATA={table:'properties',rows:[],page:0,pageSize:50,filtered:[]};
+var mapDone = false;
 
-var TEMPLATES={
-  properties:[['country','city','district','asset_class','listing_type','price','price_per_sqm','size_sqm','property_type','listing_date','source_url','source_name','agent'],
-    ['Morocco','Casablanca','Maarif','Apartments','For Sale',1800000,18000,100,'Apartment','2026-03-01','https://mubawab.ma/example','Mubawab.ma','Agent Name'],
-    ['Morocco','Marrakech','Gueliz','Offices','For Rent','',142,850,'Office','2026-03-01','','Mubawab.ma','']],
-  prices:[['country','city','district','asset_class','date_recorded','quarter','year','asking_rent_sqm','sale_price_sqm','currency','notes'],
-    ['Morocco','Casablanca','Maarif','Apartments','2026-03-01','Q1 2026',2026,'',18000,'MAD','']],
-  averages:[['country','city','district','asset_class','quarter','year','avg_rent_sqm','avg_sale_price_sqm','vacancy_rate','total_listings','currency'],
-    ['Morocco','Casablanca','','Apartments','Q1 2026',2026,'',18400,null,2847,'MAD']]
-};
-
-// ── SUPABASE ──
-function initSB(){
-  if(SB_URL&&SB_KEY){try{sb=window.supabase.createClient(SB_URL,SB_KEY);}catch(e){sb=null;}}
+function go(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  var el = document.getElementById('page-' + name);
+  if (!el) return;
+  el.classList.add('active');
+  window.scrollTo(0, 0);
+  closeDD();
+  // inject footer if empty
+  var slot = el.querySelector('.footer-slot');
+  if (slot && !slot.hasChildNodes()) {
+    slot.appendChild(document.importNode(document.getElementById('ftpl').content, true));
+  }
+  if (name === 'analytics' && !mapDone) { setTimeout(initMap, 150); }
 }
-initSB();
 
-// ── AUTO LOGIN ──
-window.addEventListener('load',async function(){
-  if(!sb)return;
-  var {data}=await sb.auth.getSession();
-  if(data?.session?.user){enterApp(data.session.user.email);}
+function initMap() {
+  try {
+    var map = L.map('africa-map').setView([2, 20], 3);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: 'Leaflet | © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 18
+    }).addTo(map);
+    var pts = [
+      [6.5244, 3.3792, 'Lagos', 'Nigeria', 'Office', '$1,800/sqm'],
+      [-1.2921, 36.8219, 'Nairobi', 'Kenya', 'Retail', '$1,600/sqm'],
+      [-33.9249, 18.4241, 'Cape Town', 'South Africa', 'Residential', '$1,950/sqm'],
+      [5.6037, -0.1870, 'Accra', 'Ghana', 'Hospitality', '$1,400/sqm'],
+      [-26.2041, 28.0473, 'Johannesburg', 'South Africa', 'Industrial', '$1,750/sqm']
+    ];
+    pts.forEach(function(p) {
+      L.marker([p[0], p[1]]).addTo(map)
+        .bindPopup('<strong>' + p[2] + '</strong><br/>' + p[3] + '<br/>Type: ' + p[4] + '<br/>Avg Rent: ' + p[5]);
+    });
+    mapDone = true;
+  } catch(e) {
+    var el = document.getElementById('africa-map');
+    if (el) el.innerHTML = '<div style="height:340px;background:#e8f0e8;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#666;font-size:13px;">Map requires internet connection to load</div>';
+  }
+}
+
+function toggleDD(e) {
+  e.stopPropagation();
+  document.getElementById('dd').classList.toggle('open');
+}
+function closeDD() { document.getElementById('dd').classList.remove('open'); }
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.nav-more')) closeDD();
 });
 
-// ── AUTH ──
-async function doLogin(){
-  var email=document.getElementById('login-email').value.trim();
-  var pw=document.getElementById('login-pw').value;
-  var btn=document.getElementById('login-btn');
-  var err=document.getElementById('login-err');
-  if(!email||!pw){showLoginErr('Please enter your email and password.');return;}
-  if(!sb){showLoginErr('Not connected. Check settings.');return;}
-  btn.disabled=true;btn.textContent='Signing in...';err.style.display='none';
-  var {data,error}=await sb.auth.signInWithPassword({email,password:pw});
-  if(error){showLoginErr('Incorrect email or password.');btn.disabled=false;btn.textContent='Sign In';return;}
-  logAction('info','Admin login','auth',email);
-  enterApp(email);
-}
-function showLoginErr(m){var e=document.getElementById('login-err');e.textContent=m;e.style.display='block';}
-function enterApp(email){
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('app').style.display='block';
-  document.getElementById('tb-user').textContent=email;
-  loadSettingsUI();loadDashboard();renderLog();
-}
-async function doLogout(){
-  if(sb)await sb.auth.signOut();
-  document.getElementById('app').style.display='none';
-  document.getElementById('login-screen').style.display='flex';
-  document.getElementById('login-pw').value='';
-  document.getElementById('login-btn').disabled=false;
-  document.getElementById('login-btn').textContent='Sign In';
-}
-
-// ── NAV ──
-function showPg(name,el){
-  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.sb-item').forEach(s=>s.classList.remove('active'));
-  var pg=document.getElementById('pg-'+name);
-  if(pg)pg.classList.add('active');
-  if(el)el.classList.add('active');
-  else{var item=document.querySelector(`.sb-item[onclick*="'${name}'"]`);if(item)item.classList.add('active');}
-  if(name==='dashboard')loadDashboard();
-  if(name==='users')loadAdminUsers();
-  if(name==='dataset-explorer')loadExplorer('properties',document.querySelector('.de-tab'));
-  if(name==='data-health')runHealthScan();
-  if(name==='activity')renderLog();
-}
-
-// ── TABS ──
-function switchTab(prefix,name,el,tabsId){
-  document.getElementById(tabsId).querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  document.querySelectorAll(`[id^="${prefix}-"]`).forEach(t=>t.classList.remove('active'));
-  document.getElementById(prefix+'-'+name).classList.add('active');
-}
-
-// ── DASHBOARD ──
-async function loadDashboard(){
-  if(!sb){document.getElementById('conn-status').innerHTML='<span class="conn-err">⚠ Not connected — go to Settings</span>';return;}
-  document.getElementById('dash-refresh').textContent=new Date().toLocaleTimeString();
-  try{
-    var {count:lCount}=await sb.from('properties').select('*',{count:'exact',head:true});
-    document.getElementById('st-listings').textContent=(lCount||0).toLocaleString();
-    var {data:cd}=await sb.from('properties').select('city');
-    var cities=[...new Set((cd||[]).map(r=>r.city).filter(Boolean))];
-    document.getElementById('st-cities').textContent=cities.length;
-    document.getElementById('st-countries').textContent=[...new Set((cd||[]).map(r=>'Morocco'))].length;
-    var {count:pCount}=await sb.from('price_records').select('*',{count:'exact',head:true});
-    document.getElementById('st-prices').textContent=(pCount||0).toLocaleString();
-    // Today / This week (estimated)
-    document.getElementById('st-today').textContent='0';
-    document.getElementById('st-week').textContent=(lCount||0).toLocaleString();
-    document.getElementById('st-lastrun').textContent='Mar 2026';
-    document.getElementById('st-lastrun-sub').textContent='Mubawab Morocco';
-    document.getElementById('src-mubawab-count').textContent=(lCount||0).toLocaleString();
-    document.getElementById('src-mubawab-last').textContent='Mar 2026';
-    document.getElementById('conn-status').innerHTML='<span class="conn-ok">✓ Connected to Supabase</span>';
-    // Health quick counts
-    await loadHealthCounts();
-    // Jobs
-    document.getElementById('job-mubawab-rec').textContent=(lCount||0).toLocaleString();
-    document.getElementById('job-mubawab-time').textContent='Mar 2026';
-  }catch(e){
-    document.getElementById('conn-status').innerHTML='<span class="conn-err">✕ Connection error — check Settings</span>';
-  }
-  renderLog('dash');
-}
-
-// ── HEALTH COUNTS ──
-async function loadHealthCounts(){
-  if(!sb)return;
-  try{
-    var {count:noDistrict}=await sb.from('properties').select('*',{count:'exact',head:true}).or('submarket.is.null,submarket.eq.');
-    var {count:noPrice}=await sb.from('properties').select('*',{count:'exact',head:true});
-    var nd=noDistrict||0;
-    // Approximate checks
-    setHealthCell('hc-district',nd,200);
-    setHealthCell('hi-district',nd,200);
-    document.getElementById('hc-price').textContent='—';
-    document.getElementById('hc-size').textContent='—';
-    document.getElementById('hc-dupes').textContent='Est.';
-    document.getElementById('hc-old').textContent='—';
-    document.getElementById('hi-price').textContent='—';
-    document.getElementById('hi-size').textContent='—';
-    document.getElementById('hi-dupes').textContent='Est.';
-    document.getElementById('hi-old').textContent='—';
-    document.getElementById('hi-url').textContent='—';
-    document.getElementById('hi-type').textContent='—';
-    document.getElementById('hi-review').textContent='3';
-    document.getElementById('batch-dupe-count').textContent='Run scan to estimate';
-  }catch(e){}
-}
-function setHealthCell(id,val,warnThreshold){
-  var el=document.getElementById(id);
-  if(!el)return;
-  el.textContent=val.toLocaleString();
-  el.className=el.className.replace(/\b(ok|warn|crit)\b/g,'');
-  el.classList.add(val===0?'ok':val>warnThreshold?'crit':'warn');
-}
-
-async function runHealthScan(){
-  document.getElementById('health-scan-time').textContent='Scanning...';
-  await loadHealthCounts();
-  document.getElementById('health-scan-time').textContent='Last scan: '+new Date().toLocaleTimeString()+' · '+new Date().toLocaleDateString();
-  logAction('info','Data health scan completed','data-health','system');
-}
-
-function viewIssue(type){
-  document.getElementById('issue-view-lbl').textContent='Records with: '+type.replace(/_/g,' ');
-  document.getElementById('issue-records-wrap').innerHTML='<div style="padding:20px;text-align:center;color:var(--ink5);font-size:13px;">Loading records with issue: '+type+'...<br><br><button class="btn btn-secondary btn-xs" onclick="exportIssue(\''+type+'\')">↓ Export Issue CSV</button></div>';
-}
-function exportIssue(type){
-  logAction('info','Issue export: '+type,'data-health');
-  alert('Exporting records with issue: '+type+'. In production this would export a CSV of matching records from the raw data layer.');
-}
-function exportHealthReport(){
-  logAction('info','Health report exported','data-health');
-  alert('Health report export: in production this downloads a full data quality report as Excel.');
-}
-
-// ── SOURCES ──
-function toggleAddSource(){
-  var f=document.getElementById('add-source-form');
-  f.style.display=f.style.display==='none'?'block':'none';
-}
-function addSource(){
-  var name=document.getElementById('ns-name').value.trim();
-  if(!name){alert('Source name is required');return;}
-  logAction('success','Source registered: '+name,'sources');
-  toggleAddSource();
-  alert('Source "'+name+'" registered. In production this writes to a source_registry table in Supabase.');
-}
-
-// ── JOBS ──
-function refreshJobs(){
-  logAction('info','Ingestion jobs refreshed','ingestion');
-}
-
-// ── ACTIVITY LOG ──
-function logAction(type,text,dataset,user){
-  var now=new Date();
-  var entry={time:now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0'),type:type,text:text,dataset:dataset||'—',user:user||'admin'};
-  ACTIVITY_LOG.unshift(entry);
-  if(ACTIVITY_LOG.length>200)ACTIVITY_LOG=ACTIVITY_LOG.slice(0,200);
-}
-function renderLog(target){
-  var filter=document.getElementById('log-filter-type')?.value||'';
-  var entries=ACTIVITY_LOG.filter(e=>!filter||e.type===filter||e.dataset===filter||e.text.toLowerCase().includes(filter));
-  var html=entries.map(e=>`
-    <div class="log-entry">
-      <div class="log-time">${e.time}</div>
-      <div class="log-dot ${e.type}"></div>
-      <div class="log-text">${e.text}<span class="log-dataset">${e.dataset}</span><div class="log-user">${e.user||''}</div></div>
-    </div>`).join('');
-  if(!html)html='<div style="padding:20px;text-align:center;color:var(--ink5);">No log entries</div>';
-  if(target==='dash'){document.getElementById('dash-activity').innerHTML=html.split('log-entry').slice(0,5).join('log-entry');}
-  else if(document.getElementById('activity-log-list')){document.getElementById('activity-log-list').innerHTML=html;}
-}
-function exportLog(){
-  var ws=XLSX.utils.json_to_sheet(ACTIVITY_LOG);
-  var wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Activity Log');
-  XLSX.writeFile(wb,'ironwood_activity_log_'+new Date().toISOString().slice(0,10)+'.xlsx');
-}
-
-// ── DATASET EXPLORER ──
-async function loadExplorer(table,el){
-  if(el){document.querySelectorAll('.de-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');}
-  EXPLORER_DATA.table=table;EXPLORER_DATA.page=0;
-  if(!sb){renderExplorer([]);return;}
-  document.getElementById('explorer-body').innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--ink5);">Loading...</td></tr>';
-  try{
-    var {data,error}=await sb.from(table).select('*').limit(200);
-    EXPLORER_DATA.rows=data||[];EXPLORER_DATA.filtered=data||[];
-    renderExplorer(EXPLORER_DATA.filtered);
-  }catch(e){renderExplorer([]);}
-}
-function applyExplorerFilters(){
-  var city=document.getElementById('ex-city')?.value||'';
-  var asset=document.getElementById('ex-asset')?.value||'';
-  var search=document.getElementById('ex-search')?.value?.toLowerCase()||'';
-  EXPLORER_DATA.filtered=EXPLORER_DATA.rows.filter(r=>{
-    if(city&&r.city!==city)return false;
-    if(asset&&r.asset_class!==asset&&r.property_type!==asset)return false;
-    if(search){var s=JSON.stringify(r).toLowerCase();if(!s.includes(search))return false;}
-    return true;
-  });
-  EXPLORER_DATA.page=0;renderExplorer(EXPLORER_DATA.filtered);
-}
-function renderExplorer(rows){
-  var start=EXPLORER_DATA.page*EXPLORER_DATA.pageSize;
-  var page=rows.slice(start,start+EXPLORER_DATA.pageSize);
-  if(!rows.length){
-    document.getElementById('explorer-head').innerHTML='';
-    document.getElementById('explorer-body').innerHTML='<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--ink5);">No records found</td></tr>';
-    document.getElementById('ex-count').textContent='0 records';
-    return;
-  }
-  var cols=Object.keys(rows[0]).slice(0,10);
-  document.getElementById('explorer-head').innerHTML=cols.map(c=>'<th>'+c+'</th>').join('');
-  document.getElementById('explorer-body').innerHTML=page.map(r=>'<tr>'+cols.map(c=>'<td title="'+(r[c]||'')+'">'+(String(r[c]||'').slice(0,40)||'<span style="color:var(--ink5)">—</span>')+'</td>').join('')+'</tr>').join('');
-  document.getElementById('ex-count').textContent=rows.length.toLocaleString()+' records · Showing '+(start+1)+'-'+Math.min(start+EXPLORER_DATA.pageSize,rows.length);
-  document.getElementById('ex-page').textContent='Page '+(EXPLORER_DATA.page+1)+' / '+Math.ceil(rows.length/EXPLORER_DATA.pageSize);
-}
-function explorerPage(dir){
-  var maxPage=Math.ceil(EXPLORER_DATA.filtered.length/EXPLORER_DATA.pageSize)-1;
-  EXPLORER_DATA.page=Math.max(0,Math.min(maxPage,EXPLORER_DATA.page+dir));
-  renderExplorer(EXPLORER_DATA.filtered);
-}
-function exportExplorer(fmt){
-  var rows=EXPLORER_DATA.filtered;
-  if(!rows.length){alert('No data to export');return;}
-  var ws=XLSX.utils.json_to_sheet(rows);
-  var wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,EXPLORER_DATA.table);
-  var fname='ironwood_'+EXPLORER_DATA.table+'_'+new Date().toISOString().slice(0,10)+(fmt==='xlsx'?'.xlsx':'.csv');
-  if(fmt==='xlsx'){XLSX.writeFile(wb,fname);}
-  else{var csv=XLSX.utils.sheet_to_csv(ws);var a=document.createElement('a');a.href='data:text/csv,'+encodeURIComponent(csv);a.download=fname;a.click();}
-  logAction('info','Dataset exported: '+EXPLORER_DATA.table,'dataset-explorer');
-}
-
-// ── VERIFICATION ──
-function verifyRecord(btn,status){
-  var card=btn.closest('.vq-card');
-  card.style.opacity='.4';
-  setTimeout(()=>card.remove(),300);
-  var count=document.querySelectorAll('.vq-card').length-1;
-  document.getElementById('badge-vq').textContent=Math.max(0,count);
-  logAction(status==='verified'?'success':'warning','Record '+status,'verification');
-}
-
-// ── BATCH OPS ──
-function confirmBatch(action){
-  var msgs={
-    update_district:'This will update the district for all matching records in Casablanca where district is empty. Continue?',
-    update_asset:'This will replace all instances of the specified asset class value with the new standardised value. Continue?',
-    delete_dupes:'This will permanently delete all detected duplicate records. This cannot be undone. Are you sure?',
-    bulk_verify:'This will set verification status for all records in the selected city. Continue?'
-  };
-  openModal('Confirm Batch Operation',msgs[action]||'Proceed with this batch operation?',()=>{
-    logAction('warning','Batch operation: '+action,'batch');
-    alert('Batch operation "'+action+'" would execute here. In production, this runs an SQL update against the raw data layer and logs the action.');
-  });
-}
-
-// ── MODAL ──
-function openModal(title,body,onConfirm){
-  document.getElementById('modal-title').textContent=title;
-  document.getElementById('modal-body').textContent=body;
-  document.getElementById('modal-confirm').onclick=()=>{closeModal();onConfirm();};
-  document.getElementById('modal-overlay').classList.add('open');
-}
-function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
-
-// ── UPLOAD FILE HANDLING ──
-function dOv(e,id){e.preventDefault();document.getElementById('dz-'+id).classList.add('drag');}
-function dLv(e,id){document.getElementById('dz-'+id).classList.remove('drag');}
-function dDp(e,id,name){e.preventDefault();dLv(e,id);processFile(e.dataTransfer.files[0],name);}
-function handleFile(e,name){processFile(e.target.files[0],name);}
-function processFile(file,name){
-  var r=new FileReader();
-  r.onload=function(e){
-    try{
-      var wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
-      var ws=wb.Sheets[wb.SheetNames[0]];
-      var data=XLSX.utils.sheet_to_json(ws,{defval:''});
-      parsed[name]=data;
-      showPreview(name,data);
-      showValidationPreview(name,data);
-    }catch(err){alert('Error reading file: '+err.message);}
-  };
-  r.readAsBinaryString(file);
-}
-function showPreview(name,data){
-  if(!data.length){alert('No data found');return;}
-  var cols=Object.keys(data[0]);
-  var html='<table class="dt"><thead><tr>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+
-    data.slice(0,5).map(r=>'<tr>'+cols.map(c=>'<td>'+(r[c]||'')+'</td>').join('')+'</tr>').join('')+
-    '</tbody></table>';
-  var dzMap={properties:'p',prices:'pr',averages:'av'};
-  document.getElementById('pt-'+name).innerHTML=html;
-  document.getElementById('pc-'+name).textContent=' ('+data.length.toLocaleString()+' rows — first 5 shown)';
-  document.getElementById('prev-'+name).style.display='block';
-  document.getElementById('bup-'+name).style.display='inline-block';
-  document.getElementById('cancel-'+name).style.display='inline-block';
-  var dz=document.getElementById('dz-'+dzMap[name]);
-  if(dz)dz.innerHTML='<div class="dz-icon">✓</div><div class="dz-title">'+data.length.toLocaleString()+' rows ready</div><div class="dz-sub">Click to replace file</div>';
-}
-function showValidationPreview(name,data){
-  var vp=document.getElementById('vp-'+name);
-  if(!vp)return;
-  var totalEl=document.getElementById('vp-'+(name==='properties'?'p':name==='prices'?'pr':'av')+'-total');
-  if(!totalEl){vp.style.display='block';return;}
-  var pfx=name==='properties'?'p':name==='prices'?'pr':'av';
-  var reqFields={properties:['country','city','asset_class','listing_type'],prices:['country','city','asset_class','date_recorded'],averages:['country','city','asset_class','quarter','year']};
-  var req=reqFields[name]||[];
-  var missing=data.filter(r=>req.some(f=>!r[f]||r[f]===''));
-  var seen=new Set();var dupes=data.filter(r=>{var k=JSON.stringify(req.map(f=>r[f]||''));if(seen.has(k))return true;seen.add(k);return false;});
-  var valid=data.length-missing.length;
-  document.getElementById('vp-'+pfx+'-total').textContent=data.length.toLocaleString();
-  document.getElementById('vp-'+pfx+'-valid').textContent=valid.toLocaleString();
-  document.getElementById('vp-'+pfx+'-dupes').textContent=dupes.length.toLocaleString();
-  document.getElementById('vp-'+pfx+'-missing').textContent=missing.length.toLocaleString();
-  vp.style.display='block';
-}
-function exportValidationReport(name){
-  logAction('info','Validation report exported: '+name,'upload');
-  alert('Validation report for '+name+' would download as Excel with flagged rows highlighted.');
-}
-
-// ── UPLOAD MODE UI ──
-function getUploadMode(name){
-  var radios=document.querySelectorAll('input[name="umode-'+name+'"]');
-  for(var r of radios){if(r.checked)return r.value;}
-  return 'append';
-}
-function updateModeUI(name){
-  var mode=getUploadMode(name);
-  var warn=document.getElementById('replace-warn-'+name);
-  if(warn)warn.style.display=mode==='replace'?'block':'none';
-  var crInfo=document.getElementById('country-replace-info-'+name);
-  if(crInfo)crInfo.style.display=mode==='country_replace'?'block':'none';
-  ['append','upsert','replace','country_replace'].forEach(m=>{
-    var lbl=document.getElementById('mode-label-'+m+'-'+name);
-    if(lbl)lbl.style.borderColor=mode===m?(m==='replace'?'var(--red)':m==='country_replace'?'var(--amber)':m==='upsert'?'var(--blue)':'var(--green)'):'var(--border)';
-  });
-}
-
-// ── UPLOAD ──
-var COL_MAP={area:'size_sqm',location:'submarket',asset_type:'asset_class',site_name:'source_name',link:'source_url'};
-function remapRow(row){
-  var c={};
-  Object.keys(row).forEach(function(k){
-    var v=row[k];
-    if(v===''||v===null||v===undefined)return;
-    var dbk=COL_MAP[k]||k;
-    c[dbk]=v instanceof Date?v.toISOString().split('T')[0]:v;
-  });
-  return c;
-}
-function cancelUpload(name){_cancelUpload[name]=true;}
-async function doUpload(name,table){
-  if(!sb){alert('Not connected. Check Settings.');return;}
-  var data=parsed[name];if(!data||!data.length){alert('No data loaded');return;}
-  var mode=getUploadMode(name);
-  if(mode==='replace'){
-    openModal('⚠ Replace All Data','This will permanently delete ALL existing rows in "'+table+'" and replace with your '+data.length.toLocaleString()+' rows. This cannot be undone.',async()=>{
-      await executeUpload(name,table,mode,data,null);
-    });
-    return;
-  }
-  if(mode==='country_replace'){
-    var countryCol=data[0].hasOwnProperty('country')?'country':data[0].hasOwnProperty('Country')?'Country':null;
-    if(!countryCol){alert('Country Replace requires a "country" column in your file. Column not found.');return;}
-    var detectedCountry=String(data[0][countryCol]||'').trim();
-    if(!detectedCountry){alert('The "country" column is empty in the first row. Cannot detect country.');return;}
-    openModal('Country Replace: '+detectedCountry,
-      'This will:\n1. Delete ALL rows where country = "'+detectedCountry+'"\n2. Insert your '+data.length.toLocaleString()+' rows\n\nAll other countries remain untouched. Continue?',
-      async()=>{ await executeUpload(name,table,mode,data,detectedCountry); }
-    );
-    return;
-  }
-  await executeUpload(name,table,mode,data,null);
-}
-async function executeUpload(name,table,mode,data,countryToReplace){
-  _cancelUpload[name]=false;
-  var btn=document.getElementById('bup-'+name);
-  var prog=document.getElementById('prog-'+name);
-  var pbar=document.getElementById('pb-'+name);
-  var ptxt=document.getElementById('ptxt-'+name);
-  var res=document.getElementById('res-'+name);
-  var cancelBtn=document.getElementById('cancel-'+name);
-  btn.disabled=true;
-  prog.style.display='block';res.style.display='none';
-  if(mode==='replace'){
-    ptxt.textContent='Deleting existing data...';
-    var {error:derr}=await sb.from(table).delete().gt('id',0);
-    if(derr){
-      var deleted=0;
-      while(true){
-        if(_cancelUpload[name])break;
-        var {data:ids}=await sb.from(table).select('id').limit(500);
-        if(!ids||!ids.length)break;
-        await sb.from(table).delete().in('id',ids.map(r=>r.id));
-        deleted+=ids.length;
-        ptxt.textContent='Deleting... '+deleted.toLocaleString()+' removed';
-        if(ids.length<500)break;
-      }
-    }
-    ptxt.textContent='Cleared. Uploading...';
-  }
-  if(mode==='country_replace'&&countryToReplace){
-    ptxt.textContent='Deleting '+countryToReplace+' rows...';
-    var {error:cderr}=await sb.from(table).delete().eq('country',countryToReplace);
-    if(cderr){
-      var cdDeleted=0;
-      while(true){
-        if(_cancelUpload[name])break;
-        var {data:cids}=await sb.from(table).select('id').eq('country',countryToReplace).limit(500);
-        if(!cids||!cids.length)break;
-        await sb.from(table).delete().in('id',cids.map(r=>r.id));
-        cdDeleted+=cids.length;
-        ptxt.textContent='Deleting '+countryToReplace+' rows... '+cdDeleted.toLocaleString()+' removed';
-        if(cids.length<500)break;
-      }
-    }
-    ptxt.textContent=countryToReplace+' cleared. Uploading '+data.length.toLocaleString()+' rows...';
-  }
-  var bsz=100,total=data.length,uploaded=0,errors=[];
-  for(var i=0;i<total;i+=bsz){
-    if(_cancelUpload[name]){
-      res.className='result-box err';
-      res.innerHTML='<h4>🛑 Cancelled</h4>'+uploaded.toLocaleString()+' rows uploaded before cancellation.';
-      res.style.display='block';btn.disabled=false;prog.style.display='none';return;
-    }
-    var batch=data.slice(i,i+bsz).map(remapRow);
-    var op=mode==='upsert'?sb.from(table).upsert(batch,{onConflict:'id',ignoreDuplicates:false}):sb.from(table).insert(batch);
-    var {error}=await op;
-    if(error){errors.push('Rows '+(i+1)+'-'+Math.min(i+bsz,total)+': '+error.message);}else{uploaded+=batch.length;}
-    pbar.style.width=Math.min(Math.round(((i+bsz)/total)*100),100)+'%';
-    var modeVerb=mode==='country_replace'?('Uploading '+countryToReplace):mode==='replace'?'Replacing':mode==='upsert'?'Upserting':'Uploading';
-    ptxt.textContent=modeVerb+'... '+Math.min(i+bsz,total).toLocaleString()+' / '+total.toLocaleString();
-  }
-  btn.disabled=false;cancelBtn.style.display='none';prog.style.display='none';
-  var modeLabel=mode==='country_replace'?'replaced ('+countryToReplace+')':mode==='replace'?'replaced':mode==='upsert'?'upserted':'added';
-  if(!errors.length){
-    res.className='result-box ok';
-    res.innerHTML='<h4>✓ Complete</h4>'+uploaded.toLocaleString()+' rows '+modeLabel+' in '+table+'.'+(mode==='country_replace'?'<br><span style="font-size:11px;color:var(--green);">All other countries untouched.</span>':'');
-    logAction('success',uploaded.toLocaleString()+' rows '+modeLabel+' in '+table,'upload');
-  }else{
-    res.className='result-box err';
-    res.innerHTML='<h4>⚠ Finished with errors</h4>'+uploaded.toLocaleString()+' rows '+modeLabel+'.<ul>'+errors.slice(0,8).map(e=>'<li>'+e+'</li>').join('')+(errors.length>8?'<li>...and '+(errors.length-8)+' more</li>':'')+'</ul>';
-    logAction('error',errors.length+' errors during upload to '+table,'upload');
-  }
-  res.style.display='block';loadDashboard();
-}
-
-// ── DOWNLOAD ──
-async function downloadTable(table,filename){
-  if(!sb){alert('Not connected.');return;}
-  var prog=document.getElementById('dl-prog-'+table);
-  var pb=document.getElementById('dl-pb-'+table);
-  var ptxt=document.getElementById('dl-ptxt-'+table);
-  prog.style.display='block';
-  var allRows=[],from=0,bsz=1000;
-  while(true){
-    ptxt.textContent='Fetching... '+allRows.length.toLocaleString()+' rows';
-    var {data,error}=await sb.from(table).select('*').range(from,from+bsz-1);
-    if(error||!data||!data.length)break;
-    allRows=allRows.concat(data);from+=bsz;
-    pb.style.width=Math.min(90,Math.round((from/(from+1000))*100))+'%';
-    if(data.length<bsz)break;
-  }
-  pb.style.width='100%';
-  ptxt.textContent='Building Excel...';
-  if(!allRows.length){ptxt.textContent='No data found.';return;}
-  var ws=XLSX.utils.json_to_sheet(allRows);
-  var wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,table);
-  XLSX.writeFile(wb,filename+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
-  ptxt.textContent='✓ Downloaded '+allRows.length.toLocaleString()+' rows';
-  logAction('success',allRows.length.toLocaleString()+' rows downloaded from '+table,'download');
-}
-async function downloadAll(){
-  if(!sb){alert('Not connected.');return;}
-  var prog=document.getElementById('dl-prog-all');
-  var pb=document.getElementById('dl-pb-all');
-  var ptxt=document.getElementById('dl-ptxt-all');
-  prog.style.display='block';
-  var wb=XLSX.utils.book_new();
-  var tables=[['properties','Listings'],['price_records','Price Records'],['market_averages','Market Averages']];
-  var total=0;
-  for(var t=0;t<tables.length;t++){
-    var [table,sheet]=tables[t];
-    ptxt.textContent='Fetching '+sheet+'...';
-    pb.style.width=Math.round((t/tables.length)*90)+'%';
-    var rows=[],from=0;
-    while(true){
-      var {data}=await sb.from(table).select('*').range(from,from+999);
-      if(!data||!data.length)break;
-      rows=rows.concat(data);from+=1000;
-      if(data.length<1000)break;
-    }
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.length?rows:[{}]),sheet);
-    total+=rows.length;
-  }
-  pb.style.width='100%';ptxt.textContent='Building Excel...';
-  XLSX.writeFile(wb,'ironwood_full_export_'+new Date().toISOString().slice(0,10)+'.xlsx');
-  ptxt.textContent='✓ '+total.toLocaleString()+' rows across 3 sheets';
-  logAction('success','Full database export: '+total.toLocaleString()+' rows','download');
-}
-
-// ── MANUAL ENTRY ──
-function v(id){return document.getElementById(id)?.value?.trim()||'';}
-function n(id){var val=document.getElementById(id)?.value;return val?parseFloat(val):null;}
-async function manualInsert(type){
-  if(!sb){alert('Not connected. Check Settings.');return;}
-  var row={},table='';
-  if(type==='property'){
-    table='properties';
-    row={country:v('m-country'),city:v('m-city'),submarket:v('m-sub'),asset_class:v('m-asset'),listing_type:v('m-listing'),property_name:v('m-name'),price:n('m-price'),price_per_sqm:n('m-psqm'),size_sqm:n('m-size'),source_name:v('m-src'),source_url:v('m-url')};
-    if(!row.country||!row.city||!row.asset_class||!row.listing_type){alert('Fill required fields (★)');return;}
-  }else if(type==='price'){
-    table='price_records';
-    row={country:v('mp-country'),city:v('mp-city'),submarket:v('mp-sub'),asset_class:v('mp-asset'),date_recorded:v('mp-date'),quarter:v('mp-q'),asking_rent_sqm:n('mp-rent'),sale_price_sqm:n('mp-salepsqm'),currency:v('mp-cur'),notes:v('mp-notes')};
-    if(!row.country||!row.city||!row.asset_class||!row.date_recorded){alert('Fill required fields (★)');return;}
-  }else if(type==='average'){
-    table='market_averages';
-    row={country:v('ma-country'),city:v('ma-city'),submarket:v('ma-sub'),asset_class:v('ma-asset'),quarter:v('ma-q'),year:n('ma-yr'),avg_rent_sqm:n('ma-rent'),avg_sale_price_sqm:n('ma-sale'),vacancy_rate:n('ma-vac'),total_listings:n('ma-total')};
-    if(!row.country||!row.city||!row.asset_class||!row.quarter||!row.year){alert('Fill required fields (★)');return;}
-  }
-  Object.keys(row).forEach(k=>{if(row[k]===null||row[k]==='')delete row[k];});
-  var {error}=await sb.from(table).insert(row);
-  if(!error){
-    var s=document.getElementById('es-'+type);s.style.display='block';setTimeout(()=>s.style.display='none',3000);
-    logAction('success','Manual entry added to '+table,'manual');
-    loadDashboard();
-  }else{alert('Error: '+error.message);}
-}
-
-// ── ADMIN USERS ──
-async function loadAdminUsers(){
-  var tbody=document.getElementById('admin-users-list');
-  if(!sb||!tbody){return;}
-  var {data:sess}=await sb.auth.getSession();
-  var email=sess?.session?.user?.email||'—';
-  var created=sess?.session?.user?.created_at?new Date(sess.session.user.created_at).toLocaleDateString():'—';
-  tbody.innerHTML='<tr><td>'+email+'</td><td><span class="badge badge-admin">Admin</span></td><td>'+created+'</td><td>—</td><td><span class="status status-success">Active</span></td></tr>';
-}
-async function addAdmin(){
-  if(!sb){alert('Not connected');return;}
-  var email=document.getElementById('new-admin-email').value.trim();
-  var pw=document.getElementById('new-admin-pw').value;
-  var role=document.getElementById('new-admin-role').value;
-  var errBox=document.getElementById('err-admin');errBox.style.display='none';
-  if(!email||!pw){alert('Fill in both fields');return;}
-  if(pw.length<8){alert('Password must be 8+ characters');return;}
-  var {error}=await sb.auth.signUp({email,password:pw});
-  if(error){errBox.innerHTML='Error: '+error.message;errBox.style.display='block';}
-  else{document.getElementById('es-admin').style.display='block';setTimeout(()=>document.getElementById('es-admin').style.display='none',3000);logAction('info','Admin user created: '+email+' ('+role+')','users');}
-}
-
-// ── API MGMT ──
-function generateApiKey(){
-  var key='iw_'+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
-  var list=document.getElementById('api-keys-list');
-  var row=document.createElement('div');row.className='api-row';
-  row.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--ink5);width:80px;text-transform:uppercase;letter-spacing:.06em;">New</div><div class="api-key-val">${key}</div><div class="api-meta">Created: ${new Date().toLocaleDateString()} &nbsp;|&nbsp; Usage: 0 req/day &nbsp;|&nbsp; Rate limit: 1,000/day</div><span class="status status-success" style="flex-shrink:0;">Active</span><button class="btn btn-danger btn-xs" onclick="this.closest('.api-row').remove()">Revoke</button>`;
-  list.appendChild(row);
-  logAction('info','API key generated','api');
-}
-
-// ── SETTINGS ──
-function loadSettingsUI(){
-  if(SB_URL)document.getElementById('s-url').value=SB_URL;
-  if(SB_KEY)document.getElementById('s-key').value=SB_KEY;
-}
-function saveSettings(){
-  SB_URL=document.getElementById('s-url').value.trim().replace(/\/$/,'');
-  SB_KEY=document.getElementById('s-key').value.trim();
-  localStorage.setItem('iw_url',SB_URL);localStorage.setItem('iw_key',SB_KEY);
-  initSB();
-  var s=document.getElementById('settings-saved');s.style.display='inline';setTimeout(()=>s.style.display='none',3000);
-  loadDashboard();
-}
-
-// ── TEMPLATE DOWNLOAD ──
-function dlTemplate(name){
-  var ws=XLSX.utils.aoa_to_sheet(TEMPLATES[name]);
-  var wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Template');
-  XLSX.writeFile(wb,'ironwood_'+name+'_template.xlsx');
-}
+go('home');
 </script>
 </body>
 </html>
