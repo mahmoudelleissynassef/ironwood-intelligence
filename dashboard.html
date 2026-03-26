@@ -2384,7 +2384,30 @@ async function loadMacroData(country){
     }
   };
 
-  var cfg = COUNTRY_CFG[country] || COUNTRY_CFG.Morocco;
+  // Generic fallback for countries without explicit config
+  var genericCfg = {
+    sources: 'World Bank · National Statistics Agency · Central Bank · IMF',
+    sourceRows: [
+      ['Population & Demographics','World Bank / National Statistics','Annual / Census','data.worldbank.org','conf-h','High'],
+      ['GDP & Growth','World Bank / IMF','Annual','data.worldbank.org','conf-h','High'],
+      ['Inflation (CPI)','World Bank / IMF','Annual','data.worldbank.org','conf-h','High'],
+      ['Interest Rates / Monetary','Central Bank (National)','Monthly','data.worldbank.org','conf-m','Med.'],
+      ['Unemployment','World Bank','Annual','data.worldbank.org','conf-m','Med.'],
+      ['Household Formation','National Statistics Agency','Census / Est.','data.worldbank.org','conf-m','Med.'],
+      ['Income Levels','World Bank / IMF','Annual','data.worldbank.org','conf-m','Med.'],
+    ],
+    cities: [],
+    demandDrivers: [
+      ['Annual HH Formation','Data pending'],
+      ['Urban pop. share','World Bank live (loading…)'],
+      ['Policy rate','Data pending'],
+      ['Currency', (COUNTRIES[country]&&COUNTRIES[country].currency)||'—'],
+      ['Mortgage penetration','Data pending'],
+      ['Remittance inflows','Data pending'],
+    ],
+    citySectionLabel: 'City-Level Demographics — ' + country,
+  };
+  var cfg = COUNTRY_CFG[country] || genericCfg;
 
   // ── Update static country references in the page ──
 
@@ -2426,9 +2449,13 @@ async function loadMacroData(country){
   // City macro table body
   var cityBody = document.querySelector('#city-macro-table tbody');
   if(cityBody){
-    cityBody.innerHTML = cfg.cities.map(function(c){
-      return '<tr><td class="dt-city">'+c[0]+'</td><td class="mono">'+c[1]+'</td><td class="chg pos">'+c[2]+'</td><td class="mono">'+c[3]+'</td><td class="mono">'+c[4]+'</td><td class="mono">'+c[5]+'</td><td class="mono">'+c[6]+'</td><td class="dt-muted">'+c[7]+'</td></tr>';
-    }).join('');
+    if(cfg.cities && cfg.cities.length > 0){
+      cityBody.innerHTML = cfg.cities.map(function(c){
+        return '<tr><td class="dt-city">'+c[0]+'</td><td class="mono">'+c[1]+'</td><td class="chg pos">'+c[2]+'</td><td class="mono">'+c[3]+'</td><td class="mono">'+c[4]+'</td><td class="mono">'+c[5]+'</td><td class="mono">'+c[6]+'</td><td class="dt-muted">'+c[7]+'</td></tr>';
+      }).join('');
+    } else {
+      cityBody.innerHTML = '<tr><td colspan="8" style="padding:16px;text-align:center;color:var(--ink4);">City-level demographic data for '+country+' coming soon</td></tr>';
+    }
   }
 
   // Demand drivers panel subtitle
