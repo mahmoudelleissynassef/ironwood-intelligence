@@ -429,21 +429,53 @@ button{cursor:pointer;font-family:var(--sans);}
     <span class="sb-mkt-name" id="sb-mkt-label">🇲🇦 Morocco</span>
     <span class="sb-mkt-caret">▾</span>
   </div>
-  <div id="country-dropdown" style="display:none;position:absolute;left:12px;right:12px;background:#fff;border:1px solid #e8e6e1;border-radius:6px;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.12);overflow:hidden;">
-    <div style="padding:8px 12px;font-size:10px;font-weight:700;color:#9c9994;letter-spacing:.08em;border-bottom:1px solid #e8e6e1;">ACTIVE COVERAGE</div>
+  <div id="country-dropdown" style="display:none;position:absolute;left:12px;right:12px;background:#fff;border:1px solid #e8e6e1;border-radius:6px;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.12);overflow:hidden;max-height:420px;overflow-y:auto;">
+    <div style="padding:8px 12px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b8b8b5;border-bottom:1px solid #f0f0ee;">● LIVE COVERAGE</div>
     <div class="country-opt active" id="copt-Morocco" onclick="switchCountry('Morocco')">
-      <span style="font-size:15px;">🇲🇦</span><span>Morocco</span><span style="margin-left:auto;font-size:10px;color:#6b7280;">62k listings</span>
+      <span style="font-size:15px;">🇲🇦</span><span>Morocco</span><span style="margin-left:auto;font-size:10px;color:#166534;font-weight:600;">62k listings</span>
     </div>
     <div class="country-opt" id="copt-Nigeria" onclick="switchCountry('Nigeria')">
-      <span style="font-size:15px;">🇳🇬</span><span>Nigeria</span><span style="margin-left:auto;font-size:10px;color:#6b7280;">28k listings</span>
+      <span style="font-size:15px;">🇳🇬</span><span>Nigeria</span><span style="margin-left:auto;font-size:10px;color:#166534;font-weight:600;">28k listings</span>
     </div>
-    <div style="padding:8px 12px;font-size:10px;font-weight:700;color:#9c9994;letter-spacing:.08em;border-top:1px solid #e8e6e1;border-bottom:1px solid #e8e6e1;margin-top:2px;">COMING SOON</div>
-    <div class="country-opt disabled" style="opacity:.4;cursor:not-allowed;">
-      <span style="font-size:15px;">🇸🇳</span><span>Senegal</span><span style="margin-left:auto;font-size:10px;color:#9c9994;">Pending</span>
-    </div>
-    <div class="country-opt disabled" style="opacity:.4;cursor:not-allowed;">
-      <span style="font-size:15px;">🇰🇪</span><span>Kenya</span><span style="margin-left:auto;font-size:10px;color:#9c9994;">Pending</span>
-    </div>
+    <div style="padding:8px 12px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b8b8b5;border-bottom:1px solid #f0f0ee;border-top:1px solid #f0f0ee;">NORTH AFRICA</div>
+    <div class="country-opt" id="copt-Egypt" onclick="switchCountry('Egypt')"><span style="font-size:15px;">🇪🇬</span><span>Egypt</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Tunisia" onclick="switchCountry('Tunisia')"><span style="font-size:15px;">🇹🇳</span><span>Tunisia</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Algeria" onclick="switchCountry('Algeria')"><span style="font-size:15px;">🇩🇿</span><span>Algeria</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Libya" onclick="switchCountry('Libya')"><span style="font-size:15px;">🇱🇾</span><span>Libya</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Sudan" onclick="switchCountry('Sudan')"><span style="font-size:15px;">🇸🇩</span><span>Sudan</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div style="padding:8px 12px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b8b8b5;border-bottom:1px solid #f0f0ee;border-top:1px solid #f0f0ee;">WEST AFRICA</div>
+    <div class="country-opt" id="copt-Ghana" onclick="switchCountry('Ghana')"><span style="font-size:15px;">🇬🇭</span><span>Ghana</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-CoteIvoire" onclick="switchCountry('CoteIvoire')"><span style="font-size:15px;">🇨🇮</span><span>Côte d'Ivoire</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Senegal" onclick="switchCountry('Senegal')"><span style="font-size:15px;">🇸🇳</span><span>Senegal</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Benin" onclick="switchCountry('Benin')"><span style="font-size:15px;">🇧🇯</span><span>Benin</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Togo" onclick="switchCountry('Togo')"><span style="font-size:15px;">🇹🇬</span><span>Togo</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Guinea" onclick="switchCountry('Guinea')"><span style="font-size:15px;">🇬🇳</span><span>Guinea</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-SierraLeone" onclick="switchCountry('SierraLeone')"><span style="font-size:15px;">🇸🇱</span><span>Sierra Leone</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Liberia" onclick="switchCountry('Liberia')"><span style="font-size:15px;">🇱🇷</span><span>Liberia</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Mali" onclick="switchCountry('Mali')"><span style="font-size:15px;">🇲🇱</span><span>Mali</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-BurkinaFaso" onclick="switchCountry('BurkinaFaso')"><span style="font-size:15px;">🇧🇫</span><span>Burkina Faso</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div style="padding:8px 12px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b8b8b5;border-bottom:1px solid #f0f0ee;border-top:1px solid #f0f0ee;">EAST AFRICA</div>
+    <div class="country-opt" id="copt-Kenya" onclick="switchCountry('Kenya')"><span style="font-size:15px;">🇰🇪</span><span>Kenya</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Ethiopia" onclick="switchCountry('Ethiopia')"><span style="font-size:15px;">🇪🇹</span><span>Ethiopia</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Tanzania" onclick="switchCountry('Tanzania')"><span style="font-size:15px;">🇹🇿</span><span>Tanzania</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Rwanda" onclick="switchCountry('Rwanda')"><span style="font-size:15px;">🇷🇼</span><span>Rwanda</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Uganda" onclick="switchCountry('Uganda')"><span style="font-size:15px;">🇺🇬</span><span>Uganda</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Djibouti" onclick="switchCountry('Djibouti')"><span style="font-size:15px;">🇩🇯</span><span>Djibouti</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div style="padding:8px 12px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b8b8b5;border-bottom:1px solid #f0f0ee;border-top:1px solid #f0f0ee;">CENTRAL AFRICA</div>
+    <div class="country-opt" id="copt-Cameroon" onclick="switchCountry('Cameroon')"><span style="font-size:15px;">🇨🇲</span><span>Cameroon</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-DRCongo" onclick="switchCountry('DRCongo')"><span style="font-size:15px;">🇨🇩</span><span>DR Congo</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div style="padding:8px 12px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b8b8b5;border-bottom:1px solid #f0f0ee;border-top:1px solid #f0f0ee;">SOUTHERN AFRICA</div>
+    <div class="country-opt" id="copt-SouthAfrica" onclick="switchCountry('SouthAfrica')"><span style="font-size:15px;">🇿🇦</span><span>South Africa</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Angola" onclick="switchCountry('Angola')"><span style="font-size:15px;">🇦🇴</span><span>Angola</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Zambia" onclick="switchCountry('Zambia')"><span style="font-size:15px;">🇿🇲</span><span>Zambia</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Zimbabwe" onclick="switchCountry('Zimbabwe')"><span style="font-size:15px;">🇿🇼</span><span>Zimbabwe</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Mozambique" onclick="switchCountry('Mozambique')"><span style="font-size:15px;">🇲🇿</span><span>Mozambique</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Botswana" onclick="switchCountry('Botswana')"><span style="font-size:15px;">🇧🇼</span><span>Botswana</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Namibia" onclick="switchCountry('Namibia')"><span style="font-size:15px;">🇳🇦</span><span>Namibia</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Malawi" onclick="switchCountry('Malawi')"><span style="font-size:15px;">🇲🇼</span><span>Malawi</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div style="padding:8px 12px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b8b8b5;border-bottom:1px solid #f0f0ee;border-top:1px solid #f0f0ee;">INDIAN OCEAN</div>
+    <div class="country-opt" id="copt-Mauritius" onclick="switchCountry('Mauritius')"><span style="font-size:15px;">🇲🇺</span><span>Mauritius</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
+    <div class="country-opt" id="copt-Madagascar" onclick="switchCountry('Madagascar')"><span style="font-size:15px;">🇲🇬</span><span>Madagascar</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
   </div>
 
   <div class="sb-section">
@@ -1710,20 +1742,111 @@ let _map=null,_chartsBuilt=false;
 
 // ── COUNTRY CONFIG ──
 const COUNTRIES={
-  Morocco:{flag:'🇲🇦',label:'Morocco',cities:['Casablanca','Marrakech','Rabat','Tangiers','Fez'],listingCount:'—',
+  Morocco:{flag:'🇲🇦',label:'Morocco',cities:['Casablanca','Marrakech','Rabat','Tangiers','Fez'],listingCount:'62,052',wbCode:'MA',
     kpis:{medianPrice:'Loading…',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
-    currency:'MAD',region:'North Africa',updated:'Live',
-    cityData:{}
-  },
-  Nigeria:{flag:'🇳🇬',label:'Nigeria',cities:['Lagos','Abuja','Port Harcourt','Kano','Ibadan'],listingCount:'—',
+    currency:'MAD',region:'North Africa',updated:'Live',status:'live',cityData:{}},
+  Nigeria:{flag:'🇳🇬',label:'Nigeria',cities:['Lagos','Abuja','Port Harcourt','Kano','Ibadan'],listingCount:'28,400+',wbCode:'NG',
     kpis:{medianPrice:'Loading…',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
-    currency:'NGN',region:'West Africa',updated:'Live',
-    cityData:{}
-  },
-  Senegal:{flag:'🇸🇳',label:'Senegal',cities:['Dakar'],listingCount:'Pending',
-    kpis:{medianPrice:'—',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
-    currency:'CFA',region:'West Africa',updated:'Coming Soon',cityData:{}
-  }
+    currency:'NGN',region:'West Africa',updated:'Live',status:'live',cityData:{}},
+  Egypt:{flag:'🇪🇬',label:'Egypt',cities:['Cairo','Alexandria','Giza','New Capital'],listingCount:'Pending',wbCode:'EG',
+    kpis:{medianPrice:'~EGP 18,500/m²',priceGrowth:'+9.2%',activeListings:'~41k est.',yieldEst:'~6.8%',pipeline:'Medium',liquidityScore:'5.4'},
+    currency:'EGP',region:'North Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  SouthAfrica:{flag:'🇿🇦',label:'South Africa',cities:['Johannesburg','Cape Town','Durban','Pretoria'],listingCount:'Pending',wbCode:'ZA',
+    kpis:{medianPrice:'~ZAR 24,000/m²',priceGrowth:'+3.1%',activeListings:'~88k est.',yieldEst:'~7.2%',pipeline:'High',liquidityScore:'6.8'},
+    currency:'ZAR',region:'Southern Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Kenya:{flag:'🇰🇪',label:'Kenya',cities:['Nairobi','Mombasa','Kisumu'],listingCount:'Pending',wbCode:'KE',
+    kpis:{medianPrice:'~KES 185,000/m²',priceGrowth:'+5.4%',activeListings:'~18k est.',yieldEst:'~7.8%',pipeline:'Medium',liquidityScore:'5.1'},
+    currency:'KES',region:'East Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Ghana:{flag:'🇬🇭',label:'Ghana',cities:['Accra','Kumasi','Takoradi'],listingCount:'Pending',wbCode:'GH',
+    kpis:{medianPrice:'~GHS 6,200/m²',priceGrowth:'+11.3%',activeListings:'~9k est.',yieldEst:'~8.4%',pipeline:'Medium',liquidityScore:'4.2'},
+    currency:'GHS',region:'West Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  CoteIvoire:{flag:'🇨🇮',label:"Côte d'Ivoire",cities:['Abidjan','Bouaké'],listingCount:'Pending',wbCode:'CI',
+    kpis:{medianPrice:'~XOF 1,850,000/m²',priceGrowth:'+7.6%',activeListings:'~7k est.',yieldEst:'~7.1%',pipeline:'High',liquidityScore:'4.8'},
+    currency:'XOF',region:'West Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Senegal:{flag:'🇸🇳',label:'Senegal',cities:['Dakar','Thiès'],listingCount:'Pending',wbCode:'SN',
+    kpis:{medianPrice:'~XOF 1,420,000/m²',priceGrowth:'+6.2%',activeListings:'~5k est.',yieldEst:'~7.5%',pipeline:'Medium',liquidityScore:'4.0'},
+    currency:'XOF',region:'West Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Tanzania:{flag:'🇹🇿',label:'Tanzania',cities:['Dar es Salaam','Zanzibar','Arusha'],listingCount:'Pending',wbCode:'TZ',
+    kpis:{medianPrice:'~TZS 2,800,000/m²',priceGrowth:'+4.8%',activeListings:'~6k est.',yieldEst:'~8.1%',pipeline:'Low',liquidityScore:'3.6'},
+    currency:'TZS',region:'East Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Ethiopia:{flag:'🇪🇹',label:'Ethiopia',cities:['Addis Ababa','Dire Dawa'],listingCount:'Pending',wbCode:'ET',
+    kpis:{medianPrice:'~ETB 45,000/m²',priceGrowth:'+14.2%',activeListings:'~4k est.',yieldEst:'~9.2%',pipeline:'High',liquidityScore:'3.2'},
+    currency:'ETB',region:'East Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Rwanda:{flag:'🇷🇼',label:'Rwanda',cities:['Kigali'],listingCount:'Pending',wbCode:'RW',
+    kpis:{medianPrice:'~RWF 580,000/m²',priceGrowth:'+8.1%',activeListings:'~2k est.',yieldEst:'~8.8%',pipeline:'High',liquidityScore:'5.6'},
+    currency:'RWF',region:'East Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Uganda:{flag:'🇺🇬',label:'Uganda',cities:['Kampala','Entebbe'],listingCount:'Pending',wbCode:'UG',
+    kpis:{medianPrice:'~UGX 3,200,000/m²',priceGrowth:'+5.3%',activeListings:'~3k est.',yieldEst:'~9.4%',pipeline:'Low',liquidityScore:'3.0'},
+    currency:'UGX',region:'East Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Zambia:{flag:'🇿🇲',label:'Zambia',cities:['Lusaka','Kitwe'],listingCount:'Pending',wbCode:'ZM',
+    kpis:{medianPrice:'~ZMW 8,400/m²',priceGrowth:'+6.7%',activeListings:'~3k est.',yieldEst:'~8.6%',pipeline:'Low',liquidityScore:'3.4'},
+    currency:'ZMW',region:'Southern Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Zimbabwe:{flag:'🇿🇼',label:'Zimbabwe',cities:['Harare','Bulawayo'],listingCount:'Pending',wbCode:'ZW',
+    kpis:{medianPrice:'~USD 1,200/m²',priceGrowth:'+3.8%',activeListings:'~2k est.',yieldEst:'~8.9%',pipeline:'Low',liquidityScore:'2.8'},
+    currency:'USD',region:'Southern Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Angola:{flag:'🇦🇴',label:'Angola',cities:['Luanda','Lobito'],listingCount:'Pending',wbCode:'AO',
+    kpis:{medianPrice:'~USD 2,100/m²',priceGrowth:'+4.1%',activeListings:'~4k est.',yieldEst:'~9.8%',pipeline:'Medium',liquidityScore:'3.8'},
+    currency:'AOA',region:'Southern Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Tunisia:{flag:'🇹🇳',label:'Tunisia',cities:['Tunis','Sfax','Sousse'],listingCount:'Pending',wbCode:'TN',
+    kpis:{medianPrice:'~TND 4,200/m²',priceGrowth:'+7.4%',activeListings:'~12k est.',yieldEst:'~6.4%',pipeline:'Medium',liquidityScore:'4.6'},
+    currency:'TND',region:'North Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Algeria:{flag:'🇩🇿',label:'Algeria',cities:['Algiers','Oran','Constantine'],listingCount:'Pending',wbCode:'DZ',
+    kpis:{medianPrice:'~DZD 280,000/m²',priceGrowth:'+5.9%',activeListings:'~22k est.',yieldEst:'~5.8%',pipeline:'Medium',liquidityScore:'4.2'},
+    currency:'DZD',region:'North Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Cameroon:{flag:'🇨🇲',label:'Cameroon',cities:['Yaoundé','Douala'],listingCount:'Pending',wbCode:'CM',
+    kpis:{medianPrice:'~XAF 680,000/m²',priceGrowth:'+5.2%',activeListings:'~3k est.',yieldEst:'~8.2%',pipeline:'Low',liquidityScore:'3.2'},
+    currency:'XAF',region:'Central Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Botswana:{flag:'🇧🇼',label:'Botswana',cities:['Gaborone','Francistown'],listingCount:'Pending',wbCode:'BW',
+    kpis:{medianPrice:'~BWP 12,400/m²',priceGrowth:'+4.6%',activeListings:'~2k est.',yieldEst:'~7.6%',pipeline:'Low',liquidityScore:'5.2'},
+    currency:'BWP',region:'Southern Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Namibia:{flag:'🇳🇦',label:'Namibia',cities:['Windhoek','Walvis Bay'],listingCount:'Pending',wbCode:'NA',
+    kpis:{medianPrice:'~NAD 18,000/m²',priceGrowth:'+3.2%',activeListings:'~2k est.',yieldEst:'~7.4%',pipeline:'Low',liquidityScore:'4.8'},
+    currency:'NAD',region:'Southern Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Mauritius:{flag:'🇲🇺',label:'Mauritius',cities:['Port Louis','Beau Bassin'],listingCount:'Pending',wbCode:'MU',
+    kpis:{medianPrice:'~MUR 88,000/m²',priceGrowth:'+6.8%',activeListings:'~4k est.',yieldEst:'~5.4%',pipeline:'Medium',liquidityScore:'6.4'},
+    currency:'MUR',region:'Indian Ocean',updated:'Coming Soon',status:'pending',cityData:{}},
+  Mozambique:{flag:'🇲🇿',label:'Mozambique',cities:['Maputo','Beira'],listingCount:'Pending',wbCode:'MZ',
+    kpis:{medianPrice:'~USD 900/m²',priceGrowth:'+4.8%',activeListings:'~1k est.',yieldEst:'~10.2%',pipeline:'Low',liquidityScore:'2.6'},
+    currency:'MZN',region:'Southern Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  DRCongo:{flag:'🇨🇩',label:'DR Congo',cities:['Kinshasa','Lubumbashi'],listingCount:'Pending',wbCode:'CD',
+    kpis:{medianPrice:'~USD 1,400/m²',priceGrowth:'+6.1%',activeListings:'~2k est.',yieldEst:'~11.4%',pipeline:'Low',liquidityScore:'2.2'},
+    currency:'CDF',region:'Central Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Madagascar:{flag:'🇲🇬',label:'Madagascar',cities:['Antananarivo'],listingCount:'Pending',wbCode:'MG',
+    kpis:{medianPrice:'~MGA 1,200,000/m²',priceGrowth:'+3.4%',activeListings:'<1k est.',yieldEst:'~9.8%',pipeline:'Low',liquidityScore:'2.0'},
+    currency:'MGA',region:'Indian Ocean',updated:'Coming Soon',status:'pending',cityData:{}},
+  Malawi:{flag:'🇲🇼',label:'Malawi',cities:['Lilongwe','Blantyre'],listingCount:'Pending',wbCode:'MW',
+    kpis:{medianPrice:'~MWK 220,000/m²',priceGrowth:'+5.6%',activeListings:'<1k est.',yieldEst:'~10.8%',pipeline:'Low',liquidityScore:'2.4'},
+    currency:'MWK',region:'Southern Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Benin:{flag:'🇧🇯',label:'Benin',cities:['Cotonou','Porto-Novo'],listingCount:'Pending',wbCode:'BJ',
+    kpis:{medianPrice:'~XOF 680,000/m²',priceGrowth:'+5.8%',activeListings:'~1k est.',yieldEst:'~8.6%',pipeline:'Low',liquidityScore:'3.0'},
+    currency:'XOF',region:'West Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Togo:{flag:'🇹🇬',label:'Togo',cities:['Lomé'],listingCount:'Pending',wbCode:'TG',
+    kpis:{medianPrice:'~XOF 620,000/m²',priceGrowth:'+4.9%',activeListings:'<1k est.',yieldEst:'~8.4%',pipeline:'Low',liquidityScore:'2.8'},
+    currency:'XOF',region:'West Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Guinea:{flag:'🇬🇳',label:'Guinea',cities:['Conakry'],listingCount:'Pending',wbCode:'GN',
+    kpis:{medianPrice:'~GNF 8,200,000/m²',priceGrowth:'+7.2%',activeListings:'<1k est.',yieldEst:'~9.2%',pipeline:'Low',liquidityScore:'2.4'},
+    currency:'GNF',region:'West Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  SierraLeone:{flag:'🇸🇱',label:'Sierra Leone',cities:['Freetown'],listingCount:'Pending',wbCode:'SL',
+    kpis:{medianPrice:'~SLL 18,000,000/m²',priceGrowth:'+4.2%',activeListings:'<1k est.',yieldEst:'~9.6%',pipeline:'Low',liquidityScore:'2.2'},
+    currency:'SLL',region:'West Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Liberia:{flag:'🇱🇷',label:'Liberia',cities:['Monrovia'],listingCount:'Pending',wbCode:'LR',
+    kpis:{medianPrice:'~USD 680/m²',priceGrowth:'+3.8%',activeListings:'<1k est.',yieldEst:'~10.4%',pipeline:'Low',liquidityScore:'2.0'},
+    currency:'LRD',region:'West Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Mali:{flag:'🇲🇱',label:'Mali',cities:['Bamako'],listingCount:'Pending',wbCode:'ML',
+    kpis:{medianPrice:'~XOF 720,000/m²',priceGrowth:'+3.1%',activeListings:'<1k est.',yieldEst:'~8.8%',pipeline:'Low',liquidityScore:'2.2'},
+    currency:'XOF',region:'West Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  BurkinaFaso:{flag:'🇧🇫',label:'Burkina Faso',cities:['Ouagadougou'],listingCount:'Pending',wbCode:'BF',
+    kpis:{medianPrice:'~XOF 540,000/m²',priceGrowth:'+2.8%',activeListings:'<1k est.',yieldEst:'~8.2%',pipeline:'Low',liquidityScore:'2.0'},
+    currency:'XOF',region:'West Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Djibouti:{flag:'🇩🇯',label:'Djibouti',cities:['Djibouti City'],listingCount:'Pending',wbCode:'DJ',
+    kpis:{medianPrice:'~USD 1,800/m²',priceGrowth:'+5.4%',activeListings:'<1k est.',yieldEst:'~8.0%',pipeline:'Medium',liquidityScore:'3.2'},
+    currency:'DJF',region:'East Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Sudan:{flag:'🇸🇩',label:'Sudan',cities:['Khartoum','Omdurman'],listingCount:'Pending',wbCode:'SD',
+    kpis:{medianPrice:'~SDG 180,000/m²',priceGrowth:'N/A',activeListings:'<1k est.',yieldEst:'N/A',pipeline:'N/A',liquidityScore:'1.2'},
+    currency:'SDG',region:'North Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Libya:{flag:'🇱🇾',label:'Libya',cities:['Tripoli','Benghazi'],listingCount:'Pending',wbCode:'LY',
+    kpis:{medianPrice:'~LYD 8,400/m²',priceGrowth:'N/A',activeListings:'<1k est.',yieldEst:'N/A',pipeline:'N/A',liquidityScore:'1.4'},
+    currency:'LYD',region:'North Africa',updated:'Coming Soon',status:'pending',cityData:{}},
 };
 let ACTIVE_COUNTRY='Morocco';
 
@@ -1741,6 +1864,9 @@ function switchCountry(name){
   if(!COUNTRIES[name]) return;
   ACTIVE_COUNTRY=name;
   var c=COUNTRIES[name];
+  // For pending markets, show KPIs from COUNTRIES config (dummy data)
+  // and still allow macro data to load
+  var isPending = COUNTRIES[name].status === 'pending';
 
   // ── Immediate UI updates (sync) ──
   document.getElementById('sb-mkt-label').textContent=c.flag+' '+c.label;
@@ -2193,7 +2319,7 @@ async function loadLiveKPIs(country){
 }
 
 async function loadMacroData(country){
-  var wbCode = country==='Morocco'?'MA' : country==='Nigeria'?'NG' : null;
+  var wbCode = COUNTRIES[country] ? COUNTRIES[country].wbCode : null;
   if(!wbCode) return;
 
   // ── Country configs ──
@@ -2440,7 +2566,7 @@ async function boot(){
     if(!user){
       clearTimeout(safetyTimer);
       hideLoader();
-      window.location.href='https://www.ironwoodintelligence.com/#login';
+      window.location.href='https://ironwoodintelligence.com/en/login';
       return;
     }
     const name=user.user_metadata?.full_name||user.email.split('@')[0];
