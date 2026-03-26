@@ -692,11 +692,11 @@ footer{background:var(--black);padding:64px 0 32px;}
         <div class="hero-tag-dot"></div>
         <span data-i18n="hero.tag">Africa's Premier Real Estate Intelligence Platform</span>
       </div>
-      <h1>Data-Driven Decisions<br/>Across <em>35+ African</em><br/>Markets</h1>
-      <p class="hero-sub">Institutional-grade property data, market analytics, and transaction intelligence for investors, developers, and financial institutions.</p>
+      <h1 data-i18n="hero.h1">The Data Layer for African Real Estate</h1>
+      <p class="hero-sub" data-i18n="hero.sub">Institutional-grade property data across Morocco, Nigeria, and 33 emerging African markets. Built for investors, developers, and advisors.</p>
       <div class="hero-btns">
-        <button class="btn-p" onclick="go('register')">Start Free Trial</button>
-        <button class="btn-gw" onclick="go('data')">Explore Data</button>
+        <button class="btn-p" onclick="go('register')" data-i18n="hero.cta1">Start Free Trial</button>
+        <button class="btn-gw" onclick="go('data')" data-i18n="hero.cta2">Explore Data</button>
       </div>
       <div class="hero-stats">
         <div class="hstat">
@@ -739,22 +739,22 @@ footer{background:var(--black);padding:64px 0 32px;}
   <div class="stats-grid">
     <div class="scell">
       <div class="scell-n">35<sup>+</sup></div>
-      <div class="scell-l">African Countries</div>
+      <div class="scell-l" data-i18n="stats.markets">Active Markets</div>
       <div class="scell-d">Complete coverage from Morocco to South Africa, West to East.</div>
     </div>
     <div class="scell">
       <div class="scell-n">140<sup>+</sup></div>
-      <div class="scell-l">Portal Sources</div>
+      <div class="scell-l" data-i18n="stats.cities">Cities Covered</div>
       <div class="scell-d">Aggregated across all major regional listing portals daily.</div>
     </div>
     <div class="scell">
       <div class="scell-n">1<sup>M+</sup></div>
-      <div class="scell-l">Listings Tracked</div>
+      <div class="scell-l" data-i18n="stats.listings">Listings Tracked</div>
       <div class="scell-d">Residential, commercial, land — every asset class covered.</div>
     </div>
     <div class="scell">
       <div class="scell-n">24<sup>/7</sup></div>
-      <div class="scell-l">Live Pipeline</div>
+      <div class="scell-l" data-i18n="stats.updated">Data Updated</div>
       <div class="scell-d">Automated scraping, cleaning, and delivery — zero lag.</div>
     </div>
   </div>
@@ -767,17 +767,18 @@ footer{background:var(--black);padding:64px 0 32px;}
         <div class="split-img-cap">Commercial Real Estate — Lagos, Nigeria</div>
       </div>
       <div class="split-txt">
-        <div class="eyebrow">The Platform</div>
-        <h2>Institutional-Grade Data<br/>for <em>African Markets</em></h2>
-        <p>We aggregate, clean, and structure property data from across the African continent — delivering it in a format that institutional investors and analysts can trust.</p>
+        <div class="eyebrow" data-i18n="split1.eyebrow">Live Market Data</div>
+        <h2 data-i18n="split1.h2">Real-time pricing intelligence across African cities</h2>
+        <p data-i18n="split1.p1">Track asking prices, rent levels, and yield estimates across residential, office, retail, and industrial assets.</p>
+        <p data-i18n="split1.p2">Data updated continuously from verified listing sources across all covered markets.</p>
         <ul class="feat-list">
           <li>
             <div class="fl-icon">
               <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             </div>
             <div class="fl-txt">
-              <strong>Real-Time Market Data</strong>
-              <span>Live price feeds, listing velocity, and supply/demand signals across 35+ markets.</span>
+              <strong data-i18n="split1.feat1.title">Price Benchmarks</strong>
+              <span data-i18n="split1.feat1.desc">Median asking prices by city, district, and asset class.</span>
             </div>
           </li>
           <li>
@@ -785,8 +786,8 @@ footer{background:var(--black);padding:64px 0 32px;}
               <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </div>
             <div class="fl-txt">
-              <strong>Deep Property Intelligence</strong>
-              <span>Asset-level detail — price per sqm, occupancy rates, transaction history.</span>
+              <strong data-i18n="split1.feat2.title">Yield Estimates</strong>
+              <span data-i18n="split1.feat2.desc">Gross yield estimates derived from listing price ratios.</span>
             </div>
           </li>
           <li>
@@ -794,12 +795,12 @@ footer{background:var(--black);padding:64px 0 32px;}
               <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             </div>
             <div class="fl-txt">
-              <strong>Multi-Market Coverage</strong>
-              <span>One platform. Every major African city. All asset classes.</span>
+              <strong data-i18n="split1.feat3.title">Market Signals</strong>
+              <span data-i18n="split1.feat3.desc">Momentum, liquidity, and pipeline risk indicators.</span>
             </div>
           </li>
         </ul>
-        <button class="btn-p" onclick="go('data')">Explore the Data</button>
+        <button class="btn-p" onclick="go('data')" data-i18n="split1.btn">Explore the Data</button>
       </div>
     </div>
   </section>
@@ -809,10 +810,10 @@ footer{background:var(--black);padding:64px 0 32px;}
     <div class="markets-inner">
       <div class="markets-hdr">
         <div class="markets-hdr-left">
-          <div class="eyebrow" style="margin-bottom:14px;">Key Markets</div>
-          <h2>Tracking Africa's<br/>Fastest-Growing Cities</h2>
+          <div class="eyebrow" style="margin-bottom:14px;" data-i18n="markets.eyebrow">Coverage</div>
+          <h2 data-i18n="markets.h2">Markets We Cover</h2>
         </div>
-        <div class="markets-hdr-right">Real-time data feeds across residential, commercial, and land markets in each city.</div>
+        <div class="markets-hdr-right" data-i18n="markets.sub">Active coverage across North and West Africa. Expanding to 35 markets by 2027.</div>
       </div>
       <div class="markets-grid">
         <div class="mcard mc-lg">
@@ -868,28 +869,28 @@ footer{background:var(--black);padding:64px 0 32px;}
   <section class="services-sec">
     <div class="services-inner">
       <div class="sec-hdr">
-        <div class="eyebrow">What We Offer</div>
-        <h2>Intelligence Built for<br/>Real Estate Professionals</h2>
+        <div class="eyebrow" data-i18n="services.eyebrow">What We Offer</div>
+        <h2 data-i18n="services.h2">Three ways to use Ironwood Intelligence</h2>
         <p>From raw data aggregation to institutional reporting — everything you need to operate in African markets.</p>
       </div>
       <div class="svc-grid">
         <div class="svc-card">
           <div class="svc-num">01</div>
-          <h3>Market Data & Analytics</h3>
-          <p>Price indices, rental yields, vacancy rates, and transaction volumes — updated daily from 140+ verified sources across 35 countries.</p>
-          <a class="svc-link" onclick="go('analytics')">Explore Analytics <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+          <h3 data-i18n="svc1.title">Market Intelligence</h3>
+          <p data-i18n="svc1.desc">Live dashboards with price trends, yields, liquidity scores, and development pipeline data.</p>
+          <a class="svc-link" onclick="go('analytics')"><span data-i18n="svc1.link">Explore Analytics</span> <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
         </div>
         <div class="svc-card">
           <div class="svc-num">02</div>
-          <h3>Property Database</h3>
-          <p>Searchable database of active and historical listings with full property detail — size, price, location, asset type, and availability status.</p>
-          <a class="svc-link" onclick="go('properties')">Browse Properties <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+          <h3 data-i18n="svc2.title">Property Search</h3>
+          <p data-i18n="svc2.desc">Browse verified commercial and residential listings with full market context and benchmarking.</p>
+          <a class="svc-link" onclick="go('properties')"><span data-i18n="svc2.link">Browse Properties</span> <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
         </div>
         <div class="svc-card">
           <div class="svc-num">03</div>
-          <h3>API & Data Delivery</h3>
-          <p>Integrate our data directly into your models, dashboards, and workflows via RESTful API. Custom feeds available for enterprise clients.</p>
-          <a class="svc-link" onclick="go('subscription')">View Plans <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+          <h3 data-i18n="svc3.title">Custom Research</h3>
+          <p data-i18n="svc3.desc">Bespoke market reports, feasibility studies, and data exports for institutional clients.</p>
+          <a class="svc-link" onclick="go('subscription')"><span data-i18n="svc3.link">View Plans</span> <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
         </div>
       </div>
     </div>
@@ -899,8 +900,8 @@ footer{background:var(--black);padding:64px 0 32px;}
   <section class="how-sec">
     <div class="how-inner">
       <div class="sec-hdr">
-        <div class="eyebrow">How It Works</div>
-        <h2>From Sign-Up to Insight<br/>in Minutes</h2>
+        <div class="eyebrow" data-i18n="how.eyebrow">How It Works</div>
+        <h2 data-i18n="how.h2">From raw data to investment decisions</h2>
         <p>A simple, structured process built for professionals who need reliable data fast.</p>
       </div>
       <div class="how-grid">
@@ -910,8 +911,8 @@ footer{background:var(--black);padding:64px 0 32px;}
           </div>
           <div class="how-card-body">
             <div class="how-step">Step 01</div>
-            <h3>Choose Your Markets</h3>
-            <p>Select from 35+ African countries and any combination of cities, asset types, and listing categories.</p>
+            <h3 data-i18n="how1.title">We scrape &amp; verify</h3>
+            <p data-i18n="how1.desc">Our automated systems collect listing data daily from verified portals across Africa.</p>
           </div>
         </div>
         <div class="how-card">
@@ -920,8 +921,8 @@ footer{background:var(--black);padding:64px 0 32px;}
           </div>
           <div class="how-card-body">
             <div class="how-step">Step 02</div>
-            <h3>Access Structured Data</h3>
-            <p>Get clean, normalised property data delivered to your dashboard or directly via API — no scraping required on your end.</p>
+            <h3 data-i18n="how2.title">We structure &amp; analyse</h3>
+            <p data-i18n="how2.desc">Raw listings are cleaned, geocoded, and aggregated into market indicators.</p>
           </div>
         </div>
         <div class="how-card">
@@ -930,8 +931,8 @@ footer{background:var(--black);padding:64px 0 32px;}
           </div>
           <div class="how-card-body">
             <div class="how-step">Step 03</div>
-            <h3>Drive Better Decisions</h3>
-            <p>Use our analytics tools to identify opportunities, track price movements, and benchmark assets across markets.</p>
+            <h3 data-i18n="how3.title">You act with confidence</h3>
+            <p data-i18n="how3.desc">Access live dashboards, exportable datasets, and institutional research reports.</p>
           </div>
         </div>
       </div>
@@ -943,8 +944,8 @@ footer{background:var(--black);padding:64px 0 32px;}
     <div class="cta-sec-bg"></div>
     <div class="cta-inner">
       <div class="cta-txt">
-        <h2>The African Real Estate Market Deserves Institutional-Grade Data</h2>
-        <p>Join investors and analysts already using Ironwood Intelligence.</p>
+        <h2 data-i18n="cta.title">Ready to access African real estate data?</h2>
+        <p data-i18n="cta.sub">Join institutional investors and advisors already using Ironwood Intelligence.</p>
       </div>
       <div class="cta-btns">
         <button class="btn-gold" onclick="go('register')" data-i18n="cta.btn1">Start Free Trial</button>
@@ -1150,9 +1151,9 @@ footer{background:var(--black);padding:64px 0 32px;}
 <div id="page-subscription" class="page">
   <div class="sub-pg">
     <div class="sub-pg-hdr">
-      <div class="eyebrow">Pricing</div>
-      <h1>Choose Your Plan</h1>
-      <p>Comprehensive African real estate market data, analytics, and intelligence — tailored to your needs.</p>
+      <div class="eyebrow" data-i18n="pricing.eyebrow">Pricing</div>
+      <h1 data-i18n="pricing.h1">Simple, transparent pricing</h1>
+      <p data-i18n="pricing.sub">All plans include access to live market data, dashboards, and exportable reports.</p>
     </div>
     <div class="plans">
       <div class="plan">
@@ -1274,9 +1275,9 @@ footer{background:var(--black);padding:64px 0 32px;}
   <div class="cnt-hero">
     <div class="cnt-hero-bg"></div>
     <div class="cnt-hero-content">
-      <div class="eyebrow">Contact</div>
-      <h1>Get in Touch</h1>
-      <p>We're here to answer your questions and help with your real estate intelligence needs.</p>
+      <div class="eyebrow" data-i18n="contact.eyebrow">Contact</div>
+      <h1 data-i18n="contact.h1">Get in touch</h1>
+      <p data-i18n="contact.sub">Reach out to our team for sales enquiries, partnership opportunities, or data questions.</p>
     </div>
   </div>
   <div class="cnt-body">
@@ -1322,9 +1323,9 @@ footer{background:var(--black);padding:64px 0 32px;}
 <div id="page-about" class="page">
   <div class="about-hero">
     <div class="about-hero-wrap">
-      <div class="eyebrow" style="margin-bottom:14px;">About Us</div>
-      <h1>Building Africa's Real Estate Intelligence Layer</h1>
-      <p>Ironwood Intelligence exists to bring transparency, data, and institutional-grade analytics to real estate markets across Africa — one market at a time.</p>
+      <div class="eyebrow" style="margin-bottom:14px;" data-i18n="about.eyebrow">About Us</div>
+      <h1 data-i18n="about.h1">Built for serious investors in African real estate</h1>
+      <p data-i18n="about.sub">Ironwood Intelligence provides institutional-grade market data for Africa's fastest-growing property markets.</p>
     </div>
   </div>
   <div class="about-body">
@@ -1378,9 +1379,9 @@ footer{background:var(--black);padding:64px 0 32px;}
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© 2026 Ironwood Intelligence. All rights reserved. Meydan Free Zone, Dubai, UAE.</p>
+      <p data-i18n="footer.rights">© 2026 Ironwood Intelligence. All rights reserved.</p>
       <div class="footer-bottom-links">
-        <a>Privacy</a><a>Terms</a><a>Cookies</a>
+        <a data-i18n="footer.privacy">Privacy Policy</a><a data-i18n="footer.terms">Terms of Service</a><a>Cookies</a>
       </div>
     </div>
   </div>
@@ -1390,46 +1391,82 @@ footer{background:var(--black);padding:64px 0 32px;}
 <script>
 var mapDone = false;
 
-var PAGE_MAP = { 'home':'home','about':'about','data':'data','contact':'contact','properties':'properties','analytics':'analytics','pricing':'subscription','subscription':'subscription','login':'login','register':'register','dashboard':'dashboard' };
-var HASH_MAP = { 'home':'home','about':'about','data':'data','contact':'contact','properties':'properties','analytics':'analytics','subscription':'pricing','login':'login','register':'register','dashboard':'dashboard' };
+var LANG = 'en';
+
+var PAGES = ['home','about','data','contact','properties','analytics','subscription','login','register','dashboard'];
 
 function go(name) {
+  // Normalise name
+  if (name === 'pricing') name = 'subscription';
   document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-  var pageId = PAGE_MAP[name] || name;
-  var el = document.getElementById('page-' + pageId);
+  var el = document.getElementById('page-' + name);
   if (!el) return;
   el.classList.add('active');
   window.scrollTo(0, 0);
   closeDD();
-  var hash = HASH_MAP[name] || name;
-  if (hash === 'home') {
-    history.pushState(null, '', '/');
-  } else {
-    history.pushState(null, '', '/#' + hash);
-  }
+  closeMobileMenu();
+  // Update URL
+  var urlName = (name === 'home') ? '' : '/' + name;
+  history.pushState({page: name, lang: LANG}, '', '/' + LANG + urlName);
   var slot = el.querySelector('.footer-slot');
   if (slot && !slot.hasChildNodes()) {
     slot.appendChild(document.importNode(document.getElementById('ftpl').content, true));
   }
-  if (pageId === 'analytics' && !mapDone) { setTimeout(initMap, 150); }
+  if (name === 'analytics' && !mapDone) { setTimeout(initMap, 150); }
+  applyLang();
 }
 
-// Route on load from hash
+function setLang(newLang, page) {
+  LANG = newLang;
+  var urlName = (!page || page === 'home') ? '' : '/' + page;
+  history.pushState({page: page, lang: LANG}, '', '/' + LANG + urlName);
+  applyLang();
+  // Update lang toggle buttons
+  document.querySelectorAll('.btn-lang').forEach(function(b) {
+    b.textContent = LANG === 'fr' ? 'EN' : 'FR';
+    b.classList.toggle('fr-active', LANG === 'fr');
+  });
+}
+
+function toggleLang() {
+  var currentPage = 'home';
+  var activePage = document.querySelector('.page.active');
+  if (activePage) currentPage = activePage.id.replace('page-', '');
+  setLang(LANG === 'en' ? 'fr' : 'en', currentPage);
+}
+
+// Parse URL on load
 window.addEventListener('DOMContentLoaded', function() {
-  var hash = window.location.hash.replace('#','');
-  if (hash && PAGE_MAP[hash]) {
-    go(hash);
-  } else {
-    go('home');
+  var path = window.location.pathname; // e.g. /fr/about or /en/data or /fr
+  var parts = path.split('/').filter(Boolean); // ['fr','about'] or ['en'] or []
+  var lang = 'en';
+  var page = 'home';
+  if (parts[0] === 'fr' || parts[0] === 'en') {
+    lang = parts[0];
+    page = parts[1] || 'home';
   }
+  if (page === 'pricing') page = 'subscription';
+  LANG = lang;
+  // Show correct page
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  var el = document.getElementById('page-' + page);
+  if (el) el.classList.add('active');
+  else document.getElementById('page-home').classList.add('active');
+  var slot = el ? el.querySelector('.footer-slot') : null;
+  if (slot && !slot.hasChildNodes()) {
+    slot.appendChild(document.importNode(document.getElementById('ftpl').content, true));
+  }
+  applyLang();
+  if (page === 'analytics' && !mapDone) { setTimeout(initMap, 150); }
 });
 
-window.addEventListener('popstate', function() {
-  var hash = window.location.hash.replace('#','');
-  if (hash && PAGE_MAP[hash]) {
-    go(hash);
-  } else {
-    go('home');
+window.addEventListener('popstate', function(e) {
+  if (e.state && e.state.page) {
+    LANG = e.state.lang || 'en';
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    var el = document.getElementById('page-' + e.state.page);
+    if (el) el.classList.add('active');
+    applyLang();
   }
 });
 
@@ -1481,35 +1518,136 @@ function closeMobileMenu() {
   document.getElementById('nav-hamburger').classList.remove('open');
 }
 
-var LANG = 'en';
 var TRANSLATIONS = {
   en: {
-    'nav.home': 'Home', 'nav.about': 'About', 'nav.data': 'Data', 'nav.contact': 'Contact',
-    'nav.more': 'More', 'nav.properties': 'Properties', 'nav.analytics': 'Analytics',
-    'nav.dashboard': 'Dashboard', 'nav.pricing': 'Pricing',
-    'nav.signin': 'Sign In', 'nav.getstarted': 'Get Started',
-    'hero.tag': 'African Real Estate Intelligence',
-    'hero.h1.1': 'The Data Layer for', 'hero.h1.em': 'African Real Estate',
-    'hero.sub': 'Institutional-grade property data across Morocco, Nigeria, and 33 emerging African markets. Built for investors, developers, and advisors.',
-    'hero.cta1': 'Start Free Trial', 'hero.cta2': 'Explore Data',
-    'footer.rights': '© 2026 Ironwood Intelligence. All rights reserved.',
-    'cta.title': 'Ready to access African real estate data?',
-    'cta.sub': 'Join institutional investors and advisors already using Ironwood Intelligence.',
-    'cta.btn1': 'Start Free Trial', 'cta.btn2': 'Talk to Sales',
+    // NAV
+    'nav.home':'Home','nav.about':'About','nav.data':'Data','nav.contact':'Contact',
+    'nav.more':'More','nav.properties':'Properties','nav.analytics':'Analytics',
+    'nav.dashboard':'Dashboard','nav.pricing':'Pricing',
+    'nav.signin':'Sign In','nav.getstarted':'Get Started',
+    // HERO
+    'hero.tag':'African Real Estate Intelligence',
+    'hero.h1':'The Data Layer for African Real Estate',
+    'hero.sub':'Institutional-grade property data across Morocco, Nigeria, and 33 emerging African markets. Built for investors, developers, and advisors.',
+    'hero.cta1':'Start Free Trial','hero.cta2':'Explore Data',
+    // STATS
+    'stats.markets':'Active Markets','stats.listings':'Listings Tracked',
+    'stats.cities':'Cities Covered','stats.updated':'Data Updated',
+    // SPLIT SECTIONS
+    'split1.eyebrow':'Live Market Data',
+    'split1.h2':'Real-time pricing intelligence across African cities',
+    'split1.p1':'Track asking prices, rent levels, and yield estimates across residential, office, retail, and industrial assets.',
+    'split1.p2':'Data updated continuously from verified listing sources across all covered markets.',
+    'split1.feat1.title':'Price Benchmarks','split1.feat1.desc':'Median asking prices by city, district, and asset class.',
+    'split1.feat2.title':'Yield Estimates','split1.feat2.desc':'Gross yield estimates derived from listing price ratios.',
+    'split1.feat3.title':'Market Signals','split1.feat3.desc':'Momentum, liquidity, and pipeline risk indicators.',
+    'split1.btn':'Explore the Data',
+    'split2.eyebrow':'Development Pipeline',
+    'split2.h2':'Track every major project across the continent',
+    'split2.p1':'Monitor active, approved, and proposed development projects. Know what supply is coming before it hits the market.',
+    'split2.feat1.title':'Pipeline Register','split2.feat1.desc':'Developer, GFA, delivery date, and construction stage.',
+    'split2.feat2.title':'Risk Scoring','split2.feat2.desc':'Supply overhang risk scored per city and asset class.',
+    'split2.feat3.title':'Corporate Occupiers','split2.feat3.desc':'Major tenant footprints and office demand indicators.',
+    'split2.btn':'View Pipeline Data',
+    // MARKETS
+    'markets.eyebrow':'Coverage',
+    'markets.h2':'Markets We Cover',
+    'markets.sub':'Active coverage across North and West Africa. Expanding to 35 markets by 2027.',
+    // SERVICES
+    'services.eyebrow':'What We Offer',
+    'services.h2':'Three ways to use Ironwood Intelligence',
+    'svc1.title':'Market Intelligence','svc1.desc':'Live dashboards with price trends, yields, liquidity scores, and development pipeline data.',
+    'svc2.title':'Property Search','svc2.desc':'Browse verified commercial and residential listings with full market context and benchmarking.',
+    'svc3.title':'Custom Research','svc3.desc':'Bespoke market reports, feasibility studies, and data exports for institutional clients.',
+    'svc1.link':'Explore Analytics','svc2.link':'Browse Properties','svc3.link':'View Plans',
+    // HOW IT WORKS
+    'how.eyebrow':'How It Works',
+    'how.h2':'From raw data to investment decisions',
+    'how1.title':'We scrape & verify','how1.desc':'Our automated systems collect listing data daily from verified portals across Africa.',
+    'how2.title':'We structure & analyse','how2.desc':'Raw listings are cleaned, geocoded, and aggregated into market indicators.',
+    'how3.title':'You act with confidence','how3.desc':'Access live dashboards, exportable datasets, and institutional research reports.',
+    // CTA
+    'cta.title':'Ready to access African real estate data?',
+    'cta.sub':'Join institutional investors and advisors already using Ironwood Intelligence.',
+    'cta.btn1':'Start Free Trial','cta.btn2':'Talk to Sales',
+    // ABOUT PAGE
+    'about.eyebrow':'About Us',
+    'about.h1':'Built for serious investors in African real estate',
+    'about.sub':"Ironwood Intelligence provides institutional-grade market data for Africa's fastest-growing property markets.",
+    // CONTACT PAGE
+    'contact.eyebrow':'Contact','contact.h1':'Get in touch',
+    'contact.sub':'Reach out to our team for sales enquiries, partnership opportunities, or data questions.',
+    // PRICING PAGE
+    'pricing.eyebrow':'Pricing','pricing.h1':'Simple, transparent pricing',
+    'pricing.sub':'All plans include access to live market data, dashboards, and exportable reports.',
+    // FOOTER
+    'footer.rights':'© 2026 Ironwood Intelligence. All rights reserved.',
+    'footer.privacy':'Privacy Policy','footer.terms':'Terms of Service',
   },
   fr: {
-    'nav.home': 'Accueil', 'nav.about': 'À propos', 'nav.data': 'Données', 'nav.contact': 'Contact',
-    'nav.more': 'Plus', 'nav.properties': 'Propriétés', 'nav.analytics': 'Analytique',
-    'nav.dashboard': 'Tableau de bord', 'nav.pricing': 'Tarifs',
-    'nav.signin': 'Connexion', 'nav.getstarted': 'Commencer',
-    'hero.tag': 'Intelligence Immobilière Africaine',
-    'hero.h1.1': "La Couche de Données pour l'", 'hero.h1.em': 'Immobilier Africain',
-    'hero.sub': "Données immobilières de qualité institutionnelle au Maroc, au Nigéria et dans 33 marchés africains émergents. Conçu pour les investisseurs, promoteurs et conseillers.",
-    'hero.cta1': 'Essai Gratuit', 'hero.cta2': 'Explorer les Données',
-    'footer.rights': '© 2026 Ironwood Intelligence. Tous droits réservés.',
-    'cta.title': 'Prêt à accéder aux données immobilières africaines ?',
-    'cta.sub': "Rejoignez les investisseurs institutionnels et conseillers qui utilisent déjà Ironwood Intelligence.",
-    'cta.btn1': 'Essai Gratuit', 'cta.btn2': 'Parler aux Ventes',
+    // NAV
+    'nav.home':'Accueil','nav.about':'À propos','nav.data':'Données','nav.contact':'Contact',
+    'nav.more':'Plus','nav.properties':'Propriétés','nav.analytics':'Analytique',
+    'nav.dashboard':'Tableau de bord','nav.pricing':'Tarifs',
+    'nav.signin':'Connexion','nav.getstarted':'Commencer',
+    // HERO
+    'hero.tag':'Intelligence Immobilière Africaine',
+    'hero.h1':"La Couche de Données pour l'Immobilier Africain",
+    'hero.sub':"Données immobilières de qualité institutionnelle au Maroc, au Nigéria et dans 33 marchés africains émergents. Conçu pour les investisseurs, promoteurs et conseillers.",
+    'hero.cta1':'Essai Gratuit','hero.cta2':'Explorer les Données',
+    // STATS
+    'stats.markets':'Marchés Actifs','stats.listings':'Annonces Suivies',
+    'stats.cities':'Villes Couvertes','stats.updated':'Données Mises à Jour',
+    // SPLIT SECTIONS
+    'split1.eyebrow':'Données de Marché en Temps Réel',
+    'split1.h2':'Intelligence tarifaire en temps réel dans les villes africaines',
+    'split1.p1':'Suivez les prix demandés, les niveaux de loyers et les estimations de rendement sur les actifs résidentiels, de bureaux, commerciaux et industriels.',
+    'split1.p2':"Données mises à jour en continu depuis des sources d'annonces vérifiées sur tous les marchés couverts.",
+    'split1.feat1.title':'Références de Prix','split1.feat1.desc':"Prix médians demandés par ville, quartier et classe d'actif.",
+    'split1.feat2.title':'Estimations de Rendement','split1.feat2.desc':"Estimations de rendement brut dérivées des ratios de prix d'annonces.",
+    'split1.feat3.title':'Signaux de Marché','split1.feat3.desc':'Indicateurs de momentum, de liquidité et de risque de pipeline.',
+    'split1.btn':'Explorer les Données',
+    'split2.eyebrow':'Pipeline de Développement',
+    'split2.h2':'Suivez chaque projet majeur à travers le continent',
+    'split2.p1':"Surveillez les projets de développement actifs, approuvés et proposés. Anticipez l'offre avant qu'elle n'atteigne le marché.",
+    'split2.feat1.title':'Registre de Pipeline','split2.feat1.desc':'Promoteur, SDP, date de livraison et stade de construction.',
+    'split2.feat2.title':'Scoring de Risque','split2.feat2.desc':"Risque de surabondance d'offre évalué par ville et classe d'actif.",
+    'split2.feat3.title':'Occupants Corporatifs','split2.feat3.desc':'Empreintes des grands locataires et indicateurs de demande de bureaux.',
+    'split2.btn':'Voir les Données de Pipeline',
+    // MARKETS
+    'markets.eyebrow':'Couverture',
+    'markets.h2':'Les Marchés Que Nous Couvrons',
+    'markets.sub':"Couverture active en Afrique du Nord et de l'Ouest. Extension à 35 marchés d'ici 2027.",
+    // SERVICES
+    'services.eyebrow':'Ce Que Nous Offrons',
+    'services.h2':"Trois façons d'utiliser Ironwood Intelligence",
+    'svc1.title':'Intelligence de Marché','svc1.desc':'Tableaux de bord en direct avec tendances des prix, rendements, scores de liquidité et données de pipeline de développement.',
+    'svc2.title':'Recherche de Propriétés','svc2.desc':'Parcourez des annonces commerciales et résidentielles vérifiées avec contexte de marché complet et benchmarking.',
+    'svc3.title':'Recherche sur Mesure','svc3.desc':'Rapports de marché personnalisés, études de faisabilité et exports de données pour clients institutionnels.',
+    'svc1.link':"Explorer l'Analytique",'svc2.link':'Parcourir les Propriétés','svc3.link':'Voir les Plans',
+    // HOW IT WORKS
+    'how.eyebrow':'Comment Ça Marche',
+    'how.h2':"Des données brutes aux décisions d'investissement",
+    'how1.title':'Nous collectons et vérifions','how1.desc':"Nos systèmes automatisés collectent quotidiennement des données d'annonces depuis des portails vérifiés à travers l'Afrique.",
+    'how2.title':'Nous structurons et analysons','how2.desc':'Les annonces brutes sont nettoyées, géocodées et agrégées en indicateurs de marché.',
+    'how3.title':'Vous agissez en confiance','how3.desc':'Accédez aux tableaux de bord en direct, aux jeux de données exportables et aux rapports de recherche institutionnels.',
+    // CTA
+    'cta.title':'Prêt à accéder aux données immobilières africaines ?',
+    'cta.sub':"Rejoignez les investisseurs institutionnels et conseillers qui utilisent déjà Ironwood Intelligence.",
+    'cta.btn1':'Essai Gratuit','cta.btn2':'Parler aux Ventes',
+    // ABOUT PAGE
+    'about.eyebrow':'À Propos',
+    'about.h1':"Conçu pour les investisseurs sérieux dans l'immobilier africain",
+    'about.sub':"Ironwood Intelligence fournit des données de marché de qualité institutionnelle pour les marchés immobiliers à la croissance la plus rapide d'Afrique.",
+    // CONTACT PAGE
+    'contact.eyebrow':'Contact','contact.h1':'Contactez-nous',
+    'contact.sub':"Contactez notre équipe pour des demandes commerciales, des opportunités de partenariat ou des questions sur les données.",
+    // PRICING PAGE
+    'pricing.eyebrow':'Tarification','pricing.h1':'Tarification simple et transparente',
+    'pricing.sub':"Tous les plans incluent l'accès aux données de marché en direct, aux tableaux de bord et aux rapports exportables.",
+    // FOOTER
+    'footer.rights':'© 2026 Ironwood Intelligence. Tous droits réservés.',
+    'footer.privacy':'Politique de Confidentialité','footer.terms':"Conditions d'Utilisation",
   }
 };
 
@@ -1522,13 +1660,12 @@ function applyLang() {
     b.classList.toggle('fr-active', isFr);
   });
   document.querySelectorAll('[data-i18n]').forEach(function(el) {
-    el.textContent = t(el.getAttribute('data-i18n'));
+    var key = el.getAttribute('data-i18n');
+    var val = (TRANSLATIONS[LANG] && TRANSLATIONS[LANG][key]) || (TRANSLATIONS.en[key]);
+    if (val) el.textContent = val;
   });
-}
-
-function toggleLang() {
-  LANG = LANG === 'en' ? 'fr' : 'en';
-  applyLang();
+  // Update html lang attribute
+  document.documentElement.lang = LANG;
 }
 </script>
 </body>
