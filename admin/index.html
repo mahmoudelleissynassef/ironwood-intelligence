@@ -4,50 +4,81 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Ironwood Intelligence — Data Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --bg:#08090d;--surface:#0e1018;--surface2:#12151f;--surface3:#191c27;
-  --border:#1a1d27;--border2:#252836;
-  --ink:#f0f0f2;--ink2:#c8cad4;--ink3:#9a9cac;--ink4:#666880;--ink5:#3e4050;
-  --blue:#4f6ef7;--blue-d:#3d5ce0;--blue-dim:#1a1f3d;
+  --bg:#09090c;--surface:#0f1014;--surface2:#13151c;--surface3:#181b24;
+  --border:#1c1f2a;--border2:#242736;
+  --ink:#f0f0f2;--ink2:#c8cad4;--ink3:#9a9cac;--ink4:#666880;--ink5:#3e4055;
+  /* Brand accent: gold replaces blue */
+  --blue:#C9A86C;--blue-d:#b8943a;--blue-dim:rgba(201,168,108,0.10);
   --green:#22c55e;--green-d:#16a34a;--green-dim:#052e16;
   --red:#f87171;--red-d:#dc2626;--red-dim:#2d0a0a;
   --amber:#f59e0b;--amber-dim:#2d1a00;
-  --gold:#b8963a;--gold-dim:#1e1608;
-  --radius:3px;
-  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  --mono:'SF Mono','Fira Code',monospace;
+  --gold:#C9A86C;--gold-light:#DEC48E;--gold-dim:rgba(201,168,108,0.10);
+  --radius:0px;
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'SF Mono','Fira Code','Fira Mono',Menlo,monospace;
 }
-body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;font-size:13px;}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;font-size:13px;-webkit-font-smoothing:antialiased;}
 
 /* ── LOGIN ── */
-#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);}
-.login-box{background:var(--surface);border:1px solid var(--border2);padding:44px 40px;width:100%;max-width:380px;}
-.login-wordmark{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);margin-bottom:2px;}
-.login-sub{font-size:10px;color:var(--ink5);letter-spacing:.1em;text-transform:uppercase;margin-bottom:36px;}
-.login-box h2{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:24px;}
-.fg label{font-size:10.5px;font-weight:700;color:var(--ink4);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;}
+#login-screen{
+  display:flex;align-items:center;justify-content:center;min-height:100vh;
+  background:var(--bg);
+  background-image:radial-gradient(ellipse at 30% 50%, rgba(201,168,108,0.04) 0%, transparent 60%);
+}
+.login-box{
+  background:var(--surface);border:1px solid var(--border2);
+  padding:52px 48px;width:100%;max-width:400px;
+}
+.login-brand{display:flex;align-items:center;gap:10px;margin-bottom:40px;}
+.login-mark{width:32px;height:32px;background:var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.login-mark span{font-size:11px;font-weight:900;color:#0D0D0D;letter-spacing:0;}
+.login-wordmark-wrap{line-height:1.15;}
+.login-wordmark{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);display:block;}
+.login-sub{font-size:8.5px;font-weight:600;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;display:block;}
+.login-box h2{font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--ink);margin-bottom:6px;}
+.login-box p{font-size:12.5px;color:var(--ink5);margin-bottom:28px;}
+.fg label{font-size:9.5px;font-weight:700;color:var(--ink4);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.1em;}
 .fg{margin-bottom:14px;}
-.fg input{width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border2);font-size:13px;color:var(--ink);outline:none;font-family:var(--font);}
-.fg input:focus{border-color:var(--blue);}
+.fg input{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border2);font-size:13px;color:var(--ink);outline:none;font-family:var(--font);transition:border-color .15s;}
+.fg input:focus{border-color:var(--gold);}
 .fg input::placeholder{color:var(--ink5);}
-.login-btn{width:100%;padding:10px;background:var(--blue);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px;font-family:var(--font);}
-.login-btn:hover{background:var(--blue-d);}
+.login-btn{
+  width:100%;padding:11px;background:var(--gold);color:#0D0D0D;
+  border:none;font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  cursor:pointer;margin-top:6px;font-family:var(--font);transition:background .15s;
+}
+.login-btn:hover{background:var(--gold-light);}
 .login-btn:disabled{background:var(--surface3);color:var(--ink5);cursor:not-allowed;}
 .login-err{color:var(--red);font-size:12px;margin-top:10px;padding:8px 12px;background:var(--red-dim);border:1px solid #7f1d1d;display:none;}
 
 /* ── APP CHROME ── */
 #app{display:none;}
-.topbar{height:48px;background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.topbar{
+  height:52px;background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 24px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:200;
+}
+.tb-left{display:flex;align-items:center;gap:12px;}
+.tb-mark{width:26px;height:26px;background:var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tb-mark span{font-size:9px;font-weight:900;color:#0D0D0D;}
 .tb-wordmark{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);}
-.tb-badge{background:var(--blue-dim);color:var(--blue);padding:2px 8px;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-left:10px;}
+.tb-badge{
+  background:var(--gold-dim);color:var(--gold);
+  padding:2px 8px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  border:1px solid rgba(201,168,108,0.2);
+}
 .tb-right{display:flex;align-items:center;gap:16px;}
 .tb-user{font-size:11.5px;color:var(--ink4);}
 .tb-demo{background:var(--red-dim);border:1px solid var(--red-d);color:var(--red);padding:3px 12px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-right:8px;}
-.btn-logout{padding:5px 12px;background:transparent;border:1px solid var(--border2);font-size:11.5px;color:var(--ink4);cursor:pointer;font-family:var(--font);}
+.btn-logout{padding:5px 12px;background:transparent;border:1px solid var(--border2);font-size:11.5px;color:var(--ink4);cursor:pointer;font-family:var(--font);letter-spacing:.04em;transition:all .15s;}
 .btn-logout:hover{border-color:var(--red);color:var(--red);}
 
 /* ── LAYOUT ── */
@@ -59,9 +90,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:10
 .sb-lbl{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink5);padding:10px 18px 4px;}
 .sb-item{display:flex;align-items:center;gap:9px;padding:8px 18px;font-size:12.5px;color:var(--ink4);cursor:pointer;transition:all .12s;border-left:2px solid transparent;}
 .sb-item:hover{background:var(--surface2);color:var(--ink2);}
-.sb-item.active{background:var(--surface2);color:var(--ink);border-left-color:var(--blue);}
+.sb-item.active{background:var(--surface2);color:var(--ink);border-left-color:var(--gold);}
 .sb-icon{font-size:13px;width:18px;text-align:center;flex-shrink:0;}
-.sb-badge{margin-left:auto;background:var(--blue-dim);color:var(--blue);padding:1px 6px;font-size:9px;font-weight:700;letter-spacing:.06em;}
+.sb-badge{margin-left:auto;background:var(--gold-dim);color:var(--gold);padding:1px 6px;font-size:9px;font-weight:700;letter-spacing:.06em;border:1px solid rgba(201,168,108,0.15);}
 .sb-badge-red{margin-left:auto;background:var(--red-dim);color:var(--red);padding:1px 6px;font-size:9px;font-weight:700;letter-spacing:.06em;}
 
 /* ── MAIN ── */
@@ -333,9 +364,15 @@ table.dt tr:last-child td{border-bottom:none;}
 <!-- ── LOGIN ── -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-wordmark">Ironwood Intelligence</div>
-    <div class="login-sub">Data Operations Terminal</div>
+    <div class="login-brand">
+      <div class="login-mark"><span>IW</span></div>
+      <div class="login-wordmark-wrap">
+        <span class="login-wordmark">Ironwood Intelligence</span>
+        <span class="login-sub">Data Operations Terminal</span>
+      </div>
+    </div>
     <h2>Sign in to continue</h2>
+    <p>Restricted access. Authorised personnel only.</p>
     <div class="fg"><label>Email</label><input type="email" id="login-email" placeholder="admin@ironwoodintelligence.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
     <div class="fg"><label>Password</label><input type="password" id="login-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
     <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In</button>
@@ -346,7 +383,8 @@ table.dt tr:last-child td{border-bottom:none;}
 <!-- ── APP ── -->
 <div id="app">
   <div class="topbar">
-    <div>
+    <div class="tb-left">
+      <div class="tb-mark"><span>IW</span></div>
       <span class="tb-wordmark">Ironwood Intelligence</span>
       <span class="tb-badge">Data Ops</span>
     </div>
