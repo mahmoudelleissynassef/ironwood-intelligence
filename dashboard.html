@@ -1633,16 +1633,16 @@ button{cursor:pointer;font-family:var(--sans);}
       <div class="pg-title">Macro Indicators</div>
       <div class="pg-sub">Macroeconomic and demographic indicators relevant to real estate demand. Sources include World Bank, national statistics agencies, and central banks. All macro figures are observed external data.</div>
 
-      <div style="padding:10px 14px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:2px;margin-bottom:16px;font-size:12px;color:#075985;">
-        <strong>Data Layer:</strong> Raw Data Layer · <span class="ds-tag ds-macro">Macro / observed</span> · Sources: World Bank · HCP Morocco · Bank Al-Maghrib · ONMT
+      <div id="macro-data-banner" style="padding:10px 14px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:2px;margin-bottom:16px;font-size:12px;color:#075985;">
+        <strong>Data Layer:</strong> Raw Data Layer · <span class="ds-tag ds-macro">Macro / observed</span> · Sources: <span id="macro-banner-sources">World Bank · HCP Morocco · Bank Al-Maghrib · ONMT</span>
       </div>
 
       <!-- Source Registry -->
       <div class="panel" style="margin-bottom:16px;">
-        <div class="panel-hd"><div class="panel-title">Source Registry</div><div class="panel-sub">Macro data sources · Morocco</div></div>
+        <div class="panel-hd"><div class="panel-title">Source Registry</div><div class="panel-sub" id="macro-src-sub">Macro data sources · Morocco</div></div>
         <table class="dt">
           <thead><tr><th>Dataset</th><th>Source</th><th>Indicator Type</th><th>Update Cadence</th><th>URL</th><th>Confidence</th></tr></thead>
-          <tbody>
+          <tbody id="macro-src-tbody">
             <tr><td class="dt-city">Population &amp; Demographics</td><td class="dt-muted">HCP Morocco</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Annual / Census</td><td class="mono dt-muted">hcp.ma</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
             <tr><td class="dt-city">GDP &amp; Growth</td><td class="dt-muted">World Bank / HCP</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Annual</td><td class="mono dt-muted">data.worldbank.org</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
             <tr><td class="dt-city">Interest Rates / Monetary</td><td class="dt-muted">Bank Al-Maghrib</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Monthly</td><td class="mono dt-muted">bkam.ma</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
@@ -2411,21 +2411,18 @@ async function loadMacroData(country){
 
   // ── Update static country references in the page ──
 
-  // Data banner
-  var banner = document.querySelector('#pg-macro-indicators .pg-sub + div, #pg-macro-indicators div[style*="f0f9ff"]');
-  if(banner) banner.innerHTML = '<strong>Data Layer:</strong> Raw Data Layer · <span class="ds-tag ds-macro">Macro / observed</span> · Sources: ' + cfg.sources;
+  // Data banner — direct ID
+  var bannerSrc = document.getElementById('macro-banner-sources');
+  if(bannerSrc) bannerSrc.textContent = cfg.sources;
 
-  // Source registry subtitle and table
-  var srcPanel = document.querySelector('#pg-macro-indicators .panel');
-  if(srcPanel){
-    var srcSub = srcPanel.querySelector('.panel-sub');
-    if(srcSub) srcSub.textContent = 'Macro data sources · ' + country;
-    var srcTbody = srcPanel.querySelector('tbody');
-    if(srcTbody){
-      srcTbody.innerHTML = cfg.sourceRows.map(function(r){
-        return '<tr><td class="dt-city">'+r[0]+'</td><td class="dt-muted">'+r[1]+'</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">'+r[2]+'</td><td class="mono dt-muted">'+r[3]+'</td><td><span class="conf '+r[4]+'"><span class="conf-dot"></span>'+r[5]+'</span></td></tr>';
-      }).join('');
-    }
+  // Source registry — direct IDs
+  var srcSub = document.getElementById('macro-src-sub');
+  if(srcSub) srcSub.textContent = 'Macro data sources · ' + country;
+  var srcTbody = document.getElementById('macro-src-tbody');
+  if(srcTbody){
+    srcTbody.innerHTML = cfg.sourceRows.map(function(r){
+      return '<tr><td class="dt-city">'+r[0]+'</td><td class="dt-muted">'+r[1]+'</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">'+r[2]+'</td><td class="mono dt-muted">'+r[3]+'</td><td><span class="conf '+r[4]+'"><span class="conf-dot"></span>'+r[5]+'</span></td></tr>';
+    }).join('');
   }
 
   // Macro table panel subtitle
