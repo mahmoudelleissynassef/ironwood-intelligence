@@ -3,454 +3,870 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Ironwood Intelligence</title>
+<title>Ironwood Intelligence — African Real Estate Data Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:14px;}
+:root{
+  --black:#0D0D0D; --charcoal:#1C1C1C; --ink:#2D2D2D; --mid:#5C5C5C; --muted:#8A8A8A;
+  --rule:#E4E0D8; --off-white:#F5F2EB; --white:#FFFFFF;
+  --gold:#C9A86C; --gold-light:#DEC48E; --gold-dim:rgba(201,168,108,0.12);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font);background:var(--white);color:var(--ink);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;}
 a{text-decoration:none;color:inherit;cursor:pointer;}
+button{font-family:var(--font);cursor:pointer;border:none;}
+.page{display:none;} .page.active{display:block;}
+.eyebrow{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);}
 
 /* ── NAV ── */
-nav{background:#fff;border-bottom:1px solid #e5e5e5;padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;}
-.nav-logo{font-size:15px;font-weight:700;letter-spacing:.04em;color:#111;cursor:pointer;}
-.nav-links{display:flex;align-items:center;gap:28px;}
-.nav-links>a{font-size:14px;color:#444;}
-.nav-links>a:hover{color:#111;}
-/* dropdown */
+nav{position:sticky;top:0;z-index:1000;height:64px;background:rgba(255,255,255,.97);border-bottom:1px solid var(--rule);backdrop-filter:blur(10px);display:flex;align-items:center;}
+.nav-inner{width:100%;max-width:1280px;margin:0 auto;padding:0 60px;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{display:flex;align-items:center;gap:10px;cursor:pointer;}
+.nav-mark{width:28px;height:28px;background:var(--black);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.nav-mark span{font-size:10px;font-weight:900;color:var(--white);}
+.nav-wordmark{line-height:1.1;}
+.nav-wordmark b{display:block;font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--black);}
+.nav-wordmark small{display:block;font-size:8px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);}
+.nav-links{display:flex;align-items:center;gap:30px;}
+.nav-links a{font-size:13px;font-weight:500;color:var(--mid);transition:color .15s;}
+.nav-links a:hover{color:var(--black);}
 .nav-more{position:relative;}
-.nav-more-btn{display:flex;align-items:center;gap:4px;font-size:14px;color:#444;background:none;border:none;font-family:inherit;cursor:pointer;padding:0;}
-.nav-more-btn:hover{color:#111;}
-.dropdown{display:none;position:absolute;top:calc(100% + 12px);left:0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.1);min-width:160px;z-index:500;overflow:hidden;}
+.nav-more-btn{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:500;color:var(--mid);background:none;border:none;font-family:var(--font);cursor:pointer;transition:color .15s;}
+.nav-more-btn:hover{color:var(--black);}
+.nav-more-btn svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;}
+.dropdown{display:none;position:absolute;top:calc(100% + 8px);left:0;background:var(--white);border:1px solid var(--rule);box-shadow:0 16px 40px rgba(0,0,0,.10);min-width:180px;z-index:500;}
 .dropdown.open{display:block;}
-.dropdown a{display:block;padding:12px 18px;font-size:14px;color:#333;border-bottom:1px solid #f0f0f0;}
+.dropdown a{display:block;padding:11px 18px;font-size:13px;color:var(--mid);border-bottom:1px solid var(--off-white);transition:all .12s;}
 .dropdown a:last-child{border-bottom:none;}
-.dropdown a:hover{background:#f7f7f7;}
-/* nav buttons */
-.nav-actions{display:flex;align-items:center;gap:10px;}
-.btn-join{padding:7px 18px;border:1.5px solid #ccc;border-radius:20px;background:#fff;font-size:13px;cursor:pointer;color:#333;}
-.btn-login{padding:7px 18px;border-radius:20px;background:#111;color:#fff;font-size:13px;cursor:pointer;border:none;}
-.btn-login:hover{background:#333;}
-
-/* ── PAGES ── */
-.page{display:none;}
-.page.active{display:block;}
-
-/* ── GRADIENT CARDS (replace photos) ── */
-.g-city   {background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);}
-.g-office {background:linear-gradient(135deg,#2c3e50,#4a6fa5,#68a0d0);}
-.g-meeting{background:linear-gradient(135deg,#134e5e,#3a7d6e,#71b280);}
-.g-dash   {background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);}
-.g-person {background:linear-gradient(135deg,#c79a6e,#e8c99a,#a67850);}
-.g-lagos  {background:linear-gradient(135deg,#1a3a2a,#2d6a4f,#40916c);}
-.g-nairobi{background:linear-gradient(135deg,#1b2838,#2a475e,#4a7da8);}
-.g-cape   {background:linear-gradient(135deg,#2d3561,#c05c7e,#f0a500);}
-.g-accra  {background:linear-gradient(135deg,#006400,#228B22,#5aab5a);}
-.g-joburg {background:linear-gradient(135deg,#3d0000,#8b0000,#cc4400);}
-.g-network{background:linear-gradient(135deg,#0d1117,#1a2332,#243447);}
-.g-build  {background:linear-gradient(135deg,#c9b08a,#a08060,#7a5c3a);}
-.grad-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;opacity:.3;}
+.dropdown a:hover{background:var(--off-white);color:var(--black);}
+.nav-actions{display:flex;align-items:center;gap:8px;}
+.btn-ng{padding:8px 18px;border:1px solid var(--rule);background:transparent;font-size:12.5px;font-weight:600;color:var(--ink);transition:all .15s;}
+.btn-ng:hover{border-color:var(--black);}
+.btn-np{padding:8px 18px;background:var(--black);color:var(--white);font-size:12.5px;font-weight:600;transition:background .15s;}
+.btn-np:hover{background:var(--charcoal);}
 
 /* ── SHARED BUTTONS ── */
-.btn-dark   {padding:11px 24px;background:#111;color:#fff;border-radius:25px;font-size:14px;font-weight:600;border:none;cursor:pointer;}
-.btn-dark:hover{background:#333;}
-.btn-outline{padding:11px 24px;background:#fff;color:#111;border-radius:25px;font-size:14px;font-weight:500;border:1.5px solid #ccc;cursor:pointer;}
-.btn-outline:hover{border-color:#888;}
-.btn-sm-outline{padding:9px 20px;border:1.5px solid #ccc;border-radius:20px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+.btn-p{display:inline-flex;align-items:center;padding:13px 28px;background:var(--black);color:var(--white);font-size:13px;font-weight:600;letter-spacing:.04em;transition:background .15s;}
+.btn-p:hover{background:var(--charcoal);}
+.btn-g{display:inline-flex;align-items:center;padding:13px 28px;background:transparent;color:var(--black);font-size:13px;font-weight:600;letter-spacing:.04em;border:1px solid rgba(0,0,0,.22);transition:all .15s;}
+.btn-g:hover{border-color:var(--black);}
+.btn-gw{display:inline-flex;align-items:center;padding:13px 28px;background:transparent;color:var(--white);font-size:13px;font-weight:600;letter-spacing:.04em;border:1px solid rgba(255,255,255,.3);transition:all .15s;}
+.btn-gw:hover{border-color:rgba(255,255,255,.7);}
+.btn-gold{display:inline-flex;align-items:center;padding:13px 28px;background:var(--gold);color:var(--black);font-size:13px;font-weight:700;letter-spacing:.04em;transition:background .15s;}
+.btn-gold:hover{background:var(--gold-light);}
 
-/* ── HOME HERO ── */
-.hero{background:#f5f5f5;padding:60px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;min-height:480px;}
-.hero h1{font-size:46px;font-weight:800;line-height:1.1;margin-bottom:18px;}
-.hero p{font-size:15px;color:#555;line-height:1.6;margin-bottom:28px;max-width:400px;}
-.hero-btns{display:flex;gap:12px;}
-.hero-img{border-radius:16px;overflow:hidden;height:320px;position:relative;}
+/* ══════════════════════════════════════
+   HOME — HERO
+══════════════════════════════════════ */
+.hero{position:relative;min-height:700px;display:flex;align-items:center;background:var(--black);overflow:hidden;}
+.hero-bg{position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1800&auto=format&fit=crop&q=80');background-size:cover;background-position:center;opacity:.2;}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(108deg,rgba(13,13,13,.97) 40%,rgba(13,13,13,.52) 100%);}
+.hero-content{position:relative;z-index:2;padding:104px 60px;max-width:1280px;width:100%;margin:0 auto;}
+.hero-tag{display:inline-flex;align-items:center;gap:10px;padding:6px 14px;border:1px solid rgba(201,168,108,.3);margin-bottom:30px;}
+.hero-tag-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);flex-shrink:0;}
+.hero-tag span{font-size:9.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);}
+.hero h1{font-size:64px;font-weight:800;line-height:1.03;letter-spacing:-.035em;color:var(--white);margin-bottom:24px;max-width:720px;}
+.hero h1 em{color:var(--gold);font-style:normal;}
+.hero-sub{font-size:16px;color:rgba(255,255,255,.48);line-height:1.72;max-width:460px;margin-bottom:38px;}
+.hero-btns{display:flex;gap:12px;margin-bottom:68px;}
+.hero-stats{display:flex;padding-top:44px;border-top:1px solid rgba(255,255,255,.08);}
+.hstat{flex:1;padding-right:44px;border-right:1px solid rgba(255,255,255,.08);}
+.hstat:last-child{border-right:none;padding-right:0;}
+.hstat:not(:first-child){padding-left:44px;}
+.hstat-n{font-size:34px;font-weight:800;color:var(--white);letter-spacing:-.035em;display:block;margin-bottom:5px;}
+.hstat-n i{color:var(--gold);font-style:normal;}
+.hstat-l{font-size:10.5px;font-weight:500;color:rgba(255,255,255,.36);text-transform:uppercase;letter-spacing:.12em;}
 
-/* split section */
-.sec-split{padding:60px;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;background:#fff;}
-.split-img{height:280px;border-radius:12px;position:relative;overflow:hidden;}
-.sec-split h2{font-size:26px;font-weight:800;margin-bottom:14px;line-height:1.2;}
-.sec-split p{font-size:14px;color:#555;line-height:1.7;margin-bottom:16px;}
-.feat-row{display:flex;gap:12px;margin-bottom:14px;}
-.feat-row-icon{font-size:18px;margin-top:2px;}
-.feat-row strong{font-size:14px;font-weight:700;display:block;margin-bottom:3px;}
-.feat-row span{font-size:13px;color:#666;}
+/* HOME — MARQUEE STRIP */
+.strip{background:var(--off-white);border-bottom:1px solid var(--rule);padding:17px 0;overflow:hidden;}
+.strip-inner{max-width:1280px;margin:0 auto;padding:0 60px;display:flex;align-items:center;gap:44px;}
+.strip-label{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);white-space:nowrap;flex-shrink:0;}
+.strip-logos{display:flex;align-items:center;gap:40px;}
+.strip-logo{font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--rule);}
 
-/* 3-col cards */
-.sec-3col{padding:60px;background:#fff;}
-.sec-3col .eyebrow{text-align:center;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;font-weight:600;margin-bottom:8px;}
-.sec-3col h2{font-size:26px;font-weight:800;text-align:center;margin-bottom:8px;}
-.sec-3col .sub{font-size:14px;color:#666;text-align:center;margin-bottom:40px;max-width:600px;margin-left:auto;margin-right:auto;}
-.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-.card3{background:#f5f5f5;border-radius:12px;padding:28px;text-align:center;}
-.card3 .icon{font-size:28px;margin-bottom:12px;}
-.card3 h3{font-size:15px;font-weight:700;margin-bottom:8px;}
-.card3 p{font-size:13px;color:#666;line-height:1.6;margin-bottom:14px;}
-.card3 a{font-size:13px;font-weight:600;}
+/* HOME — STATS GRID */
+.stats-grid{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);}
+.scell{padding:48px 52px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);}
+.scell:first-child{border-left:1px solid var(--rule);}
+.scell-n{font-size:46px;font-weight:800;letter-spacing:-.04em;color:var(--black);margin-bottom:8px;display:flex;align-items:baseline;gap:2px;}
+.scell-n sup{font-size:20px;font-weight:700;color:var(--gold);}
+.scell-l{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px;}
+.scell-d{font-size:13px;color:var(--mid);line-height:1.55;}
 
-/* how-to-navigate */
-.sec-how{padding:60px;background:#f5f5f5;}
-.sec-how h2{font-size:26px;font-weight:800;text-align:center;margin-bottom:8px;}
-.sec-how .sub{font-size:14px;color:#666;text-align:center;margin-bottom:40px;}
-.how-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-.how-card{background:#fff;border-radius:12px;overflow:hidden;}
-.how-card-img{height:160px;position:relative;}
-.how-card-body{padding:16px 20px 20px;}
-.how-card h3{font-size:14px;font-weight:700;margin-bottom:8px;}
-.how-card p{font-size:13px;color:#666;line-height:1.6;margin-bottom:12px;}
-.how-card a{font-size:13px;font-weight:600;}
+/* HOME — PLATFORM SPLIT */
+.split-sec{padding:104px 0;}
+.split-inner{max-width:1280px;margin:0 auto;padding:0 60px;display:grid;grid-template-columns:1fr 1fr;gap:88px;align-items:center;}
+.split-inner.rev{direction:rtl;}
+.split-inner.rev>*{direction:ltr;}
+.split-img{position:relative;height:480px;overflow:hidden;background:var(--off-white);}
+.split-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.split-img-cap{position:absolute;bottom:0;left:0;right:0;padding:18px 22px;background:linear-gradient(to top,rgba(13,13,13,.55) 0%,transparent 100%);font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.65);}
+.split-txt .eyebrow{margin-bottom:16px;}
+.split-txt h2{font-size:38px;font-weight:800;letter-spacing:-.025em;line-height:1.1;color:var(--black);margin-bottom:16px;}
+.split-txt h2 em{color:var(--gold);font-style:normal;}
+.split-txt p{font-size:14.5px;color:var(--mid);line-height:1.75;margin-bottom:8px;}
+.feat-list{list-style:none;margin:26px 0 34px;}
+.feat-list li{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--rule);}
+.feat-list li:first-child{border-top:1px solid var(--rule);}
+.fl-icon{width:34px;height:34px;flex-shrink:0;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;margin-top:1px;}
+.fl-icon svg{width:14px;height:14px;stroke:var(--gold);fill:none;stroke-width:2;}
+.fl-txt strong{font-size:13.5px;font-weight:700;color:var(--black);display:block;margin-bottom:3px;}
+.fl-txt span{font-size:13px;color:var(--mid);}
 
-.cta-strip{display:flex;padding:36px 60px;background:#f5f5f5;border-top:1px solid #e5e5e5;}
-.cta-strip div{flex:1;text-align:center;font-size:13px;font-weight:600;}
+/* HOME — MARKETS */
+.markets-sec{background:var(--black);padding:96px 0;}
+.markets-inner{max-width:1280px;margin:0 auto;padding:0 60px;}
+.markets-hdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:48px;}
+.markets-hdr-left h2{font-size:40px;font-weight:800;letter-spacing:-.025em;color:var(--white);line-height:1.1;}
+.markets-hdr-right{font-size:13.5px;color:rgba(255,255,255,.35);max-width:260px;text-align:right;line-height:1.6;}
+.markets-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;}
+.mcard{position:relative;height:340px;overflow:hidden;cursor:pointer;}
+.mcard-bg{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform .7s ease;}
+.mcard:hover .mcard-bg{transform:scale(1.08);}
+.mc-lg{background:linear-gradient(160deg,#071420 0%,#0f2d4a 60%,#1a5278 100%);}
+.mc-nr{background:linear-gradient(160deg,#061408 0%,#0f2e18 60%,#1a5530 100%);}
+.mc-ac{background:linear-gradient(160deg,#0f0a02 0%,#2b1e07 60%,#523c0e 100%);}
+.mc-jb{background:linear-gradient(160deg,#0f0404 0%,#2a0d0d 60%,#551a1a 100%);}
+.mc-ct{background:linear-gradient(160deg,#060610 0%,#0d0f2d 60%,#181c58 100%);}
+.mcard-overlay{position:absolute;inset:0;z-index:2;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.05) 55%);}
+.mcard-body{position:absolute;bottom:0;left:0;right:0;z-index:3;padding:22px 20px;}
+.mc-city{font-size:15px;font-weight:700;color:var(--white);margin-bottom:2px;}
+.mc-country{font-size:9.5px;font-weight:600;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px;}
+.mc-stat{font-size:10px;font-weight:600;color:var(--gold);display:flex;align-items:center;gap:5px;}
+.mc-dot{width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0;}
 
-/* ── DATA PAGE ── */
-.data-hero{padding:50px 60px 40px;background:#f5f5f5;}
-.data-hero .eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:8px;}
-.data-hero h1{font-size:36px;font-weight:800;margin-bottom:12px;}
-.data-hero p{font-size:15px;color:#555;max-width:500px;margin-bottom:22px;}
-.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-.svc-card{background:#f5f5f5;border-radius:12px;padding:28px;text-align:center;}
-.svc-card .icon{font-size:26px;margin-bottom:14px;}
-.svc-card h3{font-size:15px;font-weight:700;margin-bottom:8px;}
-.svc-card p{font-size:13px;color:#666;line-height:1.6;}
-.check-list{list-style:none;}
-.check-list li{font-size:14px;color:#333;padding:5px 0;display:flex;align-items:center;gap:8px;}
-.check-list li::before{content:'✅';font-size:13px;}
+/* HOME — SERVICES */
+.services-sec{padding:96px 0;background:var(--off-white);}
+.services-inner{max-width:1280px;margin:0 auto;padding:0 60px;}
+.sec-hdr{margin-bottom:56px;}
+.sec-hdr .eyebrow{margin-bottom:14px;}
+.sec-hdr h2{font-size:38px;font-weight:800;letter-spacing:-.025em;color:var(--black);margin-bottom:12px;}
+.sec-hdr p{font-size:14.5px;color:var(--mid);max-width:500px;}
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;}
+.svc-card{background:var(--white);padding:44px 40px;border-top:2px solid transparent;transition:border-color .2s;}
+.svc-card:hover{border-top-color:var(--gold);}
+.svc-num{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.16em;text-transform:uppercase;margin-bottom:24px;}
+.svc-card h3{font-size:19px;font-weight:700;color:var(--black);margin-bottom:12px;letter-spacing:-.01em;}
+.svc-card p{font-size:13.5px;color:var(--mid);line-height:1.75;margin-bottom:28px;}
+.svc-link{font-size:12.5px;font-weight:700;color:var(--black);letter-spacing:.04em;display:inline-flex;align-items:center;gap:6px;}
+.svc-link svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;transition:transform .15s;}
+.svc-link:hover svg{transform:translateX(4px);}
 
-/* ── ANALYTICS ── */
-.analytics-wrap{display:grid;grid-template-columns:260px 1fr;gap:20px;padding:20px;background:#f5f5f5;min-height:calc(100vh - 60px);}
-.sidebar-box{background:#fff;border-radius:10px;padding:20px;margin-bottom:16px;}
-.sidebar-box h3{font-size:15px;font-weight:700;margin-bottom:16px;}
-.fg{margin-bottom:14px;}
-.fg label{font-size:12px;color:#666;display:block;margin-bottom:5px;}
-.fg select,.fg input{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;outline:none;}
-.btn-apply{width:100%;padding:9px;background:#333;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin-top:4px;}
-.mo-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px;}
-.mo-row:last-child{border-bottom:none;}
-.mo-row .lbl{color:#777;}
-.mo-row .val{font-weight:700;}
-#africa-map{height:340px;border-radius:10px;border:1px solid #ddd;margin-bottom:20px;}
-.a-bottom{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-.a-card{background:#fff;border-radius:10px;padding:20px;}
-.a-card h3{font-size:15px;font-weight:700;margin-bottom:16px;}
-.rent-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f5f5f5;font-size:13px;}
+/* HOME — HOW IT WORKS */
+.how-sec{padding:96px 0;background:var(--white);}
+.how-inner{max-width:1280px;margin:0 auto;padding:0 60px;}
+.how-grid{margin-top:56px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+.how-card{border:1px solid var(--rule);overflow:hidden;}
+.how-card-img{height:224px;overflow:hidden;position:relative;background:var(--off-white);}
+.how-card-img img{width:100%;height:100%;object-fit:cover;transition:transform .6s ease;display:block;}
+.how-card:hover .how-card-img img{transform:scale(1.05);}
+.how-card-body{padding:28px 28px 32px;}
+.how-step{font-size:9.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+.how-card h3{font-size:16px;font-weight:700;color:var(--black);margin-bottom:10px;letter-spacing:-.01em;}
+.how-card p{font-size:13.5px;color:var(--mid);line-height:1.7;}
+
+/* HOME — CTA BANNER */
+.cta-sec{background:var(--black);padding:96px 0;position:relative;overflow:hidden;}
+.cta-sec-bg{position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1600&auto=format&fit=crop&q=80');background-size:cover;background-position:center;opacity:.06;}
+.cta-inner{position:relative;z-index:2;max-width:1280px;margin:0 auto;padding:0 60px;display:flex;align-items:center;justify-content:space-between;gap:60px;}
+.cta-txt h2{font-size:40px;font-weight:800;letter-spacing:-.025em;color:var(--white);margin-bottom:12px;max-width:580px;line-height:1.1;}
+.cta-txt p{font-size:15px;color:rgba(255,255,255,.38);}
+.cta-btns{display:flex;gap:12px;flex-shrink:0;}
+
+/* ══════════════════════════════════════
+   INNER HERO (Data / About pages)
+══════════════════════════════════════ */
+.inner-hero{background:var(--off-white);border-bottom:1px solid var(--rule);padding:80px 0 72px;}
+.inner-hero-wrap{max-width:1280px;margin:0 auto;padding:0 60px;}
+.inner-hero .eyebrow{margin-bottom:14px;}
+.inner-hero h1{font-size:44px;font-weight:800;letter-spacing:-.025em;color:var(--black);margin-bottom:16px;max-width:640px;line-height:1.1;}
+.inner-hero p{font-size:15px;color:var(--mid);max-width:540px;margin-bottom:28px;line-height:1.65;}
+.inner-hero-btns{display:flex;gap:12px;}
+
+/* DATA PAGE */
+.data-body{padding:80px 0;background:var(--white);}
+.data-wrap{max-width:1280px;margin:0 auto;padding:0 60px;}
+.data-svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--rule);margin-top:52px;}
+.dsvc{background:var(--white);padding:40px 36px;}
+.dsvc-icon{width:44px;height:44px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;margin-bottom:22px;}
+.dsvc-icon svg{width:18px;height:18px;stroke:var(--gold);fill:none;stroke-width:1.8;}
+.dsvc h3{font-size:17px;font-weight:700;color:var(--black);margin-bottom:10px;}
+.dsvc p{font-size:13.5px;color:var(--mid);line-height:1.75;}
+.data-split{padding:80px 0;background:var(--off-white);}
+.data-split-wrap{max-width:1280px;margin:0 auto;padding:0 60px;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
+.data-split-wrap h2{font-size:34px;font-weight:800;letter-spacing:-.025em;color:var(--black);margin-bottom:16px;line-height:1.12;}
+.data-split-wrap p{font-size:14.5px;color:var(--mid);line-height:1.75;margin-bottom:18px;}
+.check-list{list-style:none;margin-bottom:28px;}
+.check-list li{font-size:13.5px;color:var(--ink);padding:10px 0;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--rule);}
+.check-list li:last-child{border-bottom:none;}
+.check-list li::before{content:'';width:14px;height:14px;flex-shrink:0;border:1.5px solid var(--gold);display:block;background:var(--gold-dim);}
+.data-img{height:380px;overflow:hidden;}
+.data-img img{width:100%;height:100%;object-fit:cover;display:block;}
+
+/* ══════════════════════════════════════
+   ANALYTICS PAGE
+══════════════════════════════════════ */
+.analytics-wrap{display:grid;grid-template-columns:272px 1fr;min-height:calc(100vh - 64px);}
+.analytics-sidebar{background:var(--white);border-right:1px solid var(--rule);padding:28px;overflow-y:auto;}
+.asb-hdr{font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--black);padding-bottom:12px;border-bottom:1px solid var(--rule);margin-bottom:20px;}
+.a-fg{margin-bottom:16px;}
+.a-fg label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);display:block;margin-bottom:6px;}
+.a-fg select,.a-fg input{width:100%;padding:9px 12px;border:1px solid var(--rule);background:var(--white);font-size:13px;color:var(--ink);font-family:var(--font);outline:none;transition:border-color .15s;}
+.a-fg select:focus,.a-fg input:focus{border-color:var(--black);}
+.btn-apply{width:100%;padding:10px;background:var(--black);color:var(--white);font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:none;cursor:pointer;margin-top:6px;font-family:var(--font);}
+.a-ov-hdr{font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--black);padding-bottom:12px;border-bottom:1px solid var(--rule);margin-bottom:16px;margin-top:24px;}
+.a-ov-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--off-white);font-size:13px;}
+.a-ov-row:last-child{border-bottom:none;}
+.a-ov-lbl{color:var(--muted);}
+.a-ov-val{font-weight:700;color:var(--black);font-variant-numeric:tabular-nums;}
+.analytics-main{padding:28px;background:var(--off-white);}
+.analytics-title{font-size:18px;font-weight:700;color:var(--black);margin-bottom:20px;}
+#africa-map{height:380px;border:1px solid var(--rule);margin-bottom:22px;}
+.a-bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.a-card{background:var(--white);border:1px solid var(--rule);padding:22px;}
+.a-card-hdr{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--black);padding-bottom:12px;border-bottom:1px solid var(--rule);margin-bottom:16px;}
+.rent-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--off-white);font-size:13px;}
 .rent-row:last-child{border-bottom:none;}
-.r-val{font-weight:700;}
-.r-up{color:#16a34a;font-size:12px;margin-left:5px;}
-.tr{padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:13px;overflow:hidden;}
+.r-lbl{color:var(--mid);}
+.r-val{font-weight:700;font-variant-numeric:tabular-nums;}
+.r-up{font-size:11px;color:#16a34a;font-weight:600;margin-left:5px;}
+.tr{padding:10px 0;border-bottom:1px solid var(--off-white);font-size:13px;}
 .tr:last-child{border-bottom:none;}
-.tr .ttype{font-weight:600;}
-.tr .tdate{color:#888;font-size:12px;}
-.tr .tprice{float:right;font-weight:700;}
-.vacancy-box{background:#fff;border-radius:10px;padding:20px;margin-top:20px;}
-.vacancy-box h3{font-size:15px;font-weight:700;margin-bottom:16px;}
-.chart{position:relative;height:180px;border-left:1px solid #ddd;border-bottom:1px solid #ddd;margin:0 16px 6px 28px;}
-.y-lbls{position:absolute;left:-26px;top:0;height:100%;display:flex;flex-direction:column;justify-content:space-between;font-size:11px;color:#888;}
-.x-lbls{display:flex;justify-content:space-around;font-size:11px;color:#888;margin:0 16px 0 28px;}
+.tr-row{display:flex;justify-content:space-between;}
+.tr-type{font-weight:600;color:var(--black);}
+.tr-price{font-weight:700;font-variant-numeric:tabular-nums;}
+.tr-date{font-size:11px;color:var(--muted);}
+.vacancy-box{background:var(--white);border:1px solid var(--rule);padding:22px;margin-top:16px;}
+.vacancy-hdr{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--black);padding-bottom:12px;border-bottom:1px solid var(--rule);margin-bottom:20px;}
+.chart{position:relative;height:160px;border-left:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:0 16px 6px 36px;}
+.y-lbls{position:absolute;left:-34px;top:0;height:100%;display:flex;flex-direction:column;justify-content:space-between;font-size:10px;color:var(--muted);}
+.x-lbls{display:flex;justify-content:space-around;font-size:10px;color:var(--muted);margin:0 16px 0 36px;}
 svg.linechart{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;}
-.legend{display:flex;align-items:center;gap:6px;justify-content:center;margin-top:10px;font-size:12px;color:#666;}
-.ldot{width:8px;height:8px;border-radius:50%;background:#8b8bc8;display:inline-block;}
+.legend{display:flex;align-items:center;gap:6px;justify-content:center;margin-top:12px;font-size:11px;color:var(--muted);}
+.ldot{width:6px;height:6px;background:var(--gold);display:inline-block;}
 
-/* ── PROPERTIES ── */
-.props-hdr{padding:28px 40px 16px;background:#f5f5f5;display:flex;justify-content:space-between;align-items:center;}
-.props-hdr h1{font-size:28px;font-weight:800;margin-bottom:4px;}
-.props-hdr p{font-size:14px;color:#666;}
-.vtoggle{display:flex;gap:4px;}
-.vtoggle button{width:32px;height:32px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:15px;}
-.vtoggle button.act{background:#111;color:#fff;border-color:#111;}
-.filter-bar{padding:14px 40px;background:#fff;border-top:1px solid #eee;border-bottom:1px solid #eee;}
-.filter-bar h3{font-size:13px;font-weight:700;margin-bottom:10px;}
-.frow{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;}
-.fcol label{font-size:11px;color:#666;display:block;margin-bottom:3px;}
-.fcol select{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;min-width:110px;}
-.fcol input{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;width:80px;}
-.btn-clr{padding:6px 12px;border:1px solid #ddd;border-radius:6px;background:#fff;font-size:12px;cursor:pointer;}
-.pgrid{padding:16px 40px 40px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-.pcard{background:#fff;border-radius:10px;overflow:hidden;border:1px solid #eee;}
-.pimg{height:160px;position:relative;overflow:hidden;}
-.poverlay{position:absolute;inset:0;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;}
-.plock{width:32px;height:32px;background:rgba(255,255,255,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:1.5px solid rgba(255,255,255,.5);}
-.pbadge{position:absolute;top:10px;right:10px;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;}
-.ba{background:rgba(34,197,94,.85);color:#fff;}
-.bo{background:rgba(107,114,128,.85);color:#fff;}
-.pbody{padding:14px 16px;}
-.ptype{float:right;font-size:11px;color:#888;}
-.pname{font-size:15px;font-weight:700;margin-bottom:4px;clear:both;}
-.ploc{font-size:12px;color:#888;margin-bottom:10px;}
-.pmeta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.pmv{font-size:14px;font-weight:700;}
-.pmk{font-size:11px;color:#888;}
-.pprow{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid #f0f0f0;}
-.ppv{font-size:16px;font-weight:800;}
-.ppm{font-size:11px;color:#888;}
-.btn-vd{padding:7px 14px;background:#111;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;}
-.psub{background:#fff8e6;padding:8px 16px;font-size:12px;color:#996600;text-align:center;}
-.unlock{background:#111;color:#fff;padding:40px;text-align:center;margin:0 40px 40px;border-radius:10px;}
-.unlock h2{font-size:22px;font-weight:700;margin-bottom:8px;}
-.unlock p{font-size:14px;color:#aaa;margin-bottom:20px;}
+/* ══════════════════════════════════════
+   PROPERTIES PAGE
+══════════════════════════════════════ */
+.props-hdr{background:var(--off-white);border-bottom:1px solid var(--rule);padding:44px 60px 36px;display:flex;justify-content:space-between;align-items:flex-end;}
+.props-hdr h1{font-size:34px;font-weight:800;letter-spacing:-.02em;color:var(--black);margin-bottom:6px;}
+.props-hdr p{font-size:13px;color:var(--muted);}
+.vtoggle{display:flex;gap:3px;}
+.vtoggle button{width:34px;height:34px;border:1px solid var(--rule);background:var(--white);cursor:pointer;font-size:14px;transition:all .15s;}
+.vtoggle button.act{background:var(--black);color:var(--white);border-color:var(--black);}
+.filter-bar{padding:20px 60px;background:var(--white);border-bottom:1px solid var(--rule);}
+.filter-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-bottom:12px;}
+.frow{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;}
+.fcol label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);display:block;margin-bottom:5px;}
+.fcol select,.fcol input{padding:8px 12px;border:1px solid var(--rule);font-size:13px;background:var(--white);min-width:110px;font-family:var(--font);outline:none;color:var(--ink);}
+.fcol input{width:88px;}
+.btn-clr{padding:8px 14px;border:1px solid var(--rule);background:var(--white);font-size:12px;color:var(--mid);cursor:pointer;font-family:var(--font);}
+.pgrid{padding:24px 60px 60px;background:var(--off-white);display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.pcard{background:var(--white);border:1px solid var(--rule);overflow:hidden;}
+.pimg{height:180px;position:relative;overflow:hidden;}
+.pimg-bg{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform .55s ease;}
+.pcard:hover .pimg-bg{transform:scale(1.06);}
+.c-lagos{background:linear-gradient(160deg,#071420,#1a5278);}
+.c-nairobi{background:linear-gradient(160deg,#061408,#1a5530);}
+.c-cape{background:linear-gradient(160deg,#060610,#181c58);}
+.c-accra{background:linear-gradient(160deg,#0f0a02,#523c0e);}
+.c-joburg{background:linear-gradient(160deg,#0f0404,#551a1a);}
+.poverlay{position:absolute;inset:0;background:rgba(13,13,13,.4);display:flex;align-items:center;justify-content:center;z-index:2;}
+.plock{width:36px;height:36px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;}
+.plock svg{width:14px;height:14px;stroke:var(--white);fill:none;stroke-width:2;}
+.pbadge{position:absolute;top:12px;right:12px;padding:4px 10px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;z-index:3;}
+.ba{background:var(--gold);color:var(--black);}
+.bo{background:rgba(255,255,255,.14);color:var(--white);border:1px solid rgba(255,255,255,.28);}
+.pbody{padding:16px 18px 18px;}
+.ptype{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--gold);margin-bottom:6px;}
+.pname{font-size:14.5px;font-weight:700;color:var(--black);margin-bottom:4px;}
+.ploc{font-size:12px;color:var(--muted);margin-bottom:14px;}
+.pmeta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--rule);}
+.pmv{font-size:13.5px;font-weight:700;color:var(--black);}
+.pmk{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:2px;}
+.pprow{display:flex;justify-content:space-between;align-items:center;}
+.ppv{font-size:17px;font-weight:800;color:var(--black);}
+.ppm{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+.btn-vd{padding:8px 16px;background:var(--black);color:var(--white);font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--font);}
+.psub{background:var(--off-white);padding:10px 18px;font-size:11px;color:var(--muted);text-align:center;border-top:1px solid var(--rule);}
+.unlock{background:var(--black);padding:60px;text-align:center;margin:0 60px 60px;}
+.unlock h2{font-size:26px;font-weight:800;color:var(--white);margin-bottom:10px;}
+.unlock p{font-size:14px;color:rgba(255,255,255,.38);margin-bottom:28px;max-width:440px;margin-left:auto;margin-right:auto;}
 .unlock-btns{display:flex;gap:12px;justify-content:center;}
-.btn-wo{padding:9px 20px;border:1.5px solid #fff;background:transparent;color:#fff;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;}
-.btn-ws{padding:9px 20px;border:none;background:#fff;color:#111;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;}
 
-/* ── SUBSCRIPTION ── */
-.sub-pg{padding:50px 40px;background:#f5f5f5;}
-.sub-pg h1{font-size:32px;font-weight:800;text-align:center;margin-bottom:10px;}
-.sub-desc{font-size:15px;color:#555;text-align:center;max-width:560px;margin:0 auto 40px;}
-.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:960px;margin:0 auto 40px;}
-.plan{background:#fff;border-radius:12px;padding:32px;border:1.5px solid #e5e5e5;position:relative;}
-.plan.feat{border-color:#111;border-width:2px;}
-.pop-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:4px 16px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
-.pln-name{font-size:20px;font-weight:800;margin-bottom:4px;}
-.pln-tag{font-size:13px;color:#777;margin-bottom:20px;}
-.pln-price{display:flex;align-items:baseline;gap:4px;margin-bottom:24px;}
-.pln-price .amt{font-size:40px;font-weight:900;}
-.pln-price .per{font-size:14px;color:#888;}
-.pln-feats{list-style:none;margin-bottom:28px;}
-.pln-feats li{font-size:13px;color:#444;padding:6px 0;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f5f5f5;}
+/* ══════════════════════════════════════
+   SUBSCRIPTION PAGE
+══════════════════════════════════════ */
+.sub-pg{padding:80px 60px 88px;background:var(--off-white);}
+.sub-pg-hdr{text-align:center;margin-bottom:56px;}
+.sub-pg-hdr .eyebrow{margin-bottom:14px;}
+.sub-pg-hdr h1{font-size:42px;font-weight:800;letter-spacing:-.025em;color:var(--black);margin-bottom:14px;}
+.sub-pg-hdr p{font-size:15px;color:var(--mid);max-width:500px;margin:0 auto;}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;max-width:1020px;margin:0 auto 52px;background:var(--rule);}
+.plan{background:var(--white);padding:44px 38px;position:relative;}
+.plan.feat{background:var(--black);}
+.plan.feat .pln-name,.plan.feat .pln-price .amt{color:var(--white);}
+.plan.feat .pln-tag,.plan.feat .pln-price .per{color:rgba(255,255,255,.38);}
+.plan.feat .pln-feats li{color:rgba(255,255,255,.75);border-bottom-color:rgba(255,255,255,.07);}
+.plan.feat .pln-feats li::before{color:var(--gold);}
+.plan.feat .pln-price{border-bottom-color:rgba(255,255,255,.1);}
+.pop-badge{display:inline-block;background:var(--gold);color:var(--black);padding:4px 14px;font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:18px;}
+.pln-name{font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--black);margin-bottom:6px;}
+.pln-tag{font-size:13px;color:var(--muted);margin-bottom:26px;line-height:1.5;}
+.pln-price{display:flex;align-items:baseline;gap:4px;margin-bottom:28px;padding-bottom:28px;border-bottom:1px solid var(--rule);}
+.pln-price .amt{font-size:48px;font-weight:900;letter-spacing:-.04em;color:var(--black);}
+.pln-price .per{font-size:13px;color:var(--muted);}
+.pln-feats{list-style:none;margin-bottom:32px;}
+.pln-feats li{font-size:13.5px;color:var(--ink);padding:9px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--off-white);}
 .pln-feats li:last-child{border-bottom:none;}
-.pln-feats li::before{content:'✓';color:#16a34a;font-weight:700;}
-.btn-sub{width:100%;padding:11px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:none;}
-.btn-sub-o{background:#f5f5f5;color:#333;}
-.btn-sub-d{background:#111;color:#fff;}
-.why-box{background:#fff;border-radius:12px;padding:40px;max-width:960px;margin:0 auto;}
-.why-box h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:32px;}
-.why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center;}
-.wi-badge{display:inline-flex;width:44px;height:44px;background:#111;color:#fff;border-radius:8px;align-items:center;justify-content:center;font-size:13px;font-weight:800;margin-bottom:10px;}
-.why-item h4{font-size:14px;font-weight:700;margin-bottom:5px;}
-.why-item p{font-size:12px;color:#777;}
+.pln-feats li::before{content:'—';color:var(--gold);font-weight:700;flex-shrink:0;}
+.btn-sub{width:100%;padding:13px;font-size:13px;font-weight:700;letter-spacing:.04em;cursor:pointer;font-family:var(--font);transition:all .15s;}
+.btn-sub-out{background:transparent;color:var(--black);border:1px solid var(--rule);}
+.btn-sub-out:hover{background:var(--off-white);}
+.btn-sub-gold{background:var(--gold);color:var(--black);border:none;}
+.btn-sub-gold:hover{background:var(--gold-light);}
+.why-box{background:var(--white);padding:56px;max-width:1020px;margin:0 auto;border:1px solid var(--rule);}
+.why-box h2{font-size:22px;font-weight:800;text-align:center;color:var(--black);margin-bottom:40px;}
+.why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center;}
+.wi-num{display:inline-flex;width:48px;height:48px;border:2px solid var(--gold);align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--gold);margin-bottom:12px;}
+.why-item h4{font-size:13.5px;font-weight:700;color:var(--black);margin-bottom:6px;}
+.why-item p{font-size:12.5px;color:var(--muted);line-height:1.55;}
 
-/* ── DASHBOARD LOCKED ── */
-.dlocked{min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px;background:#f5f5f5;}
-.dlocked .lbig{font-size:48px;margin-bottom:20px;color:#ccc;}
-.dlocked h1{font-size:28px;font-weight:800;margin-bottom:10px;}
-.dlocked p{font-size:14px;color:#666;margin-bottom:24px;}
+/* ══════════════════════════════════════
+   DASHBOARD LOCKED
+══════════════════════════════════════ */
+.dlocked{min-height:480px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 60px;background:var(--off-white);}
+.dlocked-icon{width:60px;height:60px;background:var(--black);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;}
+.dlocked-icon svg{width:22px;height:22px;stroke:var(--white);fill:none;stroke-width:1.5;}
+.dlocked h1{font-size:28px;font-weight:800;color:var(--black);margin-bottom:10px;}
+.dlocked p{font-size:14px;color:var(--muted);margin-bottom:28px;max-width:380px;}
 .dbtns{display:flex;gap:12px;justify-content:center;}
 
-/* ── AUTH ── */
-.auth-pg{min-height:calc(100vh - 60px);background:#f5f5f5;display:flex;align-items:center;justify-content:center;padding:40px;}
-.auth-box{background:#fff;border-radius:12px;padding:40px;width:100%;max-width:400px;}
-.auth-logo{width:44px;height:44px;background:#111;color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;margin:0 auto 20px;}
-.auth-box h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:6px;}
-.auth-sub{font-size:13px;color:#888;text-align:center;margin-bottom:24px;}
-.auth-sub a{color:#111;font-weight:600;}
+/* ══════════════════════════════════════
+   AUTH PAGES
+══════════════════════════════════════ */
+.auth-pg{min-height:calc(100vh - 64px);background:var(--off-white);display:flex;align-items:center;justify-content:center;padding:40px;}
+.auth-box{background:var(--white);border:1px solid var(--rule);padding:48px 44px;width:100%;max-width:420px;}
+.auth-logo{width:40px;height:40px;background:var(--black);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;}
+.auth-logo span{font-size:12px;font-weight:900;color:var(--white);}
+.auth-box h2{font-size:22px;font-weight:800;letter-spacing:-.02em;text-align:center;color:var(--black);margin-bottom:6px;}
+.auth-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:28px;}
+.auth-sub a{color:var(--black);font-weight:600;}
 .fg-auth{margin-bottom:16px;}
-.fg-auth label{font-size:13px;font-weight:600;display:block;margin-bottom:5px;}
-.fg-auth input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;outline:none;}
-.fg-auth input:focus{border-color:#888;}
+.fg-auth label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);display:block;margin-bottom:6px;}
+.fg-auth input{width:100%;padding:11px 14px;border:1px solid var(--rule);font-size:14px;color:var(--ink);font-family:var(--font);outline:none;transition:border-color .15s;}
+.fg-auth input:focus{border-color:var(--black);}
 .pw{position:relative;}
-.pw input{padding-right:36px;}
-.pw-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:15px;color:#888;}
-.chk-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:16px;font-size:13px;color:#444;}
-.chk-row a{color:#111;font-weight:600;}
-.btn-submit{width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;}
-.auth-sw{text-align:center;font-size:13px;color:#666;}
-.auth-sw a{color:#111;font-weight:700;}
-.ftrial{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px 16px;margin-top:16px;}
-.ftrial .ft-t{font-size:13px;font-weight:700;color:#166534;margin-bottom:4px;}
-.ftrial p{font-size:12px;color:#166534;}
+.pw input{padding-right:40px;}
+.pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--muted);font-size:15px;}
+.chk-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:18px;font-size:13px;color:var(--mid);}
+.chk-row a{color:var(--black);font-weight:600;}
+.btn-submit{width:100%;padding:13px;background:var(--black);color:var(--white);border:none;font-size:13px;font-weight:700;letter-spacing:.04em;cursor:pointer;margin-bottom:16px;font-family:var(--font);}
+.auth-sw{text-align:center;font-size:13px;color:var(--muted);}
+.auth-sw a{color:var(--black);font-weight:700;}
+.ftrial{background:var(--off-white);border:1px solid var(--rule);padding:16px;margin-top:20px;}
+.ftrial .ft-t{font-size:11px;font-weight:700;color:var(--black);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;}
+.ftrial p{font-size:12px;color:var(--mid);}
 
-/* ── CONTACT ── */
-.cnt-hero{position:relative;height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;overflow:hidden;}
-.cnt-hero .eyebrow{position:relative;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#ccc;margin-bottom:8px;}
-.cnt-hero h1{position:relative;font-size:32px;font-weight:800;color:#fff;margin-bottom:10px;}
-.cnt-hero p{position:relative;font-size:14px;color:#ccc;max-width:480px;margin-bottom:20px;}
-.cnt-hero-btns{position:relative;display:flex;gap:10px;}
-.btn-wh{padding:9px 20px;background:#fff;color:#111;border-radius:6px;font-size:13px;font-weight:700;border:none;cursor:pointer;}
-.btn-ghw{padding:9px 20px;background:transparent;color:#fff;border-radius:6px;font-size:13px;font-weight:600;border:1.5px solid rgba(255,255,255,.4);cursor:pointer;}
-.cnt-info{padding:50px 60px;display:grid;grid-template-columns:1fr 1fr;gap:60px;background:#fff;}
-.cnt-info h2{font-size:22px;font-weight:800;margin-bottom:8px;}
-.cnt-info .ci-desc{font-size:14px;color:#666;margin-bottom:28px;}
-.ci-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:20px;}
-.ci-icon{font-size:20px;margin-top:1px;}
-.ci-lbl{font-size:13px;font-weight:700;margin-bottom:2px;}
-.ci-val{font-size:13px;color:#555;}
-.ci-imgbox{height:260px;border-radius:12px;overflow:hidden;border:1px solid #eee;position:relative;}
-.cnt-form-sec{padding:40px 60px 60px;background:#f5f5f5;}
-.cnt-form-sec h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:4px;}
-.cf-sub{font-size:14px;color:#666;text-align:center;margin-bottom:30px;}
-.cform{max-width:700px;margin:0 auto;}
-.frow2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
-.cform textarea{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;font-family:inherit;resize:vertical;min-height:120px;outline:none;}
+/* ══════════════════════════════════════
+   CONTACT PAGE
+══════════════════════════════════════ */
+.cnt-hero{position:relative;height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;overflow:hidden;background:var(--black);}
+.cnt-hero-bg{position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=1600&auto=format&fit=crop&q=80');background-size:cover;background-position:center;opacity:.14;}
+.cnt-hero-content{position:relative;z-index:2;}
+.cnt-hero .eyebrow{margin-bottom:12px;}
+.cnt-hero h1{font-size:38px;font-weight:800;letter-spacing:-.025em;color:var(--white);margin-bottom:10px;}
+.cnt-hero p{font-size:14px;color:rgba(255,255,255,.45);max-width:420px;margin:0 auto;}
+.cnt-body{max-width:1280px;margin:0 auto;padding:80px 60px;display:grid;grid-template-columns:1fr 1fr;gap:80px;}
+.cnt-info h2{font-size:24px;font-weight:800;color:var(--black);margin-bottom:8px;}
+.cnt-info-desc{font-size:14px;color:var(--mid);margin-bottom:32px;line-height:1.65;}
+.ci-item{display:flex;align-items:flex-start;gap:14px;margin-bottom:24px;}
+.ci-icon{width:40px;height:40px;flex-shrink:0;border:1px solid var(--rule);display:flex;align-items:center;justify-content:center;}
+.ci-icon svg{width:15px;height:15px;stroke:var(--gold);fill:none;stroke-width:1.8;}
+.ci-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:3px;}
+.ci-val{font-size:14px;color:var(--ink);}
+.cnt-form h2{font-size:22px;font-weight:800;color:var(--black);margin-bottom:24px;}
+.frow2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.cform textarea{width:100%;padding:11px 14px;border:1px solid var(--rule);font-size:14px;font-family:var(--font);resize:vertical;min-height:120px;outline:none;color:var(--ink);transition:border-color .15s;}
+.cform textarea:focus{border-color:var(--black);}
 
-/* ── FOOTER ── */
-footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
-.footer-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;gap:32px;margin-bottom:36px;}
-.fbrand .fb-name{font-size:14px;font-weight:800;letter-spacing:.04em;margin-bottom:8px;line-height:1.4;}
-.fbrand p{font-size:13px;color:#777;line-height:1.6;}
-.fcol h4{font-size:13px;font-weight:700;margin-bottom:14px;color:#333;}
+/* ══════════════════════════════════════
+   ABOUT PAGE
+══════════════════════════════════════ */
+.about-hero{background:var(--off-white);border-bottom:1px solid var(--rule);padding:80px 0 72px;}
+.about-hero-wrap{max-width:1280px;margin:0 auto;padding:0 60px;}
+.about-hero h1{font-size:48px;font-weight:800;letter-spacing:-.03em;color:var(--black);margin-bottom:18px;max-width:620px;line-height:1.05;}
+.about-hero p{font-size:15px;color:var(--mid);max-width:520px;line-height:1.7;}
+.about-body{max-width:1280px;margin:0 auto;padding:0 60px;}
+.about-split{padding:80px 0;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
+.about-split h2{font-size:30px;font-weight:800;letter-spacing:-.02em;color:var(--black);margin-bottom:14px;}
+.about-split p{font-size:14.5px;color:var(--mid);line-height:1.75;margin-bottom:14px;}
+.about-img{height:400px;overflow:hidden;background:var(--off-white);}
+.about-img img{width:100%;height:100%;object-fit:cover;display:block;}
+
+/* ══════════════════════════════════════
+   FOOTER
+══════════════════════════════════════ */
+footer{background:var(--black);padding:64px 0 32px;}
+.footer-wrap{max-width:1280px;margin:0 auto;padding:0 60px;}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:40px;margin-bottom:52px;}
+.fbrand-name{font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--white);margin-bottom:3px;}
+.fbrand-tagline{font-size:8.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
+.fbrand p{font-size:13px;color:rgba(255,255,255,.3);line-height:1.7;max-width:240px;}
+.fcol h4{font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:18px;}
 .fcol ul{list-style:none;}
-.fcol ul li{margin-bottom:8px;}
-.fcol ul li a{font-size:13px;color:#666;}
-.fcol ul li a:hover{color:#111;}
-.fcol select{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;}
-.footer-bottom{border-top:1px solid #eee;padding-top:20px;text-align:center;font-size:12px;color:#999;}
+.fcol ul li{margin-bottom:10px;}
+.fcol ul li a{font-size:13px;color:rgba(255,255,255,.5);transition:color .15s;}
+.fcol ul li a:hover{color:var(--white);}
+.fcol select{padding:7px 10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.5);font-size:13px;font-family:var(--font);outline:none;}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.07);padding-top:24px;display:flex;justify-content:space-between;align-items:center;}
+.footer-bottom p{font-size:12px;color:rgba(255,255,255,.2);}
+.footer-bottom-links{display:flex;gap:24px;}
+.footer-bottom-links a{font-size:12px;color:rgba(255,255,255,.2);transition:color .15s;}
+.footer-bottom-links a:hover{color:rgba(255,255,255,.55);}
 </style>
 </head>
 <body>
 
-<!-- ═══ NAV ═══ -->
+<!-- ═══════════════════ NAV ═══════════════════ -->
 <nav>
-  <div class="nav-logo" onclick="go('home')">IRONWOOD INTELLIGENCE</div>
-  <div class="nav-links">
-    <a onclick="go('home')">Home Page</a>
-    <a onclick="go('about')">About Us</a>
-    <a onclick="go('data')">Data</a>
-    <a onclick="go('contact')">Contact Us</a>
-    <div class="nav-more">
-      <button class="nav-more-btn" onclick="toggleDD(event)">
-        More Links
-        <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
-      </button>
-      <div class="dropdown" id="dd">
-        <a onclick="go('properties')">Properties</a>
-        <a onclick="go('analytics')">Analytics</a>
-        <a onclick="go('dashboard')">Dashboard</a>
-        <a onclick="go('subscription')">Pricing</a>
+  <div class="nav-inner">
+    <div class="nav-logo" onclick="go('home')">
+      <div class="nav-mark"><span>IW</span></div>
+      <div class="nav-wordmark">
+        <b>Ironwood Intelligence</b>
+        <small>African Real Estate Data</small>
       </div>
     </div>
-  </div>
-  <div class="nav-actions">
-    <button class="btn-join" onclick="go('register')">Join</button>
-    <button class="btn-login" onclick="go('login')">Login</button>
+    <div class="nav-links">
+      <a onclick="go('home')">Home</a>
+      <a onclick="go('about')">About</a>
+      <a onclick="go('data')">Data</a>
+      <a onclick="go('contact')">Contact</a>
+      <div class="nav-more">
+        <button class="nav-more-btn" onclick="toggleDD(event)">
+          More
+          <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+        </button>
+        <div class="dropdown" id="dd">
+          <a onclick="go('properties')">Properties</a>
+          <a onclick="go('analytics')">Analytics</a>
+          <a href="/dashboard">Dashboard</a>
+          <a onclick="go('subscription')">Pricing</a>
+        </div>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <button class="btn-ng" onclick="go('login')">Sign In</button>
+      <button class="btn-np" onclick="go('register')">Get Started</button>
+    </div>
   </div>
 </nav>
 
-<!-- ═══ HOME ═══ -->
+<!-- ═══════════════════ HOME ═══════════════════ -->
 <div id="page-home" class="page active">
-  <div class="hero">
-    <div>
-      <h1>Unlock Insights with Real Estate Analytics</h1>
-      <p>Discover the power of data-driven decisions in real estate. Our platform provides comprehensive analytics to help you make informed choices.</p>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-tag">
+        <div class="hero-tag-dot"></div>
+        <span>Africa's Premier Real Estate Intelligence Platform</span>
+      </div>
+      <h1>Data-Driven Decisions<br/>Across <em>35+ African</em><br/>Markets</h1>
+      <p class="hero-sub">Institutional-grade property data, market analytics, and transaction intelligence for investors, developers, and financial institutions.</p>
       <div class="hero-btns">
-        <button class="btn-dark">Learn More</button>
-        <button class="btn-outline" onclick="go('register')">Sign Up</button>
+        <button class="btn-p" onclick="go('register')">Start Free Trial</button>
+        <button class="btn-gw" onclick="go('data')">Explore Data</button>
+      </div>
+      <div class="hero-stats">
+        <div class="hstat">
+          <span class="hstat-n"><i>35</i>+</span>
+          <span class="hstat-l">Countries Covered</span>
+        </div>
+        <div class="hstat">
+          <span class="hstat-n">1<i>M</i>+</span>
+          <span class="hstat-l">Listings Tracked</span>
+        </div>
+        <div class="hstat">
+          <span class="hstat-n">Real<i>-</i>time</span>
+          <span class="hstat-l">Market Updates</span>
+        </div>
+        <div class="hstat">
+          <span class="hstat-n">140<i>+</i></span>
+          <span class="hstat-l">Portal Sources</span>
+        </div>
       </div>
     </div>
-    <div class="hero-img g-city"><span class="grad-icon">🌆</span></div>
-  </div>
+  </section>
 
-  <div class="sec-split">
-    <div class="split-img g-office"><span class="grad-icon">🏢</span></div>
-    <div>
-      <h2>Unlock the Power of Real Estate Data at Your Fingertips</h2>
-      <p>Our platform offers comprehensive data analytics to help you make informed real estate decisions. Gain valuable property insights and stay ahead of market trends with ease.</p>
-      <div class="feat-row"><div class="feat-row-icon">📊</div><div><strong>Data Analytics</strong><span>Transform raw data into actionable insights for smarter investment strategies.</span></div></div>
-      <div class="feat-row"><div class="feat-row-icon">🔍</div><div><strong>Property Insights</strong><span>Discover detailed property information to enhance your buying or selling process.</span></div></div>
+  <!-- STRIP -->
+  <div class="strip">
+    <div class="strip-inner">
+      <span class="strip-label">Data Sourced From</span>
+      <div class="strip-logos">
+        <span class="strip-logo">Tonaton</span>
+        <span class="strip-logo">PropertyPro</span>
+        <span class="strip-logo">Meqasa</span>
+        <span class="strip-logo">BuyRentKenya</span>
+        <span class="strip-logo">Mubawab</span>
+        <span class="strip-logo">Expat Dakar</span>
+        <span class="strip-logo">Nigeria Property Centre</span>
+      </div>
     </div>
   </div>
 
-  <div class="sec-3col">
-    <div class="eyebrow">SERVICES</div>
-    <h2>Unlock the Power of Real Estate Data with Our Advanced Analytics</h2>
-    <p class="sub">Our platform provides powerful tools to analyze market trends and make data-driven decisions.</p>
-    <div class="cards3">
-      <div class="card3"><div class="icon">⚡</div><h3>Stay Ahead with Real-Time Insights</h3><p>Comprehensive data analysis to empower your real estate decisions.</p><a>Learn More →</a></div>
-      <div class="card3"><div class="icon">🔍</div><h3>Get Tailored Property Investments</h3><p>Customized insights that align with your unique property goals.</p><a onclick="go('register')">Sign Up →</a></div>
-      <div class="card3"><div class="icon">📈</div><h3>Analyze Comprehensive Data</h3><p>Dive deep into the hidden potential of properties with our detailed analytics.</p><a onclick="go('analytics')">Explore →</a></div>
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="scell">
+      <div class="scell-n">35<sup>+</sup></div>
+      <div class="scell-l">African Countries</div>
+      <div class="scell-d">Complete coverage from Morocco to South Africa, West to East.</div>
+    </div>
+    <div class="scell">
+      <div class="scell-n">140<sup>+</sup></div>
+      <div class="scell-l">Portal Sources</div>
+      <div class="scell-d">Aggregated across all major regional listing portals daily.</div>
+    </div>
+    <div class="scell">
+      <div class="scell-n">1<sup>M+</sup></div>
+      <div class="scell-l">Listings Tracked</div>
+      <div class="scell-d">Residential, commercial, land — every asset class covered.</div>
+    </div>
+    <div class="scell">
+      <div class="scell-n">24<sup>/7</sup></div>
+      <div class="scell-l">Live Pipeline</div>
+      <div class="scell-d">Automated scraping, cleaning, and delivery — zero lag.</div>
     </div>
   </div>
 
-  <div class="sec-how">
-    <h2>Discover How to Navigate Our Platform Effortlessly</h2>
-    <p class="sub">A simple, intuitive process to get you from sign-up to insights in minutes.</p>
-    <div class="how-cards">
-      <div class="how-card"><div class="how-card-img g-person"><span class="grad-icon">👤</span></div><div class="how-card-body"><h3>Unlock Powerful Insights with Our User-Friendly Data Tools</h3><p>Our platform simplifies the process of accessing and analyzing real estate data.</p><a>Get Started →</a></div></div>
-      <div class="how-card"><div class="how-card-img g-meeting"><span class="grad-icon">🤝</span></div><div class="how-card-body"><h3>Step 1: Create Your Account for Personalized Data Access</h3><p>Sign up to gain access to exclusive analytics tailored to your needs.</p><a onclick="go('register')">Join →</a></div></div>
-      <div class="how-card"><div class="how-card-img g-dash"><span class="grad-icon">📊</span></div><div class="how-card-body"><h3>Step 2: Explore Our Comprehensive Dashboard for Insights</h3><p>Utilize our intuitive dashboard to visualize trends and make informed decisions.</p><a onclick="go('analytics')">See More →</a></div></div>
+  <!-- PLATFORM SPLIT -->
+  <section class="split-sec">
+    <div class="split-inner">
+      <div class="split-img">
+        <img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=900&auto=format&fit=crop&q=80" alt="Modern commercial real estate"/>
+        <div class="split-img-cap">Commercial Real Estate — Lagos, Nigeria</div>
+      </div>
+      <div class="split-txt">
+        <div class="eyebrow">The Platform</div>
+        <h2>Institutional-Grade Data<br/>for <em>African Markets</em></h2>
+        <p>We aggregate, clean, and structure property data from across the African continent — delivering it in a format that institutional investors and analysts can trust.</p>
+        <ul class="feat-list">
+          <li>
+            <div class="fl-icon">
+              <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div class="fl-txt">
+              <strong>Real-Time Market Data</strong>
+              <span>Live price feeds, listing velocity, and supply/demand signals across 35+ markets.</span>
+            </div>
+          </li>
+          <li>
+            <div class="fl-icon">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+            <div class="fl-txt">
+              <strong>Deep Property Intelligence</strong>
+              <span>Asset-level detail — price per sqm, occupancy rates, transaction history.</span>
+            </div>
+          </li>
+          <li>
+            <div class="fl-icon">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </div>
+            <div class="fl-txt">
+              <strong>Multi-Market Coverage</strong>
+              <span>One platform. Every major African city. All asset classes.</span>
+            </div>
+          </li>
+        </ul>
+        <button class="btn-p" onclick="go('data')">Explore the Data</button>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="cta-strip">
-    <div><a>Learn More →</a></div>
-    <div><a onclick="go('register')">Sign Up →</a></div>
-    <div><a onclick="go('analytics')">Explore →</a></div>
-  </div>
+  <!-- MARKETS -->
+  <section class="markets-sec">
+    <div class="markets-inner">
+      <div class="markets-hdr">
+        <div class="markets-hdr-left">
+          <div class="eyebrow" style="margin-bottom:14px;">Key Markets</div>
+          <h2>Tracking Africa's<br/>Fastest-Growing Cities</h2>
+        </div>
+        <div class="markets-hdr-right">Real-time data feeds across residential, commercial, and land markets in each city.</div>
+      </div>
+      <div class="markets-grid">
+        <div class="mcard mc-lg">
+          <div class="mcard-bg"></div>
+          <div class="mcard-overlay"></div>
+          <div class="mcard-body">
+            <div class="mc-city">Lagos</div>
+            <div class="mc-country">Nigeria</div>
+            <div class="mc-stat"><div class="mc-dot"></div>Active Feed</div>
+          </div>
+        </div>
+        <div class="mcard mc-nr">
+          <div class="mcard-bg"></div>
+          <div class="mcard-overlay"></div>
+          <div class="mcard-body">
+            <div class="mc-city">Nairobi</div>
+            <div class="mc-country">Kenya</div>
+            <div class="mc-stat"><div class="mc-dot"></div>Active Feed</div>
+          </div>
+        </div>
+        <div class="mcard mc-ac">
+          <div class="mcard-bg"></div>
+          <div class="mcard-overlay"></div>
+          <div class="mcard-body">
+            <div class="mc-city">Accra</div>
+            <div class="mc-country">Ghana</div>
+            <div class="mc-stat"><div class="mc-dot"></div>Active Feed</div>
+          </div>
+        </div>
+        <div class="mcard mc-jb">
+          <div class="mcard-bg"></div>
+          <div class="mcard-overlay"></div>
+          <div class="mcard-body">
+            <div class="mc-city">Johannesburg</div>
+            <div class="mc-country">South Africa</div>
+            <div class="mc-stat"><div class="mc-dot"></div>Active Feed</div>
+          </div>
+        </div>
+        <div class="mcard mc-ct">
+          <div class="mcard-bg"></div>
+          <div class="mcard-overlay"></div>
+          <div class="mcard-body">
+            <div class="mc-city">Cape Town</div>
+            <div class="mc-country">South Africa</div>
+            <div class="mc-stat"><div class="mc-dot"></div>Active Feed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="services-sec">
+    <div class="services-inner">
+      <div class="sec-hdr">
+        <div class="eyebrow">What We Offer</div>
+        <h2>Intelligence Built for<br/>Real Estate Professionals</h2>
+        <p>From raw data aggregation to institutional reporting — everything you need to operate in African markets.</p>
+      </div>
+      <div class="svc-grid">
+        <div class="svc-card">
+          <div class="svc-num">01</div>
+          <h3>Market Data & Analytics</h3>
+          <p>Price indices, rental yields, vacancy rates, and transaction volumes — updated daily from 140+ verified sources across 35 countries.</p>
+          <a class="svc-link" onclick="go('analytics')">Explore Analytics <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+        </div>
+        <div class="svc-card">
+          <div class="svc-num">02</div>
+          <h3>Property Database</h3>
+          <p>Searchable database of active and historical listings with full property detail — size, price, location, asset type, and availability status.</p>
+          <a class="svc-link" onclick="go('properties')">Browse Properties <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+        </div>
+        <div class="svc-card">
+          <div class="svc-num">03</div>
+          <h3>API & Data Delivery</h3>
+          <p>Integrate our data directly into your models, dashboards, and workflows via RESTful API. Custom feeds available for enterprise clients.</p>
+          <a class="svc-link" onclick="go('subscription')">View Plans <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-sec">
+    <div class="how-inner">
+      <div class="sec-hdr">
+        <div class="eyebrow">How It Works</div>
+        <h2>From Sign-Up to Insight<br/>in Minutes</h2>
+        <p>A simple, structured process built for professionals who need reliable data fast.</p>
+      </div>
+      <div class="how-grid">
+        <div class="how-card">
+          <div class="how-card-img">
+            <img src="https://images.unsplash.com/photo-1460472178825-e5240623afd5?w=700&auto=format&fit=crop&q=80" alt="African city aerial"/>
+          </div>
+          <div class="how-card-body">
+            <div class="how-step">Step 01</div>
+            <h3>Choose Your Markets</h3>
+            <p>Select from 35+ African countries and any combination of cities, asset types, and listing categories.</p>
+          </div>
+        </div>
+        <div class="how-card">
+          <div class="how-card-img">
+            <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=700&auto=format&fit=crop&q=80" alt="Data analysis"/>
+          </div>
+          <div class="how-card-body">
+            <div class="how-step">Step 02</div>
+            <h3>Access Structured Data</h3>
+            <p>Get clean, normalised property data delivered to your dashboard or directly via API — no scraping required on your end.</p>
+          </div>
+        </div>
+        <div class="how-card">
+          <div class="how-card-img">
+            <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=700&auto=format&fit=crop&q=80" alt="Analytics dashboard"/>
+          </div>
+          <div class="how-card-body">
+            <div class="how-step">Step 03</div>
+            <h3>Drive Better Decisions</h3>
+            <p>Use our analytics tools to identify opportunities, track price movements, and benchmark assets across markets.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-sec">
+    <div class="cta-sec-bg"></div>
+    <div class="cta-inner">
+      <div class="cta-txt">
+        <h2>The African Real Estate Market Deserves Institutional-Grade Data</h2>
+        <p>Join investors and analysts already using Ironwood Intelligence.</p>
+      </div>
+      <div class="cta-btns">
+        <button class="btn-gold" onclick="go('register')">Start Free Trial</button>
+        <button class="btn-gw" onclick="go('contact')">Talk to Sales</button>
+      </div>
+    </div>
+  </section>
+
   <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ DATA ═══ -->
+<!-- ═══════════════════ DATA ═══════════════════ -->
 <div id="page-data" class="page">
-  <div class="data-hero">
-    <div class="eyebrow">INSIGHTS</div>
-    <h1>Data-Driven Solutions</h1>
-    <p>Unlock the power of real estate analytics with our comprehensive data solutions tailored for you.</p>
-    <div style="display:flex;gap:12px;"><button class="btn-dark">Learn More</button><button class="btn-outline" onclick="go('register')">Sign Up</button></div>
-  </div>
-  <div style="padding:60px;background:#fff;">
-    <div style="text-align:center;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:8px;">SERVICES</div>
-    <h2 style="font-size:26px;font-weight:800;text-align:center;margin-bottom:8px;">Explore Our Comprehensive Real Estate Services</h2>
-    <p style="font-size:14px;color:#666;text-align:center;margin-bottom:40px;max-width:560px;margin-left:auto;margin-right:auto;">Unlock the true potential of real estate with our expert services. We provide insights that drive informed decisions.</p>
-    <div class="svc-grid">
-      <div class="svc-card"><div class="icon">🗄️</div><h3>Property Data Analysis</h3><p>Gain deep insights into property values and market dynamics with our advanced data analysis.</p></div>
-      <div class="svc-card"><div class="icon">📊</div><h3>Market Trends Reporting</h3><p>Stay ahead of the curve with our detailed market analysis and reporting services.</p></div>
-      <div class="svc-card"><div class="icon">📈</div><h3>Investment Advisory Services</h3><p>Maximize your real estate investment strategy and achieve your goals.</p></div>
+  <div class="inner-hero">
+    <div class="inner-hero-wrap">
+      <div class="eyebrow">Data Solutions</div>
+      <h1>Comprehensive Real Estate Data for African Markets</h1>
+      <p>Unlock property-level intelligence, price indices, and market analytics across 35+ countries — all from a single platform.</p>
+      <div class="inner-hero-btns">
+        <button class="btn-p" onclick="go('subscription')">View Plans</button>
+        <button class="btn-g" onclick="go('analytics')">See Analytics</button>
+      </div>
     </div>
-    <div style="text-align:center;margin-top:32px;"><button class="btn-sm-outline">Learn More →</button></div>
   </div>
-  <div style="padding:60px;background:#f5f5f5;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;">
-    <div>
-      <h2 style="font-size:26px;font-weight:800;margin-bottom:14px;">Unlock the Power of Property Data Analysis for Informed Real Estate Decisions</h2>
-      <p style="font-size:14px;color:#555;line-height:1.7;margin-bottom:18px;">Dive deep into our comprehensive data to make smarter, data-driven choices.</p>
-      <ul class="check-list"><li>Comprehensive market analysis</li><li>Accurate property valuations</li><li>Predictive investment modeling</li></ul>
-      <div style="margin-top:20px;"><button class="btn-sm-outline">Learn More →</button></div>
+  <div class="data-body">
+    <div class="data-wrap">
+      <div class="sec-hdr">
+        <div class="eyebrow">Services</div>
+        <h2>What's Inside the Platform</h2>
+        <p>Every tool you need to understand African real estate markets, built for professionals.</p>
+      </div>
+      <div class="data-svc-grid">
+        <div class="dsvc">
+          <div class="dsvc-icon">
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="0"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <h3>Property Data Analysis</h3>
+          <p>Gain deep insights into property values, price per sqm, and asset-level detail with our structured data sets across all major African cities.</p>
+        </div>
+        <div class="dsvc">
+          <div class="dsvc-icon">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <h3>Market Trends Reporting</h3>
+          <p>Track rental yields, vacancy rates, price movements, and listing velocity — updated daily from 140+ verified portal sources.</p>
+        </div>
+        <div class="dsvc">
+          <div class="dsvc-icon">
+            <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h3>Investment Intelligence</h3>
+          <p>Benchmark assets, identify undervalued markets, and model investment scenarios with structured data feeds and historical transaction records.</p>
+        </div>
+      </div>
     </div>
-    <div class="split-img g-dash" style="height:300px;border-radius:12px;position:relative;overflow:hidden;"><span class="grad-icon">📊</span></div>
+  </div>
+  <div class="data-split">
+    <div class="data-split-wrap">
+      <div>
+        <div class="eyebrow" style="margin-bottom:14px;">Why Ironwood</div>
+        <h2>The Data Infrastructure African Real Estate Has Been Missing</h2>
+        <p>We built the first systematic, automated data pipeline covering real estate markets across the entire African continent. Clean, structured, and delivered daily.</p>
+        <ul class="check-list">
+          <li>Comprehensive market analysis across 35+ countries</li>
+          <li>Accurate, normalised property valuations</li>
+          <li>Predictive signals and historical benchmarks</li>
+          <li>Direct API access for enterprise integration</li>
+        </ul>
+        <button class="btn-p" onclick="go('subscription')">Get Access</button>
+      </div>
+      <div class="data-img">
+        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&auto=format&fit=crop&q=80" alt="Data analytics"/>
+      </div>
+    </div>
   </div>
   <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ ANALYTICS ═══ -->
+<!-- ═══════════════════ ANALYTICS ═══════════════════ -->
 <div id="page-analytics" class="page">
   <div class="analytics-wrap">
-    <div>
-      <div class="sidebar-box">
-        <h3>Analytics Filter</h3>
-        <div class="fg"><label>City</label><select><option>All Cities</option><option>Lagos</option><option>Nairobi</option><option>Cape Town</option><option>Accra</option><option>Johannesburg</option></select></div>
-        <div class="fg"><label>Property Type</label><select><option>All Property Types</option><option>Office</option><option>Retail</option><option>Residential</option><option>Hospitality</option><option>Industrial</option></select></div>
-        <div class="fg"><label>Minimum Size (sqm)</label><input type="text" placeholder="e.g., 500"/></div>
-        <div class="fg"><label>Maximum Size (sqm)</label><input type="text" placeholder="e.g., 10000"/></div>
-        <button class="btn-apply">Apply Filters</button>
+    <div class="analytics-sidebar">
+      <div class="asb-hdr">Analytics Filter</div>
+      <div class="a-fg"><label>City</label>
+        <select><option>All Cities</option><option>Lagos</option><option>Nairobi</option><option>Cape Town</option><option>Accra</option><option>Johannesburg</option></select>
       </div>
-      <div class="sidebar-box">
-        <h3>Market Overview</h3>
-        <div class="mo-row"><span class="lbl">Total Properties</span><span class="val">5</span></div>
-        <div class="mo-row"><span class="lbl">Avg. Rent/sqm</span><span class="val">$1570.00</span></div>
-        <div class="mo-row"><span class="lbl">Vacancy Rate</span><span class="val">10.0%</span></div>
+      <div class="a-fg"><label>Property Type</label>
+        <select><option>All Types</option><option>Office</option><option>Retail</option><option>Residential</option><option>Hospitality</option><option>Industrial</option></select>
+      </div>
+      <div class="a-fg"><label>Min Size (sqm)</label><input type="text" placeholder="e.g. 500"/></div>
+      <div class="a-fg"><label>Max Size (sqm)</label><input type="text" placeholder="e.g. 10000"/></div>
+      <button class="btn-apply">Apply Filters</button>
+      <div class="a-overview">
+        <div class="a-ov-hdr">Market Overview</div>
+        <div class="a-ov-row"><span class="a-ov-lbl">Total Properties</span><span class="a-ov-val">5</span></div>
+        <div class="a-ov-row"><span class="a-ov-lbl">Avg. Rent/sqm</span><span class="a-ov-val">$1,570</span></div>
+        <div class="a-ov-row"><span class="a-ov-lbl">Vacancy Rate</span><span class="a-ov-val">10.0%</span></div>
       </div>
     </div>
-    <div>
-      <div style="font-size:18px;font-weight:700;margin-bottom:14px;">Property Dashboard</div>
+    <div class="analytics-main">
+      <div class="analytics-title">Property Dashboard</div>
       <div id="africa-map"></div>
       <div class="a-bottom">
         <div class="a-card">
-          <h3>Average Rent by Property Type</h3>
-          <div class="rent-row"><span>Office</span><span><span class="r-val">$1800/sqm</span><span class="r-up">+5.2%</span></span></div>
-          <div class="rent-row"><span>Retail</span><span><span class="r-val">$1600/sqm</span><span class="r-up">+5.2%</span></span></div>
-          <div class="rent-row"><span>Residential</span><span><span class="r-val">$1500/sqm</span><span class="r-up">+5.2%</span></span></div>
-          <div class="rent-row"><span>Hospitality</span><span><span class="r-val">$1750/sqm</span><span class="r-up">+5.2%</span></span></div>
-          <div class="rent-row"><span>Industrial</span><span><span class="r-val">$1200/sqm</span><span class="r-up">+5.2%</span></span></div>
+          <div class="a-card-hdr">Average Rent by Type</div>
+          <div class="rent-row"><span class="r-lbl">Office</span><span><span class="r-val">$1,800/sqm</span><span class="r-up">+5.2%</span></span></div>
+          <div class="rent-row"><span class="r-lbl">Retail</span><span><span class="r-val">$1,600/sqm</span><span class="r-up">+3.8%</span></span></div>
+          <div class="rent-row"><span class="r-lbl">Residential</span><span><span class="r-val">$1,500/sqm</span><span class="r-up">+4.1%</span></span></div>
+          <div class="rent-row"><span class="r-lbl">Hospitality</span><span><span class="r-val">$1,750/sqm</span><span class="r-up">+2.9%</span></span></div>
+          <div class="rent-row"><span class="r-lbl">Industrial</span><span><span class="r-val">$1,200/sqm</span><span class="r-up">+6.1%</span></span></div>
         </div>
         <div class="a-card">
-          <h3>Recent Transactions</h3>
-          <div class="tr"><span class="tprice">$450,000</span><div class="ttype">Apartment Sale</div><div class="tdate">15/01/2024</div></div>
-          <div class="tr"><span class="tprice">$280,000</span><div class="ttype">Apartment Sale</div><div class="tdate">20/02/2024</div></div>
-          <div class="tr"><span class="tprice">$1,200,000</span><div class="ttype">Office Sale</div><div class="tdate">05/03/2024</div></div>
+          <div class="a-card-hdr">Recent Transactions</div>
+          <div class="tr"><div class="tr-row"><span class="tr-type">Apartment Sale</span><span class="tr-price">$450,000</span></div><div class="tr-date">15 Jan 2024</div></div>
+          <div class="tr"><div class="tr-row"><span class="tr-type">Apartment Sale</span><span class="tr-price">$280,000</span></div><div class="tr-date">20 Feb 2024</div></div>
+          <div class="tr"><div class="tr-row"><span class="tr-type">Office Sale</span><span class="tr-price">$1,200,000</span></div><div class="tr-date">05 Mar 2024</div></div>
         </div>
       </div>
       <div class="vacancy-box">
-        <h3>Vacancy Rate Trends</h3>
+        <div class="vacancy-hdr">Vacancy Rate Trends</div>
         <div style="position:relative;">
           <div class="chart">
             <div class="y-lbls"><span>16</span><span>12</span><span>8</span><span>4</span><span>0</span></div>
-            <svg class="linechart" viewBox="0 0 400 180" preserveAspectRatio="none">
-              <line x1="0" y1="22" x2="400" y2="22" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
-              <line x1="0" y1="67" x2="400" y2="67" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
-              <line x1="0" y1="112" x2="400" y2="112" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
-              <line x1="0" y1="157" x2="400" y2="157" stroke="#eee" stroke-width="1" stroke-dasharray="4,4"/>
-              <polyline points="0,45 133,112 266,9 400,140" fill="none" stroke="#8b8bc8" stroke-width="2.5"/>
-              <circle cx="0" cy="45" r="4" fill="#8b8bc8"/>
-              <circle cx="133" cy="112" r="4" fill="#8b8bc8"/>
-              <circle cx="266" cy="9" r="4" fill="#8b8bc8"/>
-              <circle cx="400" cy="140" r="4" fill="#8b8bc8"/>
+            <svg class="linechart" viewBox="0 0 400 160" preserveAspectRatio="none">
+              <line x1="0" y1="20" x2="400" y2="20" stroke="#E4E0D8" stroke-width="1"/>
+              <line x1="0" y1="60" x2="400" y2="60" stroke="#E4E0D8" stroke-width="1"/>
+              <line x1="0" y1="100" x2="400" y2="100" stroke="#E4E0D8" stroke-width="1"/>
+              <line x1="0" y1="140" x2="400" y2="140" stroke="#E4E0D8" stroke-width="1"/>
+              <polyline points="0,40 133,100 266,8 400,125" fill="none" stroke="#C9A86C" stroke-width="2"/>
+              <circle cx="0" cy="40" r="3.5" fill="#C9A86C"/>
+              <circle cx="133" cy="100" r="3.5" fill="#C9A86C"/>
+              <circle cx="266" cy="8" r="3.5" fill="#C9A86C"/>
+              <circle cx="400" cy="125" r="3.5" fill="#C9A86C"/>
             </svg>
           </div>
         </div>
@@ -462,151 +878,259 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
   <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ PROPERTIES ═══ -->
+<!-- ═══════════════════ PROPERTIES ═══════════════════ -->
 <div id="page-properties" class="page">
   <div class="props-hdr">
     <div><h1>Property Listings</h1><p>Explore 5 properties across African markets</p></div>
     <div class="vtoggle"><button class="act">⊞</button><button>☰</button></div>
   </div>
   <div class="filter-bar">
-    <h3>Filter Properties</h3>
+    <div class="filter-lbl">Filter Properties</div>
     <div class="frow">
       <div class="fcol"><label>Region</label><select><option>All Regions</option></select></div>
       <div class="fcol"><label>Submarket</label><select><option>All Submarkets</option></select></div>
       <div class="fcol"><label>Type</label><select><option>All Types</option><option>Office</option><option>Retail</option><option>Residential</option><option>Hospitality</option><option>Industrial</option></select></div>
-      <div class="fcol"><label>Min Size (sqm)</label><input type="text" placeholder="0"/></div>
-      <div class="fcol"><label>Max Size (sqm)</label><input type="text" placeholder="∞"/></div>
-      <div class="fcol"><label>Min Rent ($)</label><input type="text" placeholder="0"/></div>
-      <div class="fcol"><label>Max Rent ($)</label><input type="text" placeholder="∞"/></div>
-      <button class="btn-clr">Clear All Filters</button>
+      <div class="fcol"><label>Min Size</label><input type="text" placeholder="0 sqm"/></div>
+      <div class="fcol"><label>Max Size</label><input type="text" placeholder="∞ sqm"/></div>
+      <div class="fcol"><label>Min Rent</label><input type="text" placeholder="$0"/></div>
+      <div class="fcol"><label>Max Rent</label><input type="text" placeholder="∞"/></div>
+      <button class="btn-clr">Clear</button>
     </div>
   </div>
   <div class="pgrid">
-    <div class="pcard"><div class="pimg g-lagos"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge ba">Available</span></div><div class="pbody"><div class="ptype">Office</div><div class="pname">Lagos Business District Tower</div><div class="ploc">📍 Lagos, Victoria Island</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
-    <div class="pcard"><div class="pimg g-nairobi"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge bo">Occupied</span></div><div class="pbody"><div class="ptype">Retail</div><div class="pname">Nairobi Commercial Center</div><div class="ploc">📍 Nairobi, Westlands</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
-    <div class="pcard"><div class="pimg g-cape"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge ba">Available</span></div><div class="pbody"><div class="ptype">Residential</div><div class="pname">Cape Town Residential Complex</div><div class="ploc">📍 Cape Town, Sea Point</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
-    <div class="pcard"><div class="pimg g-accra"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge bo">Occupied</span></div><div class="pbody"><div class="ptype">Hospitality</div><div class="pname">Accra Hotel &amp; Conference</div><div class="ploc">📍 Accra, Airport City</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
-    <div class="pcard"><div class="pimg g-joburg"><div class="poverlay"><div class="plock">🔒</div></div><span class="pbadge bo">Occupied</span></div><div class="pbody"><div class="ptype">Industrial</div><div class="pname">Johannesburg Logistics Hub</div><div class="ploc">📍 Johannesburg, Sandton</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">👁 View Details</button></div></div><div class="psub">🔒 Subscribe to view full details</div></div>
+    <div class="pcard">
+      <div class="pimg"><div class="pimg-bg c-lagos"></div><div class="poverlay"><div class="plock"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="0"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div></div><span class="pbadge ba">Available</span></div>
+      <div class="pbody"><div class="ptype">Office</div><div class="pname">Lagos Business District Tower</div><div class="ploc">Victoria Island, Lagos</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">View Details</button></div></div>
+      <div class="psub">Subscribe to unlock full property details</div>
+    </div>
+    <div class="pcard">
+      <div class="pimg"><div class="pimg-bg c-nairobi"></div><div class="poverlay"><div class="plock"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="0"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div></div><span class="pbadge bo">Occupied</span></div>
+      <div class="pbody"><div class="ptype">Retail</div><div class="pname">Nairobi Commercial Centre</div><div class="ploc">Westlands, Nairobi</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">View Details</button></div></div>
+      <div class="psub">Subscribe to unlock full property details</div>
+    </div>
+    <div class="pcard">
+      <div class="pimg"><div class="pimg-bg c-cape"></div><div class="poverlay"><div class="plock"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="0"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div></div><span class="pbadge ba">Available</span></div>
+      <div class="pbody"><div class="ptype">Residential</div><div class="pname">Cape Town Residential Complex</div><div class="ploc">Sea Point, Cape Town</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">View Details</button></div></div>
+      <div class="psub">Subscribe to unlock full property details</div>
+    </div>
+    <div class="pcard">
+      <div class="pimg"><div class="pimg-bg c-accra"></div><div class="poverlay"><div class="plock"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="0"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div></div><span class="pbadge bo">Occupied</span></div>
+      <div class="pbody"><div class="ptype">Hospitality</div><div class="pname">Accra Hotel & Conference</div><div class="ploc">Airport City, Accra</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">View Details</button></div></div>
+      <div class="psub">Subscribe to unlock full property details</div>
+    </div>
+    <div class="pcard">
+      <div class="pimg"><div class="pimg-bg c-joburg"></div><div class="poverlay"><div class="plock"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="0"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div></div><span class="pbadge bo">Occupied</span></div>
+      <div class="pbody"><div class="ptype">Industrial</div><div class="pname">Johannesburg Logistics Hub</div><div class="ploc">Sandton, Johannesburg</div><div class="pmeta"><div><div class="pmv">*** sqm</div><div class="pmk">Size</div></div><div><div class="pmv">**%</div><div class="pmk">Occupied</div></div></div><div class="pprow"><div><div class="ppv">$***,***</div><div class="ppm">per month</div></div><button class="btn-vd" onclick="go('subscription')">View Details</button></div></div>
+      <div class="psub">Subscribe to unlock full property details</div>
+    </div>
   </div>
   <div class="unlock">
-    <h2>Unlock Full Property Details</h2>
-    <p>Subscribe to access complete property information, transaction history, and advanced market analytics.</p>
-    <div class="unlock-btns"><button class="btn-wo" onclick="go('subscription')">View Subscription Plans</button><button class="btn-ws" onclick="go('register')">Start Free Trial</button></div>
+    <h2>Unlock Full Property Intelligence</h2>
+    <p>Subscribe to access complete property detail, transaction history, price benchmarks, and advanced market analytics.</p>
+    <div class="unlock-btns">
+      <button class="btn-gw" onclick="go('subscription')">View Plans</button>
+      <button class="btn-gold" onclick="go('register')">Start Free Trial</button>
+    </div>
   </div>
   <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ SUBSCRIPTION ═══ -->
+<!-- ═══════════════════ SUBSCRIPTION ═══════════════════ -->
 <div id="page-subscription" class="page">
   <div class="sub-pg">
-    <h1>Choose Your Plan</h1>
-    <p class="sub-desc">Get access to comprehensive African real estate market data, analytics, and insights tailored to your investment needs.</p>
+    <div class="sub-pg-hdr">
+      <div class="eyebrow">Pricing</div>
+      <h1>Choose Your Plan</h1>
+      <p>Comprehensive African real estate market data, analytics, and intelligence — tailored to your needs.</p>
+    </div>
     <div class="plans">
-      <div class="plan"><div class="pln-name">Basic</div><div class="pln-tag">Essential market data for small investors</div><div class="pln-price"><span class="amt">$99</span><span class="per">/month</span></div><ul class="pln-feats"><li>Access to property listings</li><li>Basic market analytics</li><li>Monthly market reports</li><li>Email support</li><li>Up to 50 property views/month</li></ul><button class="btn-sub btn-sub-o">Subscribe to Basic</button></div>
-      <div class="plan feat"><div class="pop-badge">⭐ Most Popular</div><div class="pln-name">Professional</div><div class="pln-tag">Advanced analytics for serious investors</div><div class="pln-price"><span class="amt">$299</span><span class="per">/month</span></div><ul class="pln-feats"><li>Everything in Basic</li><li>Advanced market analytics</li><li>Real-time data updates</li><li>Transaction history access</li><li>Unlimited property views</li><li>Priority support</li><li>Custom reports</li><li>API access</li></ul><button class="btn-sub btn-sub-d">Subscribe to Professional</button></div>
-      <div class="plan"><div class="pln-name">Enterprise</div><div class="pln-tag">Complete solution for large organizations</div><div class="pln-price"><span class="amt">$999</span><span class="per">/month</span></div><ul class="pln-feats"><li>Everything in Professional</li><li>Multi-user accounts</li><li>White-label solutions</li><li>Dedicated account manager</li><li>Custom integrations</li><li>Advanced security features</li><li>Training &amp; onboarding</li><li>SLA guarantee</li></ul><button class="btn-sub btn-sub-o">Subscribe to Enterprise</button></div>
+      <div class="plan">
+        <div class="pln-name">Basic</div>
+        <div class="pln-tag">Essential market data for individual investors</div>
+        <div class="pln-price"><span class="amt">$99</span><span class="per">/month</span></div>
+        <ul class="pln-feats">
+          <li>Access to property listings</li>
+          <li>Basic market analytics</li>
+          <li>Monthly market reports</li>
+          <li>Email support</li>
+          <li>Up to 50 property views/month</li>
+        </ul>
+        <button class="btn-sub btn-sub-out">Subscribe to Basic</button>
+      </div>
+      <div class="plan feat">
+        <div class="pop-badge">Most Popular</div>
+        <div class="pln-name">Professional</div>
+        <div class="pln-tag">Advanced analytics for serious investors</div>
+        <div class="pln-price"><span class="amt">$299</span><span class="per">/month</span></div>
+        <ul class="pln-feats">
+          <li>Everything in Basic</li>
+          <li>Advanced market analytics</li>
+          <li>Real-time data updates</li>
+          <li>Transaction history access</li>
+          <li>Unlimited property views</li>
+          <li>Priority support</li>
+          <li>Custom reports</li>
+          <li>API access</li>
+        </ul>
+        <button class="btn-sub btn-sub-gold">Subscribe to Professional</button>
+      </div>
+      <div class="plan">
+        <div class="pln-name">Enterprise</div>
+        <div class="pln-tag">Complete solution for institutions</div>
+        <div class="pln-price"><span class="amt">$999</span><span class="per">/month</span></div>
+        <ul class="pln-feats">
+          <li>Everything in Professional</li>
+          <li>Multi-user accounts</li>
+          <li>White-label solutions</li>
+          <li>Dedicated account manager</li>
+          <li>Custom integrations</li>
+          <li>Advanced security features</li>
+          <li>Training & onboarding</li>
+          <li>SLA guarantee</li>
+        </ul>
+        <button class="btn-sub btn-sub-out">Subscribe to Enterprise</button>
+      </div>
     </div>
     <div class="why-box">
-      <h2>Why Choose Our Platform?</h2>
+      <h2>Why Choose Ironwood Intelligence?</h2>
       <div class="why-grid">
-        <div class="why-item"><div class="wi-badge">+35</div><h4>Countries Covered</h4><p>Comprehensive data across major African markets</p></div>
-        <div class="why-item"><div class="wi-badge">24/7</div><h4>Real-time Updates</h4><p>Live market data and instant notifications</p></div>
-        <div class="why-item"><div class="wi-badge">API</div><h4>Developer Friendly</h4><p>RESTful API for custom integrations</p></div>
-        <div class="why-item"><div class="wi-badge">99%</div><h4>Uptime Guarantee</h4><p>Reliable platform you can depend on</p></div>
+        <div class="why-item"><div class="wi-num">35+</div><h4>Countries Covered</h4><p>Comprehensive data across all major African markets</p></div>
+        <div class="why-item"><div class="wi-num">24/7</div><h4>Real-Time Updates</h4><p>Live market data and automated daily delivery</p></div>
+        <div class="why-item"><div class="wi-num">API</div><h4>Developer Friendly</h4><p>RESTful API for direct integration into your stack</p></div>
+        <div class="why-item"><div class="wi-num">99%</div><h4>Uptime Guarantee</h4><p>Reliable infrastructure you can depend on</p></div>
       </div>
     </div>
   </div>
   <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ DASHBOARD ═══ -->
+<!-- ═══════════════════ DASHBOARD ═══════════════════ -->
 <div id="page-dashboard" class="page">
   <div class="dlocked">
-    <div class="lbig">🔒</div>
+    <div class="dlocked-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="0"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    </div>
     <h1>Subscriber Access Only</h1>
-    <p>This dashboard is part of our premium subscription. Please log in or join to access.</p>
-    <div class="dbtns"><button class="btn-dark" onclick="go('login')">Login</button><button class="btn-outline" onclick="go('register')">Join Now →</button></div>
+    <p>This dashboard is part of our premium subscription. Please log in or join to access full market data.</p>
+    <div class="dbtns">
+      <button class="btn-p" onclick="go('login')">Sign In</button>
+      <button class="btn-g" onclick="go('register')">Join Now</button>
+    </div>
   </div>
   <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ LOGIN ═══ -->
+<!-- ═══════════════════ LOGIN ═══════════════════ -->
 <div id="page-login" class="page">
   <div class="auth-pg">
     <div class="auth-box">
+      <div class="auth-logo"><span>IW</span></div>
       <h2>Sign in to your account</h2>
-      <div style="height:20px;"></div>
-      <div class="fg-auth"><label>Email address</label><input type="email"/></div>
-      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password"/><span class="pw-eye">👁</span></div></div>
-      <button class="btn-submit">Sign in</button>
-      <div class="auth-sw">Not a member? <a onclick="go('register')">Join now</a></div>
+      <p class="auth-sub">Don't have an account? <a onclick="go('register')">Create one</a></p>
+      <div class="fg-auth"><label>Email Address</label><input type="email" placeholder="you@company.com"/></div>
+      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password" placeholder="Your password"/><span class="pw-eye">&#128065;</span></div></div>
+      <button class="btn-submit">Sign In</button>
+      <div class="auth-sw">Forgot your password? <a>Reset it</a></div>
     </div>
   </div>
   <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ REGISTER ═══ -->
+<!-- ═══════════════════ REGISTER ═══════════════════ -->
 <div id="page-register" class="page">
   <div class="auth-pg">
     <div class="auth-box">
-      <div class="auth-logo">RE</div>
+      <div class="auth-logo"><span>IW</span></div>
       <h2>Create your account</h2>
-      <p class="auth-sub">Or <a onclick="go('login')">sign in to your existing account</a></p>
-      <div class="fg-auth"><label>Full Name</label><input type="text" placeholder="Enter your full name"/></div>
-      <div class="fg-auth"><label>Email address</label><input type="email" placeholder="Enter your email"/></div>
-      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password" placeholder="Create a password"/><span class="pw-eye">👁</span></div></div>
-      <div class="fg-auth"><label>Confirm Password</label><div class="pw"><input type="password" placeholder="Confirm your password"/><span class="pw-eye">👁</span></div></div>
-      <div class="chk-row"><input type="checkbox"/><label>I agree to the <a>Terms of Service</a> and <a>Privacy Policy</a></label></div>
-      <button class="btn-submit">Create account</button>
-      <div class="ftrial"><div class="ft-t">Free Trial Included</div><p>Get 7 days of free access to all premium features when you create your account.</p></div>
+      <p class="auth-sub">Already a member? <a onclick="go('login')">Sign in</a></p>
+      <div class="fg-auth"><label>Full Name</label><input type="text" placeholder="Your full name"/></div>
+      <div class="fg-auth"><label>Email Address</label><input type="email" placeholder="you@company.com"/></div>
+      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password" placeholder="Create a password"/><span class="pw-eye">&#128065;</span></div></div>
+      <div class="fg-auth"><label>Confirm Password</label><div class="pw"><input type="password" placeholder="Confirm your password"/><span class="pw-eye">&#128065;</span></div></div>
+      <div class="chk-row"><input type="checkbox"/> <label>I agree to the <a>Terms of Service</a> and <a>Privacy Policy</a></label></div>
+      <button class="btn-submit">Create Account</button>
+      <div class="ftrial">
+        <div class="ft-t">7-Day Free Trial Included</div>
+        <p>Get full access to all premium features for 7 days — no credit card required.</p>
+      </div>
     </div>
   </div>
   <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ CONTACT ═══ -->
+<!-- ═══════════════════ CONTACT ═══════════════════ -->
 <div id="page-contact" class="page">
-  <div class="cnt-hero g-network">
-    <div class="eyebrow">CONNECT</div>
-    <h1>Get in Touch</h1>
-    <p>We're here to answer your questions and help you with your real estate analytics needs.</p>
-    <div class="cnt-hero-btns"><button class="btn-wh">Learn More</button><button class="btn-ghw">Contact</button></div>
-  </div>
-  <div class="cnt-info">
-    <div>
-      <h2>Get in Touch</h2>
-      <p class="ci-desc">We're here to answer your questions and provide support. Reach out to us anytime!</p>
-      <div class="ci-item"><div class="ci-icon">✉️</div><div><div class="ci-lbl">Email</div><div class="ci-val">business@ironwoodintelligence.com</div></div></div>
-      <div class="ci-item"><div class="ci-icon">📞</div><div><div class="ci-lbl">Phone</div><div class="ci-val">+971 50 123 4567</div></div></div>
-      <div class="ci-item"><div class="ci-icon">📍</div><div><div class="ci-lbl">Office</div><div class="ci-val">Meydan Free Zone, Dubai, UAE</div></div></div>
+  <div class="cnt-hero">
+    <div class="cnt-hero-bg"></div>
+    <div class="cnt-hero-content">
+      <div class="eyebrow">Contact</div>
+      <h1>Get in Touch</h1>
+      <p>We're here to answer your questions and help with your real estate intelligence needs.</p>
     </div>
-    <div class="ci-imgbox g-build"><span class="grad-icon">🏗️</span></div>
   </div>
-  <div class="cnt-form-sec">
-    <h2>Send us a Message</h2>
-    <p class="cf-sub">We'd love to hear from you. Reach out today!</p>
-    <div class="cform">
-      <div class="frow2"><div class="fg-auth" style="margin:0;"><label>First Name</label><input type="text"/></div><div class="fg-auth" style="margin:0;"><label>Last Name</label><input type="text"/></div></div>
-      <div class="fg-auth"><label>Email</label><input type="email"/></div>
-      <div class="fg-auth"><label>Message</label><textarea></textarea></div>
-      <div style="text-align:center;"><button class="btn-dark" style="padding:12px 32px;border-radius:25px;">Send Message</button></div>
+  <div class="cnt-body">
+    <div class="cnt-info">
+      <h2>Contact Information</h2>
+      <p class="cnt-info-desc">Reach out to our team — whether you're exploring the platform, need a custom enterprise solution, or have a data inquiry.</p>
+      <div class="ci-item">
+        <div class="ci-icon">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <div><div class="ci-lbl">Email</div><div class="ci-val">business@ironwoodintelligence.com</div></div>
+      </div>
+      <div class="ci-item">
+        <div class="ci-icon">
+          <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.7A2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.08 6.08l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        </div>
+        <div><div class="ci-lbl">Phone</div><div class="ci-val">+971 50 123 4567</div></div>
+      </div>
+      <div class="ci-item">
+        <div class="ci-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div><div class="ci-lbl">Office</div><div class="ci-val">Meydan Free Zone, Dubai, UAE</div></div>
+      </div>
+    </div>
+    <div class="cnt-form">
+      <h2>Send a Message</h2>
+      <div class="cform">
+        <div class="frow2">
+          <div class="fg-auth" style="margin:0;"><label>First Name</label><input type="text"/></div>
+          <div class="fg-auth" style="margin:0;"><label>Last Name</label><input type="text"/></div>
+        </div>
+        <div class="fg-auth"><label>Email</label><input type="email"/></div>
+        <div class="fg-auth"><label>Message</label><textarea placeholder="Tell us how we can help…"></textarea></div>
+        <button class="btn-p" style="width:100%;justify-content:center;">Send Message</button>
+      </div>
     </div>
   </div>
   <div class="footer-slot"></div>
 </div>
 
-<!-- ═══ ABOUT ═══ -->
+<!-- ═══════════════════ ABOUT ═══════════════════ -->
 <div id="page-about" class="page">
-  <div class="data-hero">
-    <h1>About Ironwood Intelligence</h1>
-    <p>Building the definitive real estate data platform for African markets.</p>
+  <div class="about-hero">
+    <div class="about-hero-wrap">
+      <div class="eyebrow" style="margin-bottom:14px;">About Us</div>
+      <h1>Building Africa's Real Estate Intelligence Layer</h1>
+      <p>Ironwood Intelligence exists to bring transparency, data, and institutional-grade analytics to real estate markets across Africa — one market at a time.</p>
+    </div>
   </div>
-  <div class="sec-split" style="background:#fff;">
-    <div class="split-img g-meeting"><span class="grad-icon">🤝</span></div>
-    <div>
-      <h2>Our Mission</h2>
-      <p>Ironwood Intelligence exists to bring transparency, data, and institutional-grade analytics to real estate markets across Africa. We aggregate, clean, and structure property data from 35+ countries so investors, developers, and institutions can make smarter decisions.</p>
-      <p style="margin-top:14px;font-size:14px;color:#555;line-height:1.7;">Based in Meydan Free Zone, Dubai, UAE — operating across the African continent, tracking thousands of properties in real time.</p>
+  <div class="about-body">
+    <div class="about-split">
+      <div>
+        <div class="eyebrow" style="margin-bottom:14px;">Our Mission</div>
+        <h2>The Data Infrastructure Africa's Property Markets Deserve</h2>
+        <p>We aggregate, clean, and structure property listing data from 140+ portals across 35+ African countries — delivering it to investors, developers, and financial institutions who need reliable ground-truth data to make decisions.</p>
+        <p>Based in Meydan Free Zone, Dubai — operating a fully automated data pipeline across the African continent, processing thousands of listings daily in real time.</p>
+        <div style="margin-top:28px;display:flex;gap:12px;">
+          <button class="btn-p" onclick="go('data')">Explore the Data</button>
+          <button class="btn-g" onclick="go('contact')">Get in Touch</button>
+        </div>
+      </div>
+      <div class="about-img">
+        <img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=900&auto=format&fit=crop&q=80" alt="Ironwood Intelligence"/>
+      </div>
     </div>
   </div>
   <div class="footer-slot"></div>
@@ -614,29 +1138,54 @@ footer{background:#fff;border-top:1px solid #e5e5e5;padding:48px 60px 24px;}
 
 <!-- FOOTER TEMPLATE -->
 <template id="ftpl">
-  <footer>
+<footer>
+  <div class="footer-wrap">
     <div class="footer-grid">
-      <div class="fbrand"><div class="fb-name">IRONWOOD<br/>INTELLIGENCE</div><p>Data-driven decisions for real estate.</p></div>
-      <div class="fcol"><h4>Platform</h4><ul><li><a onclick="go('properties')">Properties</a></li><li><a onclick="go('analytics')">Analytics</a></li><li><a onclick="go('subscription')">Pricing</a></li></ul></div>
-      <div class="fcol"><h4>Company</h4><ul><li><a onclick="go('about')">About Us</a></li><li><a onclick="go('contact')">Contact Us</a></li></ul></div>
-      <div class="fcol"><h4>Legal</h4><ul><li><a>Privacy Policy</a></li><li><a>Terms of Service</a></li></ul></div>
-      <div class="fcol"><h4>Language</h4><select><option>🌐 English</option><option>Français</option><option>Português</option><option>العربية</option></select></div>
+      <div class="fbrand">
+        <div class="fbrand-name">Ironwood Intelligence</div>
+        <div class="fbrand-tagline">African Real Estate Data Platform</div>
+        <p>Institutional-grade property data and market analytics across 35+ African countries.</p>
+      </div>
+      <div class="fcol"><h4>Platform</h4><ul>
+        <li><a onclick="go('properties')">Properties</a></li>
+        <li><a onclick="go('analytics')">Analytics</a></li>
+        <li><a href="/dashboard">Dashboard</a></li>
+        <li><a onclick="go('subscription')">Pricing</a></li>
+      </ul></div>
+      <div class="fcol"><h4>Company</h4><ul>
+        <li><a onclick="go('about')">About Us</a></li>
+        <li><a onclick="go('contact')">Contact</a></li>
+        <li><a onclick="go('data')">Data Solutions</a></li>
+      </ul></div>
+      <div class="fcol"><h4>Legal</h4><ul>
+        <li><a>Privacy Policy</a></li>
+        <li><a>Terms of Service</a></li>
+        <li><a>Data Policy</a></li>
+      </ul></div>
+      <div class="fcol"><h4>Language</h4>
+        <select><option>English</option><option>Français</option><option>Português</option><option>العربية</option></select>
+      </div>
     </div>
-    <div class="footer-bottom">© 2026 Ironwood Intelligence. All rights reserved.</div>
-  </footer>
+    <div class="footer-bottom">
+      <p>© 2026 Ironwood Intelligence. All rights reserved. Meydan Free Zone, Dubai, UAE.</p>
+      <div class="footer-bottom-links">
+        <a>Privacy</a><a>Terms</a><a>Cookies</a>
+      </div>
+    </div>
+  </div>
+</footer>
 </template>
 
 <script>
 var mapDone = false;
 
 function go(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   var el = document.getElementById('page-' + name);
   if (!el) return;
   el.classList.add('active');
   window.scrollTo(0, 0);
   closeDD();
-  // inject footer if empty
   var slot = el.querySelector('.footer-slot');
   if (slot && !slot.hasChildNodes()) {
     slot.appendChild(document.importNode(document.getElementById('ftpl').content, true));
@@ -648,7 +1197,7 @@ function initMap() {
   try {
     var map = L.map('africa-map').setView([2, 20], 3);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: 'Leaflet | © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 18
     }).addTo(map);
     var pts = [
@@ -665,7 +1214,7 @@ function initMap() {
     mapDone = true;
   } catch(e) {
     var el = document.getElementById('africa-map');
-    if (el) el.innerHTML = '<div style="height:340px;background:#e8f0e8;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#666;font-size:13px;">Map requires internet connection to load</div>';
+    if (el) el.innerHTML = '<div style="height:380px;background:var(--off-white);border:1px solid var(--rule);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);">Map requires internet connection</div>';
   }
 }
 
@@ -673,7 +1222,10 @@ function toggleDD(e) {
   e.stopPropagation();
   document.getElementById('dd').classList.toggle('open');
 }
-function closeDD() { document.getElementById('dd').classList.remove('open'); }
+function closeDD() {
+  var dd = document.getElementById('dd');
+  if (dd) dd.classList.remove('open');
+}
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.nav-more')) closeDD();
 });
