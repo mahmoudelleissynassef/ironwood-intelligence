@@ -102,6 +102,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -1332,10 +1333,11 @@ footer{background:var(--black);padding:64px 0 32px;}
       <div class="auth-logo"><span>IW</span></div>
       <h2>Sign in to your account</h2>
       <p class="auth-sub">Don't have an account? <a onclick="go('register')">Create one</a></p>
-      <div class="fg-auth"><label>Email Address</label><input type="email" placeholder="you@company.com"/></div>
-      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password" placeholder="Your password"/><span class="pw-eye">&#128065;</span></div></div>
-      <button class="btn-submit">Sign In</button>
-      <div class="auth-sw">Forgot your password? <a>Reset it</a></div>
+      <div class="fg-auth"><label>Email Address</label><input id="iw-login-email" type="email" autocomplete="email" placeholder="you@company.com"/></div>
+      <div class="fg-auth"><label>Password</label><div class="pw"><input id="iw-login-password" type="password" autocomplete="current-password" placeholder="Your password"/><span class="pw-eye">&#128065;</span></div></div>
+      <button id="iw-login-btn" class="btn-submit">Sign In</button>
+      <div id="iw-login-status" style="display:none;margin:0 0 14px;font-size:13px;font-weight:700;text-align:center;"></div>
+      <div class="auth-sw">Forgot your password? <a id="iw-forgot-btn">Reset it</a></div>
     </div>
   </div>
   <div class="footer-slot"></div>
@@ -1348,12 +1350,13 @@ footer{background:var(--black);padding:64px 0 32px;}
       <div class="auth-logo"><span>IW</span></div>
       <h2>Create your account</h2>
       <p class="auth-sub">Already a member? <a onclick="go('login')">Sign in</a></p>
-      <div class="fg-auth"><label>Full Name</label><input type="text" placeholder="Your full name"/></div>
-      <div class="fg-auth"><label>Email Address</label><input type="email" placeholder="you@company.com"/></div>
-      <div class="fg-auth"><label>Password</label><div class="pw"><input type="password" placeholder="Create a password"/><span class="pw-eye">&#128065;</span></div></div>
-      <div class="fg-auth"><label>Confirm Password</label><div class="pw"><input type="password" placeholder="Confirm your password"/><span class="pw-eye">&#128065;</span></div></div>
-      <div class="chk-row"><input type="checkbox"/> <label>I agree to the <a>Terms of Service</a> and <a>Privacy Policy</a></label></div>
-      <button class="btn-submit">Create Account</button>
+      <div class="fg-auth"><label>Full Name</label><input id="iw-reg-name" type="text" autocomplete="name" placeholder="Your full name"/></div>
+      <div class="fg-auth"><label>Email Address</label><input id="iw-reg-email" type="email" autocomplete="email" placeholder="you@company.com"/></div>
+      <div class="fg-auth"><label>Password</label><div class="pw"><input id="iw-reg-password" type="password" autocomplete="new-password" placeholder="Create a password"/><span class="pw-eye">&#128065;</span></div></div>
+      <div class="fg-auth"><label>Confirm Password</label><div class="pw"><input id="iw-reg-confirm" type="password" autocomplete="new-password" placeholder="Confirm your password"/><span class="pw-eye">&#128065;</span></div></div>
+      <div class="chk-row"><input id="iw-reg-terms" type="checkbox"/> <label>I agree to the <a>Terms of Service</a> and <a>Privacy Policy</a></label></div>
+      <button id="iw-reg-btn" class="btn-submit">Create Account</button>
+      <div id="iw-reg-status" style="display:none;margin:12px 0 0;font-size:13px;font-weight:700;text-align:center;"></div>
       <div class="ftrial">
         <div class="ft-t">7-Day Free Trial Included</div>
         <p>Get full access to all premium features for 7 days — no credit card required.</p>
@@ -1818,6 +1821,98 @@ function applyLang() {
   // Update html lang attribute
   document.documentElement.lang = LANG;
 }
+</script>
+<script>
+/* ── Ironwood auth: wire login, register, and password reset to Supabase ── */
+(function(){
+  var SB_URL='https://ujhqkirhfmumvvnfvgnz.supabase.co';
+  var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik';
+  var sb=null, recovery=false;
+  try{ if(window.supabase) sb=window.supabase.createClient(SB_URL,SB_KEY); }catch(e){ sb=null; }
+  function el(id){ return document.getElementById(id); }
+  function val(id){ var e=el(id); return e?(e.value||''):''; }
+  function setStatus(id,msg,color){ var s=el(id); if(!s) return; s.style.display='block'; s.style.color=color; s.textContent=msg; }
+
+  /* LOGIN — also handles setting a new password when returning via a reset link */
+  async function doLogin(e){
+    if(e&&e.preventDefault) e.preventDefault();
+    if(!sb){ setStatus('iw-login-status','Auth service unavailable — please refresh.','#c0392b'); return; }
+    var pw=val('iw-login-password');
+    if(recovery){
+      if(!pw){ setStatus('iw-login-status','Enter a new password.','#c0392b'); return; }
+      setStatus('iw-login-status','Updating password…','#666');
+      var u=await sb.auth.updateUser({ password:pw });
+      if(u.error){ setStatus('iw-login-status','❌ '+u.error.message,'#c0392b'); return; }
+      recovery=false;
+      setStatus('iw-login-status','✅ Password updated — redirecting…','#1e824c');
+      setTimeout(function(){ window.location.href='/dashboard'; },700); return;
+    }
+    var em=val('iw-login-email').trim();
+    if(!em||!pw){ setStatus('iw-login-status','Enter your email and password.','#c0392b'); return; }
+    setStatus('iw-login-status','Signing in…','#666');
+    try{
+      var res=await sb.auth.signInWithPassword({ email:em, password:pw });
+      if(res.error){ setStatus('iw-login-status','❌ '+res.error.message,'#c0392b'); return; }
+      setStatus('iw-login-status','✅ Signed in — redirecting…','#1e824c');
+      setTimeout(function(){ window.location.href='/dashboard'; },600);
+    }catch(err){ setStatus('iw-login-status','❌ '+(err&&err.message||'Sign-in failed'),'#c0392b'); }
+  }
+
+  /* FORGOT PASSWORD */
+  async function doForgot(e){
+    if(e&&e.preventDefault) e.preventDefault();
+    if(!sb){ setStatus('iw-login-status','Auth service unavailable — please refresh.','#c0392b'); return; }
+    var em=val('iw-login-email').trim();
+    if(!em){ setStatus('iw-login-status','Enter your email above first, then click “Reset it”.','#c0392b'); return; }
+    setStatus('iw-login-status','Sending reset link…','#666');
+    var r=await sb.auth.resetPasswordForEmail(em,{ redirectTo: window.location.origin+'/en/login' });
+    if(r.error){ setStatus('iw-login-status','❌ '+r.error.message,'#c0392b'); return; }
+    setStatus('iw-login-status','✅ Reset link sent to '+em+' — check your email.','#1e824c');
+  }
+
+  /* REGISTER */
+  async function doRegister(e){
+    if(e&&e.preventDefault) e.preventDefault();
+    if(!sb){ setStatus('iw-reg-status','Auth service unavailable — please refresh.','#c0392b'); return; }
+    var name=val('iw-reg-name').trim(), em=val('iw-reg-email').trim();
+    var pw=val('iw-reg-password'), cf=val('iw-reg-confirm'), terms=el('iw-reg-terms');
+    if(!name||!em||!pw){ setStatus('iw-reg-status','Fill in your name, email, and password.','#c0392b'); return; }
+    if(pw.length<6){ setStatus('iw-reg-status','Password must be at least 6 characters.','#c0392b'); return; }
+    if(pw!==cf){ setStatus('iw-reg-status','Passwords do not match.','#c0392b'); return; }
+    if(terms&&!terms.checked){ setStatus('iw-reg-status','Please accept the Terms to continue.','#c0392b'); return; }
+    setStatus('iw-reg-status','Creating your account…','#666');
+    try{
+      var res=await sb.auth.signUp({ email:em, password:pw, options:{ data:{ full_name:name }, emailRedirectTo: window.location.origin+'/dashboard' } });
+      if(res.error){ setStatus('iw-reg-status','❌ '+res.error.message,'#c0392b'); return; }
+      if(res.data && res.data.session){
+        setStatus('iw-reg-status','✅ Account created — redirecting…','#1e824c');
+        setTimeout(function(){ window.location.href='/dashboard'; },700);
+      } else {
+        setStatus('iw-reg-status','✅ Account created — check your email to confirm, then sign in.','#1e824c');
+      }
+    }catch(err){ setStatus('iw-reg-status','❌ '+(err&&err.message||'Sign-up failed'),'#c0392b'); }
+  }
+
+  function wire(){
+    var lb=el('iw-login-btn'); if(lb&&!lb._iwWired){ lb._iwWired=true; lb.addEventListener('click',doLogin); }
+    ['iw-login-email','iw-login-password'].forEach(function(id){ var i=el(id); if(i&&!i._iwWired){ i._iwWired=true; i.addEventListener('keydown',function(ev){ if(ev.key==='Enter') doLogin(ev); }); } });
+    var fb=el('iw-forgot-btn'); if(fb&&!fb._iwWired){ fb._iwWired=true; fb.style.cursor='pointer'; fb.addEventListener('click',doForgot); }
+    var rb=el('iw-reg-btn'); if(rb&&!rb._iwWired){ rb._iwWired=true; rb.addEventListener('click',doRegister); }
+    ['iw-reg-name','iw-reg-email','iw-reg-password','iw-reg-confirm'].forEach(function(id){ var i=el(id); if(i&&!i._iwWired){ i._iwWired=true; i.addEventListener('keydown',function(ev){ if(ev.key==='Enter') doRegister(ev); }); } });
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',wire); } else { wire(); }
+
+  /* Password-recovery return: user arrives via the emailed reset link */
+  if(sb){
+    sb.auth.onAuthStateChange(function(event){
+      if(event==='PASSWORD_RECOVERY'){
+        recovery=true;
+        if(typeof go==='function'){ try{ go('login'); }catch(_){} }
+        setStatus('iw-login-status','Reset link verified — type a NEW password above and click “Sign In”.','#1e824c');
+      }
+    });
+  }
+})();
 </script>
 </body>
 </html>

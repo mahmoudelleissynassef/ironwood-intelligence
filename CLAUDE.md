@@ -1,6 +1,6 @@
 # IRONWOOD INTELLIGENCE — CLAUDE.md
 > Read this entire file before doing anything. This is the full context of the project.
-> Last updated: March 13, 2026
+> Last updated: July 1, 2026 (reconciled against live infra + all three repos)
 
 ---
 
@@ -8,8 +8,9 @@
 Ironwood Intelligence is a B2B SaaS platform — "the CoStar of Africa" — that sells institutional-grade real estate market data for African cities. Users pay for a subscription and get access to a dashboard showing live property prices, yields, pipeline data, and macro indicators scraped from listing websites across Africa.
 
 **Owner:** Mahmoud Nassef (mahmoud.nassef@heirstoneconsulting.com)
-**Stage:** Early — Morocco and Nigeria live. Scraping automated for both. Expanding to more markets.
-**Goal:** Automate scraping for 35 African markets, get dashboard fully live, grow subscriber base.
+**Stage:** Early / PRE-DATA. Scraper CODE is built for 15+ countries (23 portals, 18 parser modules in scraper-factory), but NO data has been ingested into Supabase yet — the DB is currently EMPTY (0 tables, 0 rows, 0 auth users, verified July 1, 2026). The dashboard runs on demo/placeholder values behind a "DEMO DATA — NOT REAL" banner. Nothing is live for customers yet.
+**Goal:** Automate scraping for 35 African markets, ingest the FIRST real data into Supabase, get the dashboard onto real data, then grow subscriber base.
+**Reality check:** "parser exists in repo" ≠ "data ingested." The next real milestone is the first end-to-end scrape → Supabase → dashboard, NOT more parsers.
 
 ---
 
@@ -19,7 +20,7 @@ Ironwood Intelligence is a B2B SaaS platform — "the CoStar of Africa" — that
 |---------|---------|
 | Frontend | Single HTML files — no framework, no build step |
 | Hosting | Vercel — auto-deploys when you push to GitHub main branch |
-| Database | Supabase (Postgres) |
+| Database | Supabase (Postgres) — ref ujhqkirhfmumvvnfvgnz — ⚠️ currently EMPTY: schema not created, no data, no auth users |
 | Payments | Stripe (test mode — not yet live) |
 | Domain | ironwoodintelligence.com (DNS on GoDaddy → Vercel) |
 | Scraper backend | Railway FastAPI (main.py) |
@@ -74,13 +75,13 @@ Ironwood Intelligence is a B2B SaaS platform — "the CoStar of Africa" — that
 
 ## GITHUB REPOS
 
-| Repo | Purpose |
-|------|---------|
-| mahmoudelleissynassef/ironwood-intelligence | Main — dashboard, landing page, Vercel config |
-| mahmoudelleissynassef/ironwood-admin | Admin panel (private) |
-| scraper-factory | Railway scraper backend (main.py) |
+| Repo | Purpose | Local clone |
+|------|---------|-------------|
+| mahmoudelleissynassef/ironwood-intelligence | Main — dashboard.html, landing (index.html), admin-*.html, Vercel config | C:\Dev\Ironwood Intelligence |
+| mahmoudelleissynassef/ironwood-admin | Admin panel (private) — single index.html | C:\Dev\ironwood-admin |
+| mahmoudelleissynassef/scraper-factory | Scraper backend + PARSER FACTORY (main.py dispatcher, parsers/, promote.py) | C:\Dev\scraper-factory |
 
-Local folder: C:\Users\mahmo\OneDrive - Heirstone Consulting\Documents\07_Ironwood Intelligence\Scripts Ironwood Intelligence
+Note: an older local copy lived at C:\Users\mahmo\OneDrive - Heirstone Consulting\Documents\07_Ironwood Intelligence\Scripts Ironwood Intelligence — C:\Dev is now the working set (all three repos cloned there).
 
 Push command: git add . && git commit -m "message" && git push origin HEAD:main
 
@@ -89,6 +90,7 @@ Push command: git add . && git commit -m "message" && git push origin HEAD:main
 ## DATABASE SCHEMA
 
 ### Table: properties (main data table)
+⚠️ AS OF July 1, 2026 THIS TABLE DOES NOT EXIST IN SUPABASE YET — the DB is empty. The schema below is the canonical/intended shape that the dashboard (loadLiveKPIs) and admin upload expect. It MUST be created before any ingestion — verify database-setup.sql / update-schema.sql actually build it.
 One row per listing. All KPIs calculated from this table on the fly.
 
 Valid columns:
@@ -110,12 +112,11 @@ Other tables:
 
 ---
 
-## DATA UPLOADED SO FAR
+## DATA IN SUPABASE SO FAR
 
-| Country | Rows | Cities | Source |
-|---------|------|--------|--------|
-| Morocco | 62,052 | Casablanca, Marrakech, Rabat, Tangiers, Fez | Mubawab.ma |
-| Nigeria | 28,400+ | Lagos, Abuja, Port Harcourt, Kano, Ibadan | NigeriaPropertyCentre |
+⚠️ NONE. As of July 1, 2026 the Supabase DB is empty — 0 tables, 0 rows, 0 auth users. No listings have been ingested yet.
+
+The figures this doc previously claimed (Morocco ~62k, Nigeria ~28k) were never confirmed present in this project and are NOT there now. Treat "data ingested" as 0 until a scrape → Supabase load is actually run and verified. Scraper CODE exists for 15+ countries (see Scraper Architecture) — but code existing ≠ data ingested.
 
 ---
 
@@ -175,25 +176,26 @@ Returns: flat array of listing objects
 5. Sheet accumulates over time — never cleared between runs
 6. Backup: Google Apps Script runs hourly on Mubawab tab, deletes duplicate rows by link column
 
-### Scraper details (main.py)
+### Scraper architecture (scraper-factory repo — reconciled July 1, 2026)
 
-Mubawab (Morocco):
-- Pagination: {base_url}:p:{page_number}
-- Card selector: div.listingBox (fallbacks: div.adlist, div.contentBox, div.box)
-- Fetching: Direct HTTP (no proxy needed)
-- Stop condition: full page returns 0 new listings
+main.py is now a thin DISPATCHER only — no parser logic lives in it. Parsers are modular under parsers/:
+- parsers/registry.json — maps domain substring → parser module + function + fetch_method (direct | crawlbase | crawlbase_js | scrapingbee | auto)
+- parsers/live/ — production parsers imported at startup
+- parsers/candidates/ — staging parsers, gated by an activation check
+- parsers/utils.py — shared price/area/date/html helpers
+- promote.py — CLI to promote a parser scaffold → candidate → live
 
-NigeriaPropertyCentre (Nigeria):
-- Pagination: {base_url}?limitstart={page * 21} (21 listings/page)
-- Link pattern: relative URLs normalized to absolute
-- Fetching: Via Crawlbase proxy (site blocks Railway IP)
-- Price parsing: handles NGN and USD
-- Stop condition: full page returns 0 new listings
+LIVE parsers (18 modules, 23 portal domains, 15+ countries):
+Morocco (mubawab.ma), Nigeria (nigeriapropertycentre.com, propertypro.ng), Senegal (expat-dakar.com, keur-immo.com), Ghana (tonaton.com, meqasa.com), Tunisia (mubawab.tn), Algeria (mubawab.dz), Egypt (aqarmap.com.eg), Kenya (buyrentkenya.com, property24.co.ke), Ethiopia (ethiopiapropertycentre.com), Uganda (lamudi.co.ug, ugandapropertycentre.com, property24.co.ug), Mauritius (lexpressproperty.com), South Africa (property24.com, privateproperty.co.za), Tanzania (property24.co.tz), Zimbabwe (property24.co.zw, property.co.zw), Mozambique (property24.co.mz).
+
+There is also a larger "factory" (selector auto-discovery, n8n workflow generation, 35-country state registry) that lives on a VPS and is NOT committed to the repo — see scraper-factory/REPO_STRUCTURE.md.
+
+⚠️ "parser exists in repo" does NOT mean it is deployed on Railway, wired to an n8n workflow, or producing data. As of July 1, 2026 no ingestion into Supabase has been confirmed for ANY portal.
 
 Railway config files:
 - Procfile: web: uvicorn main:app --host 0.0.0.0 --port $PORT
 - railway.toml: healthcheck on /
-- requirements.txt: fastapi==0.110.0, uvicorn==0.29.0, httpx==0.27.0, beautifulsoup4==4.12.3, pydantic>=2.7
+- requirements.txt: see scraper-factory/requirements.txt (do not hardcode versions here — read the file)
 
 ---
 
@@ -240,14 +242,17 @@ return out;
 
 ## SCRAPER EXPANSION PLAN
 
-Priority order:
-1. Morocco — Mubawab — DONE (~20k listings/run)
-2. Nigeria — NigeriaPropertyCentre — DONE (~2,737 listings/run via Crawlbase)
-3. Senegal — Expat-Dakar — config tab exists, scraper NOT yet built in main.py
-4. Kenya — Nairobi — buyrentkenya.com, jumia.com.ke/housing
-5. Ghana — Accra — meqasa.com, tonaton.com
-6. Egypt — Cairo — aqarmap.com, olx.com.eg
-7. South Africa — Cape Town + Johannesburg — property24.com, privateproperty.co.za
+Parser build status (reconciled July 1, 2026 from parsers/registry.json). "Parser built" = code is live in the registry; it does NOT mean data is ingested.
+1. Morocco — mubawab.ma — parser built
+2. Nigeria — nigeriapropertycentre.com + propertypro.ng — parser built
+3. Senegal — expat-dakar.com + keur-immo.com — parser built (this doc previously said "not built" — that is STALE)
+4. Kenya — buyrentkenya.com + property24.co.ke — parser built
+5. Ghana — tonaton.com + meqasa.com — parser built
+6. Egypt — aqarmap.com.eg — parser built (olx.com.eg not yet)
+7. South Africa — property24.com + privateproperty.co.za — parser built
+8. Also built: Tunisia, Algeria, Ethiopia, Uganda, Mauritius, Tanzania, Zimbabwe, Mozambique
+
+Remaining toward the 35-market goal: the other "Coming Soon" dropdown countries still need parsers + config + workflows. But the NEXT real milestone is NOT more parsers — it is getting the FIRST country's data actually ingested into Supabase and onto the dashboard.
 
 For each new country, Claude Code must:
 1. Add config URLs to Scraper Config sheet (new tab)
@@ -287,7 +292,9 @@ Macro data: World Bank API (free, no key needed)
 
 ## WHAT IS REAL vs FAKE IN DASHBOARD
 
-Live from Supabase:
+⚠️ July 1, 2026: right now EVERYTHING is effectively placeholder because the DB is empty. The "live" items below are what WILL be live once data is ingested; today they render demo values behind the DEMO banner. Macro indicators (World Bank API) are the only genuinely live data, since they don't depend on Supabase.
+
+Live from Supabase (once data exists):
 - Median sale price/m2, active listing count, prime office rent
 - Gross yield estimate, liquidity score (proxy)
 - Key indicators table, districts table, listings page, yield estimates table
@@ -326,23 +333,26 @@ VALID_COLUMNS whitelist drops unknown columns silently (fixes image column error
 
 ---
 
-## PENDING TASKS (priority order)
+## PENDING TASKS (priority order — reconciled July 1, 2026)
 
-1. URGENT: Regenerate Crawlbase token (was exposed publicly)
-2. Connect Google Sheets MCP to Claude Code
-3. Connect n8n MCP to Claude Code
-4. Build Senegal/Expat-Dakar scraper in main.py (different field structure than Mubawab/NPC)
-5. Add Senegal n8n workflow
-6. Complete Stripe webhook (4 events + whsec_ to Vercel env vars)
-7. Add Vercel env vars: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SUPABASE_URL, SUPABASE_SERVICE_KEY
-8. Relabel Transactions page as "Asking Price Evidence"
-9. Build Kenya scraper (buyrentkenya.com)
-10. Build Ghana scraper (meqasa.com)
-11. Monitor if 5s batch wait resolves dropped rows in Google Sheets
-12. Switch Stripe from test to live mode
-13. Dashboard subscription gating (lock pages by plan tier)
-14. Wire Market Signals and IOS scores to live data
-15. Run fix-duplicates-v3.sql in Supabase
+BLOCKER — nothing ships until these are done:
+1. Create the Supabase schema — the `properties` table (+ profiles) does not exist. Run/verify database-setup.sql + update-schema.sql against the DB.
+2. Ingest the FIRST real country's data end-to-end (scrape → Google Sheet → Supabase) and verify row counts. Morocco (mubawab.ma) is the natural first — most mature parser.
+3. Recreate the admin auth user (mahmoud.nassef@…) — auth.users is empty, so no one can log into dashboard/admin.
+
+THEN:
+4. Verify Railway is actually deployed with the current parsers/ factory, and which n8n workflows are active/scheduled.
+5. URGENT (security): Regenerate the Crawlbase token — exposed publicly; references still sit in this file.
+6. Complete Stripe webhook (4 events + whsec_) and add Vercel env vars: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SUPABASE_URL, SUPABASE_SERVICE_KEY.
+7. Once a market has REAL data: remove the "DEMO DATA — NOT REAL" banner for THAT market only, and relabel Transactions page as "Asking Price Evidence".
+8. Switch Stripe from test to live mode.
+9. Dashboard subscription gating (lock pages by plan tier).
+10. Wire Market Signals and IOS scores to live data.
+
+DONE since this doc was originally written (do NOT redo):
+- Senegal parser (expat-dakar + keur-immo) — built.
+- Kenya, Ghana, Egypt, South Africa, Tunisia, Algeria, Ethiopia, Uganda, Mauritius, Tanzania, Zimbabwe, Mozambique parsers — built.
+- Parser factory refactor (main.py dispatcher + parsers/ registry + promote.py) — done.
 
 ---
 
@@ -350,11 +360,13 @@ VALID_COLUMNS whitelist drops unknown columns silently (fixes image column error
 
 | Issue | Status |
 |-------|--------|
-| Mubawab returning ~20k vs previous ~23-26k | Likely real after dedup — monitor |
-| Google Sheets drops batches at high volume | 5s wait deployed — monitor |
+| Supabase DB empty — 0 tables, 0 rows, 0 auth users (schema never created / no ingestion) | 🔴 TOP BLOCKER — verified July 1, 2026 |
+| Dashboard shows "DEMO DATA — NOT REAL" banner | CORRECT for now — keep until a market has real data |
+| Railway/n8n live-deployment state unverified (parsers exist in repo; deployment not confirmed) | TODO — verify |
 | Crawlbase token exposed publicly | REGENERATE IMMEDIATELY |
-| Senegal scraper not built | TODO — different field structure |
+| Google Sheets drops batches at high volume | 5s wait deployed — monitor when scraping resumes |
 | Stripe in test mode | TODO |
+| ~~Senegal scraper not built~~ | RESOLVED — parser is live in registry.json |
 
 ---
 
