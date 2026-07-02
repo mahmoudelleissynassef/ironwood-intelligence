@@ -2590,7 +2590,7 @@ async function boot(){
     if(!user){
       clearTimeout(safetyTimer);
       hideLoader();
-      window.location.href='https://ironwoodintelligence.com/en/login';
+      window.location.href='/en/login';
       return;
     }
     const name=user.user_metadata?.full_name||user.email.split('@')[0];

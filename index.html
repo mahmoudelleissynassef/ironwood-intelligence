@@ -1366,6 +1366,23 @@ footer{background:var(--black);padding:64px 0 32px;}
   <div class="footer-slot"></div>
 </div>
 
+<!-- ═══════════════════ RESET PASSWORD ═══════════════════ -->
+<div id="page-reset" class="page">
+  <div class="auth-pg">
+    <div class="auth-box">
+      <div class="auth-logo"><span>IW</span></div>
+      <h2>Set a new password</h2>
+      <p class="auth-sub">Choose a new password for your account.</p>
+      <div class="fg-auth"><label>New Password</label><div class="pw"><input id="iw-reset-password" type="password" autocomplete="new-password" placeholder="New password"/><span class="pw-eye">&#128065;</span></div></div>
+      <div class="fg-auth"><label>Confirm New Password</label><div class="pw"><input id="iw-reset-confirm" type="password" autocomplete="new-password" placeholder="Confirm new password"/><span class="pw-eye">&#128065;</span></div></div>
+      <button id="iw-reset-btn" class="btn-submit">Update Password</button>
+      <div id="iw-reset-status" style="display:none;margin:0 0 14px;font-size:13px;font-weight:700;text-align:center;"></div>
+      <div class="auth-sw">Remembered it? <a onclick="go('login')">Back to sign in</a></div>
+    </div>
+  </div>
+  <div class="footer-slot"></div>
+</div>
+
 <!-- ═══════════════════ CONTACT ═══════════════════ -->
 <div id="page-contact" class="page">
   <div class="cnt-hero">
@@ -1489,7 +1506,7 @@ var mapDone = false;
 
 var LANG = 'en';
 
-var PAGES = ['home','about','data','contact','properties','analytics','subscription','login','register','dashboard'];
+var PAGES = ['home','about','data','contact','properties','analytics','subscription','login','register','reset','dashboard'];
 
 var PAGE_SEO = {
   home: {
@@ -1527,6 +1544,10 @@ var PAGE_SEO = {
   register: {
     en: { title: 'Get Started — Ironwood Intelligence African Real Estate Data', desc: 'Start your free trial of Ironwood Intelligence. Access institutional-grade real estate data across Africa including Morocco, Nigeria, and 33 markets.' },
     fr: { title: 'Commencer — Ironwood Intelligence Données Immobilières Africaines', desc: 'Commencez votre essai gratuit d\'Ironwood Intelligence. Accédez à des données immobilières de qualité institutionnelle à travers l\'Afrique.' }
+  },
+  reset: {
+    en: { title: 'Reset Password — Ironwood Intelligence', desc: 'Set a new password for your Ironwood Intelligence account.' },
+    fr: { title: 'Réinitialiser le mot de passe — Ironwood Intelligence', desc: 'Définissez un nouveau mot de passe pour votre compte Ironwood Intelligence.' }
   }
 };
 
@@ -1827,7 +1848,7 @@ function applyLang() {
 (function(){
   var SB_URL='https://ujhqkirhfmumvvnfvgnz.supabase.co';
   var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik';
-  var sb=null, recovery=false;
+  var sb=null;
   try{ if(window.supabase) sb=window.supabase.createClient(SB_URL,SB_KEY); }catch(e){ sb=null; }
   function el(id){ return document.getElementById(id); }
   function val(id){ var e=el(id); return e?(e.value||''):''; }
@@ -1838,15 +1859,6 @@ function applyLang() {
     if(e&&e.preventDefault) e.preventDefault();
     if(!sb){ setStatus('iw-login-status','Auth service unavailable — please refresh.','#c0392b'); return; }
     var pw=val('iw-login-password');
-    if(recovery){
-      if(!pw){ setStatus('iw-login-status','Enter a new password.','#c0392b'); return; }
-      setStatus('iw-login-status','Updating password…','#666');
-      var u=await sb.auth.updateUser({ password:pw });
-      if(u.error){ setStatus('iw-login-status','❌ '+u.error.message,'#c0392b'); return; }
-      recovery=false;
-      setStatus('iw-login-status','✅ Password updated — redirecting…','#1e824c');
-      setTimeout(function(){ window.location.href='/dashboard'; },700); return;
-    }
     var em=val('iw-login-email').trim();
     if(!em||!pw){ setStatus('iw-login-status','Enter your email and password.','#c0392b'); return; }
     setStatus('iw-login-status','Signing in…','#666');
@@ -1893,8 +1905,25 @@ function applyLang() {
     }catch(err){ setStatus('iw-reg-status','❌ '+(err&&err.message||'Sign-up failed'),'#c0392b'); }
   }
 
+  /* SET NEW PASSWORD (after arriving via the emailed reset link) */
+  async function doReset(e){
+    if(e&&e.preventDefault) e.preventDefault();
+    if(!sb){ setStatus('iw-reset-status','Auth service unavailable — please refresh.','#c0392b'); return; }
+    var pw=val('iw-reset-password'), cf=val('iw-reset-confirm');
+    if(!pw){ setStatus('iw-reset-status','Enter a new password.','#c0392b'); return; }
+    if(pw.length<6){ setStatus('iw-reset-status','Password must be at least 6 characters.','#c0392b'); return; }
+    if(pw!==cf){ setStatus('iw-reset-status','Passwords do not match.','#c0392b'); return; }
+    setStatus('iw-reset-status','Updating password…','#666');
+    var u=await sb.auth.updateUser({ password:pw });
+    if(u.error){ setStatus('iw-reset-status','❌ '+u.error.message,'#c0392b'); return; }
+    setStatus('iw-reset-status','✅ Password updated — redirecting…','#1e824c');
+    setTimeout(function(){ window.location.href='/dashboard'; },700);
+  }
+
   function wire(){
     var lb=el('iw-login-btn'); if(lb&&!lb._iwWired){ lb._iwWired=true; lb.addEventListener('click',doLogin); }
+    var xb=el('iw-reset-btn'); if(xb&&!xb._iwWired){ xb._iwWired=true; xb.addEventListener('click',doReset); }
+    ['iw-reset-password','iw-reset-confirm'].forEach(function(id){ var i=el(id); if(i&&!i._iwWired){ i._iwWired=true; i.addEventListener('keydown',function(ev){ if(ev.key==='Enter') doReset(ev); }); } });
     ['iw-login-email','iw-login-password'].forEach(function(id){ var i=el(id); if(i&&!i._iwWired){ i._iwWired=true; i.addEventListener('keydown',function(ev){ if(ev.key==='Enter') doLogin(ev); }); } });
     var fb=el('iw-forgot-btn'); if(fb&&!fb._iwWired){ fb._iwWired=true; fb.style.cursor='pointer'; fb.addEventListener('click',doForgot); }
     var rb=el('iw-reg-btn'); if(rb&&!rb._iwWired){ rb._iwWired=true; rb.addEventListener('click',doRegister); }
@@ -1906,9 +1935,8 @@ function applyLang() {
   if(sb){
     sb.auth.onAuthStateChange(function(event){
       if(event==='PASSWORD_RECOVERY'){
-        recovery=true;
-        if(typeof go==='function'){ try{ go('login'); }catch(_){} }
-        setStatus('iw-login-status','Reset link verified — type a NEW password above and click “Sign In”.','#1e824c');
+        if(typeof go==='function'){ try{ go('reset'); }catch(_){} }
+        setStatus('iw-reset-status','Reset link verified — set your new password below.','#1e824c');
       }
     });
   }
