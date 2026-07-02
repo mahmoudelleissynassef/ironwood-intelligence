@@ -1946,24 +1946,14 @@ async function loadLiveKPIs(country){
   safeSet('kpi-liquidity-chg','');
 
   try {
-    // ── STEP 1: Paginated fetch — ilike so any capitalisation works ──
-    var allRows=[], from=0, bsz=1000;
-    while(true){
-      var res=await sb.from('properties')
-        .select('city,submarket,asset_class,transaction_type,price_per_sqm,scraped_at')
-        .ilike('country', country)          // case-insensitive match
-        .not('price_per_sqm','is',null)
-        .gt('price_per_sqm',0)
-        .range(from, from+bsz-1);
-      if(res.error){ console.error('Supabase fetch error:', res.error); break; }
-      if(!res.data||!res.data.length) break;
-      allRows=allRows.concat(res.data);
-      from+=bsz;
-      if(res.data.length<bsz) break;
-    }
-    console.log('loadLiveKPIs ['+country+']: fetched', allRows.length, 'rows');
+    // ── Server-side aggregation via RPC (was: paginate 100k+ rows to the browser) ──
+    var rpc = await sb.rpc('market_kpis', { p_country: country });
+    if(rpc.error){ console.error('market_kpis RPC error:', rpc.error); throw rpc.error; }
+    var K = rpc.data || {};
+    var totalCount = Number(K.total_count) || 0;
+    console.log('loadLiveKPIs ['+country+']: aggregated', totalCount, 'rows server-side');
 
-    if(!allRows.length){
+    if(!totalCount){
       safeSet('kpi-median-price','No data');
       safeSet('kpi-active-listings','0');
       safeSet('kpi-price-growth','—');
@@ -1974,151 +1964,105 @@ async function loadLiveKPIs(country){
       return;
     }
 
-    // ── HELPER: true median ──
-    function median(arr){
-      if(!arr||!arr.length) return null;
-      var s=[...arr].sort((a,b)=>a-b);
-      var m=Math.floor(s.length/2);
-      return s.length%2===0?(s[m-1]+s[m])/2:s[m];
-    }
+    // ── Helpers ──
+    function num(x){ return (x===null||x===undefined)?null:Number(x); }
+    function qsort(a,b){ return a<b?-1:a>b?1:0; }  // lexicographic — matches previous quarter ordering
 
-    // ── Normalise fields ──
-    allRows.forEach(function(r){
-      r._tt=(r.transaction_type||'').toLowerCase().replace(/[^a-z]/g,'');
-      r._ac=(r.asset_class||'').toLowerCase().trim();
-      r._city=(r.city||'Unknown').trim();
-      r._sub=(r.submarket||'').trim();
-    });
-
-    // ── Transaction type split ──
-    // Handles: 'sale','forsale','buy','rent','forrent','rental','lease', etc.
-    var saleRows=allRows.filter(function(r){
-      return r._tt==='sale'||r._tt==='forsale'||r._tt==='buy'||r._tt==='sold';
-    });
-    var rentRows=allRows.filter(function(r){
-      return r._tt==='rent'||r._tt==='forrent'||r._tt==='rental'||r._tt==='lease'||r._tt==='tolet';
-    });
-    // If zero sale rows (data may use different values), treat everything as sale
-    if(!saleRows.length){
-      console.warn('No sale rows found for '+country+'. transaction_type values seen:', [...new Set(allRows.map(r=>r.transaction_type))].join(', '));
-      saleRows=allRows;
-    }
-
-    // ── STEP 2: Country-wide median sale price/m² ──
-    var medianSale=median(saleRows.map(r=>r.price_per_sqm));
+    // ── Country-level medians (from RPC) ──
+    var medianSale=num(K.median_sale);
+    var medRentAll=num(K.median_rent);
     var fmtMedian=medianSale?(S+Math.round(medianSale).toLocaleString()+'/m²'):'—';
+    var primeOfficeRent=K.prime_office_rent!=null?Math.round(Number(K.prime_office_rent)):null;
+    var officeRentCount=Number(K.prime_office_rent_count)||0;
+    var grossYieldAll=(medianSale&&medRentAll)?(medRentAll*12/medianSale*100):null;
 
-    // ── STEP 3: Total count ──
-    var totalCount=allRows.length;
-
-    // ── STEP 4: Prime office rent (95th pctile of office rent rows) ──
-    var officeRentRows=rentRows.filter(function(r){
-      return r._ac.indexOf('office')>=0||r._ac.indexOf('commercial')>=0||r._ac.indexOf('bureau')>=0;
-    });
-    var primeOfficeRent=null;
-    if(officeRentRows.length){
-      var orp=officeRentRows.map(r=>r.price_per_sqm).sort((a,b)=>a-b);
-      primeOfficeRent=Math.round(orp[Math.min(Math.floor(orp.length*0.95),orp.length-1)]);
-    }
-
-    // ── STEP 5: City data (median sale price, listing count, yield) ──
-    var CITY_COLORS=['#0d0d0d','#b8933f','#1d4ed8','#7c3aed','#dc2626','#059669','#d97706','#0891b2'];
-    var cityNames=[...new Set(allRows.map(r=>r._city))].filter(function(n){return n&&n!=='Unknown';});
-    var cityData={};
-    cityNames.forEach(function(city,i){
-      var cSale=saleRows.filter(r=>r._city===city).map(r=>r.price_per_sqm);
-      var cRent=rentRows.filter(r=>r._city===city).map(r=>r.price_per_sqm);
-      var mSale=median(cSale);
-      var mRent=median(cRent);
-      var yld=(mSale&&mRent)?(Math.round(mRent*12/mSale*1000)/10):null;
-      cityData[city]={
-        price:mSale?Math.round(mSale):0,
-        listings:allRows.filter(r=>r._city===city).length,
-        yield:yld,
-        growth:0,
-        color:CITY_COLORS[i%CITY_COLORS.length]
-      };
-    });
-
-    // ── STEP 6: Price growth across scraped_at quarters ──
-    var quarterMap={};
-    saleRows.forEach(function(r){
-      if(!r.scraped_at) return;
-      var d=new Date(r.scraped_at);
-      if(isNaN(d.getTime())) return;
-      var q='Q'+(Math.floor(d.getMonth()/3)+1)+' '+d.getFullYear();
-      if(!quarterMap[q]) quarterMap[q]=[];
-      quarterMap[q].push(r.price_per_sqm);
-    });
-    var quarters=Object.keys(quarterMap).sort();
-    var priceGrowthPct=null;
-    var trendPoints=[];
-    if(quarters.length>=2){
-      var firstMed=median(quarterMap[quarters[0]]);
-      var lastMed=median(quarterMap[quarters[quarters.length-1]]);
+    // ── Country quarterly trend + growth ──
+    var qArr=(K.quarters||[]).slice().sort(function(a,b){return qsort(a.quarter,b.quarter);});
+    var quarters=qArr.map(function(q){return q.quarter;});
+    var priceGrowthPct=null, trendPoints=[];
+    if(qArr.length>=2){
+      var firstMed=Number(qArr[0].sale_median), lastMed=Number(qArr[qArr.length-1].sale_median);
       if(firstMed&&lastMed) priceGrowthPct=(lastMed-firstMed)/firstMed*100;
-      trendPoints=quarters.map(function(q){return {label:q,value:Math.round(median(quarterMap[q]))};});
+      trendPoints=qArr.map(function(q){return {label:q.quarter,value:Math.round(Number(q.sale_median))};});
     }
-    // Per-city growth
-    cityNames.forEach(function(city){
-      var qm={};
-      saleRows.filter(r=>r._city===city).forEach(function(r){
-        if(!r.scraped_at) return;
-        var d=new Date(r.scraped_at);
-        if(isNaN(d.getTime())) return;
-        var q='Q'+(Math.floor(d.getMonth()/3)+1)+' '+d.getFullYear();
-        if(!qm[q]) qm[q]=[];
-        qm[q].push(r.price_per_sqm);
-      });
-      var qs=Object.keys(qm).sort();
+
+    // ── Per-city growth (from city_quarters) ──
+    var cqByCity={};
+    (K.city_quarters||[]).forEach(function(r){ (cqByCity[r.city]=cqByCity[r.city]||[]).push(r); });
+    var cityGrowth={};
+    Object.keys(cqByCity).forEach(function(city){
+      var qs=cqByCity[city].slice().sort(function(a,b){return qsort(a.quarter,b.quarter);});
       if(qs.length>=2){
-        var fm=median(qm[qs[0]]),lm=median(qm[qs[qs.length-1]]);
-        if(fm&&lm) cityData[city].growth=Math.round((lm-fm)/fm*1000)/10;
+        var fm=Number(qs[0].sale_median), lm=Number(qs[qs.length-1].sale_median);
+        if(fm&&lm) cityGrowth[city]=Math.round((lm-fm)/fm*1000)/10;
       }
     });
 
-    // ── STEP 7: Country-wide gross yield ──
-    var medRentAll=median(rentRows.map(r=>r.price_per_sqm));
-    var grossYieldAll=(medianSale&&medRentAll)?(medRentAll*12/medianSale*100):null;
+    // ── City data ──
+    var CITY_COLORS=['#0d0d0d','#b8933f','#1d4ed8','#7c3aed','#dc2626','#059669','#d97706','#0891b2'];
+    var cityData={};
+    (K.cities||[]).forEach(function(r,i){
+      var mSale=r.sale_median!=null?Math.round(Number(r.sale_median)):0;
+      var mRent=r.rent_median!=null?Number(r.rent_median):null;
+      var yld=(mSale&&mRent)?(Math.round(mRent*12/mSale*1000)/10):null;
+      cityData[r.city]={
+        price:mSale,
+        rent:mRent?Math.round(mRent):null,
+        listings:Number(r.listings)||0,
+        yield:yld,
+        growth:cityGrowth[r.city]||0,
+        color:CITY_COLORS[i%CITY_COLORS.length]
+      };
+    });
+    var cityNames=Object.keys(cityData);
 
-    // ── STEP 8: Liquidity proxy ──
+    // ── Liquidity proxy (unchanged formula) ──
     var popProxy=country==='Morocco'?37000000:country==='Nigeria'?220000000:50000000;
     var liqScore=Math.min(10,Math.round(Math.log(totalCount/(popProxy/1e6)+1)/Math.log(200)*100)/10);
 
-    // ── STEP 9: Asset class × city breakdown for Key Indicators ──
-    var assetClasses=[...new Set(allRows.map(r=>r._ac))].filter(a=>a);
+    // ── Key Indicators rows (city × asset class × type, count>=3) ──
+    var cc=K.city_class||[];
     var indicatorRows=[];
-    cityNames.forEach(function(city){
-      assetClasses.forEach(function(ac){
-        ['sale','rent'].forEach(function(tt){
-          var rows=allRows.filter(function(r){
-            return r._city===city&&r._ac===ac&&(tt==='sale'?
-              (r._tt==='sale'||r._tt==='forsale'||r._tt==='buy'):
-              (r._tt==='rent'||r._tt==='forrent'||r._tt==='rental'||r._tt==='lease'));
-          });
-          if(rows.length<3) return;
-          var med=median(rows.map(r=>r.price_per_sqm));
-          if(!med) return;
-          indicatorRows.push({city,ac,tt,med:Math.round(med),count:rows.length});
-        });
-      });
+    cc.forEach(function(r){
+      if(Number(r.count)>=3) indicatorRows.push({city:r.city,ac:r.ac,tt:r.tt,med:Math.round(Number(r.med)),count:Number(r.count)});
     });
 
-    // ── STEP 10: District breakdown ──
+    // ── Yield rows: pair sale+rent per city × asset class (each count>=2) ──
+    var ccMap={};
+    cc.forEach(function(r){ ccMap[r.city+'|'+r.ac+'|'+r.tt]={med:Number(r.med),count:Number(r.count)}; });
+    var yieldRows=[], seenCA={};
+    cc.forEach(function(r){
+      var key=r.city+'|'+r.ac; if(seenCA[key]) return; seenCA[key]=1;
+      var s=ccMap[key+'|sale'], rt=ccMap[key+'|rent'];
+      if(s&&rt&&s.count>=2&&rt.count>=2){
+        yieldRows.push({city:r.city,ac:r.ac,mS:Math.round(s.med),mR:Math.round(rt.med),y:Math.round(rt.med*12/s.med*1000)/10});
+      }
+    });
+
+    // ── District rows (vs-city % computed against city median) ──
     var districtRows=[];
-    if(saleRows.some(r=>r._sub&&r._sub.length>0)){
-      var submkts=[...new Set(saleRows.map(r=>r._sub))].filter(s=>s&&s.length>1);
-      submkts.forEach(function(sub){
-        var rows=saleRows.filter(r=>r._sub===sub);
-        if(rows.length<2) return;
-        var city=rows[0]._city;
-        var med=median(rows.map(r=>r.price_per_sqm));
-        var cityMed=cityData[city]?cityData[city].price:med;
-        var pct=cityMed?Math.round((med-cityMed)/cityMed*100):0;
-        districtRows.push({sub,city,med:Math.round(med),count:rows.length,vsCityPct:pct});
-      });
-      districtRows.sort((a,b)=>b.med-a.med);
-    }
+    (K.districts||[]).forEach(function(r){
+      var med=Math.round(Number(r.med));
+      var cityMed=cityData[r.city]?cityData[r.city].price:med;
+      var pct=cityMed?Math.round((med-cityMed)/cityMed*100):0;
+      districtRows.push({sub:r.submarket,city:r.city,med:med,count:Number(r.count),vsCityPct:pct});
+    });
+    districtRows.sort((a,b)=>b.med-a.med);
+
+    // ── Sample listings for the Listings page (small fetch, not 100k) ──
+    var sampleRows=[];
+    try{
+      var lr=await sb.from('properties')
+        .select('city,submarket,asset_class,transaction_type,price_per_sqm,scraped_at')
+        .ilike('country',country).not('price_per_sqm','is',null).gt('price_per_sqm',0)
+        .order('scraped_at',{ascending:false,nullsFirst:false}).limit(50);
+      if(!lr.error&&lr.data){
+        sampleRows=lr.data.map(function(r){
+          r._city=(r.city||'Unknown').trim(); r._sub=(r.submarket||'').trim(); r._ac=(r.asset_class||'').toLowerCase().trim();
+          return r;
+        });
+      }
+    }catch(e){ console.warn('sample listings fetch failed',e); }
 
     // ── UPDATE: COUNTRIES object ──
     var sortedCityData={};
@@ -2156,7 +2100,7 @@ async function loadLiveKPIs(country){
 
     if(primeOfficeRent){
       safeSet('kpi-prime-rent', S+primeOfficeRent.toLocaleString());
-      safeSet('kpi-prime-rent-chg', 'per m²/mo · '+officeRentRows.length+' office rent listings');
+      safeSet('kpi-prime-rent-chg', 'per m²/mo · '+officeRentCount+' office rent listings');
     } else {
       safeSet('kpi-prime-rent', '— (no office rent data)');
       safeSet('kpi-prime-rent-chg', '');
@@ -2212,19 +2156,7 @@ async function loadLiveKPIs(country){
     // ── UPDATE: Yield Estimates table ──
     var yieldBody=document.querySelector('#yield-table tbody');
     if(yieldBody){
-      var yRows=[];
-      cityNames.forEach(function(city){
-        assetClasses.forEach(function(ac){
-          var sr=saleRows.filter(r=>r._city===city&&r._ac===ac);
-          var rr=rentRows.filter(r=>r._city===city&&r._ac===ac);
-          if(sr.length<2||rr.length<2) return;
-          var mS=median(sr.map(r=>r.price_per_sqm));
-          var mR=median(rr.map(r=>r.price_per_sqm));
-          if(!mS||!mR) return;
-          var y=Math.round(mR*12/mS*1000)/10;
-          yRows.push({city,ac,mS:Math.round(mS),mR:Math.round(mR),y});
-        });
-      });
+      var yRows=yieldRows;
       if(yRows.length){
         yieldBody.innerHTML=yRows.map(function(r){
           var col=r.y>=6?'color:var(--green)':r.y>=4?'color:var(--amber)':'color:var(--red)';
@@ -2246,7 +2178,7 @@ async function loadLiveKPIs(country){
     // ── UPDATE: Listings Page ──
     var listBody=document.querySelector('#listings-table tbody');
     if(listBody){
-      var sample=allRows.slice(0,50);
+      var sample=sampleRows;
       listBody.innerHTML=sample.map(function(r,i){
         var ppsm=r.price_per_sqm?(S+Math.round(r.price_per_sqm).toLocaleString()):'-';
         var dt=r.scraped_at?new Date(r.scraped_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'}):'-';
@@ -2707,15 +2639,50 @@ function buildCharts(){
 }
 
 function buildCityTabs(){
-  const c=COUNTRIES[ACTIVE_COUNTRY];
-  if(!c) return;
-  const tabBar=document.getElementById('city-tabs-bar');
+  var c=COUNTRIES[ACTIVE_COUNTRY];
+  if(c) renderCityTabs(c);
+}
+
+// Build the Cities-page tabs from live cityData and render the first city's live profile.
+function renderCityTabs(c){
+  var tabBar=document.getElementById('city-tabs-bar');
   if(!tabBar) return;
-  const cityNames=Object.keys(c.cityData);
-  if(!cityNames.length) return;
-  tabBar.innerHTML=cityNames.map((name,i)=>
-    `<button class="city-tab${i===0?' active-tab':''}" onclick="switchCity(this,'${name.toLowerCase()}')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:${i===0?'var(--ink)':'var(--surface)'};color:${i===0?'#fff':'var(--ink3)'};border:none;cursor:pointer;">${name}</button>`
-  ).join('');
+  var cityNames=Object.keys(c.cityData||{});
+  if(!cityNames.length){
+    tabBar.innerHTML='<div style="padding:12px;font-size:12px;color:var(--ink4);">No live city data for '+(c.label||'this market')+' yet.</div>';
+    return;
+  }
+  tabBar.innerHTML=cityNames.map(function(name,i){
+    return '<button class="city-tab'+(i===0?' active-tab':'')+'" data-city="'+encodeURIComponent(name)+'" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:'+(i===0?'var(--ink)':'var(--surface)')+';color:'+(i===0?'#fff':'var(--ink3)')+';border:none;cursor:pointer;">'+name+'</button>';
+  }).join('');
+  var btns=tabBar.querySelectorAll('.city-tab');
+  btns.forEach(function(btn){
+    btn.addEventListener('click',function(){ liveCityProfile(c, decodeURIComponent(btn.getAttribute('data-city')), btn); });
+  });
+  liveCityProfile(c, cityNames[0], btns[0]);
+}
+
+// Called from loadLiveKPIs — populates the Cities page from live aggregates.
+function updateCitiesPage(c){ if(c) renderCityTabs(c); }
+
+// Fill the city profile's live KPI cards for one city. (Lower panels remain DEMO.)
+function liveCityProfile(c, city, btn){
+  var d=(c.cityData||{})[city]; if(!d) return;
+  if(btn){
+    document.querySelectorAll('#city-tabs-bar .city-tab').forEach(function(t){ t.style.background='var(--surface)'; t.style.color='var(--ink3)'; t.classList.remove('active-tab'); });
+    btn.style.background='var(--ink)'; btn.style.color='#fff'; btn.classList.add('active-tab');
+  }
+  var S=(c.currency==='MAD')?'MAD ':(c.currency==='NGN')?'₦':(c.currency+' ');
+  var set=function(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; };
+  set('c-med-price', d.price?(S+d.price.toLocaleString()):'—');
+  var chg=document.getElementById('c-price-chg');
+  if(chg){ var g=d.growth; if(g>0){ chg.textContent='▲ +'+g+'%'; chg.className='kpi-chg chg pos'; } else if(g<0){ chg.textContent='▼ '+g+'%'; chg.className='kpi-chg chg neg'; } else { chg.textContent='—'; chg.className='kpi-chg chg'; } }
+  set('c-prime-rent', d.rent?(S+d.rent.toLocaleString()):'—');
+  set('c-rent-chg','median rent · per m²/mo');
+  set('c-listings', d.listings?d.listings.toLocaleString():'0');
+  set('c-yield', d.yield?(d.yield+'%'):'—');
+  var liq=document.getElementById('c-liq'); if(liq) liq.innerHTML='—<span style="font-size:14px;color:var(--ink4);">/10</span>';
+  var pt=document.getElementById('c-pipe-title'); if(pt) pt.textContent='Development Pipeline — '+city;
 }
 
 // ── LIQUIDITY GAUGES ──
