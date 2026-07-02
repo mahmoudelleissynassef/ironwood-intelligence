@@ -557,6 +557,11 @@ button{cursor:pointer;font-family:var(--sans);}
         <span class="conf conf-m"><span class="conf-dot"></span>Med.</span>
         <span class="conf conf-e"><span class="conf-dot"></span>Est.</span>
       </div>
+      <div class="tb-conf" title="Measured = computed directly from listings. Modeled = derived with assumptions (e.g. yield, liquidity).">
+        <span>Source:</span>
+        <span class="ds-tag ds-listings">Measured</span>
+        <span class="ds-tag ds-model">Modeled</span>
+      </div>
       <div class="tb-filter">
         <span>Asset:</span>
         <select id="asset-filter" onchange="applyFilters()">
@@ -598,35 +603,35 @@ button{cursor:pointer;font-family:var(--sans);}
           <div class="kpi-val" id="kpi-prime-rent">DH 142</div>
           <div class="kpi-sub">per m²/mo · Casablanca CBD</div>
           <div class="kpi-chg" id="kpi-prime-rent-chg">▲ +4.4% 12M</div>
-          <div style="margin-top:6px;"><span class="ds-tag ds-listings">Listings-derived</span></div>
+          <div style="margin-top:6px;"><span class="ds-tag ds-listings">Measured</span></div>
         </div>
         <div class="kpi" onclick="showEvidence('median-price')" style="cursor:pointer;">
           <div class="kpi-lbl">Median Sale Price <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
           <div class="kpi-val" id="kpi-median-price">DH 18,400</div>
           <div class="kpi-sub" id="kpi-median-sub">per m² · all assets</div>
           <div class="kpi-chg chg pos" id="kpi-price-growth">▲ +6.1% 12M</div>
-          <div style="margin-top:6px;"><span class="ds-tag ds-listings">Listings-derived</span></div>
+          <div style="margin-top:6px;"><span class="ds-tag ds-listings">Measured</span></div>
         </div>
         <div class="kpi" onclick="showEvidence('listings-volume')" style="cursor:pointer;">
           <div class="kpi-lbl">Active Listings <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
           <div class="kpi-val" id="kpi-active-listings">12,806</div>
           <div class="kpi-sub">verified · all asset classes</div>
           <div class="kpi-chg" id="kpi-listings-chg">▲ +8.3% MoM</div>
-          <div style="margin-top:6px;"><span class="ds-tag ds-listings">Listings-derived</span></div>
+          <div style="margin-top:6px;"><span class="ds-tag ds-listings">Measured</span></div>
         </div>
         <div class="kpi" onclick="showEvidence('yield-estimate')" style="cursor:pointer;">
           <div class="kpi-lbl">Yield Estimate <span class="conf conf-e"><span class="conf-dot"></span>Est.</span></div>
           <div class="kpi-val" id="kpi-yield">5.8%</div>
           <div class="kpi-sub">gross · Casablanca resi.</div>
           <div class="kpi-chg" style="color:var(--ink4);">→ Stable</div>
-          <div style="margin-top:6px;"><span class="ds-tag ds-model">Modelled</span></div>
+          <div style="margin-top:6px;"><span class="ds-tag ds-model">Modeled</span></div>
         </div>
         <div class="kpi" onclick="showEvidence('liquidity')" style="cursor:pointer;">
           <div class="kpi-lbl">Liquidity Score <span class="conf conf-m"><span class="conf-dot"></span>Med.</span></div>
           <div class="kpi-val" id="kpi-liquidity">6.4<span style="font-size:14px;color:var(--ink4);">/10</span></div>
           <div class="kpi-sub">Ironwood Liquidity Index</div>
           <div class="kpi-chg" id="kpi-liquidity-chg">▲ +0.3 pts MoM</div>
-          <div style="margin-top:6px;"><span class="ds-tag ds-model">Modelled</span></div>
+          <div style="margin-top:6px;"><span class="ds-tag ds-model">Modeled</span></div>
         </div>
         <div class="kpi" onclick="showEvidence('pipeline')" style="cursor:pointer;">
           <div class="kpi-lbl">Pipeline Supply <span class="conf conf-m"><span class="conf-dot"></span>Med.</span></div>
@@ -672,7 +677,7 @@ button{cursor:pointer;font-family:var(--sans);}
           <div class="panel-hd">
             <div>
               <div class="panel-title">City Rankings</div>
-              <div class="panel-sub">By prime rent · March 2026 · <span class="ds-tag ds-listings">Listings-derived</span></div>
+              <div class="panel-sub">By prime rent · March 2026 · <span class="ds-tag ds-listings">Measured</span></div>
             </div>
             <button class="pa-btn" onclick="exportTable('city-rank-table')">↓ CSV</button>
           </div>
@@ -691,42 +696,30 @@ button{cursor:pointer;font-family:var(--sans);}
           <div class="panel-hd">
             <div>
               <div class="panel-title">Recent Transactions</div>
-              <div class="panel-sub">Last 30 days · <span class="ds-tag ds-transaction">Observed</span></div>
+              <div class="panel-sub">Observed transactions — not yet wired to live data</div>
             </div>
-            <button class="pa-btn" onclick="exportTable('recent-txn-table')">↓ CSV</button>
           </div>
-          <table class="dt" id="recent-txn-table">
-            <thead><tr><th>Date</th><th>City</th><th>Asset</th><th>DH/m²</th><th>Confidence</th></tr></thead>
-            <tbody>
-              <tr><td class="mono dt-muted">Mar 10</td><td class="dt-city">Casablanca</td><td>Office</td><td class="mono">18,200</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
-              <tr><td class="mono dt-muted">Mar 08</td><td class="dt-city">Marrakech</td><td>Riad</td><td class="mono">38,500</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
-              <tr><td class="mono dt-muted">Mar 06</td><td class="dt-city">Rabat</td><td>Apartment</td><td class="mono">15,400</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
-              <tr><td class="mono dt-muted">Mar 03</td><td class="dt-city">Tangiers</td><td>Villa</td><td class="mono">12,100</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
-              <tr><td class="mono dt-muted">Feb 28</td><td class="dt-city">Casablanca</td><td>Retail</td><td class="mono">22,800</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
-            </tbody>
-          </table>
+          <div style="padding:40px 20px;text-align:center;color:var(--ink4);border-top:1px solid var(--border);">
+            <div style="font-size:24px;margin-bottom:8px;">◷</div>
+            <div style="font-size:13px;font-weight:600;color:var(--ink3);">Coming soon</div>
+            <div style="font-size:11.5px;margin-top:4px;">Transaction evidence will appear here once a verified source is connected.</div>
+          </div>
         </div>
       </div>
 
-      <!-- Pipeline Summary -->
+      <!-- Pipeline Summary (placeholder — demo data removed) -->
       <div class="panel">
         <div class="panel-hd">
           <div>
             <div class="panel-title">Development Pipeline Summary</div>
-            <div class="panel-sub">Active tracked projects · Morocco · <span class="ds-tag ds-pipeline">Pipeline data</span></div>
+            <div class="panel-sub">Pipeline data — not yet wired to live data</div>
           </div>
-          <button class="pa-btn" onclick="nav('pipeline')">View Full Pipeline →</button>
         </div>
-        <table class="dt">
-          <thead><tr><th>City</th><th>Projects</th><th>Total GFA m²</th><th>2026 Completions</th><th>2027 Completions</th><th>Risk Level</th></tr></thead>
-          <tbody>
-            <tr><td class="dt-city">Casablanca</td><td class="mono">14</td><td class="mono">~190,000</td><td class="mono">52,000</td><td class="mono">84,000</td><td><span class="sig sig-dn">High</span></td></tr>
-            <tr><td class="dt-city">Marrakech</td><td class="mono">8</td><td class="mono">~85,000</td><td class="mono">32,000</td><td class="mono">38,000</td><td><span class="sig sig-warn">Moderate</span></td></tr>
-            <tr><td class="dt-city">Rabat</td><td class="mono">5</td><td class="mono">~42,000</td><td class="mono">24,000</td><td class="mono">18,000</td><td><span class="sig sig-up">Low</span></td></tr>
-            <tr><td class="dt-city">Tangiers</td><td class="mono">4</td><td class="mono">~71,000</td><td class="mono">0</td><td class="mono">48,000</td><td><span class="sig sig-warn">Moderate</span></td></tr>
-            <tr><td class="dt-city">Fez</td><td class="mono">2</td><td class="mono">~12,000</td><td class="mono">0</td><td class="mono">0</td><td><span class="sig sig-up">Low</span></td></tr>
-          </tbody>
-        </table>
+        <div style="padding:40px 20px;text-align:center;color:var(--ink4);border-top:1px solid var(--border);">
+          <div style="font-size:24px;margin-bottom:8px;">▦</div>
+          <div style="font-size:13px;font-weight:600;color:var(--ink3);">Coming soon</div>
+          <div style="font-size:11.5px;margin-top:4px;">Development pipeline tracking will populate here in a later release.</div>
+        </div>
       </div>
     </div><!-- /pg-market-terminal -->
 
@@ -739,7 +732,7 @@ button{cursor:pointer;font-family:var(--sans);}
       <div class="pg-sub">Full indicator set by city and asset class. All metrics carry source classification and confidence scoring.</div>
       <div class="panel">
         <div class="panel-hd">
-          <div><div class="panel-title">Asking Price Indicators — All Cities</div><div class="panel-sub">Listings-derived · Median asking prices · March 2026 · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+          <div><div class="panel-title">Asking Price Indicators — All Cities</div><div class="panel-sub">Listings-derived · Median asking prices · March 2026 · <span class="ds-tag ds-listings">Measured</span></div></div>
           <button class="pa-btn gold" onclick="exportTable('indicators-table','xlsx')">↓ Excel</button>
         </div>
         <table class="dt" id="indicators-table">
@@ -771,7 +764,7 @@ button{cursor:pointer;font-family:var(--sans);}
       <div class="pg-title">Market Signals</div>
       <div class="pg-sub">Derived signal indicators for Morocco markets. Each signal references its source dataset. Signals are modelled outputs — not direct observations.</div>
       <div class="panel" style="margin-bottom:16px;">
-        <div class="panel-hd"><div class="panel-title">Signal Registry</div><div class="panel-sub">Morocco · March 2026 · <span class="ds-tag ds-model">Modelled</span></div></div>
+        <div class="panel-hd"><div class="panel-title">Signal Registry</div><div class="panel-sub">Morocco · March 2026 · <span class="ds-tag ds-model">Modeled</span></div></div>
         <table class="dt">
           <thead><tr><th>Signal</th><th>City</th><th>Score</th><th>Direction</th><th>Source Dataset</th><th>Last Updated</th><th>Confidence</th></tr></thead>
           <tbody>
@@ -779,7 +772,7 @@ button{cursor:pointer;font-family:var(--sans);}
             <tr><td class="dt-city">Rent Momentum</td><td>Marrakech</td><td class="mono">8.4/10</td><td><span class="sig sig-up">▲ Very Strong</span></td><td><span class="ds-tag ds-listings">Listings</span></td><td class="mono dt-muted">Mar 2026</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
             <tr><td class="dt-city">Supply Pressure</td><td>Casablanca</td><td class="mono">6.8/10</td><td><span class="sig sig-warn">⚠ Elevated</span></td><td><span class="ds-tag ds-pipeline">Pipeline</span></td><td class="mono dt-muted">Mar 2026</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
             <tr><td class="dt-city">Pipeline Risk</td><td>Casablanca</td><td class="mono">6.2/10</td><td><span class="sig sig-warn">⚠ Moderate</span></td><td><span class="ds-tag ds-pipeline">Pipeline</span></td><td class="mono dt-muted">Mar 2026</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
-            <tr><td class="dt-city">Inv. Liquidity</td><td>National</td><td class="mono">6.4/10</td><td><span class="sig sig-neutral">→ Stable</span></td><td><span class="ds-tag ds-model">Modelled</span></td><td class="mono dt-muted">Mar 2026</td><td><span class="conf conf-e"><span class="conf-dot"></span>Est.</span></td></tr>
+            <tr><td class="dt-city">Inv. Liquidity</td><td>National</td><td class="mono">6.4/10</td><td><span class="sig sig-neutral">→ Stable</span></td><td><span class="ds-tag ds-model">Modeled</span></td><td class="mono dt-muted">Mar 2026</td><td><span class="conf conf-e"><span class="conf-dot"></span>Est.</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -834,35 +827,35 @@ button{cursor:pointer;font-family:var(--sans);}
             <div class="kpi-val" id="c-med-price">DH 18,420</div>
             <div class="kpi-sub">per m² · Asking price</div>
             <div class="kpi-chg chg pos" id="c-price-chg">▲ +6.2% 12M</div>
-            <div style="margin-top:6px;"><span class="ds-tag ds-listings">Listings-derived</span></div>
+            <div style="margin-top:6px;"><span class="ds-tag ds-listings">Measured</span></div>
           </div>
           <div class="kpi">
             <div class="kpi-lbl">Prime Rent <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
             <div class="kpi-val" id="c-prime-rent">DH 142</div>
             <div class="kpi-sub">per m²/mo · Offices</div>
             <div class="kpi-chg chg pos" id="c-rent-chg">▲ +4.4% 12M</div>
-            <div style="margin-top:6px;"><span class="ds-tag ds-listings">Listings-derived</span></div>
+            <div style="margin-top:6px;"><span class="ds-tag ds-listings">Measured</span></div>
           </div>
           <div class="kpi">
             <div class="kpi-lbl">Active Listings <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
             <div class="kpi-val" id="c-listings">4,218</div>
             <div class="kpi-sub">verified · all asset classes</div>
             <div class="kpi-chg" id="c-list-chg" style="color:var(--ink4);">All types</div>
-            <div style="margin-top:6px;"><span class="ds-tag ds-listings">Listings-derived</span></div>
+            <div style="margin-top:6px;"><span class="ds-tag ds-listings">Measured</span></div>
           </div>
           <div class="kpi">
             <div class="kpi-lbl">Yield Estimate <span class="conf conf-e"><span class="conf-dot"></span>Est.</span></div>
             <div class="kpi-val" id="c-yield">5.8%</div>
             <div class="kpi-sub">gross · residential</div>
             <div class="kpi-chg" style="color:var(--ink4);">→ Stable</div>
-            <div style="margin-top:6px;"><span class="ds-tag ds-model">Modelled</span></div>
+            <div style="margin-top:6px;"><span class="ds-tag ds-model">Modeled</span></div>
           </div>
           <div class="kpi">
             <div class="kpi-lbl">Liquidity Score <span class="conf conf-m"><span class="conf-dot"></span>Med.</span></div>
             <div class="kpi-val" id="c-liq">7.0<span style="font-size:14px;color:var(--ink4);">/10</span></div>
             <div class="kpi-sub">Ironwood Liquidity Index</div>
             <div class="kpi-chg" id="c-liq-chg" style="color:var(--green);">→ Liquid</div>
-            <div style="margin-top:6px;"><span class="ds-tag ds-model">Modelled</span></div>
+            <div style="margin-top:6px;"><span class="ds-tag ds-model">Modeled</span></div>
           </div>
           <div class="kpi">
             <div class="kpi-lbl">Pipeline Supply <span class="conf conf-m"><span class="conf-dot"></span>Med.</span></div>
@@ -877,7 +870,7 @@ button{cursor:pointer;font-family:var(--sans);}
           <!-- Price Trends -->
           <div class="panel">
             <div class="panel-hd">
-              <div><div class="panel-title">Price Trend</div><div class="panel-sub" id="c-trend-sub">Apartments · Indexed 100 = Q1 2025 · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+              <div><div class="panel-title">Price Trend</div><div class="panel-sub" id="c-trend-sub">Apartments · Indexed 100 = Q1 2025 · <span class="ds-tag ds-listings">Measured</span></div></div>
               <button class="pa-btn" onclick="exportTable('city-trend-table')">↓ CSV</button>
             </div>
             <div class="panel-body"><div style="height:200px;"><canvas id="city-trend-chart"></canvas></div></div>
@@ -886,7 +879,7 @@ button{cursor:pointer;font-family:var(--sans);}
           <!-- District Comparison -->
           <div class="panel">
             <div class="panel-hd">
-              <div><div class="panel-title">District Comparison</div><div class="panel-sub">Median asking price by sub-market · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+              <div><div class="panel-title">District Comparison</div><div class="panel-sub">Median asking price by sub-market · <span class="ds-tag ds-listings">Measured</span></div></div>
               <button class="pa-btn" onclick="exportTable('city-district-table')">↓ CSV</button>
             </div>
             <div class="panel-body"><div style="height:200px;"><canvas id="city-district-chart"></canvas></div></div>
@@ -952,7 +945,7 @@ button{cursor:pointer;font-family:var(--sans);}
         <!-- Price trend data table (exportable) -->
         <div class="panel">
           <div class="panel-hd">
-            <div><div class="panel-title" id="c-trend-tbl-title">Price Trend Data — Casablanca</div><div class="panel-sub">Quarterly median asking prices · DH/m² · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+            <div><div class="panel-title" id="c-trend-tbl-title">Price Trend Data — Casablanca</div><div class="panel-sub">Quarterly median asking prices · DH/m² · <span class="ds-tag ds-listings">Measured</span></div></div>
             <button class="pa-btn gold" onclick="exportTable('city-trend-table','xlsx')">↓ Excel</button>
           </div>
           <table class="dt" id="city-trend-table">
@@ -997,7 +990,7 @@ button{cursor:pointer;font-family:var(--sans);}
       <!-- District comparison table — full spec fields -->
       <div class="panel" style="margin-bottom:20px;">
         <div class="panel-hd">
-          <div><div class="panel-title" id="district-table-title">District Profiles — Casablanca</div><div class="panel-sub">Median asking prices · March 2026 · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+          <div><div class="panel-title" id="district-table-title">District Profiles — Casablanca</div><div class="panel-sub">Median asking prices · March 2026 · <span class="ds-tag ds-listings">Measured</span></div></div>
         </div>
         <table class="dt" id="district-full-table">
           <thead>
@@ -1023,7 +1016,7 @@ button{cursor:pointer;font-family:var(--sans);}
       <div class="sec-div"><span class="sd-label">District Spotlight — Ain Diab, Casablanca</span></div>
       <div class="two-col">
         <div class="panel">
-          <div class="panel-hd"><div class="panel-title">Asking Price Summary</div><div class="panel-sub">Ain Diab · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+          <div class="panel-hd"><div class="panel-title">Asking Price Summary</div><div class="panel-sub">Ain Diab · <span class="ds-tag ds-listings">Measured</span></div></div>
           <div class="panel-body">
             <div class="ep-meta-row"><span class="ep-meta-lbl">Median Sale Price</span><span class="ep-meta-val">DH 26,200/m²</span></div>
             <div class="ep-meta-row"><span class="ep-meta-lbl">vs City Median</span><span class="ep-meta-val" style="color:var(--green);">+42% premium</span></div>
@@ -1067,7 +1060,7 @@ button{cursor:pointer;font-family:var(--sans);}
         <div class="panel-hd">
           <div>
             <div class="panel-title">Listings Registry</div>
-            <div class="panel-sub" id="listings-sub">Morocco · All asset classes · <span class="ds-tag ds-listings">Listings-derived</span></div>
+            <div class="panel-sub" id="listings-sub">Morocco · All asset classes · <span class="ds-tag ds-listings">Measured</span></div>
           </div>
           <div class="panel-actions">
             <button class="pa-btn" onclick="applyFilters()">Filter</button>
@@ -1237,14 +1230,14 @@ button{cursor:pointer;font-family:var(--sans);}
       <div class="two-col">
         <div class="panel">
           <div class="panel-hd">
-            <div><div class="panel-title">Apartment Price Index</div><div class="panel-sub">Indexed to 100 = Q1 2025 · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+            <div><div class="panel-title">Apartment Price Index</div><div class="panel-sub">Indexed to 100 = Q1 2025 · <span class="ds-tag ds-listings">Measured</span></div></div>
             <button class="pa-btn" onclick="exportTable('trend-table')">↓ CSV</button>
           </div>
           <div class="panel-body"><div style="height:220px;"><canvas id="trends-chart"></canvas></div></div>
         </div>
         <div class="panel">
           <div class="panel-hd">
-            <div><div class="panel-title">12M Growth by City</div><div class="panel-sub">Apartments · asking prices · <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+            <div><div class="panel-title">12M Growth by City</div><div class="panel-sub">Apartments · asking prices · <span class="ds-tag ds-listings">Measured</span></div></div>
           </div>
           <div class="panel-body"><div style="height:220px;"><canvas id="growth-chart"></canvas></div></div>
         </div>
@@ -1274,11 +1267,11 @@ button{cursor:pointer;font-family:var(--sans);}
     <div class="pg" id="pg-liquidity-index">
       <div class="eyebrow">Analytics</div>
       <div class="pg-title">Liquidity Index</div>
-      <div class="pg-sub">Ironwood proprietary liquidity scoring. Composite of listing volume, price dispersion, transaction frequency, and investor activity. Scored 0–100. <span class="ds-tag ds-model">Modelled</span></div>
+      <div class="pg-sub">Ironwood proprietary liquidity scoring. Composite of listing volume, price dispersion, transaction frequency, and investor activity. Scored 0–100. <span class="ds-tag ds-model">Modeled</span></div>
       <div id="liq-gauges" style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px;"></div>
       <div class="two-col">
         <div class="panel">
-          <div class="panel-hd"><div class="panel-title">Liquidity Trend — 6 Months</div><div class="panel-sub">All cities · <span class="ds-tag ds-model">Modelled</span></div></div>
+          <div class="panel-hd"><div class="panel-title">Liquidity Trend — 6 Months</div><div class="panel-sub">All cities · <span class="ds-tag ds-model">Modeled</span></div></div>
           <div class="panel-body"><div style="height:220px;"><canvas id="liq-trend-chart"></canvas></div></div>
         </div>
         <div class="panel">
@@ -1288,7 +1281,7 @@ button{cursor:pointer;font-family:var(--sans);}
       </div>
       <div class="panel">
         <div class="panel-hd">
-          <div><div class="panel-title">Liquidity Rankings</div><div class="panel-sub">Morocco · Scored 0–100 · <span class="ds-tag ds-model">Modelled</span></div></div>
+          <div><div class="panel-title">Liquidity Rankings</div><div class="panel-sub">Morocco · Scored 0–100 · <span class="ds-tag ds-model">Modeled</span></div></div>
           <button class="pa-btn gold" onclick="exportTable('liq-full-table','xlsx')">↓ Excel</button>
         </div>
         <table class="dt" id="liq-full-table">
@@ -1387,7 +1380,7 @@ button{cursor:pointer;font-family:var(--sans);}
       <div class="pg-title">Yield Estimates</div>
       <div class="pg-sub">Gross yield estimates derived from median asking rents and sale prices. These are estimated indicators — not achieved investment returns.</div>
       <div style="padding:10px 14px;background:var(--amber-bg);border:1px solid #fcd34d;border-radius:2px;margin-bottom:16px;font-size:12px;color:var(--amber);">
-        ⚠ <strong>Important:</strong> Yield figures are estimated from asking-price ratios only. They do not reflect achieved transaction yields, vacancy, management costs, or financing. <span class="ds-tag ds-model">Modelled</span>
+        ⚠ <strong>Important:</strong> Yield figures are estimated from asking-price ratios only. They do not reflect achieved transaction yields, vacancy, management costs, or financing. <span class="ds-tag ds-model">Modeled</span>
       </div>
       <div class="panel">
         <div class="panel-hd"><div class="panel-title">Gross Yield Estimates by City and Asset Class</div><div class="panel-sub">Morocco · March 2026 · Listings-derived inputs · <span class="ds-tag ds-model">Modelled output</span></div></div>
@@ -1492,7 +1485,7 @@ button{cursor:pointer;font-family:var(--sans);}
         <div style="padding:14px 18px;border-bottom:1px solid var(--border);">
           <div style="display:flex;align-items:flex-start;gap:12px;">
             <span class="sig sig-up" style="flex-shrink:0;margin-top:2px;">▲ Signal</span>
-            <div><div style="font-weight:600;margin-bottom:4px;">Marrakech riad prices accelerating — 12.1% YoY</div><div style="font-size:12px;color:var(--ink3);line-height:1.6;">Median riad asking prices reached DH 38,200/m² in March 2026, up 12.1% year-on-year based on 284 verified listings. This outperforms apartment growth (+8.4%) and represents the strongest asset class growth in Morocco. Source: <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+            <div><div style="font-weight:600;margin-bottom:4px;">Marrakech riad prices accelerating — 12.1% YoY</div><div style="font-size:12px;color:var(--ink3);line-height:1.6;">Median riad asking prices reached DH 38,200/m² in March 2026, up 12.1% year-on-year based on 284 verified listings. This outperforms apartment growth (+8.4%) and represents the strongest asset class growth in Morocco. Source: <span class="ds-tag ds-listings">Measured</span></div></div>
           </div>
         </div>
         <div style="padding:14px 18px;border-bottom:1px solid var(--border);">
@@ -1504,7 +1497,7 @@ button{cursor:pointer;font-family:var(--sans);}
         <div style="padding:14px 18px;">
           <div style="display:flex;align-items:flex-start;gap:12px;">
             <span class="sig sig-dn" style="flex-shrink:0;margin-top:2px;">▼ Watch</span>
-            <div><div style="font-weight:600;margin-bottom:4px;">Fez asking prices contracting — only declining market in Morocco</div><div style="font-size:12px;color:var(--ink3);line-height:1.6;">Fez apartment prices fell -2.1% over 12 months to March 2026 based on 524 listing observations. Rent data also declining at -1.4%. Liquidity score at 3.8/10, lowest in coverage. Source: <span class="ds-tag ds-listings">Listings-derived</span></div></div>
+            <div><div style="font-weight:600;margin-bottom:4px;">Fez asking prices contracting — only declining market in Morocco</div><div style="font-size:12px;color:var(--ink3);line-height:1.6;">Fez apartment prices fell -2.1% over 12 months to March 2026 based on 524 listing observations. Rent data also declining at -1.4%. Liquidity score at 3.8/10, lowest in coverage. Source: <span class="ds-tag ds-listings">Measured</span></div></div>
           </div>
         </div>
       </div>
@@ -1717,7 +1710,7 @@ button{cursor:pointer;font-family:var(--sans);}
           </div>
         </div>
         <div class="panel">
-          <div class="panel-hd"><div class="panel-title">Macro-to-RE Signal</div><div class="panel-sub">Derived signal · <span class="ds-tag ds-model">Modelled</span></div></div>
+          <div class="panel-hd"><div class="panel-title">Macro-to-RE Signal</div><div class="panel-sub">Derived signal · <span class="ds-tag ds-model">Modeled</span></div></div>
           <div class="panel-body">
             <div class="score-bar-row"><span class="score-bar-label">Demand Trend</span><div class="score-bar-track"><div class="score-bar-fill" style="width:78%;background:var(--green);"></div></div><span class="score-bar-val">7.8</span></div>
             <div class="score-bar-row"><span class="score-bar-label">Affordability</span><div class="score-bar-track"><div class="score-bar-fill" style="width:52%;background:var(--gold);"></div></div><span class="score-bar-val">5.2</span></div>
@@ -2089,14 +2082,14 @@ async function loadLiveKPIs(country){
     }
 
     if(grossYieldAll!==null){
-      safeSet('kpi-yield', Math.round(grossYieldAll*10)/10+'% gross est.');
+      safeSet('kpi-yield', Math.round(grossYieldAll*10)/10+'% gross · modeled est.');
     } else {
       safeSet('kpi-yield', '— (need rent listings)');
     }
 
     safeSet('kpi-pipeline', '—');
     safeSet('kpi-liquidity', liqScore.toFixed(1)+' / 10');
-    safeSet('kpi-liquidity-chg', 'Listing volume proxy · '+country);
+    safeSet('kpi-liquidity-chg', 'Listing-volume proxy · modeled · '+country);
 
     if(primeOfficeRent){
       safeSet('kpi-prime-rent', S+primeOfficeRent.toLocaleString());
@@ -2510,8 +2503,37 @@ function hideLoader(){
   setTimeout(()=>document.getElementById('loader').style.display='none',700);
 }
 
+// Replace fabricated demo pages with a neutral placeholder until real data is wired.
+function placeholderizeDemoPages(){
+  var pages=[
+    ['transactions','Data','Transactions'],
+    ['pipeline','Data','Development Pipeline'],
+    ['occupiers','Data','Corporate Occupiers'],
+    ['infrastructure','Data','Infrastructure'],
+    ['market-signals','Overview','Market Signals'],
+    ['investment-radar','Analytics','Investment Radar'],
+    ['liquidity-index','Analytics','Liquidity Index'],
+    ['heatmaps','Map','Heatmaps'],
+    ['market-reports','Research','Market Reports'],
+    ['insights','Research','Insights']
+  ];
+  pages.forEach(function(p){
+    var pg=document.getElementById('pg-'+p[0]); if(!pg) return;
+    pg.innerHTML=
+      '<div class="eyebrow">'+p[1]+'</div>'+
+      '<div class="pg-title">'+p[2]+'</div>'+
+      '<div class="pg-sub">This module is not yet wired to live data. The layout is reserved; real data will be added in a later release.</div>'+
+      '<div style="margin-top:24px;padding:56px 24px;border:1px dashed var(--border);border-radius:4px;text-align:center;background:var(--surface);">'+
+        '<div style="font-size:30px;margin-bottom:10px;color:var(--ink4);">▦</div>'+
+        '<div style="font-size:14px;font-weight:700;color:var(--ink3);margin-bottom:6px;">'+p[2]+' — coming soon</div>'+
+        '<div style="font-size:12px;color:var(--ink4);max-width:440px;margin:0 auto;line-height:1.6;">Illustrative demo figures were removed to avoid confusion. This section will populate once its data source is connected.</div>'+
+      '</div>';
+  });
+}
+
 // ── BOOT ──
 async function boot(){
+  placeholderizeDemoPages();
   try{ sb=supabase.createClient(SB_URL,SB_KEY); }catch(e){ sb=null; }
   const safetyTimer=setTimeout(()=>{ hideLoader(); buildCharts(); },4000);
   try{
