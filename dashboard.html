@@ -1893,7 +1893,7 @@ function switchCountry(name){
   if(liveEl) liveEl.innerHTML='<div class="live-dot"></div>'+name+' · Loading…';
 
   // Update city page placeholder
-  updateCitiesPage(c);
+  if(typeof updateCitiesPage==='function') updateCitiesPage(c);  // TODO: not yet implemented — guard against ReferenceError
 
   // ── Async: fetch live data from Supabase ──
   loadLiveKPIs(name);
@@ -2306,7 +2306,7 @@ async function loadLiveKPIs(country){
     }
 
     // ── UPDATE: Cities Page ──
-    updateCitiesPage(c);
+    if(typeof updateCitiesPage==='function') updateCitiesPage(c);  // TODO: updateCitiesPage is not yet implemented — guard so it doesn't abort KPI render
 
     // ── REBUILD Charts ──
     _chartsBuilt=false;
