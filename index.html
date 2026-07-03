@@ -161,6 +161,8 @@ nav{position:sticky;top:0;z-index:1000;height:64px;background:rgba(255,255,255,.
 ══════════════════════════════════════ */
 .hero{position:relative;min-height:700px;display:flex;align-items:center;background:var(--black);overflow:hidden;}
 .hero-bg{position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1800&auto=format&fit=crop&q=80');background-size:cover;background-position:center;opacity:.2;}
+.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.85;}
+@media (prefers-reduced-motion: reduce){.hero-video{display:none;}}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(108deg,rgba(13,13,13,.97) 40%,rgba(13,13,13,.52) 100%);}
 .hero-content{position:relative;z-index:2;padding:104px 60px;max-width:1280px;width:100%;margin:0 auto;}
 .hero-tag{display:inline-flex;align-items:center;gap:10px;padding:6px 14px;border:1px solid rgba(201,168,108,.3);margin-bottom:30px;}
@@ -780,6 +782,10 @@ footer{background:var(--black);padding:64px 0 32px;}
   <!-- HERO -->
   <section class="hero">
     <div class="hero-bg"></div>
+    <video class="hero-video" autoplay muted loop playsinline preload="auto" poster="/assets/hero-720-poster.jpg">
+      <source src="/assets/hero-720.webm" type="video/webm"/>
+      <source src="/assets/hero-720.mp4" type="video/mp4"/>
+    </video>
     <div class="hero-overlay"></div>
     <div class="hero-content">
       <div class="hero-tag">
