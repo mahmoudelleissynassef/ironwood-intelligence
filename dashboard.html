@@ -437,9 +437,6 @@ button{cursor:pointer;font-family:var(--sans);}
     <div class="country-opt active" id="copt-Morocco" onclick="switchCountry('Morocco')">
       <span style="font-size:15px;">🇲🇦</span><span>Morocco</span><span style="margin-left:auto;font-size:10px;color:#166534;font-weight:600;">62k listings</span>
     </div>
-    <div class="country-opt" id="copt-Nigeria" onclick="switchCountry('Nigeria')">
-      <span style="font-size:15px;">🇳🇬</span><span>Nigeria</span><span style="margin-left:auto;font-size:10px;color:#166534;font-weight:600;">28k listings</span>
-    </div>
     <div class="country-opt" id="copt-Kenya" onclick="switchCountry('Kenya')">
       <span style="font-size:15px;">🇰🇪</span><span>Kenya</span><span style="margin-left:auto;font-size:10px;color:#166534;font-weight:600;">3.5k listings</span>
     </div>
@@ -452,6 +449,7 @@ button{cursor:pointer;font-family:var(--sans);}
     <div class="country-opt" id="copt-Libya" onclick="switchCountry('Libya')"><span style="font-size:15px;">🇱🇾</span><span>Libya</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
     <div class="country-opt" id="copt-Sudan" onclick="switchCountry('Sudan')"><span style="font-size:15px;">🇸🇩</span><span>Sudan</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
     <div style="padding:8px 12px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b8b8b5;border-bottom:1px solid #f0f0ee;border-top:1px solid #f0f0ee;">WEST AFRICA</div>
+    <div class="country-opt" id="copt-Nigeria" onclick="switchCountry('Nigeria')"><span style="font-size:15px;">🇳🇬</span><span>Nigeria</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
     <div class="country-opt" id="copt-Ghana" onclick="switchCountry('Ghana')"><span style="font-size:15px;">🇬🇭</span><span>Ghana</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
     <div class="country-opt" id="copt-CoteIvoire" onclick="switchCountry('CoteIvoire')"><span style="font-size:15px;">🇨🇮</span><span>Côte d'Ivoire</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
     <div class="country-opt" id="copt-Senegal" onclick="switchCountry('Senegal')"><span style="font-size:15px;">🇸🇳</span><span>Senegal</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
@@ -1745,9 +1743,9 @@ const COUNTRIES={
   Morocco:{flag:'🇲🇦',label:'Morocco',cities:['Casablanca','Marrakech','Rabat','Tangiers','Fez'],listingCount:'62,052',wbCode:'MA',
     kpis:{medianPrice:'Loading…',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
     currency:'MAD',region:'North Africa',updated:'Live',status:'live',cityData:{}},
-  Nigeria:{flag:'🇳🇬',label:'Nigeria',cities:['Lagos','Abuja','Port Harcourt','Kano','Ibadan'],listingCount:'28,400+',wbCode:'NG',
-    kpis:{medianPrice:'Loading…',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
-    currency:'NGN',region:'West Africa',updated:'Live',status:'live',cityData:{}},
+  Nigeria:{flag:'🇳🇬',label:'Nigeria',cities:['Lagos','Abuja','Port Harcourt','Kano','Ibadan'],listingCount:'Pending',wbCode:'NG',
+    kpis:{medianPrice:'~₦ 1,840,000/m²',priceGrowth:'+6.1%',activeListings:'~28k est.',yieldEst:'~7.5%',pipeline:'High',liquidityScore:'5.6'},
+    currency:'NGN',region:'West Africa',updated:'Coming Soon',status:'pending',cityData:{}},
   Egypt:{flag:'🇪🇬',label:'Egypt',cities:['Cairo','Alexandria','Giza','New Capital'],listingCount:'Pending',wbCode:'EG',
     kpis:{medianPrice:'~EGP 18,500/m²',priceGrowth:'+9.2%',activeListings:'~41k est.',yieldEst:'~6.8%',pipeline:'Medium',liquidityScore:'5.4'},
     currency:'EGP',region:'North Africa',updated:'Coming Soon',status:'pending',cityData:{}},
