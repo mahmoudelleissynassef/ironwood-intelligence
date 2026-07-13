@@ -443,9 +443,11 @@ button{cursor:pointer;font-family:var(--sans);}
     <div class="country-opt" id="copt-Kenya" onclick="switchCountry('Kenya')">
       <span style="font-size:15px;">🇰🇪</span><span>Kenya</span><span style="margin-left:auto;font-size:10px;color:#166534;font-weight:600;">3.5k listings</span>
     </div>
+    <div class="country-opt" id="copt-Tunisia" onclick="switchCountry('Tunisia')">
+      <span style="font-size:15px;">🇹🇳</span><span>Tunisia</span><span style="margin-left:auto;font-size:10px;color:#166534;font-weight:600;">Live</span>
+    </div>
     <div style="padding:8px 12px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b8b8b5;border-bottom:1px solid #f0f0ee;border-top:1px solid #f0f0ee;">NORTH AFRICA</div>
     <div class="country-opt" id="copt-Egypt" onclick="switchCountry('Egypt')"><span style="font-size:15px;">🇪🇬</span><span>Egypt</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
-    <div class="country-opt" id="copt-Tunisia" onclick="switchCountry('Tunisia')"><span style="font-size:15px;">🇹🇳</span><span>Tunisia</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
     <div class="country-opt" id="copt-Algeria" onclick="switchCountry('Algeria')"><span style="font-size:15px;">🇩🇿</span><span>Algeria</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
     <div class="country-opt" id="copt-Libya" onclick="switchCountry('Libya')"><span style="font-size:15px;">🇱🇾</span><span>Libya</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
     <div class="country-opt" id="copt-Sudan" onclick="switchCountry('Sudan')"><span style="font-size:15px;">🇸🇩</span><span>Sudan</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
@@ -1785,9 +1787,9 @@ const COUNTRIES={
   Angola:{flag:'🇦🇴',label:'Angola',cities:['Luanda','Lobito'],listingCount:'Pending',wbCode:'AO',
     kpis:{medianPrice:'~USD 2,100/m²',priceGrowth:'+4.1%',activeListings:'~4k est.',yieldEst:'~9.8%',pipeline:'Medium',liquidityScore:'3.8'},
     currency:'AOA',region:'Southern Africa',updated:'Coming Soon',status:'pending',cityData:{}},
-  Tunisia:{flag:'🇹🇳',label:'Tunisia',cities:['Tunis','Sfax','Sousse'],listingCount:'Pending',wbCode:'TN',
-    kpis:{medianPrice:'~TND 4,200/m²',priceGrowth:'+7.4%',activeListings:'~12k est.',yieldEst:'~6.4%',pipeline:'Medium',liquidityScore:'4.6'},
-    currency:'TND',region:'North Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Tunisia:{flag:'🇹🇳',label:'Tunisia',cities:['Tunis','Sfax','Sousse','Nabeul','Ariana','Bizerte','Monastir','Hammamet','La Marsa','Ben Arous'],listingCount:'Live',wbCode:'TN',
+    kpis:{medianPrice:'Loading…',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
+    currency:'TND',region:'North Africa',updated:'Live',status:'live',cityData:{}},
   Algeria:{flag:'🇩🇿',label:'Algeria',cities:['Algiers','Oran','Constantine'],listingCount:'Pending',wbCode:'DZ',
     kpis:{medianPrice:'~DZD 280,000/m²',priceGrowth:'+5.9%',activeListings:'~22k est.',yieldEst:'~5.8%',pipeline:'Medium',liquidityScore:'4.2'},
     currency:'DZD',region:'North Africa',updated:'Coming Soon',status:'pending',cityData:{}},
