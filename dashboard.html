@@ -712,19 +712,15 @@ button{cursor:pointer;font-family:var(--sans);}
         </div>
       </div>
 
-      <!-- Pipeline Summary (placeholder — demo data removed) -->
+      <!-- Market & Development News (live — fed by fetch_news.py, Mon+Thu) -->
       <div class="panel">
         <div class="panel-hd">
           <div>
-            <div class="panel-title">Development Pipeline Summary</div>
-            <div class="panel-sub">Pipeline data — not yet wired to live data</div>
+            <div class="panel-title">Market &amp; Development News</div>
+            <div class="panel-sub">Latest for this market · <span class="ds-tag ds-macro">Auto-fetched Mon &amp; Thu</span></div>
           </div>
         </div>
-        <div style="padding:40px 20px;text-align:center;color:var(--ink4);border-top:1px solid var(--border);">
-          <div style="font-size:24px;margin-bottom:8px;">▦</div>
-          <div style="font-size:13px;font-weight:600;color:var(--ink3);">Coming soon</div>
-          <div style="font-size:11.5px;margin-top:4px;">Development pipeline tracking will populate here in a later release.</div>
-        </div>
+        <div id="overview-news-list" style="border-top:1px solid var(--border);"><div style="padding:18px;color:var(--ink5);font-size:12px;">Loading news…</div></div>
       </div>
     </div><!-- /pg-market-terminal -->
 
@@ -1134,6 +1130,12 @@ button{cursor:pointer;font-family:var(--sans);}
       <div class="pg-sub">Active, approved, and proposed development projects. Sources include developer announcements, planning authorities, and construction reports.</div>
       <div style="padding:10px 14px;background:#fff7ed;border:1px solid #fed7aa;border-radius:2px;margin-bottom:16px;font-size:12px;color:#c2410c;">
         <strong>Data Layer:</strong> Raw Data Layer · Pipeline data · Sources: developer announcements · planning authorities · municipal permits · press
+      </div>
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-hd">
+          <div><div class="panel-title">Live Development &amp; Market News</div><div class="panel-sub" id="news-pipe-sub">Auto-fetched Mon &amp; Thu · <span class="ds-tag ds-macro">Observed · News feed</span></div></div>
+        </div>
+        <div id="pipeline-news-list"><div style="padding:18px;color:var(--ink5);font-size:12px;">Loading news…</div></div>
       </div>
       <div class="panel">
         <div class="panel-hd">
@@ -1895,6 +1897,7 @@ function switchCountry(name){
 
   // ── Async: fetch live data from Supabase ──
   loadLiveKPIs(name);
+  loadMarketNews(name);
 
   // Reload macro page if open
   var activePg=document.querySelector('.pg.active');
@@ -1913,6 +1916,46 @@ function updateAllPagesForCountry(c){
   if(listSub) listSub.textContent=name+' · loading…';
 }
 function safeSet(id,val){var el=document.getElementById(id);if(el)el.textContent=val;}
+
+// ── MARKET NEWS LOADER ──
+// Reads market_news (populated Mon+Thu by fetch_news.py) for the active country
+// and renders it into the pipeline-page news panel + the overview news strip.
+function _newsEsc(s){return (s||'').replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];});}
+function renderNews(el, rows, showBadge){
+  if(!el) return;
+  if(!rows||!rows.length){ el.innerHTML='<div style="padding:18px;color:var(--ink5);font-size:12px;">No recent news for this market yet — the feed refreshes Monday &amp; Thursday.</div>'; return; }
+  el.innerHTML=rows.map(function(n){
+    var d=n.published_at?new Date(n.published_at):null;
+    var ds=d&&!isNaN(d)?d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):'';
+    var badge='';
+    if(showBadge){
+      if(n.is_pipeline) badge='<span class="ds-tag ds-pipeline" style="margin-right:6px;">Pipeline</span>';
+      else if(n.category==='macro') badge='<span class="ds-tag ds-macro" style="margin-right:6px;">Macro</span>';
+    }
+    return '<a href="'+_newsEsc(n.url)+'" target="_blank" rel="noopener" style="display:block;padding:11px 16px;border-bottom:1px solid var(--border);text-decoration:none;">'
+      +'<div style="font-size:12.5px;color:var(--ink);line-height:1.45;margin-bottom:3px;">'+badge+_newsEsc(n.summary||n.title)+'</div>'
+      +'<div style="font-size:10.5px;color:var(--ink5);">'+_newsEsc(n.source||'')+(ds?' · '+ds:'')+'</div></a>';
+  }).join('');
+}
+async function loadMarketNews(country){
+  if(!sb) return;
+  var pipeEl=document.getElementById('pipeline-news-list');
+  var ovEl=document.getElementById('overview-news-list');
+  try{
+    var res=await sb.from('market_news')
+      .select('title,url,source,category,is_pipeline,published_at,summary')
+      .eq('country',country).order('published_at',{ascending:false,nullsFirst:false}).limit(40);
+    var rows=(res&&res.data)||[];
+    // pipeline panel: pipeline items first, then the rest
+    var ranked=rows.slice().sort(function(a,b){return (b.is_pipeline?1:0)-(a.is_pipeline?1:0);});
+    renderNews(pipeEl, ranked, true);
+    renderNews(ovEl, rows.slice(0,6), true);
+    var sub=document.getElementById('news-pipe-sub');
+    if(sub) sub.innerHTML=(COUNTRIES[country]?COUNTRIES[country].label:country)+' · '+rows.length+' items · Auto-fetched Mon &amp; Thu · <span class="ds-tag ds-macro">News feed</span>';
+  }catch(e){
+    if(pipeEl) pipeEl.innerHTML='<div style="padding:18px;color:var(--ink5);font-size:12px;">News feed unavailable right now.</div>';
+  }
+}
 
 // ── LIVE KPI LOADER ──
 // Fetches ALL rows for the active country from Supabase properties table.
@@ -2559,6 +2602,7 @@ async function boot(){
     loadProgress(50,'Loading market data...');
     await loadListings();
     await loadLiveKPIs(ACTIVE_COUNTRY);
+    loadMarketNews(ACTIVE_COUNTRY);
     loadProgress(90,'Ready.');
     clearTimeout(safetyTimer);
     setTimeout(hideLoader,300);
