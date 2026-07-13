@@ -440,6 +440,9 @@ button{cursor:pointer;font-family:var(--sans);}
     <div class="country-opt" id="copt-Nigeria" onclick="switchCountry('Nigeria')">
       <span style="font-size:15px;">🇳🇬</span><span>Nigeria</span><span style="margin-left:auto;font-size:10px;color:#166534;font-weight:600;">28k listings</span>
     </div>
+    <div class="country-opt" id="copt-Kenya" onclick="switchCountry('Kenya')">
+      <span style="font-size:15px;">🇰🇪</span><span>Kenya</span><span style="margin-left:auto;font-size:10px;color:#166534;font-weight:600;">3.5k listings</span>
+    </div>
     <div style="padding:8px 12px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b8b8b5;border-bottom:1px solid #f0f0ee;border-top:1px solid #f0f0ee;">NORTH AFRICA</div>
     <div class="country-opt" id="copt-Egypt" onclick="switchCountry('Egypt')"><span style="font-size:15px;">🇪🇬</span><span>Egypt</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
     <div class="country-opt" id="copt-Tunisia" onclick="switchCountry('Tunisia')"><span style="font-size:15px;">🇹🇳</span><span>Tunisia</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
@@ -458,7 +461,6 @@ button{cursor:pointer;font-family:var(--sans);}
     <div class="country-opt" id="copt-Mali" onclick="switchCountry('Mali')"><span style="font-size:15px;">🇲🇱</span><span>Mali</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
     <div class="country-opt" id="copt-BurkinaFaso" onclick="switchCountry('BurkinaFaso')"><span style="font-size:15px;">🇧🇫</span><span>Burkina Faso</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
     <div style="padding:8px 12px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b8b8b5;border-bottom:1px solid #f0f0ee;border-top:1px solid #f0f0ee;">EAST AFRICA</div>
-    <div class="country-opt" id="copt-Kenya" onclick="switchCountry('Kenya')"><span style="font-size:15px;">🇰🇪</span><span>Kenya</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
     <div class="country-opt" id="copt-Ethiopia" onclick="switchCountry('Ethiopia')"><span style="font-size:15px;">🇪🇹</span><span>Ethiopia</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
     <div class="country-opt" id="copt-Tanzania" onclick="switchCountry('Tanzania')"><span style="font-size:15px;">🇹🇿</span><span>Tanzania</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
     <div class="country-opt" id="copt-Rwanda" onclick="switchCountry('Rwanda')"><span style="font-size:15px;">🇷🇼</span><span>Rwanda</span><span style="margin-left:auto;font-size:10px;color:#b8b8b5;">Coming Soon</span></div>
@@ -1750,9 +1752,9 @@ const COUNTRIES={
   SouthAfrica:{flag:'🇿🇦',label:'South Africa',cities:['Johannesburg','Cape Town','Durban','Pretoria'],listingCount:'Pending',wbCode:'ZA',
     kpis:{medianPrice:'~ZAR 24,000/m²',priceGrowth:'+3.1%',activeListings:'~88k est.',yieldEst:'~7.2%',pipeline:'High',liquidityScore:'6.8'},
     currency:'ZAR',region:'Southern Africa',updated:'Coming Soon',status:'pending',cityData:{}},
-  Kenya:{flag:'🇰🇪',label:'Kenya',cities:['Nairobi','Mombasa','Kisumu'],listingCount:'Pending',wbCode:'KE',
-    kpis:{medianPrice:'~KES 185,000/m²',priceGrowth:'+5.4%',activeListings:'~18k est.',yieldEst:'~7.8%',pipeline:'Medium',liquidityScore:'5.1'},
-    currency:'KES',region:'East Africa',updated:'Coming Soon',status:'pending',cityData:{}},
+  Kenya:{flag:'🇰🇪',label:'Kenya',cities:['Nairobi','Mombasa','Thika','Kiambu','Machakos','Kisumu'],listingCount:'3,500+',wbCode:'KE',
+    kpis:{medianPrice:'Loading…',priceGrowth:'—',activeListings:'—',yieldEst:'—',pipeline:'—',liquidityScore:'—'},
+    currency:'KES',region:'East Africa',updated:'Live',status:'live',cityData:{}},
   Ghana:{flag:'🇬🇭',label:'Ghana',cities:['Accra','Kumasi','Takoradi'],listingCount:'Pending',wbCode:'GH',
     kpis:{medianPrice:'~GHS 6,200/m²',priceGrowth:'+11.3%',activeListings:'~9k est.',yieldEst:'~8.4%',pipeline:'Medium',liquidityScore:'4.2'},
     currency:'GHS',region:'West Africa',updated:'Coming Soon',status:'pending',cityData:{}},
