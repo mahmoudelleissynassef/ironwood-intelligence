@@ -763,9 +763,19 @@ button{cursor:pointer;font-family:var(--sans);}
     <div class="pg" id="pg-market-signals">
       <div class="eyebrow">Overview</div>
       <div class="pg-title">Market Signals</div>
-      <div class="pg-sub">Derived signal indicators for Morocco markets. Each signal references its source dataset. Signals are modelled outputs — not direct observations.</div>
+      <div class="pg-sub">Derived signal indicators for the active market. Each signal references its source dataset. Signals are modelled outputs — not direct observations.</div>
       <div class="panel" style="margin-bottom:16px;">
-        <div class="panel-hd"><div class="panel-title">Signal Registry</div><div class="panel-sub">Morocco · March 2026 · <span class="ds-tag ds-model">Modeled</span></div></div>
+        <div class="panel-hd"><div><div class="panel-title">Live Signals</div><div class="panel-sub" id="signals-sub">Computed from Ironwood listings + weekly snapshots · <span class="ds-tag ds-model">Modeled</span></div></div></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--border);border-top:1px solid var(--border);">
+          <div style="background:var(--surface);padding:15px 18px;"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:6px;">IOS Score</div><div style="font-family:var(--serif);font-size:25px;color:var(--ink);" id="sig-ios">—</div><div style="font-size:10.5px;color:var(--ink5);">0–100 composite</div></div>
+          <div style="background:var(--surface);padding:15px 18px;"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:6px;">Gross Yield</div><div style="font-family:var(--serif);font-size:25px;color:var(--ink);" id="sig-yield">—</div><div style="font-size:10.5px;color:var(--ink5);">rent ÷ price</div></div>
+          <div style="background:var(--surface);padding:15px 18px;"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:6px;">Price Momentum</div><div style="font-family:var(--serif);font-size:25px;color:var(--ink);" id="sig-momentum">—</div><div style="font-size:10.5px;color:var(--ink5);" id="sig-momentum-sub">vs last snapshot</div></div>
+          <div style="background:var(--surface);padding:15px 18px;"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:6px;">Liquidity</div><div style="font-family:var(--serif);font-size:25px;color:var(--ink);" id="sig-liquidity">—</div><div style="font-size:10.5px;color:var(--ink5);">depth proxy 0–100</div></div>
+          <div style="background:var(--surface);padding:15px 18px;"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:6px;">Supply Change</div><div style="font-family:var(--serif);font-size:25px;color:var(--ink);" id="sig-supply">—</div><div style="font-size:10.5px;color:var(--ink5);">listing count WoW</div></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-hd"><div class="panel-title">Signal Registry</div><div class="panel-sub">Illustrative · <span class="ds-tag ds-model">Modeled</span></div></div>
         <table class="dt">
           <thead><tr><th>Signal</th><th>City</th><th>Score</th><th>Direction</th><th>Source Dataset</th><th>Last Updated</th><th>Confidence</th></tr></thead>
           <tbody>
@@ -1898,6 +1908,7 @@ function switchCountry(name){
   // ── Async: fetch live data from Supabase ──
   loadLiveKPIs(name);
   loadMarketNews(name);
+  loadMarketSignals(name);
 
   // Reload macro page if open
   var activePg=document.querySelector('.pg.active');
@@ -1955,6 +1966,30 @@ async function loadMarketNews(country){
   }catch(e){
     if(pipeEl) pipeEl.innerHTML='<div style="padding:18px;color:var(--ink5);font-size:12px;">News feed unavailable right now.</div>';
   }
+}
+
+// ── LIVE MARKET SIGNALS ──
+// Reads the market_signals RPC (IOS / yield / momentum / liquidity / supply),
+// computed from listings + weekly market_snapshots. Momentum activates once a
+// second weekly snapshot exists.
+async function loadMarketSignals(country){
+  if(!sb) return;
+  var setT=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  try{
+    var res=await sb.rpc('market_signals',{p_country:country});
+    var s=res&&res.data?res.data:null;
+    if(!s){ return; }
+    setT('sig-ios', s.ios_score!=null?s.ios_score:'—');
+    setT('sig-yield', s.gross_yield_pct!=null?s.gross_yield_pct+'%':'—');
+    setT('sig-liquidity', s.liquidity_score!=null?s.liquidity_score:'—');
+    var mom=s.price_momentum_pct;
+    setT('sig-momentum', mom!=null?((mom>0?'+':'')+mom+'%'):'—');
+    setT('sig-momentum-sub', s.momentum_ready?'vs last snapshot':'baseline · next Mon');
+    var sup=s.supply_change_pct;
+    setT('sig-supply', sup!=null?((sup>0?'+':'')+sup+'%'):'—');
+    var sub=document.getElementById('signals-sub');
+    if(sub) sub.innerHTML=(COUNTRIES[country]?COUNTRIES[country].label:country)+' · as of '+(s.as_of||'—')+' · '+(s.snapshots||0)+' weekly snapshot(s) · <span class="ds-tag ds-model">Modeled</span>';
+  }catch(e){}
 }
 
 // ── LIVE KPI LOADER ──
@@ -2603,6 +2638,7 @@ async function boot(){
     await loadListings();
     await loadLiveKPIs(ACTIVE_COUNTRY);
     loadMarketNews(ACTIVE_COUNTRY);
+    loadMarketSignals(ACTIVE_COUNTRY);
     loadProgress(90,'Ready.');
     clearTimeout(safetyTimer);
     setTimeout(hideLoader,300);
