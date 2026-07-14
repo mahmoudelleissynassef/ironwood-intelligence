@@ -506,11 +506,10 @@ button{cursor:pointer;font-family:var(--sans);}
       </div>
       <div class="tb-filter">
         <span>Type:</span>
-        <select id="type-filter" onchange="applyFilters()">
-          <option value="all">Sale &amp; Rent</option>
-          <option value="sale">Sale</option>
-          <option value="rent">Rent</option>
-        </select>
+        <div id="type-toggle" style="display:inline-flex;border:1px solid var(--border2);">
+          <button data-t="sale" onclick="setType('sale')" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;font-family:var(--sans);background:var(--ink);color:#fff;">Sale</button>
+          <button data-t="rent" onclick="setType('rent')" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;font-family:var(--sans);background:var(--surface);color:var(--ink3);">Rent</button>
+        </div>
       </div>
       <button class="tb-export" onclick="nav('exports')">↓ Export</button>
     </div>
@@ -2052,6 +2051,8 @@ async function renderOverview(country){
     el.innerHTML='<div class="eyebrow">Overview</div><div class="pg-title">Market Command Center</div><div class="pg-sub">'+lbl+' — no live data yet.</div>'+_emptyState('Coverage activates once '+lbl+' has listing data.'); return; }
   var sig=null; try{ var sr=await sb.rpc('market_signals',{p_country:country}); sig=sr&&sr.data?sr.data:null; }catch(e){}
   var f=_curFilters();
+  var mf=null; try{ var mr=await sb.rpc('market_filtered',{p_country:country,p_asset:f.asset}); mf=mr&&mr.data?mr.data:null; }catch(e){}
+  var tt=f.type, mfc=mf?(mf[tt]||{}):{}, medLbl=tt==='rent'?'Median Rent':'Median Sale', medU=tt==='rent'?'/m²/mo':'/m²';
   function dlt(v){ return v==null?'baseline':((v>0?'▲ +':'▼ ')+Math.abs(v)+'%'); }
   function cell(label,val,sub){
     return '<div style="background:var(--surface);padding:12px 14px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink4);margin-bottom:6px;">'+label+'</div>'
@@ -2060,9 +2061,9 @@ async function renderOverview(country){
   }
   var u='<span style="font-size:11px;color:var(--ink4)">';
   var kpiStrip='<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:14px;">'
-    +cell('Median Sale', K.median_sale?S+Math.round(K.median_sale).toLocaleString()+u+'/m²</span>':'—', sig&&sig.price_momentum_pct!=null?(dlt(sig.price_momentum_pct)+' QoQ'):'builds weekly')
+    +cell(medLbl, mfc.median?S+Math.round(mfc.median).toLocaleString()+u+medU+'</span>':'—', sig&&sig.price_momentum_pct!=null?(dlt(sig.price_momentum_pct)+' QoQ'):'builds weekly')
     +cell('Prime Rent', K.prime_office_rent?S+Math.round(K.prime_office_rent).toLocaleString()+u+'/mo</span>':'—','office /m²')
-    +cell('Active Listings', sig?Number(sig.total_listings).toLocaleString():'—','live inventory')
+    +cell('Priced Listings', mfc.count!=null?Number(mfc.count).toLocaleString():'—', (f.asset==='all'?'all assets':_cap(f.asset))+' · '+_cap(tt))
     +cell('Gross Yield', (sig&&sig.gross_yield_pct)?sig.gross_yield_pct+'%':'—','rent ÷ price')
     +cell('IOS Score', sig?sig.ios_score+u+'/100</span>':'—','opportunity')
     +cell('Liquidity', sig?sig.liquidity_score+u+'/100</span>':'—','market depth')
@@ -2090,12 +2091,13 @@ async function renderOverview(country){
       +'<div class="panel"><div class="panel-hd"><div class="panel-title">Live Markets</div></div><div id="ov-topmarkets"></div></div>'
     +'</div>'
     +'<div class="panel"><div class="panel-hd"><div class="panel-title">Market &amp; Development News</div></div><div id="overview-news-list" style="border-top:1px solid var(--border);"><div style="padding:16px;color:var(--ink5);font-size:12px;">Loading…</div></div></div>';
-  renderOvMap(country,K,f); renderOvAssetMix(K); renderOvPriceByCity(K); renderOvYieldByCity(K); renderOvTopDistricts(country,f,S);
+  renderOvMap(country,K,f); renderOvAssetMix(K); renderOvPriceByCity(mf,tt); renderOvYieldByCity(mf); renderOvTopDistricts(country,f,S);
   renderOvKeyInd(f,S); renderOvInsight(country); renderOvReports(country); renderOvTopMarkets(); renderOvMacro(country); loadMarketNews(country);
 }
-function renderOvYieldByCity(K){
-  _ovDestroy('ov-yieldcity'); var cv=document.getElementById('ov-yieldcity'); if(!cv||!window.Chart) return;
-  var rows=(K.cities||[]).map(function(r){ var y=(r.sale_median&&r.rent_median)?Math.round(r.rent_median*12/r.sale_median*1000)/10:null; return {city:r.city,y:y}; }).filter(function(r){return r.y;}).sort(function(a,b){return b.y-a.y;}).slice(0,8);
+function renderOvYieldByCity(mf){
+  _ovDestroy('ov-yieldcity'); var cv=document.getElementById('ov-yieldcity'); if(!cv||!window.Chart||!mf) return;
+  var sm={}; (((mf.sale||{}).cities)||[]).forEach(function(r){sm[r.city]=r.med;});
+  var rows=(((mf.rent||{}).cities)||[]).map(function(r){ var s=sm[r.city]; return s?{city:r.city,y:Math.round(r.med*12/s*1000)/10}:null; }).filter(Boolean).sort(function(a,b){return b.y-a.y;}).slice(0,8);
   if(!rows.length) return;
   _ovCharts['ov-yieldcity']=new Chart(cv,{type:'bar',data:{labels:rows.map(function(r){return r.city;}),datasets:[{data:rows.map(function(r){return r.y;}),backgroundColor:'#3f7a52',borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:10},color:'#8c8c8c',callback:function(v){return v+'%';}}}}}});
 }
@@ -2137,11 +2139,11 @@ function renderOvAssetMix(K){
   var cols=['#0d0d0d','#b8933f','#5a5a5a','#c0603a','#3f7a52','#8c8c8c','#1d4ed8','#7c3aed'];
   _ovCharts['ov-assetmix']=new Chart(cv,{type:'doughnut',data:{labels:labels.map(_cap),datasets:[{data:data,backgroundColor:cols,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{font:{family:'DM Sans',size:11},color:'#5a5a5a',boxWidth:8,padding:8}}}}});
 }
-function renderOvPriceByCity(K){
-  _ovDestroy('ov-pricecity'); var cv=document.getElementById('ov-pricecity'); if(!cv||!window.Chart) return;
-  var rows=(K.cities||[]).filter(function(r){return r.sale_median;}).sort(function(a,b){return b.sale_median-a.sale_median;}).slice(0,8);
+function renderOvPriceByCity(mf,tt){
+  _ovDestroy('ov-pricecity'); var cv=document.getElementById('ov-pricecity'); if(!cv||!window.Chart||!mf) return;
+  var rows=(((mf[tt]||{}).cities)||[]).slice(0,8);
   if(!rows.length) return;
-  _ovCharts['ov-pricecity']=new Chart(cv,{type:'bar',data:{labels:rows.map(function(r){return r.city;}),datasets:[{data:rows.map(function(r){return Math.round(r.sale_median);}),backgroundColor:'#b8933f',borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:10},color:'#8c8c8c'}}}}});
+  _ovCharts['ov-pricecity']=new Chart(cv,{type:'bar',data:{labels:rows.map(function(r){return r.city;}),datasets:[{data:rows.map(function(r){return Math.round(r.med);}),backgroundColor:'#b8933f',borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:10},color:'#8c8c8c'}}}}});
 }
 function renderOvTopDistricts(country,f,S){
   var el=document.getElementById('ov-topdist'); if(!el) return;
@@ -2201,7 +2203,12 @@ var CITY_COORDS={
 var COUNTRY_VIEW={Morocco:[[31.7,-7],5.4],Tunisia:[[35.6,9.9],6.2],Kenya:[[-0.6,37.9],6]};
 var _liveMap=null,_cityActive=null;
 function _mapCol(t){ return t<0.34?'#3f7a52':t<0.67?'#b8933f':'#c0603a'; }
-function _curFilters(){ return { asset:(document.getElementById('asset-filter')||{}).value||'all', type:(document.getElementById('type-filter')||{}).value||'all' }; }
+var _typeFilter='sale';
+function setType(t){ _typeFilter=t;
+  document.querySelectorAll('#type-toggle button').forEach(function(b){ var on=b.getAttribute('data-t')===t; b.style.background=on?'var(--ink)':'var(--surface)'; b.style.color=on?'#fff':'var(--ink3)'; });
+  applyFilters();
+}
+function _curFilters(){ return { asset:(document.getElementById('asset-filter')||{}).value||'all', type:_typeFilter||'sale' }; }
 function _cityMed(K,city,asset,tt){
   if(asset==='all'){ var ci=(K.cities||[]).filter(function(r){return r.city===city;})[0]; return ci?(tt==='rent'?ci.rent_median:ci.sale_median):null; }
   var cc=(K.city_class||[]).filter(function(r){return r.city===city&&r.ac===asset&&r.tt===tt;})[0]; return cc?cc.med:null;
