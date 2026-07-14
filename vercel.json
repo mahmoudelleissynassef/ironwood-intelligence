@@ -5,15 +5,13 @@
     {
       "source": "/(.*)",
       "has": [{ "type": "host", "value": "admin.ironwoodintelligence.com" }],
-      "destination": "/admin/index.html"
+      "destination": "/admin"
     },
-    { "source": "/admin",           "destination": "/admin/index.html" },
-    { "source": "/admin/:path*",    "destination": "/admin/index.html" },
-    { "source": "/dashboard",       "destination": "/dashboard.html" },
-    { "source": "/dashboard/:page", "destination": "/dashboard.html" },
-    { "source": "/en",              "destination": "/index.html" },
-    { "source": "/en/:path*",       "destination": "/index.html" },
-    { "source": "/fr",              "destination": "/index.html" },
-    { "source": "/fr/:path*",       "destination": "/index.html" }
+    { "source": "/admin/:path*",    "destination": "/admin" },
+    { "source": "/dashboard/:page", "destination": "/dashboard" },
+    { "source": "/en",              "destination": "/" },
+    { "source": "/en/:path*",       "destination": "/" },
+    { "source": "/fr",              "destination": "/" },
+    { "source": "/fr/:path*",       "destination": "/" }
   ]
 }
