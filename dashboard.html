@@ -2066,26 +2066,45 @@ var CITY_COORDS={
 };
 var COUNTRY_VIEW={Morocco:[[31.7,-7],5.4],Tunisia:[[35.6,9.9],6.2],Kenya:[[-0.6,37.9],6]};
 var _liveMap=null,_cityActive=null;
-function renderMap(country,K){
+function _mapCol(t){ return t<0.34?'#3f7a52':t<0.67?'#b8933f':'#c0603a'; }
+async function renderMap(country,K){
   var el=document.getElementById('pg-map-view'); if(!el) return;
   var c=COUNTRIES[country], S=_B2S, lbl=c?c.label:country;
   if(!c||c.status!=='live'||!K||!(K.cities||[]).length){
     el.innerHTML='<div class="eyebrow">Map</div><div class="pg-title">Market Map</div><div class="pg-sub">City map activates once '+lbl+' has live listing data.</div>'+_emptyState('No mappable city data yet.'); return; }
   el.innerHTML='<div class="eyebrow">Map</div><div class="pg-title">Market Map</div>'
-    +'<div class="pg-sub">Median asking price/m² by city, '+lbl+'. Bubble size = listing volume; warmer = higher price.</div>'
-    +'<div class="panel"><div style="height:520px;" id="map-live"></div></div>';
+    +'<div class="pg-sub">Median asking price/m² for '+lbl+'. Cities when zoomed out — <b>zoom in to drill into individual districts</b>. Bubble size = listing volume; warmer = higher price.</div>'
+    +'<div class="panel"><div style="height:560px;" id="map-live"></div></div>';
   if(!window.L) return;
   if(_liveMap){ try{_liveMap.remove();}catch(e){} _liveMap=null; }
   var view=COUNTRY_VIEW[country]||[[0,20],4];
   _liveMap=L.map('map-live',{zoomControl:true}).setView(view[0],view[1]);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap · © CARTO',maxZoom:18}).addTo(_liveMap);
-  var cities=(K.cities||[]).filter(function(r){return r.sale_median&&CITY_COORDS[r.city];});
-  var meds=cities.map(function(r){return r.sale_median;}), mn=Math.min.apply(null,meds), mx=Math.max.apply(null,meds);
-  cities.forEach(function(r){ var t=mx>mn?(r.sale_median-mn)/(mx-mn):0.5, col=t<0.34?'#3f7a52':t<0.67?'#b8933f':'#c0603a';
-    L.circleMarker(CITY_COORDS[r.city],{radius:Math.max(7,Math.sqrt((Number(r.listings)||1)/30)),fillColor:col,color:'#fff',weight:1.5,fillOpacity:.85}).addTo(_liveMap)
-      .bindPopup('<div style="font-family:DM Sans,sans-serif;min-width:150px;"><div style="font-weight:700;font-size:13px;">'+r.city+'</div>'
-        +'<div style="font-size:11px;color:#5a5a5a;">Median sale: <b>'+S+Math.round(r.sale_median).toLocaleString()+'/m²</b></div>'
-        +'<div style="font-size:11px;color:#5a5a5a;">Listings: <b>'+(Number(r.listings)||0).toLocaleString()+'</b></div></div>'); });
+  // ── City layer (zoomed out) ──
+  var cityLayer=L.layerGroup();
+  var cc=(K.cities||[]).filter(function(r){return r.sale_median&&CITY_COORDS[r.city];});
+  var cmn=Math.min.apply(null,cc.map(function(r){return r.sale_median;})), cmx=Math.max.apply(null,cc.map(function(r){return r.sale_median;}));
+  cc.forEach(function(r){ var t=cmx>cmn?(r.sale_median-cmn)/(cmx-cmn):0.5;
+    L.circleMarker(CITY_COORDS[r.city],{radius:Math.max(8,Math.sqrt((Number(r.listings)||1)/30)),fillColor:_mapCol(t),color:'#fff',weight:1.5,fillOpacity:.85})
+      .bindPopup('<div style="font-family:DM Sans,sans-serif;min-width:150px;"><div style="font-weight:700;">'+r.city+'</div><div style="font-size:11px;color:#5a5a5a;">Median sale: <b>'+S+Math.round(r.sale_median).toLocaleString()+'/m²</b></div><div style="font-size:11px;color:#5a5a5a;">Listings: <b>'+(Number(r.listings)||0).toLocaleString()+'</b></div></div>')
+      .addTo(cityLayer); });
+  cityLayer.addTo(_liveMap);
+  // ── District layer (zoomed in), from map_districts RPC (real coords + real prices) ──
+  var districtLayer=L.layerGroup();
+  try{
+    var dr=await sb.rpc('map_districts',{p_country:country}); var dd=((dr&&dr.data)||[]).filter(function(r){return r.lat!=null;});
+    if(dd.length){ var dmn=Math.min.apply(null,dd.map(function(r){return Number(r.median_ppsqm);})), dmx=Math.max.apply(null,dd.map(function(r){return Number(r.median_ppsqm);}));
+      dd.forEach(function(r){ var t=dmx>dmn?(r.median_ppsqm-dmn)/(dmx-dmn):0.5;
+        L.circleMarker([r.lat,r.lng],{radius:Math.max(5,Math.sqrt((Number(r.listings)||1)/8)),fillColor:_mapCol(t),color:'#fff',weight:1,fillOpacity:.8})
+          .bindPopup('<div style="font-family:DM Sans,sans-serif;min-width:150px;"><div style="font-weight:700;">'+(r.submarket||'—')+'</div><div style="font-size:11px;color:#5a5a5a;">'+r.city+'</div><div style="font-size:11px;color:#5a5a5a;">Median: <b>'+S+Math.round(r.median_ppsqm).toLocaleString()+'/m²</b></div><div style="font-size:11px;color:#5a5a5a;">Listings: <b>'+(Number(r.listings)||0).toLocaleString()+'</b></div></div>')
+          .addTo(districtLayer); });
+    }
+  }catch(e){}
+  var DZOOM=9;
+  function syncLayers(){ var z=_liveMap.getZoom();
+    if(z>=DZOOM){ if(_liveMap.hasLayer(cityLayer)) _liveMap.removeLayer(cityLayer); if(!_liveMap.hasLayer(districtLayer)) districtLayer.addTo(_liveMap); }
+    else { if(_liveMap.hasLayer(districtLayer)) _liveMap.removeLayer(districtLayer); if(!_liveMap.hasLayer(cityLayer)) cityLayer.addTo(_liveMap); } }
+  _liveMap.on('zoomend', syncLayers); syncLayers();
   setTimeout(function(){ if(_liveMap) _liveMap.invalidateSize(); },250);
 }
 function _bars(ds,S){
