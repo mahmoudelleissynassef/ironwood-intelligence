@@ -2730,7 +2730,9 @@ async function renderOverview(country){
   var assetLbl=(f.asset==='all'?'All classes':f.asset.charAt(0).toUpperCase()+f.asset.slice(1));
   var ccy=_ccyName(cur);
 
-  var pts=df.filter(function(r){return r.med!=null&&r.n>=20;}).slice(0,40);
+  var pts=((mfc.cities)||[]).map(function(x){return {city:x.city,n:Number(x.n||0),med:x.med!=null?Number(x.med):null};})
+      .filter(function(r){return r.city&&r.med!=null&&r.n>=20;})
+      .sort(function(a,b){return b.n-a.n;}).slice(0,40);
   var L1=56,R1=548,T1=20,B1=278;
   var maxN=Math.max.apply(null,pts.map(function(p){return p.n;}).concat([1]));
   var maxU=Math.max.apply(null,pts.map(function(p){return p.med;}).concat([1]));
@@ -2741,16 +2743,16 @@ async function renderOverview(country){
   function median(arr){ if(!arr.length)return null; var a=arr.slice().sort(function(x,y){return x-y;}); var m=Math.floor(a.length/2); return a.length%2?a[m]:(a[m-1]+a[m])/2; }
   var medN=median(pts.map(function(p){return p.n;}))||0, medU=median(pts.map(function(p){return p.med;}))||0;
   window._mkRows=df; window._mkCtx={country:country,cur:cur,type:f.type};
-  if(!window._mkSel||!df.some(function(r){return r.sub===window._mkSel;})) window._mkSel=pts.length?pts[0].sub:(df[0]&&df[0].sub);
-  var labelSet={}; pts.slice(0,4).forEach(function(p){labelSet[p.sub]=1;});
-  pts.slice().sort(function(a,b){return b.med-a.med;}).slice(0,2).forEach(function(p){labelSet[p.sub]=1;});
-  var circles=pts.map(function(p){ var sel=p.sub===window._mkSel;
-    return '<circle cx="'+X(p.n).toFixed(1)+'" cy="'+Y(p.med).toFixed(1)+'" r="'+(sel?7.5:Math.min(7,Math.max(4,Math.sqrt(p.n)/6)))+'" fill="'+(sel?'#E3BC7E':'#C89B5A')+'"'+(sel?' stroke="#0A0D12" stroke-width="1.5"':' opacity=".88"')+' style="cursor:pointer" data-sub="'+_newsEsc(p.sub)+'" onclick="selectMarket(this.getAttribute(\'data-sub\'))"><title>'+_newsEsc(p.sub)+' · '+nf(p.n)+' listings · '+fmt(p.med)+'/m²</title></circle>';}).join('');
-  var labels=pts.filter(function(p){return labelSet[p.sub];}).map(function(p){
+  if(!window._mkSel||!df.some(function(r){return r.sub===window._mkSel;})) window._mkSel=(df[0]&&df[0].sub);
+  var labelSet={}; pts.slice(0,5).forEach(function(p){labelSet[p.city]=1;});
+  pts.slice().sort(function(a,b){return b.med-a.med;}).slice(0,2).forEach(function(p){labelSet[p.city]=1;});
+  var circles=pts.map(function(p){
+    return '<circle cx="'+X(p.n).toFixed(1)+'" cy="'+Y(p.med).toFixed(1)+'" r="'+Math.min(9,Math.max(5,Math.sqrt(p.n)/5))+'" fill="#C89B5A" opacity=".9" style="cursor:pointer" data-city="'+_newsEsc(p.city)+'" onclick="openCity(this.getAttribute(\'data-city\'))"><title>'+_newsEsc(p.city)+' · '+nf(p.n)+' listings · '+fmt(p.med)+'/m² — click to open</title></circle>';}).join('');
+  var labels=pts.filter(function(p){return labelSet[p.city];}).map(function(p){
     var x=X(p.n),y=Y(p.med),anchor=x>R1-90?'end':'start',dx=x>R1-90?-10:10;
-    return '<text x="'+(x+dx).toFixed(1)+'" y="'+(y+3).toFixed(1)+'" text-anchor="'+anchor+'" fill="#9AA6B6" font-family="Inter,sans-serif" font-size="9">'+p.sub+'</text>';}).join('');
+    return '<text x="'+(x+dx).toFixed(1)+'" y="'+(y+3).toFixed(1)+'" text-anchor="'+anchor+'" fill="#9AA6B6" font-family="Inter,sans-serif" font-size="9">'+_newsEsc(p.city)+'</text>';}).join('');
   var quads={pd:[],pt:[],ad:[],at:[]};
-  pts.forEach(function(p){ (p.med>=medU?(p.n>=medN?quads.pd:quads.pt):(p.n>=medN?quads.ad:quads.at)).push(p.sub); });
+  pts.forEach(function(p){ (p.med>=medU?(p.n>=medN?quads.pd:quads.pt):(p.n>=medN?quads.ad:quads.at)).push(p.city); });
   function quadCell(tag,arr,hl){ return '<div class="quad-cell'+(hl?' hl':'')+'"><div class="quad-tag">'+tag+'</div><div class="quad-count num">'+arr.length+' markets</div><div class="quad-names">'+(arr.slice(0,3).join(' · ')||'—')+'</div></div>'; }
 
   var lead=df.slice(0,12), maxLead=lead.length?lead[0].n:1;
@@ -2788,14 +2790,13 @@ async function renderOverview(country){
     +'<div class="panel-body2"><div class="mk-map-frame"><div class="lmap" id="mk-map"></div>'
     +'<div class="mk-map-note">Night imagery · bubbles ∝ observed listings · medians in '+ccy+'</div></div></div></div>'
     +'<div><div class="panel" style="margin-bottom:14px;"><div class="panel-head"><div><div class="panel-title">Market landscape — price vs depth</div>'
-    +'<div class="panel-sub">Each point is a market · x: observed listings · y: median asking /m² ('+ccy+')</div></div>'
-    +'<div class="panel-actions"><span class="n-tag num">'+pts.length+' of '+df.length+' markets shown</span></div></div>'
+    +'<div class="panel-sub">Each point is a city · x: observed listings · y: median asking /m² ('+ccy+') · click a city to open it</div></div>'
+    +'<div class="panel-actions"><span class="n-tag num">'+pts.length+' of '+((mfc.cities||[]).length)+' cities shown</span></div></div>'
     +'<div class="panel-body2"><div class="scatter-legend">'
-    +'<span><span class="ldot" style="background:var(--gold2)"></span> Selected market</span>'
-    +'<span><span class="ldot" style="background:var(--gold)"></span> Market</span>'
+    +'<span><span class="ldot" style="background:var(--gold)"></span> City · size ∝ observed listings</span>'
     +'<span style="margin-left:auto">Dashed lines: market medians</span></div>'
     +(pts.length?
-      '<svg width="100%" height="320" viewBox="0 0 560 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Scatter of '+lbl+' markets">'
+      '<svg width="100%" height="320" viewBox="0 0 560 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Scatter of '+lbl+' cities">'
       +'<g stroke="rgba(148,168,196,.08)" stroke-width="1"><line x1="56" y1="20" x2="56" y2="278"/><line x1="56" y1="278" x2="548" y2="278"/></g>'
       +'<line x1="'+X(medN).toFixed(1)+'" y1="20" x2="'+X(medN).toFixed(1)+'" y2="278" stroke="rgba(148,168,196,.22)" stroke-width="1" stroke-dasharray="3 4"/>'
       +'<line x1="56" y1="'+Y(medU).toFixed(1)+'" x2="548" y2="'+Y(medU).toFixed(1)+'" stroke="rgba(200,155,90,.3)" stroke-width="1" stroke-dasharray="3 4"/>'
@@ -2807,14 +2808,14 @@ async function renderOverview(country){
       +'<text x="66" y="34">PREMIUM · THIN</text><text x="540" y="34" text-anchor="end">PREMIUM · DEEP</text>'
       +'<text x="66" y="272">AFFORDABLE · THIN</text><text x="540" y="272" text-anchor="end">AFFORDABLE · DEEP</text></g>'
       +'<g>'+circles+'</g><g>'+labels+'</g></svg>'
-      :'<div class="empty-trend" style="height:200px;">Not enough priced markets for the landscape view under the current filters.</div>')
+      :'<div class="empty-trend" style="height:200px;">Not enough priced cities (≥20 priced listings each) under the current filters.</div>')
     +'<div class="quad-grid">'
     +quadCell('PREMIUM · DEEP',quads.pd,true)+quadCell('PREMIUM · THIN',quads.pt,false)
     +quadCell('AFFORDABLE · DEEP',quads.ad,false)+quadCell('AFFORDABLE · THIN',quads.at,false)+'</div>'
     +'<div class="movers"><span class="m-label">90-day movers, median /m²:</span>'
     +'<span class="mover-chip">Weekly price movers activate with the second snapshot — '+_nextMon()+'</span></div>'
-    +'<div class="axis-note"><span>Markets with fewer than 20 priced listings excluded · point size ∝ inventory</span>'
-    +'<span class="num">Market medians: '+nf(Math.round(medN))+' listings · '+fmt(medU)+' / m²</span></div></div></div></div>'
+    +'<div class="axis-note"><span>Cities with fewer than 20 priced listings excluded · quadrants split at city medians</span>'
+    +'<span class="num">City medians: '+nf(Math.round(medN))+' listings · '+fmt(medU)+' / m²</span></div></div></div></div>'
    +'</section>'
 
    +'<section class="grid g-bottom"><div class="panel"><div class="panel-head"><div><div class="panel-title">All markets — '+lbl+'</div>'
@@ -2958,6 +2959,7 @@ async function renderPipelineRegister(country){
     +'<div class="panel-body2" style="padding-top:8px;"><table class="xmt"><thead><tr><th>Project</th><th style="text-align:left;">City</th><th style="text-align:left;">Class</th><th>Quantum</th><th>Stage</th><th>Delivery</th><th>Sources</th></tr></thead>'
     +'<tbody>'+body+'</tbody></table>'+proj+'</div></div>';
 }
+function openCity(c){ _cityActive=c; nav('cities'); }
 var _prMap=null;
 async function selectMarket(sub){
   var ctx=window._mkCtx||{}, rows=window._mkRows||[]; await _fx();
@@ -3928,10 +3930,12 @@ async function boot(){
   const safetyTimer=setTimeout(()=>{ hideLoader(); buildCharts(); },4000);
   try{
     if(!sb) throw new Error('Supabase unavailable');
+    var AUTH_GATE=false; /* BUILD MODE: login gate off. Re-enable (true) + drop the
+       build_mode_anon_* Supabase policies before commercial launch. */
     loadProgress(20,'Authenticating...');
     const{data:sess}=await sb.auth.getSession();
     const user=sess?.session?.user;
-    if(!user){
+    if(!user&&AUTH_GATE){
       clearTimeout(safetyTimer);
       hideLoader();
       if(location.protocol.indexOf('http')===0){
@@ -3940,10 +3944,10 @@ async function boot(){
       }
       return;
     }
-    const name=user.user_metadata?.full_name||user.email.split('@')[0];
-    const initials=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const name=user?(user.user_metadata?.full_name||user.email.split('@')[0]):'Preview';
+    const initials=user?name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2):'IW';
     document.getElementById('sb-av').textContent=initials;
-    document.getElementById('sb-un').textContent=name;
+    document.getElementById('sb-un').textContent=user?name:'Build preview — gate off';
     blankHardcoded();
     buildCountryDropdown();
     loadProgress(50,'Loading market data...');
