@@ -447,6 +447,181 @@ button{cursor:pointer;font-family:var(--sans);}
   }
 }
 </style>
+
+<style>
+/* ═══ design-v2 components (visual source of truth: design-v2/index.html) ═══ */
+.topbar{height:auto;padding:10px 24px;background:var(--bg2);}
+.geo-picker{display:flex;align-items:center;gap:6px;position:relative;}
+.geo-chip{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);padding:5.5px 11px;border-radius:8px;font-size:12px;font-weight:500;color:var(--ink);transition:border-color .15s;cursor:pointer;font-family:var(--sans);}
+.geo-chip:hover{border-color:var(--border2);}
+.geo-chip svg{width:11px;height:11px;color:var(--ink4);}
+.geo-sep{color:var(--ink4);font-size:11px;}
+.search{flex:1;max-width:420px;display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--border);padding:6.5px 12px;border-radius:8px;color:var(--ink4);font-size:12px;}
+.search svg{width:13px;height:13px;flex:none;}
+.search input{flex:1;background:none;border:none;outline:none;color:var(--ink);font-family:var(--sans);font-size:12px;min-width:0;}
+.search input::placeholder{color:var(--ink4);}
+.search kbd{margin-left:auto;font-family:inherit;font-size:10px;background:var(--surface3);padding:1px 6px;border-radius:4px;color:var(--ink4);border:1px solid var(--hairline);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.freshness{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink3);background:var(--surface);border:1px solid var(--border);padding:5.5px 11px;border-radius:20px;white-space:nowrap;}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(99,185,139,.15);animation:v2pulse 2.5s infinite;flex:none;}
+@keyframes v2pulse{0%,100%{box-shadow:0 0 0 3px rgba(99,185,139,.15)}50%{box-shadow:0 0 0 5px rgba(99,185,139,.06)}}
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:550;border:1px solid transparent;transition:all .15s;font-family:var(--sans);}
+.btn svg{width:13px;height:13px;}
+.btn-primary{background:var(--gold);color:#14100A;border-color:var(--gold);}
+.btn-primary:hover{background:var(--gold2);}
+.btn-ghost{background:transparent;color:var(--ink3);border-color:var(--border);}
+.btn-ghost:hover{color:var(--ink);border-color:var(--border2);}
+.icon-btn{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--ink3);transition:all .15s;flex:none;}
+.icon-btn:hover{color:var(--ink);border-color:var(--border2);}
+.icon-btn svg{width:14px;height:14px;}
+.f-seg{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.f-seg button{padding:5.5px 12px;font-size:11.5px;border:none;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--ink4);font-weight:500;}
+.f-seg button.on{background:var(--gold-pale);color:var(--gold2);font-weight:600;}
+.f-chip{display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0 4px 0 11px;font-size:11.5px;color:var(--ink4);}
+.f-chip select{border:none;background:transparent;color:var(--ink);font-family:var(--sans);font-size:11.5px;padding:6px 2px;outline:none;}
+.f-chip select option{background:var(--surface2);color:var(--ink);}
+/* page head */
+.v2-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:18px;flex-wrap:wrap;}
+.v2-title{font-family:var(--serif);font-size:28px;font-weight:500;letter-spacing:-.005em;line-height:1.15;}
+.page-context{margin-top:6px;font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ctx-dot{width:3px;height:3px;border-radius:50%;background:var(--ink4);}
+.basis-chip{display:inline-flex;align-items:center;gap:6px;background:var(--gold-pale);color:var(--gold2);padding:2.5px 10px;border-radius:20px;font-size:11px;font-weight:500;}
+.basis-chip svg{width:11px;height:11px;}
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:14px;}
+.kpis .kpi{position:relative;overflow:hidden;}
+.kpi-label{font-size:11px;color:var(--ink3);font-weight:500;display:flex;align-items:center;gap:6px;}
+.kpi-label svg{width:12px;height:12px;color:var(--ink4);flex:none;}
+.kpi-value{font-size:26px;font-weight:600;margin-top:8px;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums;}
+.kpi-value .unit{font-size:13px;font-weight:500;color:var(--ink3);margin-right:2px;}
+.kpi-meta{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap;font-size:10.5px;color:var(--ink4);}
+.delta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:1.5px 7px;border-radius:20px;font-family:var(--sans);}
+.delta svg{width:9px;height:9px;}
+.delta.up{color:var(--green);background:var(--green-bg);}
+.delta.down{color:var(--red);background:var(--red-bg);}
+.delta.flat{color:var(--ink3);background:rgba(148,168,196,.08);}
+.kpi-basis{font-size:10.5px;color:var(--ink4);margin-top:8px;padding-top:8px;border-top:1px solid var(--hairline);}
+/* grids + panels */
+.grid{display:grid;gap:14px;margin-bottom:14px;}
+.g-main{grid-template-columns:1.45fr 1fr;}
+.g-four{grid-template-columns:1.05fr 1fr 1.05fr 1fr;}
+.g-trend{grid-template-columns:1.15fr 1.55fr;}
+.g-bottom{grid-template-columns:1.55fr 1fr;}
+.grid .panel{margin-bottom:0;display:flex;flex-direction:column;}
+.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:15px 18px 0;}
+.panel-head .panel-title{font-size:13px;font-weight:600;letter-spacing:-.005em;margin:0;}
+.panel-head .panel-sub{font-size:11px;color:var(--ink4);margin-top:3px;font-weight:400;}
+.panel-body2{padding:14px 18px 18px;flex:1;min-width:0;}
+.panel-link{font-size:11px;color:var(--ink4);display:inline-flex;align-items:center;gap:4px;transition:color .15s;background:none;border:none;font-family:var(--sans);cursor:pointer;}
+.panel-link:hover{color:var(--gold2);}
+.panel-link svg{width:11px;height:11px;}
+.n-tag{font-size:10px;color:var(--ink4);background:var(--surface2);border:1px solid var(--hairline);padding:2px 8px;border-radius:20px;white-space:nowrap;}
+/* hbars */
+.hbar-row{display:grid;grid-template-columns:128px 1fr 128px;align-items:center;gap:12px;padding:6.5px 0;border-radius:6px;transition:background .15s;}
+.hbar-row:hover{background:rgba(148,168,196,.045);}
+.hbar-name{font-size:12px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;font-weight:450;}
+.hbar-name .sub{font-size:9.5px;color:var(--ink4);display:block;line-height:1.2;}
+.hbar-row:hover .hbar-name{color:var(--ink);}
+.hbar-track{height:17px;background:rgba(148,168,196,.05);border-radius:4px;overflow:hidden;position:relative;}
+.hbar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#8A6534 0%,var(--gold) 100%);}
+.hbar-row:first-child .hbar-fill{background:linear-gradient(90deg,#A87F42 0%,var(--gold2) 100%);}
+.hbar-val{font-size:12px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.hbar-n{font-size:10px;color:var(--ink4);font-weight:400;margin-left:5px;}
+.axis-note{display:flex;justify-content:space-between;gap:14px;font-size:10px;color:var(--ink4);margin-top:10px;padding-top:10px;border-top:1px solid var(--hairline);}
+/* map */
+.map-frame{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);aspect-ratio:16/9.6;background:#0C1017;min-height:240px;}
+.map-frame .lmap{position:absolute;inset:0;z-index:1;}
+.map-legend{display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:12px;}
+.legend-scale{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--ink4);}
+.legend-dots{display:flex;gap:14px;font-size:10px;color:var(--ink4);align-items:center;}
+.ldot{width:6px;height:6px;border-radius:50%;display:inline-block;flex:none;}
+/* donut */
+.donut-wrap{display:flex;align-items:center;gap:14px;}
+.legend-list{flex:1;display:flex;flex-direction:column;min-width:0;}
+.legend-row{display:flex;align-items:center;gap:9px;padding:5.5px 8px;border-radius:6px;font-size:11.5px;transition:background .15s;}
+.legend-row:hover{background:rgba(148,168,196,.05);}
+.legend-row .l-name{color:var(--ink3);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.legend-row .l-pct{font-weight:600;font-variant-numeric:tabular-nums;}
+.legend-row .l-n{color:var(--ink4);font-size:10px;width:44px;text-align:right;font-variant-numeric:tabular-nums;}
+/* country bars */
+.cty-rows{display:flex;flex-direction:column;gap:6px;padding-top:2px;}
+.cty-row{display:grid;grid-template-columns:86px 1fr 96px;gap:10px;align-items:center;border-radius:5px;transition:background .15s;padding:2px 4px;}
+.cty-row:hover{background:rgba(148,168,196,.045);}
+.cty-name{font-size:11px;color:var(--ink3);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cty-track{height:11px;border-radius:3px;background:rgba(148,168,196,.05);overflow:hidden;}
+.cty-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#8A6534,var(--gold));}
+.cty-val{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;}
+/* stacked purpose bars */
+.stk-rows{display:flex;flex-direction:column;gap:9px;padding-top:4px;}
+.stk-row{display:grid;grid-template-columns:86px 1fr 74px;gap:10px;align-items:center;border-radius:5px;padding:2px 4px;transition:background .15s;}
+.stk-row:hover{background:rgba(148,168,196,.045);}
+.stk-name{font-size:11px;color:var(--ink3);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stk-track{height:12px;border-radius:3px;overflow:hidden;display:flex;background:rgba(148,168,196,.05);}
+.stk-sale{height:100%;background:linear-gradient(90deg,#8A6534,var(--gold));}
+.stk-rent{height:100%;background:linear-gradient(90deg,#3E6B62,var(--teal));}
+.stk-val{font-size:10.5px;color:var(--ink3);font-variant-numeric:tabular-nums;}
+.stk-val strong{color:var(--ink);font-weight:600;}
+.stk-legend{display:flex;gap:14px;font-size:10px;color:var(--ink4);margin-top:12px;padding-top:10px;border-top:1px solid var(--hairline);}
+.stk-legend span{display:flex;align-items:center;gap:5px;}
+/* teal bars (rent by city) */
+.bed-rows{display:flex;flex-direction:column;gap:10px;padding-top:4px;}
+.bed-row{display:grid;grid-template-columns:86px 1fr 92px;gap:10px;align-items:center;}
+.bed-name{font-size:11.5px;color:var(--ink3);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bed-track{height:13px;border-radius:3.5px;background:rgba(148,168,196,.05);overflow:hidden;}
+.bed-fill{height:100%;border-radius:3.5px;background:linear-gradient(90deg,#3E6B62,var(--teal));}
+.bed-val{font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums;}
+/* trend */
+.chart-meta{display:flex;gap:16px;margin:2px 0 10px;}
+.chart-meta .cm{font-size:10.5px;color:var(--ink4);display:flex;align-items:center;gap:6px;}
+.cm-line{width:14px;height:2px;border-radius:2px;background:var(--gold);display:inline-block;}
+.cm-line.t{background:var(--teal);}
+/* tables (scoped) */
+table.xmt{width:100%;border-collapse:collapse;}
+.xmt thead th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink4);font-weight:600;text-align:right;padding:0 12px 9px;border-bottom:1px solid var(--border);white-space:nowrap;background:transparent;}
+.xmt thead th:first-child{text-align:left;padding-left:8px;}
+.xmt tbody td{padding:9px 12px;border-bottom:1px solid var(--hairline);font-size:12px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.xmt tbody td:first-child{text-align:left;padding-left:8px;}
+.xmt tbody tr{transition:background .12s;}
+.xmt tbody tr:hover{background:rgba(148,168,196,.045);}
+.xmt tbody tr:last-child td{border-bottom:none;}
+.mkt-cell{display:flex;align-items:center;gap:9px;}
+.mkt-rank{width:18px;height:18px;border-radius:5px;background:var(--surface3);color:var(--ink4);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none;}
+.mkt-name{font-weight:500;color:var(--ink);}
+.mkt-cat{font-size:10px;color:var(--ink4);}
+.share-cell{display:flex;align-items:center;gap:8px;justify-content:flex-end;}
+.share-track{width:56px;height:5px;border-radius:3px;background:rgba(148,168,196,.08);overflow:hidden;}
+.share-fill{height:100%;border-radius:3px;background:var(--gold);}
+.status-dot2{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;}
+.status-lbl2{font-size:11px;color:var(--ink3);}
+/* coverage */
+.cov-rows{display:flex;flex-direction:column;gap:12px;}
+.cov-row .cov-top{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:5px;}
+.cov-row .c-name{color:var(--ink3);}
+.cov-row .c-val{font-weight:600;font-variant-numeric:tabular-nums;}
+.cov-track{height:6px;border-radius:3px;background:rgba(148,168,196,.07);overflow:hidden;}
+.cov-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#3E6B62,var(--teal));}
+.cov-fill.bronze{background:linear-gradient(90deg,#8A6534,var(--gold));}
+.cov-meta{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px;padding-top:14px;border-top:1px solid var(--hairline);}
+.cov-stat{background:var(--surface2);border:1px solid var(--hairline);border-radius:8px;padding:9px 11px;}
+.cov-stat .cs-label{font-size:10px;color:var(--ink4);}
+.cov-stat .cs-value{font-size:13px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums;}
+.method-note{margin-top:13px;font-size:10.5px;color:var(--ink4);line-height:1.55;background:var(--surface2);border-left:2px solid var(--gold);padding:9px 12px;border-radius:0 8px 8px 0;}
+/* footer */
+.foot{margin-top:8px;padding:16px 4px 0;border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:24px;align-items:flex-start;font-size:10.5px;color:var(--ink4);line-height:1.6;flex-wrap:wrap;}
+.foot .f-brand{font-family:var(--serif);color:var(--ink3);font-size:12px;white-space:nowrap;}
+/* sidebar extras */
+.data-health{margin:12px 12px 0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;}
+.data-health h4{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink4);font-weight:600;display:flex;align-items:center;gap:6px;margin:0;}
+.data-health .dh-row{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-top:7px;}
+.data-health .dh-row strong{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums;}
+.user-card{margin:12px 12px 12px;display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--surface);border:1px solid var(--border);}
+.avatar{width:30px;height:30px;border-radius:50%;flex:none;background:linear-gradient(135deg,#C89B5A,#8A6534);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#0A0D12;}
+.user-card .u-name{font-size:12px;font-weight:500;line-height:1.2;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.user-card .u-plan{font-size:10px;color:var(--gold);letter-spacing:.06em;font-weight:500;}
+.empty-trend{height:190px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;border:1px dashed var(--border2);border-radius:10px;color:var(--ink4);font-size:11.5px;text-align:center;padding:0 24px;line-height:1.6;}
+@media (max-width:1500px){.kpis{grid-template-columns:repeat(3,1fr);}.g-four{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:1100px){.g-main,.g-four,.g-trend,.g-bottom{grid-template-columns:1fr;}.hbar-row{grid-template-columns:96px 1fr 110px;}}
+</style>
 </head>
 <body>
 
@@ -510,13 +685,6 @@ button{cursor:pointer;font-family:var(--sans);}
       <div class="sb-tag">Market Terminal · v3.0</div>
     </div>
   </div>
-  <div class="sb-mkt" id="sb-mkt-btn" onclick="toggleCountryDropdown()">
-    <span class="sb-mkt-name" id="sb-mkt-label">🇲🇦 Morocco</span>
-    <span class="sb-mkt-caret">▾</span>
-  </div>
-  <div id="country-dropdown" style="display:none;position:absolute;left:12px;right:12px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.12);overflow:hidden;max-height:420px;overflow-y:auto;">
-    <div id="country-list"></div>
-  </div>
 
   <div class="sb-section">
     <div class="sb-section-lbl">Overview</div>
@@ -555,12 +723,21 @@ button{cursor:pointer;font-family:var(--sans);}
     <div class="ni" onclick="nav('api-access')"><span class="ni-icon" data-icon="activity"></span>API Access</div>
   </div>
 
-  <div class="sb-foot">
-    <div class="sb-live" id="sb-live-indicator"><div class="live-dot"></div>Morocco · Updated March 2026</div>
-    <div class="sb-user">
-      <div class="sb-avatar" id="sb-av">—</div>
-      <div class="sb-uname" id="sb-un">Loading...</div>
+  <div style="margin-top:auto;">
+    <div class="data-health">
+      <h4><span class="pulse"></span> Data pipeline</h4>
+      <div class="dh-row"><span>Last collection</span><strong id="dh-last">—</strong></div>
+      <div class="dh-row"><span>Active sources</span><strong id="dh-src">—</strong></div>
+      <div class="dh-row"><span>Records held</span><strong id="dh-rec">—</strong></div>
     </div>
+    <div class="user-card">
+      <div class="avatar" id="sb-av">—</div>
+      <div style="min-width:0;">
+        <div class="u-name" id="sb-un">Loading...</div>
+        <div class="u-plan">INSTITUTIONAL PLAN</div>
+      </div>
+    </div>
+    <span id="sb-live-indicator" style="display:none;"></span>
   </div>
 </aside>
 
@@ -572,15 +749,30 @@ button{cursor:pointer;font-family:var(--sans);}
     <button class="mobile-nav-btn" onclick="toggleSidebar()" aria-label="Menu">
       <span></span><span></span><span></span>
     </button>
-    <div class="tb-search">
-      <span class="tb-search-ic" data-icon="search"></span>
-      <input type="text" placeholder="Search market, city, district…" aria-label="Search"/>
+    <div class="geo-picker">
+      <span class="geo-chip" style="cursor:default;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#C89B5A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Africa
+      </span>
+      <span class="geo-sep">/</span>
+      <button class="geo-chip" id="sb-mkt-btn" onclick="toggleCountryDropdown()">
+        <span id="sb-mkt-label">🇲🇦 Morocco</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div id="country-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;width:280px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;z-index:400;box-shadow:0 14px 40px -12px rgba(0,0,0,.7);overflow:hidden;max-height:420px;overflow-y:auto;">
+        <div id="country-list"></div>
+      </div>
     </div>
-    <div class="tb-right">
-      <div class="tb-filter">
-        <span>Asset:</span>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search countries, cities, markets…" aria-label="Search"/>
+      <kbd>Ctrl K</kbd>
+    </div>
+    <div class="topbar-right">
+      <div class="freshness"><span class="pulse"></span> Data as of&nbsp;<strong class="num" id="tb-fresh" style="color:var(--ink)">—</strong></div>
+      <div class="f-chip"><span>Asset</span>
         <select id="asset-filter" onchange="applyFilters()">
-          <option value="all">All Classes</option>
+          <option value="all">All classes</option>
           <option value="apartments">Apartments</option>
           <option value="offices">Offices</option>
           <option value="retail">Retail</option>
@@ -588,18 +780,17 @@ button{cursor:pointer;font-family:var(--sans);}
           <option value="land">Land</option>
         </select>
       </div>
-      <div class="tb-filter">
-        <span>Type:</span>
-        <div id="type-toggle" style="display:inline-flex;border:1px solid var(--border2);border-radius:3px;overflow:hidden;">
-          <button data-t="sale" onclick="setType('sale')" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;font-family:var(--sans);background:var(--gold);color:#14100A;font-weight:600;">Sale</button>
-          <button data-t="rent" onclick="setType('rent')" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;font-family:var(--sans);background:var(--surface);color:var(--ink3);">Rent</button>
-        </div>
+      <div class="f-seg" id="type-toggle">
+        <button data-t="sale" class="on" onclick="setType('sale')">Sale</button>
+        <button data-t="rent" onclick="setType('rent')">Rent</button>
       </div>
-      <div class="tb-actions">
-        <span class="tb-ic" data-icon="bell" title="Alerts — coming soon"></span>
-        <span class="tb-ic" data-icon="bookmark" title="Saved — coming soon"></span>
-        <span class="tb-av" title="Mahmoud Nassef">MN</span>
-      </div>
+      <button class="icon-btn" aria-label="Notifications" title="Alerts — coming soon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+      <button class="btn btn-primary" onclick="nav('exports')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export report
+      </button>
     </div>
   </div>
 
@@ -2177,100 +2368,258 @@ async function renderCrossMarket(){
                         sb.rpc('market_signals',{p_country:k}).then(function(r){return r&&r.data;}).catch(function(){return null;})])
       .then(function(a){return {k:k,c:COUNTRIES[k],kpi:a[0]||{},sig:a[1]||{}};}); }));
   data=data.filter(function(d){return d.kpi&&(d.kpi.total_count||d.sig.total_listings);});
-  var COL=['#C89B5A','#6E8FBF','#63B98B','#D07A6A','#55A899','#D8A94E'];
-  var totalListings=0, totalPriced=0, cityset={};
+  var COL=['#C89B5A','#55A899','#6E8FBF','#8E99A9','#B87E76','#62708A','#D8A94E','#63B98B'];
+  var nf=function(v){return Number(v||0).toLocaleString('en-US');};
+  var kf=function(v){v=Number(v||0);return v>=1000?(Math.round(v/100)/10)+'k':''+v;};
+  var usd0=function(v){return v==null?'—':'$'+Math.round(v).toLocaleString('en-US');};
+
+  // ---- aggregates (all real) ----
+  var totalListings=0, totalPriced=0, totalDedup=0, cityset={}, distCount=0;
+  var cityRows=[], rentRows=[], purposeByCity={}, mix={};
   data.forEach(function(d,i){ d.color=COL[i%COL.length]; d.cur=d.c.currency;
     d.listings=Number(d.sig.total_listings||d.kpi.total_count||0); totalListings+=d.listings;
-    totalPriced+=Number(d.kpi.raw_count||d.kpi.dedup_count||0);
-    (d.kpi.cities||[]).forEach(function(c){cityset[d.k+'|'+c.city]=1;}); });
-  var cityCount=Object.keys(cityset).length, comp=totalListings?Math.round(totalPriced/totalListings*100):0;
-  var refresh='This week'; try{ var lr=await sb.from('properties').select('scraped_at').order('scraped_at',{ascending:false,nullsFirst:false}).limit(1); if(lr&&lr.data&&lr.data[0]&&lr.data[0].scraped_at) refresh=new Date(lr.data[0].scraped_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }catch(e){}
-  function meanOf(arr){ arr=arr.filter(function(x){return x!=null;}); return arr.length?arr.reduce(function(a,b){return a+b;},0)/arr.length:null; }
-  var avgIOS=meanOf(data.map(function(d){return d.sig.ios_score;})); avgIOS=avgIOS!=null?Math.round(avgIOS):null;
-  var avgYld=meanOf(data.map(function(d){return d.sig.gross_yield_pct;})); avgYld=avgYld!=null?avgYld.toFixed(1):null;
-  var avgLiq=meanOf(data.map(function(d){return d.sig.liquidity_score;})); avgLiq=avgLiq!=null?Math.round(avgLiq):null;
-  var rentUSD=meanOf(data.map(function(d){return _usd(d.kpi.median_rent,d.cur,fx);}));
-  // Cross-market USD city medians (for price bar + distribution histogram)
-  var cityUSD=[]; data.forEach(function(d){ (d.kpi.cities||[]).forEach(function(c){ var u=_usd(c.sale_median,d.cur,fx); if(u) cityUSD.push(u); }); });
-  var K1=function(icn,l,v,s){ return '<div class="kpi"><div style="display:flex;gap:11px;align-items:flex-start;"><div class="kpi-ico">'+ic(icn)+'</div><div style="min-width:0;"><div class="kpi-lbl" style="margin-bottom:7px;">'+l+'</div><div class="kpi-val">'+v+'</div><div class="kpi-sub" style="margin-top:6px;">'+(s||'')+'</div></div></div></div>'; };
-  var MINI=function(l,v,color,note){ var sp='<svg class="spark" viewBox="0 0 180 34" preserveAspectRatio="none"><line x1="2" y1="24" x2="178" y2="24" stroke="'+color+'" stroke-width="1.5" stroke-dasharray="3 5" opacity=".55"/><circle cx="176" cy="24" r="2.6" fill="'+color+'"/></svg>';
-    return '<div class="mini"><div class="mini-t">'+l+'<span class="i" title="Level shown from latest scrape. Week-over-week trend line activates once a second weekly snapshot exists.">'+ic('info')+'</span></div><div style="display:flex;align-items:baseline;"><span class="mini-v">'+v+'</span>'+(note?'<span class="delta flat">'+note+'</span>':'')+'</div>'+sp+'</div>'; };
-  el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:16px;flex-wrap:wrap;">'
-    +'<div><div class="pg-title" style="margin-bottom:2px;">Welcome back, Mahmoud</div><div style="font-size:12.5px;color:var(--ink3);">Real-time intelligence from property listings across Africa &amp; emerging markets.</div></div>'
-    +'<button class="tb-export" onclick="nav(\'market-reports\')">↓ Reports &amp; Insights</button></div>'
-    +'<div class="kpi-grid">'
-      +K1('globe','Live Markets', lives.length, data.map(function(d){return d.c.label;}).join(', '))
-      +K1('listings','Total Listings', totalListings>=1000?'~'+Math.round(totalListings/1000)+'k':totalListings, 'across all markets')
-      +K1('city','Cities Covered', cityCount, 'across all districts')
-      +K1('calendar-clock','Update Frequency','Weekly','automated collection')
-      +K1('refresh','Latest Refresh', refresh, 'all markets')
-      +K1('quality','Data Completeness', comp+'%','listings with price/m²')
-    +'</div>'
-    +'<div style="display:grid;grid-template-columns:1.28fr 1.22fr .96fr;gap:12px;margin-bottom:14px;">'
-      +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Market Coverage Map</div><div class="panel-sub">where we collect data</div></div><span style="font-size:9px;color:var(--green);font-weight:700;letter-spacing:.05em;">● LIVE</span></div><div id="xm-map" style="height:264px;"></div></div>'
-      +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Median Asking Price / m² · Sale</div><div class="panel-sub">USD · top cities</div></div></div><div class="panel-body"><div style="height:248px;"><canvas id="xm-price"></canvas></div></div></div>'
-      +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Listings by Market</div><div class="panel-sub">total active listings</div></div></div><div class="panel-body"><div class="inv-wrap"><div style="height:206px;"><canvas id="xm-inv"></canvas></div><div class="inv-list" id="xm-invlist"></div></div></div></div>'
-    +'</div>'
-    +'<div class="mini-grid">'
-      +MINI('Median Rent', rentUSD?'$'+rentUSD.toFixed(1):'—','var(--gold)', rentUSD?'baseline':null)
-      +MINI('Avg Gross Yield', avgYld?avgYld+'%':'—','var(--blue)', avgYld?'baseline':null)
-      +MINI('Avg Liquidity', avgLiq!=null?avgLiq+'/100':'—','var(--green)', avgLiq!=null?'baseline':null)
-      +MINI('Avg IOS', avgIOS!=null?avgIOS+'/100':'—','var(--gold)', avgIOS!=null?'baseline':null)
-      +MINI('Price Momentum (WoW)','—','var(--green)','builds weekly')
-      +MINI('Inventory Momentum (WoW)','—','var(--blue)','builds weekly')
-    +'</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1.05fr 1.05fr 1fr;gap:12px;margin-bottom:14px;">'
-      +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Price Distribution · Sale</div><div class="panel-sub">covered cities · USD/m²</div></div></div><div class="panel-body"><div style="height:186px;"><canvas id="xm-dist"></canvas></div></div></div>'
-      +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Top Districts by Activity</div><div class="panel-sub">all markets</div></div></div><div id="xm-districts" style="max-height:230px;overflow:auto;"></div></div>'
-      +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Markets</div><div class="panel-sub">click to open</div></div></div><div id="xm-markets"></div></div>'
-      +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Biggest Price Changes</div><div class="panel-sub">week-over-week</div></div><div class="tab-switch"><button class="active">Increases</button><button>Decreases</button></div></div><div class="panel-body" style="color:var(--ink4);font-size:11.5px;line-height:1.6;">Week-over-week movers activate once a second weekly snapshot exists. First deltas land after next Monday’s scrape.</div></div>'
-    +'</div>'
-    +'<div class="status-strip">'
-      +'<div class="status"><div class="status-ico">'+ic('check')+'</div><div><div class="status-lbl">Latest Scrape</div><div class="status-val">All markets completed<br><span style="color:var(--ink5);">'+refresh+'</span></div></div></div>'
-      +'<div class="status"><div class="status-ico">'+ic('clock')+'</div><div><div class="status-lbl">Data Freshness</div><div class="status-val">Updated this week<br><span style="color:var(--ink5);">100% markets</span></div></div></div>'
-      +'<div class="status"><div style="width:100%;"><div class="status-lbl">Coverage · Critical Fields</div><div class="status-val" style="font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;font-size:14px;">'+comp+'%</div><div class="progress"><span style="width:'+comp+'%;"></span></div></div></div>'
-      +'<div class="status"><div class="status-ico">'+ic('activity')+'</div><div><div class="status-lbl">Source Health</div><div class="status-val">'+data.length+' portals operational<br><span style="color:var(--ink5);">active collectors</span></div></div></div>'
-      +'<div class="status"><div class="status-ico g">'+ic('listings')+'</div><div><div class="status-lbl">Avg / Market</div><div class="status-val">~'+Math.round(totalListings/Math.max(lives.length,1)/1000)+'k listings<br><span style="color:var(--ink5);">this week</span></div></div></div>'
-      +'<div class="status"><div class="status-ico g">'+ic('calendar')+'</div><div><div class="status-lbl">Next Refresh</div><div class="status-val">'+_nextMon()+'<br><span style="color:var(--ink5);">weekly cycle</span></div></div></div>'
-    +'</div>';
-  renderXmMap(data); renderXmPrice(data,fx); renderXmInv(data); renderXmDistricts(data); renderXmMarkets(data,fx); renderXmDist(cityUSD);
-}
-function renderXmDist(vals){ _xmD('xm-dist'); var cv=document.getElementById('xm-dist'); if(!cv||!window.Chart)return;
-  if(!vals||!vals.length){ return; }
-  var bands=[['<500',0,500],['500–1k',500,1000],['1k–1.5k',1000,1500],['1.5k–2k',1500,2000],['2k–3k',2000,3000],['>3k',3000,1e9]];
-  var counts=bands.map(function(b){ return vals.filter(function(v){return v>=b[1]&&v<b[2];}).length; });
-  _xmCharts['xm-dist']=new Chart(cv,{type:'bar',data:{labels:bands.map(function(b){return b[0];}),datasets:[{data:counts,backgroundColor:'#C89B5A',borderWidth:0,borderRadius:2,barPercentage:.66}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+' cities';}}}},scales:{x:{grid:{display:false},ticks:{font:{family:'Inter',size:8.5},color:'#5F6B7C'}},y:{beginAtZero:true,grid:{color:'rgba(148,168,196,.10)'},ticks:{stepSize:1,font:{family:'Inter',size:9},color:'#5F6B7C'}}}}});
+    d.priced=Number(d.kpi.raw_count||d.kpi.dedup_count||0); totalPriced+=d.priced;
+    totalDedup+=Number(d.kpi.dedup_count||d.kpi.raw_count||0);
+    distCount+=(d.kpi.districts||[]).length;
+    (d.kpi.cities||[]).forEach(function(c){ cityset[d.k+'|'+c.city]=1;
+      var su=_usd(c.sale_median,d.cur,fx), ru=_usd(c.rent_median,d.cur,fx);
+      if(su) cityRows.push({city:c.city,country:d.c.label,usd:su,n:Number(c.listings||0)});
+      if(ru) rentRows.push({city:c.city,country:d.c.label,usd:ru,n:Number(c.listings||0)}); });
+    (d.kpi.city_class||[]).forEach(function(x){ var n=Number(x.count||0);
+      var acl=(x.ac||'other'); acl=acl.charAt(0).toUpperCase()+acl.slice(1);
+      mix[acl]=(mix[acl]||0)+n;
+      var key=x.city+'|'+d.c.label; purposeByCity[key]=purposeByCity[key]||{city:x.city,sale:0,rent:0};
+      purposeByCity[key][x.tt==='rent'?'rent':'sale']+=n; }); });
+  var cityCount=Object.keys(cityset).length;
+  var comp=totalListings?Math.round(totalPriced/totalListings*100):0;
+  var refresh='—';
+  try{ var lr=await sb.from('properties').select('scraped_at').order('scraped_at',{ascending:false,nullsFirst:false}).limit(1);
+       if(lr&&lr.data&&lr.data[0]&&lr.data[0].scraped_at) refresh=new Date(lr.data[0].scraped_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }catch(e){}
+  var snapInfo=null;
+  try{ var sr=await sb.from('market_snapshots').select('snapshot_date').order('snapshot_date',{ascending:true}).limit(1);
+       var sr2=await sb.from('market_snapshots').select('snapshot_date').order('snapshot_date',{ascending:false}).limit(1);
+       if(sr&&sr.data&&sr.data.length) snapInfo={first:sr.data[0].snapshot_date,last:sr2.data[0].snapshot_date}; }catch(e){}
+  var snapDates=snapInfo&&snapInfo.first!==snapInfo.last?2:(snapInfo?1:0);
+  var SOURCES=[{name:'Mubawab',country:'Morocco',domain:'mubawab.ma'},
+               {name:'Mubawab Tunisie',country:'Tunisia',domain:'mubawab.tn'},
+               {name:'BuyRentKenya',country:'Kenya',domain:'buyrentkenya.com'}]
+    .filter(function(x){return data.some(function(d){return d.c.label===x.country;});});
+
+  // topbar + sidebar pipeline card
+  var setTxt=function(id,v){var e=document.getElementById(id); if(e) e.textContent=v;};
+  setTxt('tb-fresh',refresh); setTxt('dh-last',refresh); setTxt('dh-src',''+SOURCES.length); setTxt('dh-rec',nf(totalListings));
+
+  // ---- shared svg snippets ----
+  var chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>';
+  var db='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>';
+  var flat=function(t){return '<span class="delta flat">'+t+'</span>';};
+
+  // ---- KPI row ----
+  function KPI(icon,label,value,meta,basis){
+    return '<div class="kpi"><div class="kpi-label">'+icon+label+'</div><div class="kpi-value num">'+value+'</div>'
+      +'<div class="kpi-meta">'+meta+'</div><div class="kpi-basis">'+basis+'</div></div>';
+  }
+  var icoList='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>';
+  var icoGlobe='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+  var icoCity='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l5-4v17"/><path d="M14 21V11l5-3v13"/></svg>';
+  var icoPin='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+  var icoAct='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>';
+  var icoShield='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5c0 5 3.1 8.2 7.5 10 4.4-1.8 7.5-5 7.5-10V6Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg>';
+
+  // ---- hbar rows (median sale $/m2 by city) ----
+  cityRows.sort(function(a,b){return b.usd-a.usd;});
+  var topCities=cityRows.slice(0,10), maxUsd=topCities.length?topCities[0].usd:1;
+  var hbarN=topCities.reduce(function(a,r){return a+r.n;},0);
+  var hbars=topCities.map(function(r){
+    return '<div class="hbar-row"><div class="hbar-name">'+r.city+'<span class="sub">'+r.country+'</span></div>'
+      +'<div class="hbar-track"><div class="hbar-fill" style="width:'+(r.usd/maxUsd*100).toFixed(1)+'%"></div></div>'
+      +'<div class="hbar-val num">'+usd0(r.usd)+'<span class="hbar-n">n='+nf(r.n)+'</span></div></div>'; }).join('');
+  var spread=topCities.length?usd0(topCities[topCities.length-1].usd)+' – '+usd0(topCities[0].usd)+' / m²':'—';
+
+  // ---- country inventory ----
+  var byCty=data.slice().sort(function(a,b){return b.listings-a.listings;});
+  var maxCty=byCty.length?byCty[0].listings:1;
+  var ctyRows=byCty.map(function(d){var pct=totalListings?(d.listings/totalListings*100):0;
+    return '<div class="cty-row"><div class="cty-name">'+d.c.label+'</div>'
+      +'<div class="cty-track"><div class="cty-fill" style="width:'+(d.listings/maxCty*100).toFixed(1)+'%"></div></div>'
+      +'<div class="cty-val num">'+nf(d.listings)+'<span class="hbar-n">'+pct.toFixed(1)+'%</span></div></div>';}).join('');
+
+  // ---- listing mix donut (from city_class, real) ----
+  var mixArr=Object.keys(mix).map(function(k){return {name:k,n:mix[k]};}).sort(function(a,b){return b.n-a.n;});
+  var mixTot=mixArr.reduce(function(a,x){return a+x.n;},0)||1;
+  var top6=mixArr.slice(0,6), rest=mixArr.slice(6).reduce(function(a,x){return a+x.n;},0);
+  if(rest>0) top6.push({name:'Other',n:rest});
+  var C=2*Math.PI*58, off=0;
+  var segs=top6.map(function(x,i){ var len=x.n/mixTot*C;
+    var t='<circle cx="75" cy="75" r="58" fill="none" stroke="'+COL[i%COL.length]+'" stroke-width="17" stroke-dasharray="'+len.toFixed(1)+' '+(C-len).toFixed(1)+'" stroke-dashoffset="'+(-off).toFixed(1)+'"/>';
+    off+=len; return t;}).join('');
+  var mixLegend=top6.map(function(x,i){
+    return '<div class="legend-row"><span class="ldot" style="background:'+COL[i%COL.length]+'"></span><span class="l-name">'+x.name+'</span><span class="l-pct num">'+Math.round(x.n/mixTot*100)+'%</span><span class="l-n num">'+kf(x.n)+'</span></div>';}).join('');
+
+  // ---- purpose split (sale vs rent) by city ----
+  var pc=Object.keys(purposeByCity).map(function(k){return purposeByCity[k];})
+    .map(function(x){x.tot=x.sale+x.rent;return x;}).filter(function(x){return x.tot>200;})
+    .sort(function(a,b){return b.tot-a.tot;}).slice(0,8);
+  var stkRows=pc.map(function(x){var sp=Math.round(x.sale/x.tot*100);
+    return '<div class="stk-row"><div class="stk-name">'+x.city+'</div>'
+      +'<div class="stk-track"><div class="stk-sale" style="width:'+sp+'%"></div><div class="stk-rent" style="width:'+(100-sp)+'%"></div></div>'
+      +'<div class="stk-val num"><strong>'+sp+'</strong> / '+(100-sp)+'</div></div>';}).join('');
+
+  // ---- rent $/m2 by city (teal bars) ----
+  rentRows.sort(function(a,b){return b.usd-a.usd;});
+  var topRent=rentRows.slice(0,8), maxRent=topRent.length?topRent[0].usd:1;
+  var rentBars=topRent.map(function(r){
+    return '<div class="bed-row"><div class="bed-name">'+r.city+'</div>'
+      +'<div class="bed-track"><div class="bed-fill" style="width:'+(r.usd/maxRent*100).toFixed(1)+'%"></div></div>'
+      +'<div class="bed-val num">$'+r.usd.toFixed(1)+'<span class="hbar-n">/m²/mo</span></div></div>';}).join('');
+
+  // ---- city leaderboard ----
+  var lead=[]; data.forEach(function(d){ (d.kpi.cities||[]).forEach(function(c){
+    var mkts=(d.kpi.districts||[]).filter(function(x){return x.city===c.city;}).length;
+    lead.push({city:c.city,country:d.c.label,n:Number(c.listings||0),mkts:mkts,usd:_usd(c.sale_median,d.cur,fx)}); }); });
+  lead.sort(function(a,b){return b.n-a.n;});
+  var lead8=lead.slice(0,8), maxLead=lead8.length?lead8[0].n:1;
+  var leadRows=lead8.map(function(r,i){
+    return '<tr><td><div class="mkt-cell"><span class="mkt-rank num">'+(i+1)+'</span><div><div class="mkt-name">'+r.city+'</div><div class="mkt-cat">'+r.country+'</div></div></div></td>'
+      +'<td class="num">'+nf(r.n)+'</td>'
+      +'<td><div class="share-cell"><div class="share-track"><div class="share-fill" style="width:'+(r.n/maxLead*100).toFixed(1)+'%"></div></div><span class="num">'+(totalListings?(r.n/totalListings*100).toFixed(1):'0')+'%</span></div></td>'
+      +'<td class="num">'+(r.mkts||'—')+'</td>'
+      +'<td class="num">'+usd0(r.usd)+'</td>'
+      +'<td>'+flat('—')+'</td></tr>';}).join('');
+
+  // ---- source network ----
+  var srcRows=SOURCES.map(function(x){ var d=data.filter(function(q){return q.c.label===x.country;})[0];
+    return '<tr><td><span class="mkt-name">'+x.name+'</span><span class="mkt-cat" style="margin-left:7px;">'+x.domain+'</span></td>'
+      +'<td class="status-lbl2">'+x.country+'</td>'
+      +'<td class="num">'+nf(d?d.listings:0)+'</td>'
+      +'<td class="num">'+refresh+'</td>'
+      +'<td><span class="status-dot2"></span><span class="status-lbl2">Healthy</span></td></tr>';}).join('');
+
+  // ---- coverage ----
+  var covRows=byCty.map(function(d){ var p=d.listings?Math.round(d.priced/d.listings*100):0;
+    return '<div class="cov-row"><div class="cov-top"><span class="c-name">'+d.c.label+' · price per m² computable</span><span class="c-val num">'+p+'%</span></div>'
+      +'<div class="cov-track"><div class="cov-fill'+(p>=70?' bronze':'')+'" style="width:'+p+'%"></div></div></div>';}).join('');
+  var dups=Math.max(0,totalPriced-totalDedup);
+
+  // ---- trend (honest: needs 2+ weekly snapshots) ----
+  var trendBody;
+  if(snapDates>=2){
+    trendBody='<div class="empty-trend">Snapshot history detected — trend chart activates in the next release of this page.</div>';
+  } else {
+    var firstSnap=snapInfo?new Date(snapInfo.first).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):null;
+    trendBody='<div class="empty-trend"><span style="font-size:22px;color:var(--ink5);">─┄─</span>'
+      +(firstSnap?'First weekly snapshot recorded <strong style="color:var(--ink3);">&nbsp;'+firstSnap+'&nbsp;</strong> — the inventory trend line begins with the second snapshot on '+_nextMon()+'.':'Weekly snapshots begin '+_nextMon()+' — the trend line activates with the second data point.')
+      +'</div>';
+  }
+
+  // ---- page ----
+  el.innerHTML=
+   '<div class="v2-head"><div>'
+    +'<h1 class="v2-title">Africa Market Overview</h1>'
+    +'<div class="page-context"><span>'+data.length+' countries · '+cityCount+' cities</span><span class="ctx-dot"></span>'
+    +'<span>Updated '+refresh+'</span><span class="ctx-dot"></span>'
+    +'<span>All price figures are <strong style="color:var(--ink)">asking prices in USD</strong></span>'
+    +'<span class="basis-chip">'+db+'Based on '+nf(totalListings)+' observed listings</span></div></div>'
+    +'<button class="btn btn-ghost" onclick="nav(\'market-reports\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Market reports</button></div>'
+
+   +'<section class="kpis">'
+    +KPI(icoList,'Observed listings',nf(totalListings),flat('baseline')+'<span>trend from '+_nextMon()+'</span>','Active records, deduplicated')
+    +KPI(icoGlobe,'Countries covered',''+data.length,flat('live')+'<span>'+byCty.map(function(d){return d.c.label;}).join(', ')+'</span>','Markets with active collection')
+    +KPI(icoCity,'Cities covered',''+cityCount,flat('stable')+'<span>this period</span>','Metro areas with active collection')
+    +KPI(icoPin,'Markets tracked',nf(distCount),flat('growing')+'<span>district level</span>','Neighbourhoods &amp; submarkets, standardised')
+    +KPI(icoAct,'Active sources',''+SOURCES.length,flat(SOURCES.length+' healthy')+'<span>0 delayed</span>','Listing portals scraped weekly')
+    +KPI(icoShield,'Data completeness',comp+'<span class="unit">%</span>',flat('baseline')+'<span>critical fields</span>','Listings with computable price per m²')
+   +'</section>'
+
+   +'<section class="grid g-main">'
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Median asking price per m² by city</div>'
+    +'<div class="panel-sub">Top '+topCities.length+' of '+cityCount+' cities · USD per m² · for sale</div></div>'
+    +'<div class="panel-actions"><span class="n-tag num">n = '+nf(hbarN)+'</span><button class="panel-link" onclick="nav(\'cities\')">All cities'+chev+'</button></div></div>'
+    +'<div class="panel-body2">'+(hbars||'<div class="empty-trend" style="height:120px;">No priced cities yet.</div>')
+    +'<div class="axis-note"><span>Medians of observed asking prices per city · converted at live interbank FX</span><span class="num" style="white-space:nowrap">Spread: '+spread+'</span></div></div></div>'
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Map Explorer — Africa</div>'
+    +'<div class="panel-sub">Observed listing inventory · dot size = listings</div></div>'
+    +'<div class="panel-actions"><button class="panel-link" onclick="nav(\'map-view\')">Open full map'+chev+'</button></div></div>'
+    +'<div class="panel-body2"><div class="map-frame"><div class="lmap" id="xm-map"></div></div>'
+    +'<div class="map-legend"><div class="legend-scale">'
+    +'<span class="ldot" style="width:4px;height:4px;background:var(--gold2)"></span><span>&lt; 10k</span>'
+    +'<span class="ldot" style="width:7px;height:7px;background:var(--gold2)"></span><span>25k</span>'
+    +'<span class="ldot" style="width:11px;height:11px;background:var(--gold2)"></span><span>50k+ listings</span></div>'
+    +'<div class="legend-dots"><span>'+cityCount+' cities · '+nf(distCount)+' markets tracked</span></div></div></div></div>'
+   +'</section>'
+
+   +'<section class="grid g-four">'
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Inventory by country</div>'
+    +'<div class="panel-sub">Observed listings · share of total</div></div><span class="n-tag num">n = '+nf(totalListings)+'</span></div>'
+    +'<div class="panel-body2"><div class="cty-rows">'+ctyRows+'</div></div></div>'
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Listing mix by type</div>'
+    +'<div class="panel-sub">Share of observed inventory</div></div><span class="n-tag num">n = '+nf(mixTot)+'</span></div>'
+    +'<div class="panel-body2"><div class="donut-wrap">'
+    +'<svg width="118" height="118" viewBox="0 0 150 150" style="flex:none" role="img" aria-label="Listing mix by property type"><g transform="rotate(-90 75 75)">'+segs+'</g>'
+    +'<text x="75" y="70" text-anchor="middle" fill="#E9EDF3" font-family="Inter,sans-serif" font-size="19" font-weight="650">'+top6.length+'</text>'
+    +'<text x="75" y="88" text-anchor="middle" fill="#5F6B7C" font-family="Inter,sans-serif" font-size="9.5">property types</text></svg>'
+    +'<div class="legend-list">'+mixLegend+'</div></div></div></div>'
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Listing purpose by city</div>'
+    +'<div class="panel-sub">Sale vs rent share of observed listings</div></div><span class="n-tag num">n = '+nf(mixTot)+'</span></div>'
+    +'<div class="panel-body2"><div class="stk-rows">'+stkRows+'</div>'
+    +'<div class="stk-legend"><span><span class="ldot" style="background:var(--gold)"></span> For sale</span>'
+    +'<span><span class="ldot" style="background:var(--teal)"></span> For rent (monthly)</span></div></div></div>'
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Median asking rent by city</div>'
+    +'<div class="panel-sub">USD per m² per month · residential rent</div></div><span class="n-tag num">n = '+nf(topRent.reduce(function(a,r){return a+r.n;},0))+'</span></div>'
+    +'<div class="panel-body2"><div class="bed-rows">'+(rentBars||'<div class="empty-trend" style="height:120px;">No rent-priced cities yet.</div>')+'</div>'
+    +'<div class="axis-note" style="margin-top:14px"><span>Cities with computable rent per m²</span>'
+    +'<span class="num" style="color:var(--ink)">'+(topRent.length?topRent[0].city+' · $'+topRent[0].usd.toFixed(1)+'/m²':'—')+'</span></div></div></div>'
+   +'</section>'
+
+   +'<section class="grid g-trend">'
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Observed inventory over time</div>'
+    +'<div class="panel-sub">Active listings per weekly collection · all markets</div></div>'
+    +'<div class="panel-actions"><button class="panel-link" onclick="nav(\'data-explorer\')">Data Explorer'+chev+'</button></div></div>'
+    +'<div class="panel-body2"><div class="chart-meta"><span class="cm"><span class="cm-line"></span> Active listings</span>'
+    +'<span class="cm"><span class="cm-line t"></span> New per period</span></div>'+trendBody
+    +'<div class="axis-note"><span>Inventory reflects collected listings, not total market supply</span><span class="num">'+nf(totalListings)+' current</span></div></div></div>'
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">City leaderboard</div>'
+    +'<div class="panel-sub">Ranked by observed inventory · medians are for sale, USD</div></div>'
+    +'<div class="panel-actions"><button class="panel-link" onclick="nav(\'cities\')">All '+cityCount+' cities'+chev+'</button></div></div>'
+    +'<div class="panel-body2" style="padding-top:8px"><table class="xmt"><thead><tr><th>City</th><th>Listings</th><th>Share</th><th>Markets</th><th>Median $/m²</th><th>Δ wk</th></tr></thead>'
+    +'<tbody>'+leadRows+'</tbody></table></div></div>'
+   +'</section>'
+
+   +'<section class="grid g-bottom">'
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Source network</div>'
+    +'<div class="panel-sub">Listing portals monitored by the Ironwood collection pipeline</div></div>'
+    +'<div class="panel-actions"><span class="n-tag num">'+SOURCES.length+' sources</span></div></div>'
+    +'<div class="panel-body2" style="padding-top:8px"><table class="xmt"><thead><tr><th>Source</th><th>Country</th><th>Records</th><th>Last collection</th><th>Status</th></tr></thead>'
+    +'<tbody>'+srcRows+'</tbody></table>'
+    +'<div class="axis-note" style="margin-top:6px"><span>'+SOURCES.length+' proxy-free sources live · 15+ additional portals onboard as markets unblock</span></div></div></div>'
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Data coverage — all markets</div>'
+    +'<div class="panel-sub">Field completeness of the current collection</div></div></div>'
+    +'<div class="panel-body2"><div class="cov-rows">'+covRows+'</div>'
+    +'<div class="cov-meta">'
+    +'<div class="cov-stat"><div class="cs-label">Records held</div><div class="cs-value num">'+nf(totalListings)+'</div></div>'
+    +'<div class="cov-stat"><div class="cs-label">Priced per m²</div><div class="cs-value num">'+nf(totalPriced)+' ('+comp+'%)</div></div>'
+    +'<div class="cov-stat"><div class="cs-label">Sources monitored</div><div class="cs-value num">'+SOURCES.length+' portals</div></div>'
+    +'<div class="cov-stat"><div class="cs-label">Update cadence</div><div class="cs-value">Weekly</div></div></div>'
+    +'<div class="method-note">Ironwood indicators are based on <strong style="color:var(--ink2)">observed property listing data</strong> and should not be interpreted as verified transaction prices. Local-currency asking prices are converted to USD at live interbank rates.</div></div></div>'
+   +'</section>'
+
+   +'<div class="foot"><span class="f-brand">Ironwood Intelligence</span>'
+   +'<span style="max-width:860px">Real estate intelligence for Africa’s overlooked markets. All indicators on this page are derived from observed property listings collected from public sources, cleaned, deduplicated, and standardised by Ironwood. Asking prices are not transaction prices. Coverage: '+data.length+' countries · '+cityCount+' cities · '+nf(distCount)+' markets · '+SOURCES.length+' sources · latest collection '+refresh+'.</span>'
+   +'<span class="num" style="white-space:nowrap">© 2026 Ironwood Intelligence</span></div>';
+
+  renderXmMap(data);
 }
 function renderXmMap(data){ var el=document.getElementById('xm-map'); if(!el||!window.L) return;
   if(_xmMap){try{_xmMap.remove();}catch(e){}_xmMap=null;}
-  _xmMap=L.map('xm-map',{zoomControl:true,attributionControl:false}).setView([9,18],3);
+  _xmMap=L.map('xm-map',{zoomControl:false,attributionControl:false,scrollWheelZoom:false}).setView([6,16],3);
+  L.control.zoom({position:'topright'}).addTo(_xmMap);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(_xmMap);
   data.forEach(function(d){ var v=COUNTRY_VIEW[d.k]; if(!v)return;
-    L.circleMarker(v[0],{radius:Math.min(24,Math.max(9,Math.sqrt(d.listings/180))),fillColor:d.color,color:'#14100A',weight:2,fillOpacity:.9}).addTo(_xmMap)
-      .bindPopup('<div style="font-family:Inter,sans-serif"><b>'+d.c.label+'</b><br>'+d.listings.toLocaleString()+' listings</div>'); });
+    L.circleMarker(v[0],{radius:Math.min(22,Math.max(8,Math.sqrt(d.listings/200))),fillColor:'#E3BC7E',color:'rgba(10,13,18,.85)',weight:1.5,fillOpacity:.85}).addTo(_xmMap)
+      .bindTooltip(d.c.label+' · '+d.listings.toLocaleString()+' listings',{direction:'top',className:'xm-tip'}); });
   setTimeout(function(){if(_xmMap)_xmMap.invalidateSize();},250);
 }
-function renderXmPrice(data,fx){ _xmD('xm-price'); var cv=document.getElementById('xm-price'); if(!cv||!window.Chart)return;
-  var rows=[]; data.forEach(function(d){ (d.kpi.cities||[]).forEach(function(c){ var usd=_usd(c.sale_median,d.cur,fx); if(usd) rows.push({city:c.city,usd:usd,color:d.color}); }); });
-  rows.sort(function(a,b){return b.usd-a.usd;}); rows=rows.slice(0,8); if(!rows.length)return;
-  var valLbl={id:'valLbl',afterDatasetsDraw:function(ch){var ctx=ch.ctx;ctx.save();ctx.fillStyle='#E9EDF3';ctx.font='600 10px Inter';ctx.textAlign='center';ctx.textBaseline='bottom';ch.getDatasetMeta(0).data.forEach(function(bar,i){ctx.fillText('$'+Number(ch.data.datasets[0].data[i]).toLocaleString(),bar.x,bar.y-6);});ctx.restore();}};
-  _xmCharts['xm-price']=new Chart(cv,{type:'bar',data:{labels:rows.map(function(r){return r.city;}),datasets:[{data:rows.map(function(r){return Math.round(r.usd);}),backgroundColor:rows.map(function(r){return r.color;}),borderWidth:0,borderRadius:2,barPercentage:.66,categoryPercentage:.74}]},plugins:[valLbl],options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18}},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return '$'+c.raw.toLocaleString()+' / m²';}}}},scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{family:'Inter',size:10},color:'#9AA6B6',maxRotation:0}},y:{grid:{color:'rgba(148,168,196,.10)'},border:{display:false},ticks:{font:{family:'Inter',size:10},color:'#5F6B7C',callback:function(v){return v>=1000?'$'+(v/1000)+'k':'$'+v;}}}}}});
-}
-function renderXmInv(data){ _xmD('xm-inv'); var cv=document.getElementById('xm-inv'); if(!cv||!window.Chart)return;
-  var tot=data.reduce(function(a,d){return a+d.listings;},0)||1;
-  _xmCharts['xm-inv']=new Chart(cv,{type:'doughnut',data:{labels:data.map(function(d){return d.c.label;}),datasets:[{data:data.map(function(d){return d.listings;}),backgroundColor:data.map(function(d){return d.color;}),borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw.toLocaleString();}}}}},plugins:[{id:'ctr',afterDraw:function(ch){var a=ch.chartArea,x=(a.left+a.right)/2,y=(a.top+a.bottom)/2,ctx=ch.ctx;ctx.save();ctx.textAlign='center';ctx.fillStyle='#f4f7fb';ctx.font='600 20px Inter';ctx.fillText(tot>=1000?'~'+Math.round(tot/1000)+'k':tot,x,y-1);ctx.fillStyle='#5F6B7C';ctx.font='10px Inter';ctx.fillText('Total',x,y+15);ctx.restore();}}]});
-  var ll=document.getElementById('xm-invlist'); if(ll){ ll.innerHTML=data.slice().sort(function(a,b){return b.listings-a.listings;}).map(function(d){ var pct=Math.round(d.listings/tot*100); return '<div class="inv-item"><span class="dot" style="background:'+d.color+';"></span><div class="inv-copy"><div class="inv-head"><strong>'+d.c.label+'</strong><span class="inv-count">'+d.listings.toLocaleString()+'</span></div><div class="inv-meta"><span>Active listings</span><span style="color:var(--ink2);">'+pct+'%</span></div><div class="inv-track"><span style="width:'+pct+'%;background:'+d.color+';"></span></div></div></div>'; }).join(''); }
-}
-function renderXmDistricts(data){ var el=document.getElementById('xm-districts'); if(!el)return;
-  var rows=[]; data.forEach(function(d){ (d.kpi.districts||[]).forEach(function(x){ rows.push({sub:x.submarket,market:d.c.label,n:Number(x.count)}); }); });
-  rows.sort(function(a,b){return b.n-a.n;}); rows=rows.slice(0,10);
-  el.innerHTML='<table class="dt" style="width:100%"><thead><tr><th>District</th><th>Market</th><th>Active Listings</th></tr></thead><tbody>'
-    +rows.map(function(r){return '<tr><td class="dt-city">'+(r.sub||'—')+'</td><td class="dt-muted">'+r.market+'</td><td class="mono">'+r.n.toLocaleString()+'</td></tr>';}).join('')+'</tbody></table>';
-}
-function renderXmMarkets(data,fx){ var el=document.getElementById('xm-markets'); if(!el)return;
-  el.innerHTML='<table class="dt" style="width:100%"><thead><tr><th>Market</th><th>Listings</th><th>Median (USD)</th></tr></thead><tbody>'
-    +data.map(function(d){ var usd=_usd(d.kpi.median_sale,d.cur,fx); return '<tr onclick="switchCountry(\''+d.k+'\');nav(\'markets\')" style="cursor:pointer;"><td class="dt-city">'+d.c.flag+' '+d.c.label+'</td><td class="mono">'+d.listings.toLocaleString()+'</td><td class="mono">'+(usd?'$'+Math.round(usd).toLocaleString():'—')+'</td></tr>';}).join('')+'</tbody></table>';
-}
+
 var _ovMap=null, _ovCharts={};
 function _ovDestroy(id){ if(_ovCharts[id]){ try{_ovCharts[id].destroy();}catch(e){} delete _ovCharts[id]; } }
 function _kcard(label,val,sub){
@@ -2440,7 +2789,7 @@ var _liveMap=null,_cityActive=null;
 function _mapCol(t){ return t<0.34?'#3f7a52':t<0.67?'#b8933f':'#c0603a'; }
 var _typeFilter='sale';
 function setType(t){ _typeFilter=t;
-  document.querySelectorAll('#type-toggle button').forEach(function(b){ var on=b.getAttribute('data-t')===t; b.style.background=on?'var(--gold)':'var(--surface)'; b.style.color=on?'#14100A':'var(--ink3)'; b.style.fontWeight=on?'600':'400'; });
+  document.querySelectorAll('#type-toggle button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-t')===t); });
   applyFilters();
 }
 function _curFilters(){ return { asset:(document.getElementById('asset-filter')||{}).value||'all', type:_typeFilter||'sale' }; }
