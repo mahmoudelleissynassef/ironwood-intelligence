@@ -1954,14 +1954,7 @@ var COMINGSOON={
   'pg-listings':['Listings','Raw individual listing records are not exposed in the client. The market intelligence derived from them is available under Key Indicators, Market Signals, Cities and Districts.'],
   'pg-transactions':['Transactions','Recorded-transaction data needs land-registry / deal feeds we don’t yet license.'],
   'pg-occupiers':['Corporate Occupiers','Corporate-occupier data is not yet sourced for this market.'],
-  'pg-infrastructure':['Infrastructure Projects','Infrastructure projects populate from the AI news pipeline (Mon & Thu) and appear here as they are detected for this market.'],
   'pg-price-trends':['Price Trends','Trend lines need several weekly snapshots. History is captured automatically each Monday — trends appear once enough accrues.'],
-  'pg-map-view':['Market Map','The market map is being rebuilt on live per-district data from the listings database.'],
-  'pg-heatmaps':['Heatmaps','Heatmaps are being rebuilt on live per-district data from the listings database.'],
-  'pg-market-reports':['Market Reports','AI-written market reports generate monthly from Ironwood’s live data. Coming soon.'],
-  'pg-insights':['Insights','AI insights generate from live data. Coming soon.'],
-  'pg-data-explorer':['Data Explorer','The interactive data explorer is being built.'],
-  'pg-exports':['Exports','Bulk dataset exports are being built.'],
   'pg-api-access':['API Access','Programmatic API access is coming soon.']
 };
 function _emptyState(msg){
@@ -2073,8 +2066,129 @@ function loadHonestLayer(country){
     renderSignalsPages(country);
     renderCitiesGate(country);
     renderMarketGate(country);
+    loadBatch2(country);
     stripMicroLabels();
   }catch(e){ console.warn('honest layer',e); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// BATCH 2 — Infrastructure (from news), Heatmaps/Map (district data),
+// Data Explorer + Exports (aggregate), Reports + Insights. All market-scoped.
+// ══════════════════════════════════════════════════════════════
+function _cur(c){ return c==='MAD'?'MAD ':c==='NGN'?'₦':(c+' '); }
+var _B2K=null,_B2C=null,_B2S='';
+function _newsHtml(items){
+  return '<div style="border-top:1px solid var(--border);">'+items.map(function(x){
+    var d=x.published_at?new Date(x.published_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
+    return '<a href="'+x.url+'" target="_blank" rel="noopener" style="display:block;padding:12px 18px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;">'
+      +'<div style="font-size:13px;color:var(--ink);line-height:1.45;">'+((x.summary||x.title)||'')+'</div>'
+      +'<div style="font-size:11px;color:var(--ink5);margin-top:4px;">'+((x.source||''))+(d?' · '+d:'')+'</div></a>';
+  }).join('')+'</div>';
+}
+async function loadBatch2(country){
+  if(!sb) return;
+  var c=COUNTRIES[country]; var live=c&&c.status==='live';
+  _B2C=country; _B2S=c?_cur(c.currency):'';
+  var K=null;
+  if(live){ try{ var r=await sb.rpc('market_kpis',{p_country:country}); K=r&&r.data?r.data:null; }catch(e){} }
+  _B2K=K;
+  renderInfra(country);
+  renderHeat(country,K);
+  renderExplorer(country,K);
+  renderExportsPage(country,K);
+  renderReports(country);
+  renderInsights(country,K);
+}
+async function renderInfra(country){
+  var el=document.getElementById('pg-infrastructure'); if(!el) return;
+  var lbl=COUNTRIES[country]?COUNTRIES[country].label:country, items=[];
+  try{ var r=await sb.from('market_news').select('title,url,source,summary,published_at,category,is_pipeline')
+    .eq('country',country).order('published_at',{ascending:false,nullsFirst:false}).limit(80); items=(r&&r.data)||[]; }catch(e){}
+  var infra=items.filter(function(x){ return x.category==='infrastructure' ||
+    /\b(road|rail|railway|metro|port|airport|bridge|highway|motorway|dam|power plant|grid|water|transit|tram|expressway|interchange|infrastructure)\b/i.test((x.title||'')+' '+(x.summary||'')); });
+  el.innerHTML='<div class="eyebrow">Data</div><div class="pg-title">Infrastructure Projects</div>'
+    +'<div class="pg-sub">Major infrastructure affecting real-estate demand in '+lbl+' — detected from the AI news pipeline (Mon &amp; Thu).</div>'
+    +(infra.length?('<div class="panel"><div class="panel-hd"><div class="panel-title">Detected Infrastructure — '+lbl+'</div><div class="panel-sub">'+infra.length+' items</div></div>'+_newsHtml(infra)+'</div>')
+      :_emptyState('No infrastructure news detected for '+lbl+' in the latest cycle. Road, rail, port, metro and utility projects surface here as they are announced.'));
+}
+function _heatGrid(K,S,lbl){
+  var ds=(K&&K.districts)||[]; if(!ds.length) return _emptyState('No district-level data for '+lbl+' yet.');
+  var meds=ds.map(function(r){return Number(r.med);}).filter(function(v){return v>0;});
+  var mn=Math.min.apply(null,meds), mx=Math.max.apply(null,meds);
+  function color(v){ var t=mx>mn?(v-mn)/(mx-mn):0.5; return t<0.34?'#3f7a52':t<0.67?'#b8933f':'#c0603a'; }
+  var byCity={}; ds.forEach(function(r){ (byCity[r.city]=byCity[r.city]||[]).push(r); });
+  var html=Object.keys(byCity).sort().map(function(city){
+    var rows=byCity[city].slice().sort(function(a,b){return b.med-a.med;});
+    return '<div style="margin-bottom:18px;"><div style="font-family:var(--serif);font-size:15px;margin-bottom:8px;">'+city+'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;">'
+      +rows.map(function(r){ var v=Math.round(Number(r.med));
+        return '<div style="padding:12px;border-radius:3px;background:'+color(v)+';color:#fff;">'
+          +'<div style="font-size:11px;opacity:.9;">'+(r.submarket||'—')+'</div>'
+          +'<div style="font-family:var(--mono);font-size:14px;font-weight:600;">'+S+v.toLocaleString()+'</div>'
+          +'<div style="font-size:10px;opacity:.85;">'+r.count+' listings</div></div>';
+      }).join('')+'</div></div>';
+  }).join('');
+  return '<div class="panel"><div class="panel-body">'+html+'</div></div>';
+}
+function renderHeat(country,K){
+  var lbl=COUNTRIES[country]?COUNTRIES[country].label:country, grid=_heatGrid(K,_B2S,lbl);
+  var hm=document.getElementById('pg-heatmaps');
+  if(hm) hm.innerHTML='<div class="eyebrow">Map</div><div class="pg-title">District Heatmaps</div><div class="pg-sub">Median asking price per m² by district, '+lbl+'. Warmer = higher price.</div>'+grid;
+  var mv=document.getElementById('pg-map-view');
+  if(mv) mv.innerHTML='<div class="eyebrow">Map</div><div class="pg-title">Market Map</div><div class="pg-sub">District-level price map for '+lbl+'. Geographic pins arrive once listing coordinates are captured.</div>'+grid;
+}
+function _aggTables(K,S){
+  if(!K) return _emptyState('No data yet.');
+  var cities=(K.cities||[]).map(function(r){return '<tr><td class="dt-city">'+r.city+'</td><td class="mono">'+(r.sale_median?S+Math.round(r.sale_median).toLocaleString():'—')+'</td><td class="mono">'+(r.rent_median?S+Math.round(r.rent_median).toLocaleString():'—')+'</td><td class="mono">'+(Number(r.listings)||0).toLocaleString()+'</td></tr>';}).join('');
+  var am={}; (K.city_class||[]).forEach(function(r){ var k=r.ac+'|'+r.tt; (am[k]=am[k]||{ac:r.ac,tt:r.tt,vals:[],n:0}); am[k].vals.push(Number(r.med)); am[k].n+=Number(r.count); });
+  var assetRows=Object.keys(am).map(function(k){var a=am[k];var sv=a.vals.slice().sort(function(x,y){return x-y;});var med=sv[Math.floor(sv.length/2)];return '<tr><td>'+_cap(a.ac)+'</td><td>'+(a.tt==='sale'?'Sale':'Rent')+'</td><td class="mono">'+S+Math.round(med).toLocaleString()+'</td><td class="mono">'+a.n+'</td></tr>';}).join('');
+  return '<div class="two-col"><div class="panel"><div class="panel-hd"><div class="panel-title">By City</div></div><table class="dt"><thead><tr><th>City</th><th>Sale/m²</th><th>Rent/m²</th><th>Listings</th></tr></thead><tbody>'+cities+'</tbody></table></div>'
+    +'<div class="panel"><div class="panel-hd"><div class="panel-title">By Asset Class</div></div><table class="dt"><thead><tr><th>Asset</th><th>Type</th><th>Median/m²</th><th>Listings</th></tr></thead><tbody>'+assetRows+'</tbody></table></div></div>';
+}
+function renderExplorer(country,K){
+  var el=document.getElementById('pg-data-explorer'); if(!el) return;
+  var lbl=COUNTRIES[country]?COUNTRIES[country].label:country;
+  el.innerHTML='<div class="eyebrow">Tools</div><div class="pg-title">Data Explorer</div><div class="pg-sub">Browse aggregated market intelligence for '+lbl+'. Figures are listings-derived medians.</div>'+(K?_aggTables(K,_B2S):_emptyState('No data for '+lbl+' yet.'));
+}
+function renderExportsPage(country,K){
+  var el=document.getElementById('pg-exports'); if(!el) return;
+  var lbl=COUNTRIES[country]?COUNTRIES[country].label:country;
+  var b=K?('<div style="display:flex;flex-wrap:wrap;gap:10px;padding:20px;">'
+    +'<button class="exp-btn primary" onclick="exportAgg(\'cities\')">↓ City summary (CSV)</button>'
+    +'<button class="exp-btn primary" onclick="exportAgg(\'districts\')">↓ District summary (CSV)</button>'
+    +'<button class="exp-btn primary" onclick="exportAgg(\'assets\')">↓ Asset-class summary (CSV)</button></div>')
+    :_emptyState('No data to export for '+lbl+' yet.');
+  el.innerHTML='<div class="eyebrow">Tools</div><div class="pg-title">Exports</div><div class="pg-sub">Download aggregated datasets for '+lbl+'. Raw individual listings are not exported.</div><div class="panel">'+b+'</div>';
+}
+function exportAgg(kind){
+  var K=_B2K,S=_B2S,country=_B2C; if(!K) return; var rows=[];
+  if(kind==='cities'){ rows.push(['City','MedianSalePerSqm','MedianRentPerSqm','Listings']); (K.cities||[]).forEach(function(r){rows.push([r.city,r.sale_median||'',r.rent_median||'',r.listings||0]);}); }
+  else if(kind==='districts'){ rows.push(['City','District','MedianPerSqm','Listings']); (K.districts||[]).forEach(function(r){rows.push([r.city,r.submarket||'',Math.round(Number(r.med)),r.count]);}); }
+  else { rows.push(['City','Asset','Type','MedianPerSqm','Listings']); (K.city_class||[]).forEach(function(r){rows.push([r.city,r.ac,r.tt,Math.round(Number(r.med)),r.count]);}); }
+  var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=kind+'-'+country+'.csv'; a.click();
+}
+async function renderReports(country){
+  var el=document.getElementById('pg-market-reports'); if(!el) return;
+  var lbl=COUNTRIES[country]?COUNTRIES[country].label:country, reps=[];
+  try{ var r=await sb.from('market_reports').select('period,title,summary').eq('country',country).order('period',{ascending:false}).limit(12); reps=(r&&r.data)||[]; }catch(e){}
+  var body=reps.length?reps.map(function(x){
+    return '<div class="panel" style="margin-bottom:14px;"><div class="panel-hd"><div><div class="panel-title">'+((x.title)||(lbl+' Market Report'))+'</div><div class="panel-sub">'+x.period+'</div></div></div><div class="panel-body" style="font-size:13px;line-height:1.7;color:var(--ink2);white-space:pre-wrap;">'+((x.summary)||'')+'</div></div>';
+  }).join(''):_emptyState('The first monthly AI market report for '+lbl+' is generated at month-end from live data. None published yet.');
+  el.innerHTML='<div class="eyebrow">Research</div><div class="pg-title">Market Reports</div><div class="pg-sub">AI-written monthly reports for '+lbl+', generated from Ironwood’s live data.</div>'+body;
+}
+function renderInsights(country,K){
+  var el=document.getElementById('pg-insights'); if(!el) return;
+  var lbl=COUNTRIES[country]?COUNTRIES[country].label:country, S=_B2S, pts=[];
+  if(K&&K.cities&&K.cities.length){
+    var bp=K.cities.filter(function(c){return c.sale_median;}).sort(function(a,b){return b.sale_median-a.sale_median;});
+    if(bp.length){ pts.push('Highest median sale price: <b>'+bp[0].city+'</b> at '+S+Math.round(bp[0].sale_median).toLocaleString()+'/m².');
+      pts.push('Most affordable: <b>'+bp[bp.length-1].city+'</b> at '+S+Math.round(bp[bp.length-1].sale_median).toLocaleString()+'/m².'); }
+    var bv=K.cities.slice().sort(function(a,b){return (b.listings||0)-(a.listings||0);});
+    if(bv.length) pts.push('Deepest market by listing volume: <b>'+bv[0].city+'</b> ('+Number(bv[0].listings).toLocaleString()+' listings).');
+  }
+  var body=pts.length?('<div class="panel"><div class="panel-hd"><div class="panel-title">Data Insights — '+lbl+'</div><div class="panel-sub">Auto-derived from current listings</div></div><div class="panel-body"><ul style="margin:0;padding-left:18px;line-height:2;font-size:13px;color:var(--ink2);">'+pts.map(function(p){return '<li>'+p+'</li>';}).join('')+'</ul></div></div>'):_emptyState('Insights appear once '+lbl+' has listing data.');
+  el.innerHTML='<div class="eyebrow">Research</div><div class="pg-title">Insights</div><div class="pg-sub">Key data-derived insights for '+lbl+'. Deeper AI narratives ship with the monthly reports.</div>'+body;
 }
 
 // ── LIVE KPI LOADER ──
