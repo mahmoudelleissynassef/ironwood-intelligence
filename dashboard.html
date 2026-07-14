@@ -161,12 +161,32 @@ button{cursor:pointer;font-family:var(--sans);}
 .status-val{margin-top:4px;font-size:11px;color:var(--ink2);line-height:1.35;}
 .progress{width:100%;height:4px;background:rgba(255,255,255,.08);margin-top:7px;border-radius:999px;overflow:hidden;}
 .progress span{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));}
-.inv-wrap{display:grid;grid-template-columns:1.05fr .95fr;align-items:center;gap:6px;}
-.inv-list{display:grid;gap:13px;}
-.inv-item{display:flex;align-items:center;gap:9px;}
-.inv-item .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-.inv-item strong{display:block;font-size:11px;font-weight:500;color:var(--ink2);}
-.inv-item span{color:var(--ink4);font-size:10px;}
+.inv-wrap{display:grid;grid-template-columns:minmax(150px,.9fr) minmax(180px,1.1fr);align-items:center;gap:12px;}
+.inv-list{display:grid;gap:14px;padding:2px 6px 2px 2px;}
+.inv-item{display:grid;grid-template-columns:10px 1fr;align-items:start;gap:10px;}
+.inv-item .dot{margin-top:4px;width:9px;height:9px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 3px rgba(255,255,255,.025);}
+.inv-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.inv-head strong{font-size:11px;font-weight:600;color:var(--ink);}
+.inv-count{color:var(--ink2);font-size:10px;font-variant-numeric:tabular-nums;}
+.inv-meta{color:var(--ink4);font-size:9px;margin-top:3px;display:flex;justify-content:space-between;}
+.inv-track{margin-top:6px;height:4px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;}
+.inv-track>span{display:block;height:100%;border-radius:inherit;}
+
+/* SVG icon system (v2) */
+.ni-icon{width:16px;height:16px;display:inline-grid;place-items:center;flex-shrink:0;opacity:.85;}
+.ni.active .ni-icon{opacity:1;}
+.ni-icon svg,.tb-ic svg,.tb-search-ic svg,.kpi-ico svg,.status-ico svg,.mini-t .i svg,.delta svg,.ui-ic svg{stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.ni-icon svg{width:16px;height:16px;}
+.kpi-ico svg{width:16px;height:16px;}
+.status-ico svg{width:15px;height:15px;}
+.tb-ic{display:inline-grid;place-items:center;width:18px;height:18px;}
+.tb-ic svg{width:17px;height:17px;}
+.tb-search-ic{display:inline-grid;place-items:center;width:15px;height:15px;}
+.tb-search-ic svg{width:15px;height:15px;}
+.mini-t .i{width:13px;height:13px;display:inline-grid;place-items:center;color:var(--ink5);}
+.mini-t .i svg{width:13px;height:13px;}
+.delta{display:inline-flex;align-items:center;gap:2px;}
+.delta svg{width:12px;height:12px;}
 .tab-switch{display:flex;gap:14px;font-size:10px;color:var(--ink4);margin-left:auto;}
 .tab-switch button{border:0;background:transparent;color:inherit;padding:0 0 5px;font-family:var(--sans);}
 .tab-switch .active{color:var(--gold2);border-bottom:1px solid var(--gold);}
@@ -494,39 +514,39 @@ button{cursor:pointer;font-family:var(--sans);}
 
   <div class="sb-section">
     <div class="sb-section-lbl">Overview</div>
-    <div class="ni active" onclick="nav('market-terminal')"><span class="ni-icon">⬛</span>Dashboard</div>
+    <div class="ni active" onclick="nav('market-terminal')"><span class="ni-icon" data-icon="dashboard"></span>Dashboard</div>
   </div>
 
   <div class="sb-section">
     <div class="sb-section-lbl">Market Intelligence</div>
-    <div class="ni" onclick="nav('markets')"><span class="ni-icon">◧</span>Markets</div>
-    <div class="ni" onclick="nav('cities')"><span class="ni-icon">◫</span>Cities</div>
-    <div class="ni" onclick="nav('districts')"><span class="ni-icon">◪</span>Districts</div>
+    <div class="ni" onclick="nav('markets')"><span class="ni-icon" data-icon="globe"></span>Markets</div>
+    <div class="ni" onclick="nav('cities')"><span class="ni-icon" data-icon="city"></span>Cities</div>
+    <div class="ni" onclick="nav('districts')"><span class="ni-icon" data-icon="map"></span>Districts</div>
   </div>
 
   <div class="sb-section">
     <div class="sb-section-lbl">Data</div>
-    <div class="ni" onclick="nav('pipeline')"><span class="ni-icon">◱</span>Dev. Pipeline</div>
-    <div class="ni" onclick="nav('infrastructure')"><span class="ni-icon">⬡</span>Infrastructure</div>
-    <div class="ni" onclick="nav('macro-indicators')"><span class="ni-icon">◐</span>Macro Indicators</div>
+    <div class="ni" onclick="nav('pipeline')"><span class="ni-icon" data-icon="construction"></span>Dev. Pipeline</div>
+    <div class="ni" onclick="nav('infrastructure')"><span class="ni-icon" data-icon="route"></span>Infrastructure</div>
+    <div class="ni" onclick="nav('macro-indicators')"><span class="ni-icon" data-icon="trend"></span>Macro Indicators</div>
   </div>
 
   <div class="sb-section">
     <div class="sb-section-lbl">Map</div>
-    <div class="ni" onclick="nav('map-view')"><span class="ni-icon">⊕</span>Market Map</div>
-    <div class="ni" onclick="nav('heatmaps')"><span class="ni-icon">▦</span>Heatmaps</div>
+    <div class="ni" onclick="nav('map-view')"><span class="ni-icon" data-icon="crosshair"></span>Market Map</div>
+    <div class="ni" onclick="nav('heatmaps')"><span class="ni-icon" data-icon="layers"></span>Heatmaps</div>
   </div>
 
   <div class="sb-section">
     <div class="sb-section-lbl">Research</div>
-    <div class="ni" onclick="nav('market-reports')"><span class="ni-icon">▤</span>Market Reports</div>
+    <div class="ni" onclick="nav('market-reports')"><span class="ni-icon" data-icon="report"></span>Market Reports</div>
   </div>
 
   <div class="sb-section">
     <div class="sb-section-lbl">Tools</div>
-    <div class="ni" onclick="nav('data-explorer')"><span class="ni-icon">⊞</span>Data Explorer</div>
-    <div class="ni" onclick="nav('exports')"><span class="ni-icon">↓</span>Exports</div>
-    <div class="ni" onclick="nav('api-access')"><span class="ni-icon">⚡</span>API Access</div>
+    <div class="ni" onclick="nav('data-explorer')"><span class="ni-icon" data-icon="data-explorer"></span>Data Explorer</div>
+    <div class="ni" onclick="nav('exports')"><span class="ni-icon" data-icon="download"></span>Exports</div>
+    <div class="ni" onclick="nav('api-access')"><span class="ni-icon" data-icon="activity"></span>API Access</div>
   </div>
 
   <div class="sb-foot">
@@ -547,7 +567,7 @@ button{cursor:pointer;font-family:var(--sans);}
       <span></span><span></span><span></span>
     </button>
     <div class="tb-search">
-      <span class="tb-search-ic">⌕</span>
+      <span class="tb-search-ic" data-icon="search"></span>
       <input type="text" placeholder="Search market, city, district…" aria-label="Search"/>
     </div>
     <div class="tb-right">
@@ -570,8 +590,8 @@ button{cursor:pointer;font-family:var(--sans);}
         </div>
       </div>
       <div class="tb-actions">
-        <span class="tb-ic" title="Alerts — coming soon">🔔</span>
-        <span class="tb-ic" title="Saved — coming soon">☆</span>
+        <span class="tb-ic" data-icon="bell" title="Alerts — coming soon"></span>
+        <span class="tb-ic" data-icon="bookmark" title="Saved — coming soon"></span>
         <span class="tb-av" title="Mahmoud Nassef">MN</span>
       </div>
     </div>
@@ -2105,6 +2125,39 @@ function _newsHtml(items){
 // ══════════════════════════════════════════════════════════════
 var _xmMap=null, _xmCharts={}, _fxCache=null;
 function _xmD(id){ if(_xmCharts[id]){try{_xmCharts[id].destroy();}catch(e){}delete _xmCharts[id];} }
+
+/* ── SVG ICON SET (Lucide-style, from v2 prototype) ── */
+var ICONS={
+  dashboard:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.4 4.2 6.5 4.2 9S15 17.6 12 21c-3-3.4-4.2-6.5-4.2-9S9 6.4 12 3Z"/>',
+  city:'<path d="M3 21h18M5 21V8l5-3v16M10 21V3l7 4v14M13 9h2M13 13h2M13 17h2M7 11h1M7 15h1"/>',
+  map:'<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z"/><path d="M9 3v15M15 6v15"/>',
+  construction:'<path d="M3 21h18M6 21V8l6-5 6 5v13M9 12h6M9 16h6"/><path d="M4 8h16"/>',
+  route:'<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h3a3 3 0 0 0 3-3v-6a3 3 0 0 1 3-3h1"/><path d="m4 5 3-2 3 2v4l-3 2-3-2Z"/>',
+  trend:'<path d="M3 17 9 11l4 4 8-9"/><path d="M15 6h6v6"/>',
+  crosshair:'<circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
+  layers:'<path d="m12 3 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/>',
+  report:'<path d="M6 2h9l4 4v16H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v5h5M8 12h8M8 16h8"/>',
+  'data-explorer':'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3 1.5 0 2.9-.2 4-.5"/><circle cx="18" cy="18" r="3"/><path d="m20.2 20.2 1.5 1.5"/>',
+  download:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19v2h16v-2"/>',
+  activity:'<path d="M3 12h4l2-6 4 12 2-6h6"/>',
+  listings:'<path d="M6 4h12M6 9h12M6 14h8M6 19h10"/><circle cx="3" cy="4" r=".7"/><circle cx="3" cy="9" r=".7"/><circle cx="3" cy="14" r=".7"/><circle cx="3" cy="19" r=".7"/>',
+  'calendar-clock':'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/><circle cx="15.5" cy="15.5" r="3.5"/><path d="M15.5 13.5v2.2l1.5 1"/>',
+  quality:'<path d="M12 3 4.5 6v5c0 5 3.1 8.2 7.5 10 4.4-1.8 7.5-5 7.5-10V6Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>',
+  refresh:'<path d="M20 6v5h-5M4 18v-5h5"/><path d="M18.2 9A7 7 0 0 0 6.4 6.4L4 9M5.8 15A7 7 0 0 0 17.6 17.6L20 15"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M16.3 16.3 21 21"/>',
+  bell:'<path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
+  bookmark:'<path d="M6 3h12v18l-6-4-6 4Z"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>',
+  check:'<path d="m5 12 4 4L19 6"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>',
+  'trend-up':'<path d="M4 16 10 10l4 4 6-7"/><path d="M15 7h5v5"/>',
+  'trend-down':'<path d="M4 8 10 14l4-4 6 7"/><path d="M15 17h5v-5"/>'
+};
+function ic(name){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[name]||ICONS.info)+'</svg>'; }
+function paintIcons(root){ (root||document).querySelectorAll('[data-icon]').forEach(function(el){ if(!el.__ic){ el.innerHTML=ic(el.getAttribute('data-icon')); el.__ic=1; } }); }
+try{ paintIcons(document); }catch(e){}
 async function _fx(){ if(_fxCache) return _fxCache; try{ var r=await fetch('https://open.er-api.com/v6/latest/USD'); var j=await r.json(); _fxCache=(j&&j.rates)||{}; }catch(e){ _fxCache={}; } return _fxCache; }
 function _usd(v,cur,fx){ var r=fx[cur]; return (r&&v)?v/r:null; }
 function _nextMon(){ var d=new Date(); var add=((8-d.getDay())%7)||7; d.setDate(d.getDate()+add); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
@@ -2133,19 +2186,19 @@ async function renderCrossMarket(){
   var rentUSD=meanOf(data.map(function(d){return _usd(d.kpi.median_rent,d.cur,fx);}));
   // Cross-market USD city medians (for price bar + distribution histogram)
   var cityUSD=[]; data.forEach(function(d){ (d.kpi.cities||[]).forEach(function(c){ var u=_usd(c.sale_median,d.cur,fx); if(u) cityUSD.push(u); }); });
-  var K1=function(ic,l,v,s){ return '<div class="kpi"><div style="display:flex;gap:11px;align-items:flex-start;"><div class="kpi-ico">'+ic+'</div><div style="min-width:0;"><div class="kpi-lbl" style="margin-bottom:7px;">'+l+'</div><div class="kpi-val">'+v+'</div><div class="kpi-sub" style="margin-top:6px;">'+(s||'')+'</div></div></div></div>'; };
+  var K1=function(icn,l,v,s){ return '<div class="kpi"><div style="display:flex;gap:11px;align-items:flex-start;"><div class="kpi-ico">'+ic(icn)+'</div><div style="min-width:0;"><div class="kpi-lbl" style="margin-bottom:7px;">'+l+'</div><div class="kpi-val">'+v+'</div><div class="kpi-sub" style="margin-top:6px;">'+(s||'')+'</div></div></div></div>'; };
   var MINI=function(l,v,color,note){ var sp='<svg class="spark" viewBox="0 0 180 34" preserveAspectRatio="none"><line x1="2" y1="24" x2="178" y2="24" stroke="'+color+'" stroke-width="1.5" stroke-dasharray="3 5" opacity=".55"/><circle cx="176" cy="24" r="2.6" fill="'+color+'"/></svg>';
-    return '<div class="mini"><div class="mini-t">'+l+'<span class="i" title="Level shown from latest scrape. Week-over-week trend line activates once a second weekly snapshot exists.">ⓘ</span></div><div style="display:flex;align-items:baseline;"><span class="mini-v">'+v+'</span>'+(note?'<span class="delta flat">'+note+'</span>':'')+'</div>'+sp+'</div>'; };
+    return '<div class="mini"><div class="mini-t">'+l+'<span class="i" title="Level shown from latest scrape. Week-over-week trend line activates once a second weekly snapshot exists.">'+ic('info')+'</span></div><div style="display:flex;align-items:baseline;"><span class="mini-v">'+v+'</span>'+(note?'<span class="delta flat">'+note+'</span>':'')+'</div>'+sp+'</div>'; };
   el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:16px;flex-wrap:wrap;">'
     +'<div><div class="pg-title" style="margin-bottom:2px;">Welcome back, Mahmoud</div><div style="font-size:12.5px;color:var(--ink3);">Real-time intelligence from property listings across Africa &amp; emerging markets.</div></div>'
     +'<button class="tb-export" onclick="nav(\'market-reports\')">↓ Reports &amp; Insights</button></div>'
     +'<div class="kpi-grid">'
-      +K1('◎','Live Markets', lives.length, data.map(function(d){return d.c.label;}).join(', '))
-      +K1('▤','Total Listings', totalListings>=1000?'~'+Math.round(totalListings/1000)+'k':totalListings, 'across all markets')
-      +K1('▥','Cities Covered', cityCount, 'across all districts')
-      +K1('↻','Update Frequency','Weekly','automated collection')
-      +K1('◔','Latest Refresh', refresh, 'all markets')
-      +K1('◈','Data Completeness', comp+'%','listings with price/m²')
+      +K1('globe','Live Markets', lives.length, data.map(function(d){return d.c.label;}).join(', '))
+      +K1('listings','Total Listings', totalListings>=1000?'~'+Math.round(totalListings/1000)+'k':totalListings, 'across all markets')
+      +K1('city','Cities Covered', cityCount, 'across all districts')
+      +K1('calendar-clock','Update Frequency','Weekly','automated collection')
+      +K1('refresh','Latest Refresh', refresh, 'all markets')
+      +K1('quality','Data Completeness', comp+'%','listings with price/m²')
     +'</div>'
     +'<div style="display:grid;grid-template-columns:1.28fr 1.22fr .96fr;gap:12px;margin-bottom:14px;">'
       +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Market Coverage Map</div><div class="panel-sub">where we collect data</div></div><span style="font-size:9px;color:var(--green);font-weight:700;letter-spacing:.05em;">● LIVE</span></div><div id="xm-map" style="height:264px;"></div></div>'
@@ -2167,12 +2220,12 @@ async function renderCrossMarket(){
       +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Biggest Price Changes</div><div class="panel-sub">week-over-week</div></div><div class="tab-switch"><button class="active">Increases</button><button>Decreases</button></div></div><div class="panel-body" style="color:var(--ink4);font-size:11.5px;line-height:1.6;">Week-over-week movers activate once a second weekly snapshot exists. First deltas land after next Monday’s scrape.</div></div>'
     +'</div>'
     +'<div class="status-strip">'
-      +'<div class="status"><div class="status-ico">✓</div><div><div class="status-lbl">Latest Scrape</div><div class="status-val">All markets completed<br><span style="color:var(--ink5);">'+refresh+'</span></div></div></div>'
-      +'<div class="status"><div class="status-ico">◉</div><div><div class="status-lbl">Data Freshness</div><div class="status-val">Updated this week<br><span style="color:var(--ink5);">100% markets</span></div></div></div>'
+      +'<div class="status"><div class="status-ico">'+ic('check')+'</div><div><div class="status-lbl">Latest Scrape</div><div class="status-val">All markets completed<br><span style="color:var(--ink5);">'+refresh+'</span></div></div></div>'
+      +'<div class="status"><div class="status-ico">'+ic('clock')+'</div><div><div class="status-lbl">Data Freshness</div><div class="status-val">Updated this week<br><span style="color:var(--ink5);">100% markets</span></div></div></div>'
       +'<div class="status"><div style="width:100%;"><div class="status-lbl">Coverage · Critical Fields</div><div class="status-val" style="font-family:var(--serif);font-size:14px;">'+comp+'%</div><div class="progress"><span style="width:'+comp+'%;"></span></div></div></div>'
-      +'<div class="status"><div class="status-ico">●</div><div><div class="status-lbl">Source Health</div><div class="status-val">'+data.length+' portals operational<br><span style="color:var(--ink5);">active collectors</span></div></div></div>'
-      +'<div class="status"><div><div class="status-lbl">Avg / Market</div><div class="status-val">~'+Math.round(totalListings/Math.max(lives.length,1)/1000)+'k listings<br><span style="color:var(--ink5);">this week</span></div></div></div>'
-      +'<div class="status"><div class="status-ico g">▫</div><div><div class="status-lbl">Next Refresh</div><div class="status-val">'+_nextMon()+'<br><span style="color:var(--ink5);">weekly cycle</span></div></div></div>'
+      +'<div class="status"><div class="status-ico">'+ic('activity')+'</div><div><div class="status-lbl">Source Health</div><div class="status-val">'+data.length+' portals operational<br><span style="color:var(--ink5);">active collectors</span></div></div></div>'
+      +'<div class="status"><div class="status-ico g">'+ic('listings')+'</div><div><div class="status-lbl">Avg / Market</div><div class="status-val">~'+Math.round(totalListings/Math.max(lives.length,1)/1000)+'k listings<br><span style="color:var(--ink5);">this week</span></div></div></div>'
+      +'<div class="status"><div class="status-ico g">'+ic('calendar')+'</div><div><div class="status-lbl">Next Refresh</div><div class="status-val">'+_nextMon()+'<br><span style="color:var(--ink5);">weekly cycle</span></div></div></div>'
     +'</div>';
   renderXmMap(data); renderXmPrice(data,fx); renderXmInv(data); renderXmDistricts(data); renderXmMarkets(data,fx); renderXmDist(cityUSD);
 }
@@ -2194,12 +2247,13 @@ function renderXmMap(data){ var el=document.getElementById('xm-map'); if(!el||!w
 function renderXmPrice(data,fx){ _xmD('xm-price'); var cv=document.getElementById('xm-price'); if(!cv||!window.Chart)return;
   var rows=[]; data.forEach(function(d){ (d.kpi.cities||[]).forEach(function(c){ var usd=_usd(c.sale_median,d.cur,fx); if(usd) rows.push({city:c.city,usd:usd,color:d.color}); }); });
   rows.sort(function(a,b){return b.usd-a.usd;}); rows=rows.slice(0,8); if(!rows.length)return;
-  _xmCharts['xm-price']=new Chart(cv,{type:'bar',data:{labels:rows.map(function(r){return r.city;}),datasets:[{data:rows.map(function(r){return Math.round(r.usd);}),backgroundColor:rows.map(function(r){return r.color;}),borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8b95a3'}},y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{family:'DM Mono',size:10},color:'#8b95a3',callback:function(v){return '$'+v;}}}}}});
+  var valLbl={id:'valLbl',afterDatasetsDraw:function(ch){var ctx=ch.ctx;ctx.save();ctx.fillStyle='#eaf0f6';ctx.font='600 10px "DM Mono"';ctx.textAlign='center';ctx.textBaseline='bottom';ch.getDatasetMeta(0).data.forEach(function(bar,i){ctx.fillText('$'+Number(ch.data.datasets[0].data[i]).toLocaleString(),bar.x,bar.y-6);});ctx.restore();}};
+  _xmCharts['xm-price']=new Chart(cv,{type:'bar',data:{labels:rows.map(function(r){return r.city;}),datasets:[{data:rows.map(function(r){return Math.round(r.usd);}),backgroundColor:rows.map(function(r){return r.color;}),borderWidth:0,borderRadius:2,barPercentage:.66,categoryPercentage:.74}]},plugins:[valLbl],options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18}},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return '$'+c.raw.toLocaleString()+' / m²';}}}},scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#c7d1dc',maxRotation:0}},y:{grid:{color:'rgba(255,255,255,.06)'},border:{display:false},ticks:{font:{family:'DM Mono',size:10},color:'#7f92a7',callback:function(v){return v>=1000?'$'+(v/1000)+'k':'$'+v;}}}}}});
 }
 function renderXmInv(data){ _xmD('xm-inv'); var cv=document.getElementById('xm-inv'); if(!cv||!window.Chart)return;
   var tot=data.reduce(function(a,d){return a+d.listings;},0)||1;
   _xmCharts['xm-inv']=new Chart(cv,{type:'doughnut',data:{labels:data.map(function(d){return d.c.label;}),datasets:[{data:data.map(function(d){return d.listings;}),backgroundColor:data.map(function(d){return d.color;}),borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw.toLocaleString();}}}}},plugins:[{id:'ctr',afterDraw:function(ch){var a=ch.chartArea,x=(a.left+a.right)/2,y=(a.top+a.bottom)/2,ctx=ch.ctx;ctx.save();ctx.textAlign='center';ctx.fillStyle='#f4f7fb';ctx.font='400 21px "DM Serif Display"';ctx.fillText(tot>=1000?'~'+Math.round(tot/1000)+'k':tot,x,y-1);ctx.fillStyle='#7f92a7';ctx.font='10px "DM Sans"';ctx.fillText('Total',x,y+15);ctx.restore();}}]});
-  var ll=document.getElementById('xm-invlist'); if(ll){ ll.innerHTML=data.slice().sort(function(a,b){return b.listings-a.listings;}).map(function(d){ return '<div class="inv-item"><span class="dot" style="background:'+d.color+';"></span><div><strong>'+d.c.label+'</strong><span>'+d.listings.toLocaleString()+' ('+Math.round(d.listings/tot*100)+'%)</span></div></div>'; }).join(''); }
+  var ll=document.getElementById('xm-invlist'); if(ll){ ll.innerHTML=data.slice().sort(function(a,b){return b.listings-a.listings;}).map(function(d){ var pct=Math.round(d.listings/tot*100); return '<div class="inv-item"><span class="dot" style="background:'+d.color+';"></span><div class="inv-copy"><div class="inv-head"><strong>'+d.c.label+'</strong><span class="inv-count">'+d.listings.toLocaleString()+'</span></div><div class="inv-meta"><span>Active listings</span><span style="color:var(--ink2);">'+pct+'%</span></div><div class="inv-track"><span style="width:'+pct+'%;background:'+d.color+';"></span></div></div></div>'; }).join(''); }
 }
 function renderXmDistricts(data){ var el=document.getElementById('xm-districts'); if(!el)return;
   var rows=[]; data.forEach(function(d){ (d.kpi.districts||[]).forEach(function(x){ rows.push({sub:x.submarket,market:d.c.label,n:Number(x.count)}); }); });
