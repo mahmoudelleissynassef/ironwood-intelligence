@@ -2624,92 +2624,28 @@ async function loadMacroData(country){
   var wbCode = COUNTRIES[country] ? COUNTRIES[country].wbCode : null;
   if(!wbCode) return;
 
-  // ── Country configs ──
-  var COUNTRY_CFG = {
-    Morocco: {
-      sources: 'World Bank · HCP Morocco · Bank Al-Maghrib · ONMT',
-      sourceRows: [
-        ['Population & Demographics','HCP Morocco','Annual / Census','hcp.ma','conf-h','High'],
-        ['GDP & Growth','World Bank / HCP','Annual','data.worldbank.org','conf-h','High'],
-        ['Inflation (CPI)','World Bank / HCP','Annual','data.worldbank.org','conf-h','High'],
-        ['Interest Rates / Monetary','Bank Al-Maghrib','Monthly','bkam.ma','conf-h','High'],
-        ['Tourism Arrivals','ONMT (Observatoire)','Monthly','onmt.ma','conf-h','High'],
-        ['Unemployment','World Bank','Annual','data.worldbank.org','conf-m','Med.'],
-        ['Household Formation','HCP Morocco','Census / Est.','hcp.ma','conf-m','Med.'],
-        ['Income Levels','World Bank / HCP','Annual','data.worldbank.org','conf-m','Med.'],
-      ],
-      cities: [
-        ['Casablanca','4.4M','+8.2%','~1.1M','98%','32','~35% national','HCP 2024'],
-        ['Rabat','1.9M','+6.4%','~480k','97%','33','~12% national','HCP 2024'],
-        ['Marrakech','1.1M','+9.8%','~260k','92%','30','~6% national','HCP 2024'],
-        ['Tangiers','1.1M','+12.4%','~255k','95%','29','~7% national','HCP 2024'],
-        ['Fez','1.2M','+3.1%','~290k','88%','28','~5% national','HCP 2024'],
-      ],
-      demandDrivers: [
-        ['Annual HH Formation','~260,000 / year'],
-        ['Urban pop. share','~63% (World Bank live)'],
-        ['Policy rate (Bank Al-Maghrib)','3.00% (Dec 2024)'],
-        ['Currency','MAD (Moroccan Dirham)'],
-        ['Mortgage penetration','~5% of GDP'],
-        ['Remittance inflows','~$10B/year (2024)'],
-      ],
-      citySectionLabel: 'City-Level Demographics — Morocco',
-    },
-    Nigeria: {
-      sources: 'World Bank · NBS Nigeria · CBN · Nigerian Tourism Dev. Corp.',
-      sourceRows: [
-        ['Population & Demographics','NBS Nigeria / World Bank','Annual / Census','nigerianstat.gov.ng','conf-h','High'],
-        ['GDP & Growth','World Bank / NBS','Annual','data.worldbank.org','conf-h','High'],
-        ['Inflation (CPI)','World Bank / NBS','Annual','data.worldbank.org','conf-h','High'],
-        ['Interest Rates / Monetary','CBN (Central Bank Nigeria)','Monthly','cbn.gov.ng','conf-h','High'],
-        ['Oil Production & Revenue','NNPC / World Bank','Monthly','nnpc.gov.ng','conf-m','Med.'],
-        ['Unemployment','World Bank / NBS','Annual','data.worldbank.org','conf-m','Med.'],
-        ['Household Formation','NBS Nigeria','Census / Est.','nigerianstat.gov.ng','conf-m','Med.'],
-        ['Remittances','World Bank','Annual','data.worldbank.org','conf-m','Med.'],
-      ],
-      cities: [
-        ['Lagos','15.9M','+18.2%','~3.4M','52%','19','~30% national','NBS 2024'],
-        ['Abuja','3.6M','+22.4%','~720k','98%','23','~10% national','NBS 2024'],
-        ['Port Harcourt','2.4M','+12.1%','~480k','74%','22','~8% national','NBS 2024'],
-        ['Kano','4.1M','+8.6%','~760k','48%','18','~6% national','NBS 2024'],
-        ['Ibadan','3.6M','+6.2%','~680k','62%','20','~5% national','NBS 2024'],
-      ],
-      demandDrivers: [
-        ['Annual HH Formation','~600,000+ / year (est.)'],
-        ['Urban pop. share','~53% (World Bank live)'],
-        ['Policy rate (CBN)','27.50% (Dec 2024)'],
-        ['Currency','NGN (Nigerian Naira)'],
-        ['Mortgage penetration','<1% of GDP'],
-        ['Remittance inflows','~$20B/year (2024)'],
-      ],
-      citySectionLabel: 'City-Level Demographics — Nigeria',
-    }
-  };
-
-  // Generic fallback for countries without explicit config
-  var genericCfg = {
-    sources: 'World Bank · National Statistics Agency · Central Bank · IMF',
+  // ── Honest macro config — the ONLY macro source we actually fetch is the
+  //    World Bank Open Data API. No HCP / central-bank / city-demographic data
+  //    is sourced, so none is shown (was hardcoded/fabricated before). ──
+  var cfg = {
+    sources: 'World Bank Open Data',
     sourceRows: [
-      ['Population & Demographics','World Bank / National Statistics','Annual / Census','data.worldbank.org','conf-h','High'],
-      ['GDP & Growth','World Bank / IMF','Annual','data.worldbank.org','conf-h','High'],
-      ['Inflation (CPI)','World Bank / IMF','Annual','data.worldbank.org','conf-h','High'],
-      ['Interest Rates / Monetary','Central Bank (National)','Monthly','data.worldbank.org','conf-m','Med.'],
-      ['Unemployment','World Bank','Annual','data.worldbank.org','conf-m','Med.'],
-      ['Household Formation','National Statistics Agency','Census / Est.','data.worldbank.org','conf-m','Med.'],
-      ['Income Levels','World Bank / IMF','Annual','data.worldbank.org','conf-m','Med.'],
-    ],
-    cities: [],
+      ['Population','World Bank · SP.POP.TOTL','Annual','data.worldbank.org'],
+      ['Population growth','World Bank · SP.POP.GROW','Annual','data.worldbank.org'],
+      ['GDP growth','World Bank · NY.GDP.MKTP.KD.ZG','Annual','data.worldbank.org'],
+      ['GDP per capita','World Bank · NY.GDP.PCAP.CD','Annual','data.worldbank.org'],
+      ['Inflation (CPI)','World Bank · FP.CPI.TOTL.ZG','Annual','data.worldbank.org'],
+      ['Unemployment','World Bank · SL.UEM.TOTL.ZS','Annual','data.worldbank.org'],
+      ['Lending rate','World Bank · FR.INR.LEND','Annual','data.worldbank.org'],
+      ['Tourism arrivals','World Bank · ST.INT.ARVL','Annual','data.worldbank.org'],
+    ].map(function(r){ return [r[0], r[1], r[2], r[3], 'conf-h', 'High']; }),
+    cities: [],   // no city-level demographic source — shows "coming soon", never fabricated
     demandDrivers: [
-      ['Annual HH Formation','Data pending'],
-      ['Urban pop. share','World Bank live (loading…)'],
-      ['Policy rate','Data pending'],
       ['Currency', (COUNTRIES[country]&&COUNTRIES[country].currency)||'—'],
-      ['Mortgage penetration','Data pending'],
-      ['Remittance inflows','Data pending'],
+      ['Urban population share','World Bank live (loading…)'],
     ],
     citySectionLabel: 'City-Level Demographics — ' + country,
   };
-  var cfg = COUNTRY_CFG[country] || genericCfg;
 
   // ── Update static country references in the page ──
 
