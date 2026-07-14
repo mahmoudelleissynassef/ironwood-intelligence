@@ -1880,7 +1880,7 @@ function applyLang() {
       var res=await sb.auth.signInWithPassword({ email:em, password:pw });
       if(res.error){ setStatus('iw-login-status','❌ '+res.error.message,'#c0392b'); return; }
       setStatus('iw-login-status','✅ Signed in — redirecting…','#1e824c');
-      setTimeout(function(){ window.location.href='/dashboard'; },600);
+      setTimeout(function(){ var nx=null; try{ nx=sessionStorage.getItem('iw_next'); sessionStorage.removeItem('iw_next'); }catch(e){} window.location.href=(nx&&nx.indexOf('/dashboard')===0)?nx:'/dashboard'; },600);
     }catch(err){ setStatus('iw-login-status','❌ '+(err&&err.message||'Sign-in failed'),'#c0392b'); }
   }
 
