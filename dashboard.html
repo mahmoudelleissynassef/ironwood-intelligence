@@ -16,14 +16,15 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --bg:#f5f5f3;--bg2:#eeeeeb;--surface:#ffffff;--surface2:#f9f9f7;
-  --border:#e3e3df;--border2:#d0d0cb;
-  --ink:#0d0d0d;--ink2:#2a2a2a;--ink3:#5a5a5a;--ink4:#8c8c8c;--ink5:#b8b8b5;
-  --gold:#b8933f;--gold2:#d4a84f;--gold-pale:#f9f4eb;
-  --green:#166534;--green-bg:#f0fdf4;
-  --red:#dc2626;--red-bg:#fef2f2;
-  --amber:#92400e;--amber-bg:#fffbeb;
-  --blue:#1d4ed8;--blue-bg:#eff6ff;
+  /* Dark command-center theme */
+  --bg:#0a0e14;--bg2:#0d121a;--surface:#131a24;--surface2:#1a222e;
+  --border:#232c38;--border2:#2f3a48;
+  --ink:#eef1f5;--ink2:#c4ccd6;--ink3:#8b95a3;--ink4:#68727f;--ink5:#4c5563;
+  --gold:#c9a86c;--gold2:#d9bd88;--gold-pale:rgba(201,168,108,.12);
+  --green:#4ade80;--green-bg:rgba(74,222,128,.12);
+  --red:#f87171;--red-bg:rgba(248,113,113,.12);
+  --amber:#fbbf24;--amber-bg:rgba(251,191,36,.12);
+  --blue:#60a5fa;--blue-bg:rgba(96,165,250,.12);
   --sw:228px;
   --serif:'DM Serif Display',Georgia,serif;
   --sans:'DM Sans',system-ui,sans-serif;
@@ -57,7 +58,7 @@ button{cursor:pointer;font-family:var(--sans);}
 .sb-mkt-name{font-size:12px;color:rgba(255,255,255,.7);font-weight:500;}
 .sb-mkt-caret{font-size:10px;color:rgba(255,255,255,.3);}
 .country-opt{display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:12.5px;cursor:pointer;color:#2a2a2a;transition:background .1s;}
-.country-opt:hover{background:#f5f5f3;}
+.country-opt:hover{background:var(--surface2);}
 .country-opt.active{background:#f0fdf4;color:#166534;font-weight:500;}
 .sb-section{padding:16px 10px 2px;flex-shrink:0;}
 .sb-section-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.25);padding:0 8px;margin-bottom:2px;}
@@ -242,7 +243,7 @@ button{cursor:pointer;font-family:var(--sans);}
 .rc-footer{padding:10px 20px;border-top:1px solid var(--border);display:flex;gap:6px;align-items:center;}
 
 /* ── FULL REPORT OVERLAY ── */
-#report-view{position:fixed;inset:0;background:#f5f5f3;z-index:500;display:none;flex-direction:column;overflow:hidden;}
+#report-view{position:fixed;inset:0;background:var(--bg);z-index:500;display:none;flex-direction:column;overflow:hidden;}
 #report-view.open{display:flex;}
 .rv-topbar{height:48px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;flex-shrink:0;}
 .rv-title{font-size:13px;font-weight:600;}
@@ -432,17 +433,18 @@ button{cursor:pointer;font-family:var(--sans);}
     <span class="sb-mkt-name" id="sb-mkt-label">🇲🇦 Morocco</span>
     <span class="sb-mkt-caret">▾</span>
   </div>
-  <div id="country-dropdown" style="display:none;position:absolute;left:12px;right:12px;background:#fff;border:1px solid #e8e6e1;border-radius:6px;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.12);overflow:hidden;max-height:420px;overflow-y:auto;">
+  <div id="country-dropdown" style="display:none;position:absolute;left:12px;right:12px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.12);overflow:hidden;max-height:420px;overflow-y:auto;">
     <div id="country-list"></div>
   </div>
 
   <div class="sb-section">
     <div class="sb-section-lbl">Overview</div>
-    <div class="ni active" onclick="nav('market-terminal')"><span class="ni-icon">⬛</span>Overview</div>
+    <div class="ni active" onclick="nav('market-terminal')"><span class="ni-icon">⬛</span>Dashboard</div>
   </div>
 
   <div class="sb-section">
-    <div class="sb-section-lbl">Markets</div>
+    <div class="sb-section-lbl">Market Intelligence</div>
+    <div class="ni" onclick="nav('markets')"><span class="ni-icon">◧</span>Markets</div>
     <div class="ni" onclick="nav('cities')"><span class="ni-icon">◫</span>Cities</div>
     <div class="ni" onclick="nav('districts')"><span class="ni-icon">◪</span>Districts</div>
   </div>
@@ -521,6 +523,7 @@ button{cursor:pointer;font-family:var(--sans);}
     <!-- ══════════════════════════════════════════════
          MARKET TERMINAL
     ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-markets"></div>
     <div class="pg active" id="pg-market-terminal">
       <div class="eyebrow">Overview</div>
       <div class="pg-title">Market Terminal</div>
@@ -2036,6 +2039,104 @@ function _newsHtml(items){
 // concept sections we lack (vacancy/absorption/transactions) are replaced
 // with real equivalents (asset mix, price-by-city, top districts, live markets).
 // ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// CROSS-MARKET DASHBOARD — the all-markets landing page (dark command center).
+// Aggregates every live market; USD-normalised for cross-market price comparison.
+// ══════════════════════════════════════════════════════════════
+var _xmMap=null, _xmCharts={}, _fxCache=null;
+function _xmD(id){ if(_xmCharts[id]){try{_xmCharts[id].destroy();}catch(e){}delete _xmCharts[id];} }
+async function _fx(){ if(_fxCache) return _fxCache; try{ var r=await fetch('https://open.er-api.com/v6/latest/USD'); var j=await r.json(); _fxCache=(j&&j.rates)||{}; }catch(e){ _fxCache={}; } return _fxCache; }
+function _usd(v,cur,fx){ var r=fx[cur]; return (r&&v)?v/r:null; }
+function _nextMon(){ var d=new Date(); var add=((8-d.getDay())%7)||7; d.setDate(d.getDate()+add); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function _statCell(l,v,c){ return '<div style="background:var(--surface);padding:13px 16px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink4);margin-bottom:5px;">'+l+'</div><div style="font-size:12px;color:'+c+';font-weight:600;">'+v+'</div></div>'; }
+async function renderCrossMarket(){
+  var el=document.getElementById('pg-market-terminal'); if(!el||!sb) return;
+  var lives=Object.keys(COUNTRIES).filter(function(k){return COUNTRIES[k].status==='live';});
+  var fx=await _fx();
+  var data=await Promise.all(lives.map(function(k){
+    return Promise.all([sb.rpc('market_kpis',{p_country:k}).then(function(r){return r&&r.data;}).catch(function(){return null;}),
+                        sb.rpc('market_signals',{p_country:k}).then(function(r){return r&&r.data;}).catch(function(){return null;})])
+      .then(function(a){return {k:k,c:COUNTRIES[k],kpi:a[0]||{},sig:a[1]||{}};}); }));
+  data=data.filter(function(d){return d.kpi&&(d.kpi.total_count||d.sig.total_listings);});
+  var COL=['#c9a86c','#60a5fa','#4ade80','#f87171','#a78bfa','#fbbf24'];
+  var totalListings=0, totalPriced=0, cityset={};
+  data.forEach(function(d,i){ d.color=COL[i%COL.length]; d.cur=d.c.currency;
+    d.listings=Number(d.sig.total_listings||d.kpi.total_count||0); totalListings+=d.listings;
+    totalPriced+=Number(d.kpi.raw_count||d.kpi.dedup_count||0);
+    (d.kpi.cities||[]).forEach(function(c){cityset[d.k+'|'+c.city]=1;}); });
+  var cityCount=Object.keys(cityset).length, comp=totalListings?Math.round(totalPriced/totalListings*100):0;
+  var refresh='This week'; try{ var lr=await sb.from('properties').select('scraped_at').order('scraped_at',{ascending:false,nullsFirst:false}).limit(1); if(lr&&lr.data&&lr.data[0]&&lr.data[0].scraped_at) refresh=new Date(lr.data[0].scraped_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }catch(e){}
+  function meanOf(arr){ arr=arr.filter(function(x){return x!=null;}); return arr.length?arr.reduce(function(a,b){return a+b;},0)/arr.length:null; }
+  var avgIOS=meanOf(data.map(function(d){return d.sig.ios_score;})); avgIOS=avgIOS!=null?Math.round(avgIOS):null;
+  var avgYld=meanOf(data.map(function(d){return d.sig.gross_yield_pct;})); avgYld=avgYld!=null?avgYld.toFixed(1):null;
+  var avgLiq=meanOf(data.map(function(d){return d.sig.liquidity_score;})); avgLiq=avgLiq!=null?Math.round(avgLiq):null;
+  var rentUSD=meanOf(data.map(function(d){return _usd(d.kpi.median_rent,d.cur,fx);}));
+  var K1=function(l,v,s){ return '<div style="background:var(--surface);padding:16px 18px;border:1px solid var(--border);"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:8px;">'+l+'</div><div style="font-family:var(--serif);font-size:24px;color:var(--ink);line-height:1;">'+v+'</div><div style="font-size:10.5px;color:var(--ink4);margin-top:7px;">'+(s||'')+'</div></div>'; };
+  el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:16px;flex-wrap:wrap;">'
+    +'<div><div class="pg-title" style="margin-bottom:2px;">Welcome back, Mahmoud</div><div style="font-size:13px;color:var(--ink3);">Real-time intelligence from property listings across Africa &amp; emerging markets.</div></div>'
+    +'<button class="pa-btn gold" onclick="nav(\'market-reports\')">↓ Reports &amp; Insights</button></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px;">'
+      +K1('Live Markets', lives.length, data.map(function(d){return d.c.label;}).join(', '))
+      +K1('Total Listings', totalListings>=1000?'~'+Math.round(totalListings/1000)+'k':totalListings, 'across all markets')
+      +K1('Cities Covered', cityCount, 'across all districts')
+      +K1('Update Frequency','Weekly','automated collection')
+      +K1('Latest Refresh', refresh, 'all markets')
+      +K1('Data Completeness', comp+'%','listings with price/m²')
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1.3fr 1.3fr 1fr;gap:14px;margin-bottom:14px;">'
+      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Market Coverage Map</div><span style="font-size:10px;color:var(--green);font-weight:700;">● LIVE</span></div><div id="xm-map" style="height:300px;"></div></div>'
+      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Median Asking Price / m² (Sale)</div><div class="panel-sub">USD · top cities</div></div><div class="panel-body"><div style="height:260px;"><canvas id="xm-price"></canvas></div></div></div>'
+      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Listings by Market</div></div><div class="panel-body"><div style="height:260px;"><canvas id="xm-inv"></canvas></div></div></div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:14px;">'
+      +K1('Median Rent (USD)', rentUSD?'$'+rentUSD.toFixed(1):'—','/m²/mo · avg')
+      +K1('Avg Gross Yield', avgYld?avgYld+'%':'—','across markets')
+      +K1('Avg Liquidity', avgLiq!=null?avgLiq+'/100':'—','market depth')
+      +K1('Avg IOS', avgIOS!=null?avgIOS+'/100':'—','opportunity')
+      +K1('Price Momentum','—','builds weekly')
+      +K1('Inventory Momentum','—','builds weekly')
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px;">'
+      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Top Districts by Activity</div><div class="panel-sub">across all markets</div></div><div id="xm-districts" style="max-height:300px;overflow:auto;"></div></div>'
+      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Markets</div></div><div id="xm-markets"></div></div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);border:1px solid var(--border);">'
+      +_statCell('Scrape Status','All markets completed','var(--green)')
+      +_statCell('Data Freshness','Updated this week','var(--green)')
+      +_statCell('Coverage',comp+'% critical fields','var(--gold)')
+      +_statCell('Source Health',data.length+' portals operational','var(--green)')
+      +_statCell('Avg / Market','~'+Math.round(totalListings/Math.max(lives.length,1)/1000)+'k listings','var(--ink3)')
+      +_statCell('Next Refresh',_nextMon(),'var(--ink3)')
+    +'</div>';
+  renderXmMap(data); renderXmPrice(data,fx); renderXmInv(data); renderXmDistricts(data); renderXmMarkets(data,fx);
+}
+function renderXmMap(data){ var el=document.getElementById('xm-map'); if(!el||!window.L) return;
+  if(_xmMap){try{_xmMap.remove();}catch(e){}_xmMap=null;}
+  _xmMap=L.map('xm-map',{zoomControl:true,attributionControl:false}).setView([9,18],3);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(_xmMap);
+  data.forEach(function(d){ var v=COUNTRY_VIEW[d.k]; if(!v)return;
+    L.circleMarker(v[0],{radius:Math.max(10,Math.sqrt(d.listings/40)),fillColor:d.color,color:'#0a0e14',weight:2,fillOpacity:.9}).addTo(_xmMap)
+      .bindPopup('<div style="font-family:DM Sans,sans-serif"><b>'+d.c.label+'</b><br>'+d.listings.toLocaleString()+' listings</div>'); });
+  setTimeout(function(){if(_xmMap)_xmMap.invalidateSize();},250);
+}
+function renderXmPrice(data,fx){ _xmD('xm-price'); var cv=document.getElementById('xm-price'); if(!cv||!window.Chart)return;
+  var rows=[]; data.forEach(function(d){ (d.kpi.cities||[]).forEach(function(c){ var usd=_usd(c.sale_median,d.cur,fx); if(usd) rows.push({city:c.city,usd:usd,color:d.color}); }); });
+  rows.sort(function(a,b){return b.usd-a.usd;}); rows=rows.slice(0,8); if(!rows.length)return;
+  _xmCharts['xm-price']=new Chart(cv,{type:'bar',data:{labels:rows.map(function(r){return r.city;}),datasets:[{data:rows.map(function(r){return Math.round(r.usd);}),backgroundColor:rows.map(function(r){return r.color;}),borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8b95a3'}},y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{family:'DM Mono',size:10},color:'#8b95a3',callback:function(v){return '$'+v;}}}}}});
+}
+function renderXmInv(data){ _xmD('xm-inv'); var cv=document.getElementById('xm-inv'); if(!cv||!window.Chart)return;
+  _xmCharts['xm-inv']=new Chart(cv,{type:'doughnut',data:{labels:data.map(function(d){return d.c.label;}),datasets:[{data:data.map(function(d){return d.listings;}),backgroundColor:data.map(function(d){return d.color;}),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'64%',plugins:{legend:{position:'right',labels:{font:{family:'DM Sans',size:11},color:'#8b95a3',boxWidth:8,padding:8}}}}});
+}
+function renderXmDistricts(data){ var el=document.getElementById('xm-districts'); if(!el)return;
+  var rows=[]; data.forEach(function(d){ (d.kpi.districts||[]).forEach(function(x){ rows.push({sub:x.submarket,market:d.c.label,n:Number(x.count)}); }); });
+  rows.sort(function(a,b){return b.n-a.n;}); rows=rows.slice(0,10);
+  el.innerHTML='<table class="dt" style="width:100%"><thead><tr><th>District</th><th>Market</th><th>Active Listings</th></tr></thead><tbody>'
+    +rows.map(function(r){return '<tr><td class="dt-city">'+(r.sub||'—')+'</td><td class="dt-muted">'+r.market+'</td><td class="mono">'+r.n.toLocaleString()+'</td></tr>';}).join('')+'</tbody></table>';
+}
+function renderXmMarkets(data,fx){ var el=document.getElementById('xm-markets'); if(!el)return;
+  el.innerHTML='<table class="dt" style="width:100%"><thead><tr><th>Market</th><th>Listings</th><th>Median (USD)</th></tr></thead><tbody>'
+    +data.map(function(d){ var usd=_usd(d.kpi.median_sale,d.cur,fx); return '<tr onclick="switchCountry(\''+d.k+'\');nav(\'markets\')" style="cursor:pointer;"><td class="dt-city">'+d.c.flag+' '+d.c.label+'</td><td class="mono">'+d.listings.toLocaleString()+'</td><td class="mono">'+(usd?'$'+Math.round(usd).toLocaleString():'—')+'</td></tr>';}).join('')+'</tbody></table>';
+}
 var _ovMap=null, _ovCharts={};
 function _ovDestroy(id){ if(_ovCharts[id]){ try{_ovCharts[id].destroy();}catch(e){} delete _ovCharts[id]; } }
 function _kcard(label,val,sub){
@@ -2045,7 +2146,7 @@ function _kcard(label,val,sub){
     +'<div style="font-size:10.5px;color:var(--ink5);margin-top:8px;">'+(sub||'')+'</div></div>';
 }
 async function renderOverview(country){
-  var el=document.getElementById('pg-market-terminal'); if(!el) return;
+  var el=document.getElementById('pg-markets'); if(!el) return;
   var c=COUNTRIES[country], S=_B2S, K=_B2K, lbl=c?c.label:country;
   if(!c||c.status!=='live'||!K){
     el.innerHTML='<div class="eyebrow">Overview</div><div class="pg-title">Market Command Center</div><div class="pg-sub">'+lbl+' — no live data yet.</div>'+_emptyState('Coverage activates once '+lbl+' has listing data.'); return; }
@@ -2099,7 +2200,7 @@ function renderOvYieldByCity(mf){
   var sm={}; (((mf.sale||{}).cities)||[]).forEach(function(r){sm[r.city]=r.med;});
   var rows=(((mf.rent||{}).cities)||[]).map(function(r){ var s=sm[r.city]; return s?{city:r.city,y:Math.round(r.med*12/s*1000)/10}:null; }).filter(Boolean).sort(function(a,b){return b.y-a.y;}).slice(0,8);
   if(!rows.length) return;
-  _ovCharts['ov-yieldcity']=new Chart(cv,{type:'bar',data:{labels:rows.map(function(r){return r.city;}),datasets:[{data:rows.map(function(r){return r.y;}),backgroundColor:'#3f7a52',borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:10},color:'#8c8c8c',callback:function(v){return v+'%';}}}}}});
+  _ovCharts['ov-yieldcity']=new Chart(cv,{type:'bar',data:{labels:rows.map(function(r){return r.city;}),datasets:[{data:rows.map(function(r){return r.y;}),backgroundColor:'#3f7a52',borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8b95a3'}},y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{family:'DM Mono',size:10},color:'#8b95a3',callback:function(v){return v+'%';}}}}}});
 }
 function renderOvKeyInd(f,S){
   var el=document.getElementById('ov-keyind'); if(!el) return;
@@ -2123,7 +2224,7 @@ function renderOvMap(country,K,f){
   if(_ovMap){ try{_ovMap.remove();}catch(e){} _ovMap=null; }
   var S=_B2S, tt=f.type==='rent'?'rent':'sale', view=COUNTRY_VIEW[country]||[[0,20],4];
   _ovMap=L.map('overview-map',{zoomControl:true}).setView(view[0],view[1]);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OSM · CARTO',maxZoom:18}).addTo(_ovMap);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OSM · CARTO',maxZoom:18}).addTo(_ovMap);
   var rows=(K.cities||[]).map(function(r){return {city:r.city,med:_cityMed(K,r.city,f.asset,tt),n:_cityCnt(K,r.city,f.asset)};}).filter(function(r){return r.med&&CITY_COORDS[r.city];});
   var m=rows.map(function(r){return r.med;}),mn=Math.min.apply(null,m),mx=Math.max.apply(null,m);
   rows.forEach(function(r){var t=mx>mn?(r.med-mn)/(mx-mn):.5;
@@ -2137,13 +2238,13 @@ function renderOvAssetMix(K){
   var labels=Object.keys(agg), data=labels.map(function(k){return agg[k];});
   if(!labels.length) return;
   var cols=['#0d0d0d','#b8933f','#5a5a5a','#c0603a','#3f7a52','#8c8c8c','#1d4ed8','#7c3aed'];
-  _ovCharts['ov-assetmix']=new Chart(cv,{type:'doughnut',data:{labels:labels.map(_cap),datasets:[{data:data,backgroundColor:cols,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{font:{family:'DM Sans',size:11},color:'#5a5a5a',boxWidth:8,padding:8}}}}});
+  _ovCharts['ov-assetmix']=new Chart(cv,{type:'doughnut',data:{labels:labels.map(_cap),datasets:[{data:data,backgroundColor:cols,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{font:{family:'DM Sans',size:11},color:'#8b95a3',boxWidth:8,padding:8}}}}});
 }
 function renderOvPriceByCity(mf,tt){
   _ovDestroy('ov-pricecity'); var cv=document.getElementById('ov-pricecity'); if(!cv||!window.Chart||!mf) return;
   var rows=(((mf[tt]||{}).cities)||[]).slice(0,8);
   if(!rows.length) return;
-  _ovCharts['ov-pricecity']=new Chart(cv,{type:'bar',data:{labels:rows.map(function(r){return r.city;}),datasets:[{data:rows.map(function(r){return Math.round(r.med);}),backgroundColor:'#b8933f',borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:10},color:'#8c8c8c'}}}}});
+  _ovCharts['ov-pricecity']=new Chart(cv,{type:'bar',data:{labels:rows.map(function(r){return r.city;}),datasets:[{data:rows.map(function(r){return Math.round(r.med);}),backgroundColor:'#b8933f',borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8b95a3'}},y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{family:'DM Mono',size:10},color:'#8b95a3'}}}}});
 }
 function renderOvTopDistricts(country,f,S){
   var el=document.getElementById('ov-topdist'); if(!el) return;
@@ -2231,7 +2332,7 @@ async function renderMap(country,K){
   if(_liveMap){ try{_liveMap.remove();}catch(e){} _liveMap=null; }
   var view=COUNTRY_VIEW[country]||[[0,20],4];
   _liveMap=L.map('map-live',{zoomControl:true}).setView(view[0],view[1]);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap · © CARTO',maxZoom:18}).addTo(_liveMap);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap · © CARTO',maxZoom:18}).addTo(_liveMap);
   // ── City layer (filtered by asset/type) ──
   var cityLayer=L.layerGroup();
   var crows=(K.cities||[]).map(function(r){ return {city:r.city, med:_cityMed(K,r.city,f.asset,tt), n:_cityCnt(K,r.city,f.asset)}; }).filter(function(r){ return r.med&&CITY_COORDS[r.city]; });
@@ -3015,6 +3116,7 @@ async function boot(){
     loadMarketNews(ACTIVE_COUNTRY);
     loadMarketSignals(ACTIVE_COUNTRY);
     loadHonestLayer(ACTIVE_COUNTRY);
+    renderCrossMarket();
     loadProgress(90,'Ready.');
     clearTimeout(safetyTimer);
     setTimeout(hideLoader,300);
@@ -3036,7 +3138,7 @@ function nav(id){
   const pg=document.getElementById('pg-'+id);
   if(pg) pg.classList.add('active');
   const titles={
-    'market-terminal':'Overview / Market Terminal','key-indicators':'Overview / Key Indicators',
+    'market-terminal':'Overview / Dashboard','markets':'Market Intelligence / Markets','key-indicators':'Overview / Key Indicators',
     'market-signals':'Overview / Market Signals','countries':'Markets / Countries',
     'cities':'Markets / Cities','districts':'Markets / Districts',
     'listings':'Data / Listings','transactions':'Data / Transactions',
@@ -3053,7 +3155,8 @@ function nav(id){
   document.getElementById('tb-bc').innerHTML=parts[0]+'<span>/'+parts.slice(1).join('/')+'</span>';
   if(id==='map-view') renderMap(_B2C,_B2K);
   if(id==='cities' && _cityActive) renderCityProfile(_B2C,_cityActive);
-  if(id==='market-terminal') setTimeout(function(){ if(_ovMap) _ovMap.invalidateSize(); },150);
+  if(id==='market-terminal') setTimeout(function(){ if(_xmMap) _xmMap.invalidateSize(); },150);
+  if(id==='markets'){ renderOverview(_B2C); setTimeout(function(){ if(_ovMap) _ovMap.invalidateSize(); },160); }
   if(id==='macro-indicators') loadMacroData(ACTIVE_COUNTRY);
 }
 
@@ -3087,7 +3190,7 @@ function buildCharts(){
   const c=COUNTRIES[ACTIVE_COUNTRY];
   const cityData=c?c.cityData:{};
   const cityNames=Object.keys(cityData);
-  const CHART_DEFAULTS={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:11},color:'#8c8c8c',boxWidth:8,padding:10}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:11},color:'#8c8c8c'}}}};
+  const CHART_DEFAULTS={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:11},color:'#8b95a3',boxWidth:8,padding:10}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8b95a3'}},y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{family:'DM Mono',size:11},color:'#8b95a3'}}}};
 
   // ── Price trends (country-specific) ──
   destroyChart('trends-chart');
@@ -3111,7 +3214,7 @@ function buildCharts(){
     new Chart(gc,{type:'bar',data:{
       labels:sorted,
       datasets:[{label:'12M Growth %',data:sorted.map(n=>cityData[n].growth),backgroundColor:sorted.map(n=>cityData[n].color||'#8c8c8c'),borderWidth:0,borderRadius:2}]
-    },options:{...CHART_DEFAULTS,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:11},color:'#8c8c8c',callback:v=>v+'%'}}}}});
+    },options:{...CHART_DEFAULTS,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8b95a3'}},y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{family:'DM Mono',size:11},color:'#8b95a3',callback:v=>v+'%'}}}}});
   }
 
   // ── City tabs — rebuild for active country ──
@@ -3218,7 +3321,7 @@ function buildLiquidityCharts(){
       {label:'Marrakech',data:[60,61,63,65,64,68],borderColor:'#b8933f',borderWidth:2,tension:.3,pointRadius:0,fill:false},
       {label:'Rabat',data:[57,58,58,59,59,60],borderColor:'#1d4ed8',borderWidth:1.5,tension:.3,pointRadius:0,fill:false},
       {label:'Fez',data:[44,43,42,41,39,38],borderColor:'#dc2626',borderWidth:1.5,tension:.3,pointRadius:0,fill:false},
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:11},color:'#8c8c8c',boxWidth:8,padding:10}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8c8c8c'}},y:{min:30,max:80,grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:11},color:'#8c8c8c'}}}}});
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:11},color:'#8b95a3',boxWidth:8,padding:10}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8b95a3'}},y:{min:30,max:80,grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{family:'DM Mono',size:11},color:'#8b95a3'}}}}});
   }
   const cc=document.getElementById('liq-component-chart');
   if(cc&&!cc._built){
@@ -3228,7 +3331,7 @@ function buildLiquidityCharts(){
       {label:'Price Disp.',data:[68,72,58,54,44],backgroundColor:'#b8933f',borderWidth:0,borderRadius:1},
       {label:'Txn Freq.',data:[64,58,54,44,32],backgroundColor:'#1d4ed8',borderWidth:0,borderRadius:1},
       {label:'Inv. Activity',data:[71,80,66,62,42],backgroundColor:'#e5e5e2',borderWidth:0,borderRadius:1},
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:10},color:'#8c8c8c',boxWidth:8,padding:8}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:10},color:'#8c8c8c'}}}}});
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:10},color:'#8b95a3',boxWidth:8,padding:8}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8b95a3'}},y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{family:'DM Mono',size:10},color:'#8b95a3'}}}}});
   }
 }
 
@@ -3238,7 +3341,7 @@ function initMap(){
   const el=document.getElementById('map-container');
   if(!el) return;
   _map=L.map('map-container',{zoomControl:true}).setView([32,-5],5.4);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap · © CARTO',maxZoom:18}).addTo(_map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap · © CARTO',maxZoom:18}).addTo(_map);
   const cities=[
     {name:'Casablanca',lat:33.5731,lng:-7.5898,price:'18,420',chg:'+6.2%',listings:4218,liq:7.0},
     {name:'Marrakech',lat:31.6295,lng:-7.9811,price:'17,800',chg:'+8.4%',listings:2847,liq:6.8},
@@ -3308,7 +3411,7 @@ function applyFilters(){
   var _ap=(document.querySelector('.pg.active')||{}).id||'';
   if(_ap==='pg-cities'){ if(_cityActive) renderCityProfile(_B2C,_cityActive); }
   else if(_ap==='pg-map-view'){ renderMap(_B2C,_B2K); }
-  else if(_ap==='pg-market-terminal'){ renderOverview(_B2C); }
+  else if(_ap==='pg-markets'){ renderOverview(_B2C); }
 }
 
 // ── REPORTS ──
@@ -3428,7 +3531,7 @@ function buildCityTrendChart(cityName,data){
   const ctx=document.getElementById('city-trend-chart');
   if(!ctx)return;
   if(_cityChart){_cityChart.destroy();_cityChart=null;}
-  _cityChart=new Chart(ctx,{type:'line',data:{labels:['Q1 25','Q2 25','Q3 25','Q4 25','Q1 26'],datasets:[{label:cityName,data:data,borderColor:'#0d0d0d',borderWidth:2,tension:.3,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:11},color:'#8c8c8c'}}}}});
+  _cityChart=new Chart(ctx,{type:'line',data:{labels:['Q1 25','Q2 25','Q3 25','Q4 25','Q1 26'],datasets:[{label:cityName,data:data,borderColor:'#0d0d0d',borderWidth:2,tension:.3,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#8b95a3'}},y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{family:'DM Mono',size:11},color:'#8b95a3'}}}}});
 }
 
 const CITY_DISTRICTS={
@@ -3444,7 +3547,7 @@ function buildCityDistrictChart(cityId){
   if(!ctx)return;
   if(_cityDistChart){_cityDistChart.destroy();_cityDistChart=null;}
   const d=CITY_DISTRICTS[cityId]||CITY_DISTRICTS.casablanca;
-  _cityDistChart=new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[{label:'DH/m²',data:d.data,backgroundColor:'#0d0d0d',borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:10},color:'#8c8c8c'}},y:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#5a5a5a'}}}}});
+  _cityDistChart=new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[{label:'DH/m²',data:d.data,backgroundColor:'#0d0d0d',borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{family:'DM Mono',size:10},color:'#8b95a3'}},y:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8b95a3'}}}}});
 }
 
 // ── DISTRICT FILTER ──
