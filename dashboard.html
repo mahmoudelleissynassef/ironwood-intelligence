@@ -710,6 +710,29 @@ table.xmt{width:100%;border-collapse:collapse;}
 @keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.skel{animation:none;}}
 </style>
+
+<style>
+/* ═══ batch round: city cards, markets map, pipeline register, research panel ═══ */
+.city-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px;}
+.city-card{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:border-color .15s,transform .15s;padding:0;text-align:left;}
+.city-card:hover{border-color:var(--border2);transform:translateY(-1px);}
+.city-card.on{border-color:rgba(200,155,90,.55);box-shadow:0 0 0 1px rgba(200,155,90,.35);}
+.city-card img{width:100%;height:64px;object-fit:cover;display:block;filter:saturate(.9) brightness(.85);}
+.city-card .cc-cap{padding:7px 10px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:6px;}
+.city-card .cc-name{font-size:12px;font-weight:550;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.city-card.on .cc-name{color:var(--gold2);}
+.city-card .cc-n{font-size:10px;color:var(--ink4);font-variant-numeric:tabular-nums;flex:none;}
+.mk-map-frame{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#0C1017;height:640px;}
+.mk-map-frame .lmap{position:absolute;inset:0;z-index:1;}
+.sat-dim{filter:saturate(.78) brightness(.72) contrast(1.05);}
+.leaflet-container{background:#0A0D12;}
+.mk-map-note{position:absolute;left:10px;bottom:10px;z-index:500;background:rgba(12,16,23,.86);border:1px solid rgba(200,155,90,.3);color:var(--ink2);padding:5px 10px;border-radius:7px;font-size:10px;}
+.pp-badge{display:inline-flex;font-size:9px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;padding:1.5px 7px;border-radius:20px;background:var(--surface3);color:var(--ink3);}
+.pp-badge.uc{background:var(--teal-bg);color:var(--teal);}
+.pp-badge.an{background:var(--gold-pale);color:var(--gold2);}
+.rs-badge{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:600;padding:1.5px 8px;border-radius:20px;background:var(--blue-bg);color:var(--blue);white-space:nowrap;}
+.rs-val{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;}
+</style>
 </head>
 <body>
 
@@ -1333,8 +1356,9 @@ table.xmt{width:100%;border-collapse:collapse;}
         </div>
         <div id="pipeline-news-list" style="padding-top:6px;"><div style="padding:18px;color:var(--ink5);font-size:12px;">Loading news…</div></div>
       </div>
+      <div id="pipe-register"></div>
       <div class="panel"><div class="panel-body2" style="padding:20px;">
-        <div class="method-note" style="margin-top:0;">A structured pipeline register (project · developer · GFA · stage · delivery) requires licensed planning-authority or developer feeds we don’t yet source. Development signals above come from the observed news pipeline; no fabricated register rows are shown.</div>
+        <div class="method-note" style="margin-top:0;">Register rows are machine-extracted from named projects in observed news articles — only explicitly stated figures are stored, and every row links to its sources. This is announced/reported pipeline, not a licensed planning-authority feed.</div>
       </div></div>
     </div>
 
@@ -2146,7 +2170,11 @@ window.addEventListener('popstate',function(e){
   var id=(e.state&&e.state.pg)||'market-terminal';
   nav(id,true);
 });
-var CITY_IMG={casablanca:'/assets/city-casablanca.jpg',nairobi:'/assets/city-nairobi.jpg',tunis:'/assets/city-tunis.jpg',marrakech:'/assets/city-marrakech.jpg'};
+var CITY_SLUGS=['casablanca','marrakech','tangier','rabat','fez','agadir','tunis','la-marsa','hammamet','ariana','sousse','nabeul','sfax','nairobi','mombasa','thika','kiambu','machakos'];
+function citySlug(c){ return (c||'').toLowerCase().replace(/\s+/g,'-'); }
+function cityImg(c,thumb){ var sl=citySlug(c); if(CITY_SLUGS.indexOf(sl)<0) return null;
+  return '/assets/city-'+sl+(thumb?'-thumb':'')+'.jpg'; }
+var CITY_IMG={};CITY_SLUGS.forEach(function(sl){CITY_IMG[sl]='/assets/city-'+sl+'.jpg';});
 
 // ── MARKET NEWS LOADER ──
 // Reads market_news (populated Mon+Thu by fetch_news.py) for the active country
@@ -2754,7 +2782,12 @@ async function renderOverview(country){
    +'</div>'
 
    +'<section class="grid g-split">'
-    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Market landscape — price vs depth</div>'
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Market map — live price aggregations</div>'
+    +'<div class="panel-sub">Zoom in for district-level medians · '+(f.asset==='all'?'all classes':f.asset)+' · for '+ttLbl+' · click a district to load its profile</div></div>'
+    +'<div class="panel-actions"><span class="n-tag num">'+df.filter(function(r){return r.lat!=null;}).length+' districts geocoded</span></div></div>'
+    +'<div class="panel-body2"><div class="mk-map-frame"><div class="lmap" id="mk-map"></div>'
+    +'<div class="mk-map-note">Night imagery · bubbles ∝ observed listings · medians in '+ccy+'</div></div></div></div>'
+    +'<div><div class="panel" style="margin-bottom:14px;"><div class="panel-head"><div><div class="panel-title">Market landscape — price vs depth</div>'
     +'<div class="panel-sub">Each point is a market · x: observed listings · y: median asking /m² ('+ccy+')</div></div>'
     +'<div class="panel-actions"><span class="n-tag num">'+pts.length+' of '+df.length+' markets shown</span></div></div>'
     +'<div class="panel-body2"><div class="scatter-legend">'
@@ -2781,25 +2814,149 @@ async function renderOverview(country){
     +'<div class="movers"><span class="m-label">90-day movers, median /m²:</span>'
     +'<span class="mover-chip">Weekly price movers activate with the second snapshot — '+_nextMon()+'</span></div>'
     +'<div class="axis-note"><span>Markets with fewer than 20 priced listings excluded · point size ∝ inventory</span>'
-    +'<span class="num">Market medians: '+nf(Math.round(medN))+' listings · '+fmt(medU)+' / m²</span></div></div></div>'
-
-    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Market profile</div>'
-    +'<div class="panel-sub">Selected from landscape or table</div></div></div>'
-    +'<div class="panel-body2" id="pr-body"><div class="empty-trend" style="height:200px;">Select a market.</div></div></div>'
+    +'<span class="num">Market medians: '+nf(Math.round(medN))+' listings · '+fmt(medU)+' / m²</span></div></div></div></div>'
    +'</section>'
 
-   +'<section class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">All markets — '+lbl+'</div>'
+   +'<section class="grid g-bottom"><div class="panel"><div class="panel-head"><div><div class="panel-title">All markets — '+lbl+'</div>'
     +'<div class="panel-sub">Click a row to load its profile · medians are asking prices, for '+ttLbl+', '+ccy+'</div></div>'
     +'<div class="panel-actions"><span class="n-tag num">'+df.length+' markets</span><button class="panel-link" onclick="nav(\'districts\')">All districts'+_CHEV+'</button></div></div>'
     +'<div class="panel-body2" style="padding-top:8px"><table class="xmt"><thead><tr><th>Market</th><th>Listings</th><th>Share</th><th>Median /m²</th><th>Δ wk</th></tr></thead><tbody>'+rows+'</tbody></table>'
     +'<div class="axis-note" style="margin-top:6px"><span>Showing '+lead.length+' of '+df.length+' markets · ranked by observed inventory</span>'
-    +'<span class="num">n = '+nf(dfTotal)+' in current filter</span></div></div></div></section>'
+    +'<span class="num">n = '+nf(dfTotal)+' in current filter</span></div></div></div>'
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Market profile</div>'
+    +'<div class="panel-sub">Selected from map, landscape or table</div></div></div>'
+    +'<div class="panel-body2" id="pr-body"><div class="empty-trend" style="height:200px;">Select a market.</div></div></div>'
+   +'</section>'
+   +'<div id="mk-research"></div>'
 
    +'<div class="foot"><span class="f-brand">Ironwood Intelligence</span>'
    +'<span style="max-width:860px">All indicators derive from observed property listings collected from public sources, cleaned, deduplicated and standardised by Ironwood. Asking prices are not transaction prices. Coverage: '+lbl+' · '+df.length+' markets · '+Object.keys(cities).length+' cities.</span>'
    +'<span class="num" style="white-space:nowrap">© 2026 Ironwood Intelligence</span></div>';
 
   if(window._mkSel) selectMarket(window._mkSel);
+  renderMkMap(country,df,f,cur);
+  renderResearchPanel(country);
+}
+var _mkMap=null;
+function renderMkMap(country,df,f,cur){
+  var el=document.getElementById('mk-map'); if(!el||!window.L) return;
+  if(_mkMap){try{_mkMap.remove();}catch(e){}_mkMap=null;}
+  var view=COUNTRY_VIEW[country]||[[0,20],5];
+  _mkMap=L.map('mk-map',{zoomControl:true,attributionControl:false}).setView(view[0],view[1]);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,className:'sat-dim'}).addTo(_mkMap);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:18,opacity:.85}).addTo(_mkMap);
+  var tt=f.type==='rent'?'rent':'sale', K=_B2K||{};
+  var cityLayer=L.layerGroup(), distLayer=L.layerGroup();
+  (K.cities||[]).forEach(function(ct){ var xy=CITY_COORDS[ct.city]; if(!xy) return;
+    var med=_cityMed(K,ct.city,f.asset,tt), n=_cityCnt(K,ct.city,f.asset);
+    L.circleMarker(xy,{radius:Math.min(26,Math.max(9,Math.sqrt((n||1))/4)),fillColor:'#E3BC7E',color:'rgba(10,13,18,.9)',weight:1.5,fillOpacity:.85})
+      .bindPopup('<div style="font-family:Inter,sans-serif;min-width:150px;"><b style="font-size:12.5px;">'+ct.city+'</b>'
+        +'<div style="font-size:11.5px;margin-top:3px;">Median '+tt+': <b>'+(med!=null?money(med,cur)+'/m²'+(tt==='rent'?'/mo':''):'—')+'</b></div>'
+        +'<div style="font-size:10.5px;color:#5F6B7C;">'+Number(n||0).toLocaleString('en-US')+' listings · zoom for districts</div></div>').addTo(cityLayer); });
+  df.filter(function(d){return d.lat!=null;}).forEach(function(d){
+    var m=L.circleMarker([d.lat,d.lng],{radius:Math.min(16,Math.max(5,Math.sqrt((d.n||1))/2.5)),fillColor:'#C89B5A',color:'rgba(10,13,18,.9)',weight:1,fillOpacity:.8});
+    m.bindPopup('<div style="font-family:Inter,sans-serif;min-width:150px;"><b style="font-size:12.5px;">'+_newsEsc(d.sub)+'</b> <span style="color:#5F6B7C;font-size:10px;">'+(d.city||'')+'</span>'
+        +'<div style="font-size:11.5px;margin-top:3px;">Median '+tt+': <b>'+(d.med!=null?money(d.med,cur)+'/m²'+(tt==='rent'?'/mo':''):'—')+'</b></div>'
+        +'<div style="font-size:10.5px;color:#5F6B7C;">'+Number(d.n||0).toLocaleString('en-US')+' listings</div></div>');
+    m.on('click',function(){ selectMarket(d.sub); });
+    m.addTo(distLayer); });
+  var DZ=10;
+  function sync(){ var z=_mkMap.getZoom();
+    if(z>=DZ&&distLayer.getLayers().length>0){ if(_mkMap.hasLayer(cityLayer))_mkMap.removeLayer(cityLayer); if(!_mkMap.hasLayer(distLayer))_mkMap.addLayer(distLayer); }
+    else{ if(_mkMap.hasLayer(distLayer))_mkMap.removeLayer(distLayer); if(!_mkMap.hasLayer(cityLayer))_mkMap.addLayer(cityLayer); } }
+  _mkMap.on('zoomend',sync); sync();
+  setTimeout(function(){ if(_mkMap)_mkMap.invalidateSize(); },200);
+}
+async function renderResearchPanel(country){
+  var slot=document.getElementById('mk-research'); if(!slot||!sb) return;
+  var c=COUNTRIES[country], lbl=c?c.label:country;
+  var rows=[], area=[];
+  try{ var r=await sb.from('market_research_stats').select('*').eq('country',country).order('as_of',{ascending:false}); rows=(r&&r.data)||[]; }catch(e){}
+  try{ var a=await sb.rpc('listed_area',{p_country:country}); area=(a&&a.data)||[]; }catch(e){}
+  var note='<div class="method-note">Research-derived figures cite their publisher and edition; ranges are shown when publishers disagree — never silently blended. '
+    +'Derived metrics state their formula. Listings-derived inputs come from the live Ironwood collection.</div>';
+  if(!rows.length){
+    slot.innerHTML='<section class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">Supply &amp; occupancy — research layer</div>'
+      +'<div class="panel-sub">Total stock, vacancy and occupancy from published market research (JLL, CBRE, Knight Frank, Colliers…)</div></div></div>'
+      +'<div class="panel-body2"><div class="empty-trend" style="height:120px;">Research figures for '+lbl+' are being sourced and verified — each figure will cite its publisher, report and year before it appears here.</div>'+note+'</div></div></section>';
+    return;
+  }
+  var groups={};
+  rows.forEach(function(x){ var k=(x.city||'(country)')+'|'+(x.asset_class||'all')+'|'+x.metric;
+    groups[k]=groups[k]||[]; groups[k].push(x); });
+  function fmtVal(x){
+    if(x.metric==='total_stock_sqm'||x.metric==='pipeline_sqm') return (Number(x.value)/1e6>=1? (Number(x.value)/1e6).toFixed(2)+'M':Math.round(Number(x.value)/1e3)+'k')+' m²';
+    if(/pct/.test(x.metric)) return Number(x.value).toFixed(1)+'%';
+    return Number(x.value).toLocaleString('en-US')+(x.unit?' '+x.unit:'');
+  }
+  var METRIC_LBL={total_stock_sqm:'Total stock',vacancy_pct:'Vacancy',occupancy_pct:'Occupancy',prime_rent:'Prime rent',prime_yield_pct:'Prime yield',pipeline_sqm:'Pipeline supply'};
+  var body=Object.keys(groups).sort().map(function(k){
+    var g=groups[k].sort(function(a,b){return (b.as_of||'').localeCompare(a.as_of||'');});
+    var parts=k.split('|');
+    var vals=g.map(function(x){ return '<span style="margin-right:12px;white-space:nowrap;"><span class="rs-val">'+fmtVal(x)+'</span> <span class="rs-badge" title="'+_newsEsc(x.report_title||'')+'">'+_newsEsc(x.publisher)+' '+_newsEsc(x.as_of)+'</span></span>'; }).join('');
+    return '<tr><td style="text-align:left;padding-left:8px;" class="mkt-name">'+(METRIC_LBL[parts[2]]||parts[2])+'</td>'
+      +'<td style="text-align:left;">'+(parts[0]==='(country)'?lbl:parts[0])+'</td>'
+      +'<td style="text-align:left;">'+parts[1]+'</td>'
+      +'<td style="text-align:left;white-space:normal;">'+vals+'</td></tr>'; }).join('');
+  // derived: visible float where stock + listed area exist for same city+asset
+  var derived='';
+  Object.keys(groups).forEach(function(k){ var parts=k.split('|'); if(parts[2]!=='total_stock_sqm') return;
+    var g=groups[k][0]; var cityK=parts[0], acK=parts[1];
+    var la=area.filter(function(x){ return (cityK==='(country)'||x.city===cityK) && (acK==='all'||x.ac.indexOf(acK.slice(0,5))>-1); })
+      .reduce(function(t,x){return t+Number(x.sqm||0);},0);
+    if(la>0&&Number(g.value)>0){
+      var pct=(la/Number(g.value)*100);
+      derived+='<tr><td style="text-align:left;padding-left:8px;" class="mkt-name">Visible float</td>'
+        +'<td style="text-align:left;">'+(cityK==='(country)'?lbl:cityK)+'</td><td style="text-align:left;">'+acK+'</td>'
+        +'<td style="text-align:left;"><span class="rs-val">'+pct.toFixed(1)+'%</span> <span style="font-size:10px;color:var(--ink4);">= '+Math.round(la).toLocaleString('en-US')+' m² listed ÷ '+fmtVal(g)+' stock ('+_newsEsc(g.publisher)+' '+_newsEsc(g.as_of)+')</span></td></tr>';
+    } });
+  slot.innerHTML='<section class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">Supply &amp; occupancy — research layer</div>'
+    +'<div class="panel-sub">Published market research, reconciled per figure · derived metrics show their formula</div></div>'
+    +'<span class="n-tag num">'+rows.length+' figures</span></div>'
+    +'<div class="panel-body2" style="padding-top:8px;"><table class="xmt"><thead><tr><th style="text-align:left;">Metric</th><th style="text-align:left;">Market</th><th style="text-align:left;">Asset</th><th style="text-align:left;">Value · source</th></tr></thead>'
+    +'<tbody>'+body+derived+'</tbody></table>'+note+'</div></div></section>';
+}
+async function renderPipelineRegister(country){
+  var slot=document.getElementById('pipe-register'); if(!slot||!sb) return;
+  var c=COUNTRIES[country], lbl=c?c.label:country, rows=[];
+  try{ var r=await sb.from('pipeline_projects').select('*').eq('country',country).order('quantum_value',{ascending:false,nullsFirst:false}).limit(60); rows=(r&&r.data)||[]; }catch(e){}
+  if(!rows.length){
+    slot.innerHTML='<div class="panel"><div class="panel-head"><div><div class="panel-title">Project register — '+lbl+'</div>'
+      +'<div class="panel-sub">Structured projects extracted from the observed news pipeline</div></div></div>'
+      +'<div class="panel-body2"><div class="empty-trend" style="height:100px;">No quantified projects extracted for '+lbl+' yet — the register fills as the Mon/Thu news runs surface named projects.</div></div></div>';
+    return;
+  }
+  function q(x){ if(x.quantum_value==null) return '—';
+    var v=Number(x.quantum_value), u=x.quantum_unit;
+    var vs=v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?Math.round(v/1e3)+'k':''+Math.round(v);
+    return vs+' '+(u==='sqm_gfa'?'m²':u==='usd'?'USD':u||''); }
+  var stageCls=function(st){ return st==='under_construction'?'uc':(st==='announced'?'an':''); };
+  var body=rows.slice(0,25).map(function(x,i){
+    var cit=(x.citations||[])[0]||{}; var nCit=(x.citations||[]).length;
+    return '<tr><td><div class="mkt-cell"><span class="mkt-rank num">'+(i+1)+'</span><div><div class="mkt-name">'+_newsEsc(x.project_name)+'</div>'
+      +'<div class="mkt-cat">'+_newsEsc(x.developer||'Developer undisclosed')+'</div></div></div></td>'
+      +'<td style="text-align:left;">'+_newsEsc(x.city||'—')+'</td>'
+      +'<td style="text-align:left;">'+_newsEsc(x.asset_class||'—')+'</td>'
+      +'<td class="num">'+q(x)+'</td>'
+      +'<td>'+(x.stage?'<span class="pp-badge '+stageCls(x.stage)+'">'+x.stage.replace(/_/g,' ')+'</span>':'—')+'</td>'
+      +'<td class="num">'+_newsEsc(x.expected_delivery||'—')+'</td>'
+      +'<td><a class="panel-link" style="display:inline-flex;" href="'+_newsEsc(_safeUrl(cit.url))+'" target="_blank" rel="noopener">'+nCit+' source'+(nCit>1?'s':'')+'</a></td></tr>'; }).join('');
+  var byYear={};
+  rows.forEach(function(x){ if(x.quantum_unit==='sqm_gfa'&&x.quantum_value&&x.expected_delivery){
+    var y=(String(x.expected_delivery).match(/20\d\d/)||[])[0]; if(!y) return;
+    byYear[y]=(byYear[y]||0)+Number(x.quantum_value); } });
+  var years=Object.keys(byYear).sort();
+  var maxY=Math.max.apply(null,years.map(function(y){return byYear[y];}).concat([1]));
+  var proj=years.length?('<div class="pr-sec" style="margin-top:16px;">Expected additions — stated GFA by delivery year</div><div class="bed-rows">'
+    +years.map(function(y){ return '<div class="bed-row" style="grid-template-columns:52px 1fr 110px;"><div class="bed-name num">'+y+'</div>'
+      +'<div class="bed-track"><div class="bed-fill" style="width:'+(byYear[y]/maxY*100).toFixed(1)+'%;background:linear-gradient(90deg,#8A6534,var(--gold));"></div></div>'
+      +'<div class="bed-val num">'+(byYear[y]/1e3>=1000?(byYear[y]/1e6).toFixed(2)+'M':Math.round(byYear[y]/1e3)+'k')+' m²</div></div>'; }).join('')
+    +'</div><div class="axis-note"><span>Sums only quantums explicitly stated in source articles · not total market pipeline</span><span class="num">'+years.length+' delivery years</span></div>'):'';
+  slot.innerHTML='<div class="panel"><div class="panel-head"><div><div class="panel-title">Project register — '+lbl+'</div>'
+    +'<div class="panel-sub">Extracted from observed news · every row cites its sources · nothing inferred</div></div>'
+    +'<span class="n-tag num">'+rows.length+' projects</span></div>'
+    +'<div class="panel-body2" style="padding-top:8px;"><table class="xmt"><thead><tr><th>Project</th><th style="text-align:left;">City</th><th style="text-align:left;">Class</th><th>Quantum</th><th>Stage</th><th>Delivery</th><th>Sources</th></tr></thead>'
+    +'<tbody>'+body+'</tbody></table>'+proj+'</div></div>';
 }
 var _prMap=null;
 async function selectMarket(sub){
@@ -2869,6 +3026,7 @@ async function loadBatch2(country){
   await _fx(); _syncCcyUI(c?c.currency:'');
   var ph=document.getElementById('pipe-head');
   if(ph) ph.innerHTML=V2HEAD(country,'Development Pipeline',['Observed development &amp; construction news','Refreshed Mon &amp; Thu'],null);
+  renderPipelineRegister(country);
   var K=null;
   if(live){ try{ var r=await sb.rpc('market_kpis',{p_country:country}); K=r&&r.data?r.data:null; }catch(e){} }
   _B2K=K;
@@ -2958,10 +3116,13 @@ async function renderCitiesPage(country){
   if(!c||c.status!=='live'||!K||!K.cities||!K.cities.length){ el.innerHTML=V2HEAD(country,'Cities',[],null)+_emptyState('City analytics activate once '+(c?c.label:country)+' has listing data.'); return; }
   var cities=K.cities.slice().sort(function(a,b){return (b.listings||0)-(a.listings||0);});
   if(!_cityActive||!cities.some(function(x){return x.city===_cityActive;})) _cityActive=cities[0].city;
-  var chips=cities.map(function(x){ return '<button class="city-chip'+(x.city===_cityActive?' on':'')+'" data-city="'+x.city.replace(/"/g,'&quot;')+'" onclick="selectCity(this.getAttribute(\'data-city\'))">'+x.city+' <span class="num" style="color:var(--ink4);font-size:10px;">'+Number(x.listings||0).toLocaleString('en-US')+'</span></button>'; }).join('');
+  var chips=cities.map(function(x){ var th=cityImg(x.city,true);
+    return '<button class="city-card'+(x.city===_cityActive?' on':'')+'" data-city="'+x.city.replace(/"/g,'&quot;')+'" onclick="selectCity(this.getAttribute(\'data-city\'))">'
+      +(th?'<img src="'+th+'" alt="'+x.city+' at night" loading="lazy"/>':'')
+      +'<span class="cc-cap"><span class="cc-name">'+x.city+'</span><span class="cc-n num">'+Number(x.listings||0).toLocaleString('en-US')+'</span></span></button>'; }).join('');
   var tot=cities.reduce(function(a,x){return a+Number(x.listings||0);},0);
   el.innerHTML=V2HEAD(country,'Cities',['Metro areas with active collection','Asking prices in '+_ccyName(c.currency)],tot)
-   +'<div class="city-chips">'+chips+'</div><div id="city-profile-live"></div>';
+   +'<div class="city-cards">'+chips+'</div><div id="city-profile-live"></div>';
   renderCityProfile(country,_cityActive);
 }
 async function renderCityProfile(country,city){
@@ -2975,7 +3136,7 @@ async function renderCityProfile(country,city){
   var yld=(med&&medR)?Math.round(medR*12/med*1000)/10:null;
   var ci=(K.cities||[]).filter(function(x){return x.city===city;})[0]||{};
   var listAll=Number(ci.listings||0);
-  var img=CITY_IMG[(city||'').toLowerCase()];
+  var img=cityImg(city);
   var hero=img?'<div class="city-hero"><img src="'+img+'" alt="'+city+' at night, aerial view" loading="lazy"/><div class="ch-cap"><strong>'+city+'</strong>'+c.label+' · '+listAll.toLocaleString('en-US')+' observed listings</div></div>':'';
   // by asset class table (respects type filter)
   var acRows=(K.city_class||[]).filter(function(x){return x.city===city&&x.tt===tt&&(f.asset==='all'||(x.ac||'').toLowerCase()===f.asset);})
@@ -3825,7 +3986,7 @@ function nav(id, fromRoute){
   if(id==='map-view'&&_B2C){ renderMap(_B2C,_B2K); }
   if(id==='cities'&&_B2C&&_cityActive){ renderCityProfile(_B2C,_cityActive); }
   if(id==='market-terminal'){ setTimeout(function(){ if(_xmMap)_xmMap.invalidateSize(); },150); }
-  if(id==='markets'&&_B2C){ renderOverview(_B2C); setTimeout(function(){ if(_prMap)_prMap.invalidateSize(); },160); }
+  if(id==='markets'&&_B2C){ renderOverview(_B2C); setTimeout(function(){ if(_prMap)_prMap.invalidateSize(); if(_mkMap)_mkMap.invalidateSize(); },160); }
   if(id==='macro-indicators'){ loadMacroData(ACTIVE_COUNTRY); }
   if(id==='districts'&&_B2C){ renderDistrictsPage(_B2C); }
   if(id==='heatmaps'&&_B2C){ renderHeat(_B2C,_B2K); }
