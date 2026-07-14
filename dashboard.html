@@ -2067,33 +2067,45 @@ var CITY_COORDS={
 var COUNTRY_VIEW={Morocco:[[31.7,-7],5.4],Tunisia:[[35.6,9.9],6.2],Kenya:[[-0.6,37.9],6]};
 var _liveMap=null,_cityActive=null;
 function _mapCol(t){ return t<0.34?'#3f7a52':t<0.67?'#b8933f':'#c0603a'; }
+function _curFilters(){ return { asset:(document.getElementById('asset-filter')||{}).value||'all', type:(document.getElementById('type-filter')||{}).value||'all' }; }
+function _cityMed(K,city,asset,tt){
+  if(asset==='all'){ var ci=(K.cities||[]).filter(function(r){return r.city===city;})[0]; return ci?(tt==='rent'?ci.rent_median:ci.sale_median):null; }
+  var cc=(K.city_class||[]).filter(function(r){return r.city===city&&r.ac===asset&&r.tt===tt;})[0]; return cc?cc.med:null;
+}
+function _cityCnt(K,city,asset){
+  if(asset==='all'){ var ci=(K.cities||[]).filter(function(r){return r.city===city;})[0]; return ci?Number(ci.listings)||0:0; }
+  return (K.city_class||[]).filter(function(r){return r.city===city&&r.ac===asset;}).reduce(function(s,r){return s+Number(r.count);},0);
+}
 async function renderMap(country,K){
   var el=document.getElementById('pg-map-view'); if(!el) return;
   var c=COUNTRIES[country], S=_B2S, lbl=c?c.label:country;
   if(!c||c.status!=='live'||!K||!(K.cities||[]).length){
     el.innerHTML='<div class="eyebrow">Map</div><div class="pg-title">Market Map</div><div class="pg-sub">City map activates once '+lbl+' has live listing data.</div>'+_emptyState('No mappable city data yet.'); return; }
+  var f=_curFilters(), tt=f.type==='rent'?'rent':'sale';
+  var fl=(f.asset==='all'?'All assets':_cap(f.asset))+' · '+(f.type==='all'?'Sale':_cap(f.type));
   el.innerHTML='<div class="eyebrow">Map</div><div class="pg-title">Market Map</div>'
-    +'<div class="pg-sub">Median asking price/m² for '+lbl+'. Cities when zoomed out — <b>zoom in to drill into individual districts</b>. Bubble size = listing volume; warmer = higher price.</div>'
+    +'<div class="pg-sub">'+lbl+' · '+fl+'. Cities when zoomed out — <b>zoom in to drill into districts</b>. Bubble size = listing volume; warmer = higher price.</div>'
     +'<div class="panel"><div style="height:560px;" id="map-live"></div></div>';
   if(!window.L) return;
   if(_liveMap){ try{_liveMap.remove();}catch(e){} _liveMap=null; }
   var view=COUNTRY_VIEW[country]||[[0,20],4];
   _liveMap=L.map('map-live',{zoomControl:true}).setView(view[0],view[1]);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap · © CARTO',maxZoom:18}).addTo(_liveMap);
-  // ── City layer (zoomed out) ──
+  // ── City layer (filtered by asset/type) ──
   var cityLayer=L.layerGroup();
-  var cc=(K.cities||[]).filter(function(r){return r.sale_median&&CITY_COORDS[r.city];});
-  var cmn=Math.min.apply(null,cc.map(function(r){return r.sale_median;})), cmx=Math.max.apply(null,cc.map(function(r){return r.sale_median;}));
-  cc.forEach(function(r){ var t=cmx>cmn?(r.sale_median-cmn)/(cmx-cmn):0.5;
-    L.circleMarker(CITY_COORDS[r.city],{radius:Math.max(8,Math.sqrt((Number(r.listings)||1)/30)),fillColor:_mapCol(t),color:'#fff',weight:1.5,fillOpacity:.85})
-      .bindPopup('<div style="font-family:DM Sans,sans-serif;min-width:150px;"><div style="font-weight:700;">'+r.city+'</div><div style="font-size:11px;color:#5a5a5a;">Median sale: <b>'+S+Math.round(r.sale_median).toLocaleString()+'/m²</b></div><div style="font-size:11px;color:#5a5a5a;">Listings: <b>'+(Number(r.listings)||0).toLocaleString()+'</b></div></div>')
+  var crows=(K.cities||[]).map(function(r){ return {city:r.city, med:_cityMed(K,r.city,f.asset,tt), n:_cityCnt(K,r.city,f.asset)}; }).filter(function(r){ return r.med&&CITY_COORDS[r.city]; });
+  var cm=crows.map(function(r){return r.med;}), cmn=Math.min.apply(null,cm), cmx=Math.max.apply(null,cm);
+  crows.forEach(function(r){ var t=cmx>cmn?(r.med-cmn)/(cmx-cmn):0.5;
+    L.circleMarker(CITY_COORDS[r.city],{radius:Math.max(8,Math.sqrt((r.n||1)/30)),fillColor:_mapCol(t),color:'#fff',weight:1.5,fillOpacity:.85})
+      .bindPopup('<div style="font-family:DM Sans,sans-serif;min-width:150px;"><div style="font-weight:700;">'+r.city+'</div><div style="font-size:11px;color:#5a5a5a;">Median '+tt+': <b>'+S+Math.round(r.med).toLocaleString()+'/m²'+(tt==='rent'?'/mo':'')+'</b></div><div style="font-size:11px;color:#5a5a5a;">Listings: <b>'+r.n.toLocaleString()+'</b></div></div>')
       .addTo(cityLayer); });
   cityLayer.addTo(_liveMap);
-  // ── District layer (zoomed in), from map_districts RPC (real coords + real prices) ──
+  // ── District layer (filtered) from districts_filtered RPC ──
   var districtLayer=L.layerGroup();
   try{
-    var dr=await sb.rpc('map_districts',{p_country:country}); var dd=((dr&&dr.data)||[]).filter(function(r){return r.lat!=null;});
-    if(dd.length){ var dmn=Math.min.apply(null,dd.map(function(r){return Number(r.median_ppsqm);})), dmx=Math.max.apply(null,dd.map(function(r){return Number(r.median_ppsqm);}));
+    var dr=await sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type});
+    var dd=((dr&&dr.data)||[]).filter(function(r){return r.lat!=null;});
+    if(dd.length){ var dm=dd.map(function(r){return Number(r.median_ppsqm);}), dmn=Math.min.apply(null,dm), dmx=Math.max.apply(null,dm);
       dd.forEach(function(r){ var t=dmx>dmn?(r.median_ppsqm-dmn)/(dmx-dmn):0.5;
         L.circleMarker([r.lat,r.lng],{radius:Math.max(5,Math.sqrt((Number(r.listings)||1)/8)),fillColor:_mapCol(t),color:'#fff',weight:1,fillOpacity:.8})
           .bindPopup('<div style="font-family:DM Sans,sans-serif;min-width:150px;"><div style="font-weight:700;">'+(r.submarket||'—')+'</div><div style="font-size:11px;color:#5a5a5a;">'+r.city+'</div><div style="font-size:11px;color:#5a5a5a;">Median: <b>'+S+Math.round(r.median_ppsqm).toLocaleString()+'/m²</b></div><div style="font-size:11px;color:#5a5a5a;">Listings: <b>'+(Number(r.listings)||0).toLocaleString()+'</b></div></div>')
@@ -2131,23 +2143,27 @@ function renderCityProfile(country,city){
   var el=document.getElementById('city-profile-live'); if(!el) return;
   var K=_B2K, S=_B2S; if(!K) return;
   var cinfo=(K.cities||[]).filter(function(r){return r.city===city;})[0]||{};
-  var asset=(document.getElementById('asset-filter')||{}).value||'all';
-  var type=(document.getElementById('type-filter')||{}).value||'all';
+  var f=_curFilters(), asset=f.asset, type=f.type;
   var cc=(K.city_class||[]).filter(function(r){return r.city===city;});
   var med=cinfo.sale_median, rent=cinfo.rent_median, listings=Number(cinfo.listings)||0;
   if(asset!=='all'){ var sa=cc.filter(function(r){return r.ac===asset&&r.tt==='sale';})[0], ra=cc.filter(function(r){return r.ac===asset&&r.tt==='rent';})[0];
     med=sa?sa.med:null; rent=ra?ra.med:null; listings=cc.filter(function(r){return r.ac===asset;}).reduce(function(s,r){return s+Number(r.count);},0); }
   var yld=(med&&rent)?Math.round(rent*12/med*1000)/10:null;
+  var lblA=asset==='all'?'all assets':_cap(asset);
   var kpis='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:16px;">'
-    +_stat('Median Sale', med?S+Math.round(med).toLocaleString()+'/m²':'—', asset==='all'?'all assets':_cap(asset))
-    +_stat('Median Rent', rent?S+Math.round(rent).toLocaleString()+'/m²/mo':'—', asset==='all'?'all assets':_cap(asset))
+    +_stat('Median Sale', med?S+Math.round(med).toLocaleString()+'/m²':'—', lblA)
+    +_stat('Median Rent', rent?S+Math.round(rent).toLocaleString()+'/m²/mo':'—', lblA)
     +_stat('Listings', listings.toLocaleString(), 'with price/m²')
     +_stat('Gross Yield', yld?yld+'%':'—', 'modeled est.')+'</div>';
-  var ds=(K.districts||[]).filter(function(r){return r.city===city;}).sort(function(a,b){return b.med-a.med;}).slice(0,15);
-  var dist=ds.length?('<div class="panel"><div class="panel-hd"><div class="panel-title">District Comparison — '+city+'</div><div class="panel-sub">Median asking price/m² by sub-market</div></div><div class="panel-body">'+_bars(ds,S)+'</div></div>'):'';
   var ab=cc.filter(function(r){return type==='all'||r.tt===type;}).sort(function(a,b){return b.med-a.med;}).map(function(r){return '<tr><td>'+_cap(r.ac)+'</td><td>'+(r.tt==='sale'?'Sale':'Rent')+'</td><td class="mono">'+S+Math.round(r.med).toLocaleString()+'</td><td class="mono">'+r.count+'</td></tr>';}).join('');
   var at=ab?('<div class="panel"><div class="panel-hd"><div class="panel-title">By Asset Class — '+city+'</div></div><table class="dt"><thead><tr><th>Asset</th><th>Type</th><th>Median/m²</th><th>Listings</th></tr></thead><tbody>'+ab+'</tbody></table></div>'):'';
-  el.innerHTML=kpis+dist+at;
+  el.innerHTML=kpis+'<div id="city-dist-slot"><div style="padding:14px;color:var(--ink5);font-size:12px;">Loading districts…</div></div>'+at;
+  sb.rpc('districts_filtered',{p_country:country,p_asset:asset,p_type:type}).then(function(dr){
+    var slot=document.getElementById('city-dist-slot'); if(!slot) return;
+    var ds=((dr&&dr.data)||[]).filter(function(r){return r.city===city;}).sort(function(a,b){return b.median_ppsqm-a.median_ppsqm;}).slice(0,15)
+      .map(function(r){return {submarket:r.submarket,med:r.median_ppsqm,count:r.listings};});
+    slot.innerHTML=ds.length?('<div class="panel"><div class="panel-hd"><div class="panel-title">District Comparison — '+city+'</div><div class="panel-sub">Median asking price/m² by sub-market · '+lblA+'</div></div><div class="panel-body">'+_bars(ds,S)+'</div></div>'):'';
+  }).catch(function(){ var s=document.getElementById('city-dist-slot'); if(s) s.innerHTML=''; });
 }
 function renderDistrictsPage(country){
   var el=document.getElementById('pg-districts'); if(!el) return;
@@ -2956,7 +2972,8 @@ function nav(id){
   const t=titles[id]||id;
   const parts=t.split('/');
   document.getElementById('tb-bc').innerHTML=parts[0]+'<span>/'+parts.slice(1).join('/')+'</span>';
-  if(id==='map-view') setTimeout(function(){ if(_liveMap) _liveMap.invalidateSize(); },150);
+  if(id==='map-view') renderMap(_B2C,_B2K);
+  if(id==='cities' && _cityActive) renderCityProfile(_B2C,_cityActive);
   if(id==='macro-indicators') loadMacroData(ACTIVE_COUNTRY);
 }
 
@@ -3203,7 +3220,9 @@ function applyFilters(){
         +'%</td><td><span class="conf conf-e"><span class="conf-dot"></span>Calc.</span></td></tr>';
     }).join(''):'<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--ink5);">No paired sale+rent data for this asset in the selected market.</td></tr>';
   }
-  if(typeof renderCityProfile==='function'&&_cityActive) renderCityProfile(_B2C,_cityActive);
+  var _ap=(document.querySelector('.pg.active')||{}).id||'';
+  if(_ap==='pg-cities'){ if(_cityActive) renderCityProfile(_B2C,_cityActive); }
+  else if(_ap==='pg-map-view'){ renderMap(_B2C,_B2K); }
 }
 
 // ── REPORTS ──
