@@ -2843,7 +2843,7 @@ function renderMkMap(country,df,f,cur){
   var el=document.getElementById('mk-map'); if(!el||!window.L) return;
   if(_mkMap){try{_mkMap.remove();}catch(e){}_mkMap=null;}
   var view=COUNTRY_VIEW[country]||[[0,20],5];
-  _mkMap=L.map('mk-map',{zoomControl:true,attributionControl:false,zoomSnap:.5});
+  _mkMap=L.map('mk-map',{zoomControl:true,attributionControl:false,zoomSnap:.5,scrollWheelZoom:false});
   _mkMap.setView(view[0],view[1],{animate:false});
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,className:'sat-dim'}).addTo(_mkMap);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:18,opacity:.85}).addTo(_mkMap);
@@ -2886,12 +2886,16 @@ async function renderResearchPanel(country){
   var groups={};
   rows.forEach(function(x){ var k=(x.city||'(country)')+'|'+(x.asset_class||'all')+'|'+x.metric;
     groups[k]=groups[k]||[]; groups[k].push(x); });
+  var UNIT_LBL={sqm:'m²',sqft:'sq ft',mn_sqft:'M sq ft',rooms:'rooms',keys:'keys',pct:'%',
+    usd_psm_month:'US$/m²/mo',usd_psf_month:'US$/sq ft/mo',kes_psf_month:'KES/sq ft/mo',mad_psm_month:'MAD/m²/mo'};
   function fmtVal(x){
-    if(x.metric==='total_stock_sqm'||x.metric==='pipeline_sqm') return (Number(x.value)/1e6>=1? (Number(x.value)/1e6).toFixed(2)+'M':Math.round(Number(x.value)/1e3)+'k')+' m²';
-    if(/pct/.test(x.metric)) return Number(x.value).toFixed(1)+'%';
-    return Number(x.value).toLocaleString('en-US')+(x.unit?' '+x.unit:'');
+    var v=Number(x.value), u=(x.unit||'').split(' ')[0];
+    if(u==='pct') return v.toFixed(1)+'%';
+    if(u==='sqm'||u==='sqft') return (v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e3?Math.round(v/1e3)+'k':v)+' '+(UNIT_LBL[u]||u);
+    if(u==='mn_sqft') return v+' '+UNIT_LBL[u]+(/oversupply/.test(x.unit||'')?' (oversupply)':'');
+    return v.toLocaleString('en-US')+' '+(UNIT_LBL[u]||x.unit||'');
   }
-  var METRIC_LBL={total_stock_sqm:'Total stock',vacancy_pct:'Vacancy',occupancy_pct:'Occupancy',prime_rent:'Prime rent',prime_yield_pct:'Prime yield',pipeline_sqm:'Pipeline supply'};
+  var METRIC_LBL={total_stock:'Total stock',vacancy_pct:'Vacancy',occupancy_pct:'Occupancy',prime_rent:'Prime rent',prime_yield_pct:'Prime yield',completions:'Completions',pipeline_supply:'Pipeline supply'};
   var body=Object.keys(groups).sort().map(function(k){
     var g=groups[k].sort(function(a,b){return (b.as_of||'').localeCompare(a.as_of||'');});
     var parts=k.split('|');
@@ -2902,12 +2906,15 @@ async function renderResearchPanel(country){
       +'<td style="text-align:left;white-space:normal;">'+vals+'</td></tr>'; }).join('');
   // derived: visible float where stock + listed area exist for same city+asset
   var derived='';
-  Object.keys(groups).forEach(function(k){ var parts=k.split('|'); if(parts[2]!=='total_stock_sqm') return;
+  Object.keys(groups).forEach(function(k){ var parts=k.split('|'); if(parts[2]!=='total_stock') return;
     var g=groups[k][0]; var cityK=parts[0], acK=parts[1];
-    var la=area.filter(function(x){ return (cityK==='(country)'||x.city===cityK) && (acK==='all'||x.ac.indexOf(acK.slice(0,5))>-1); })
+    var u=(g.unit||'').split(' ')[0];
+    var stockM2=u==='sqm'?Number(g.value):u==='sqft'?Number(g.value)*0.092903:u==='mn_sqft'?Number(g.value)*1e6*0.092903:null;
+    if(stockM2==null) return;
+    var la=area.filter(function(x){ return (cityK==='(country)'||x.city===cityK.split(' - ')[0]) && (acK==='all'||x.ac.indexOf(acK.slice(0,5))>-1); })
       .reduce(function(t,x){return t+Number(x.sqm||0);},0);
-    if(la>0&&Number(g.value)>0){
-      var pct=(la/Number(g.value)*100);
+    if(la>0&&stockM2>0){
+      var pct=(la/stockM2*100);
       derived+='<tr><td style="text-align:left;padding-left:8px;" class="mkt-name">Visible float</td>'
         +'<td style="text-align:left;">'+(cityK==='(country)'?lbl:cityK)+'</td><td style="text-align:left;">'+acK+'</td>'
         +'<td style="text-align:left;"><span class="rs-val">'+pct.toFixed(1)+'%</span> <span style="font-size:10px;color:var(--ink4);">= '+Math.round(la).toLocaleString('en-US')+' m² listed ÷ '+fmtVal(g)+' stock ('+_newsEsc(g.publisher)+' '+_newsEsc(g.as_of)+')</span></td></tr>';
