@@ -438,9 +438,7 @@ button{cursor:pointer;font-family:var(--sans);}
 
   <div class="sb-section">
     <div class="sb-section-lbl">Overview</div>
-    <div class="ni active" onclick="nav('market-terminal')"><span class="ni-icon">⬛</span>Market Terminal</div>
-    <div class="ni" onclick="nav('key-indicators')"><span class="ni-icon">◈</span>Key Indicators</div>
-    <div class="ni" onclick="nav('market-signals')"><span class="ni-icon">◉</span>Market Signals</div>
+    <div class="ni active" onclick="nav('market-terminal')"><span class="ni-icon">⬛</span>Overview</div>
   </div>
 
   <div class="sb-section">
@@ -457,14 +455,6 @@ button{cursor:pointer;font-family:var(--sans);}
   </div>
 
   <div class="sb-section">
-    <div class="sb-section-lbl">Analytics</div>
-    <div class="ni" onclick="nav('price-trends')"><span class="ni-icon">∿</span>Price Trends</div>
-    <div class="ni" onclick="nav('liquidity-index')"><span class="ni-icon">◎</span>Liquidity Index</div>
-    <div class="ni" onclick="nav('investment-radar')"><span class="ni-icon">◉</span>Investment Radar</div>
-    <div class="ni" onclick="nav('yield-estimates')"><span class="ni-icon">%</span>Yield Estimates</div>
-  </div>
-
-  <div class="sb-section">
     <div class="sb-section-lbl">Map</div>
     <div class="ni" onclick="nav('map-view')"><span class="ni-icon">⊕</span>Market Map</div>
     <div class="ni" onclick="nav('heatmaps')"><span class="ni-icon">▦</span>Heatmaps</div>
@@ -473,7 +463,6 @@ button{cursor:pointer;font-family:var(--sans);}
   <div class="sb-section">
     <div class="sb-section-lbl">Research</div>
     <div class="ni" onclick="nav('market-reports')"><span class="ni-icon">▤</span>Market Reports</div>
-    <div class="ni" onclick="nav('insights')"><span class="ni-icon">◈</span>Insights</div>
   </div>
 
   <div class="sb-section">
@@ -2063,35 +2052,69 @@ async function renderOverview(country){
     el.innerHTML='<div class="eyebrow">Overview</div><div class="pg-title">Market Command Center</div><div class="pg-sub">'+lbl+' — no live data yet.</div>'+_emptyState('Coverage activates once '+lbl+' has listing data.'); return; }
   var sig=null; try{ var sr=await sb.rpc('market_signals',{p_country:country}); sig=sr&&sr.data?sr.data:null; }catch(e){}
   var f=_curFilters();
-  var deltaSale = (sig&&sig.price_momentum_pct!=null) ? ((sig.price_momentum_pct>0?'▲ +':'▼ ')+Math.abs(sig.price_momentum_pct)+'% QoQ') : 'baseline · builds weekly';
-  var u='<span style="font-size:12px;color:var(--ink4)">';
-  var kpiRow='<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px;">'
-    +_kcard('Median Sale', K.median_sale?S+Math.round(K.median_sale).toLocaleString()+u+'/m²</span>':'—', deltaSale)
-    +_kcard('Prime Office Rent', K.prime_office_rent?S+Math.round(K.prime_office_rent).toLocaleString()+u+'/m²/mo</span>':'—', (K.prime_office_rent_count||0)+' office listings')
-    +_kcard('Active Listings', sig?Number(sig.total_listings).toLocaleString():'—', 'live inventory')
-    +_kcard('Gross Yield', (sig&&sig.gross_yield_pct)?sig.gross_yield_pct+'%':'—', 'rent ÷ price')
-    +_kcard('Liquidity', sig?sig.liquidity_score+u+'/100</span>':'—', 'market depth')
-    +_kcard('IOS Score', sig?sig.ios_score+u+'/100</span>':'—', 'opportunity index')
+  function dlt(v){ return v==null?'baseline':((v>0?'▲ +':'▼ ')+Math.abs(v)+'%'); }
+  function cell(label,val,sub){
+    return '<div style="background:var(--surface);padding:12px 14px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink4);margin-bottom:6px;">'+label+'</div>'
+      +'<div style="font-family:var(--serif);font-size:20px;color:var(--ink);line-height:1;">'+val+'</div>'
+      +'<div style="font-size:10px;color:var(--ink5);margin-top:6px;">'+(sub||'')+'</div></div>';
+  }
+  var u='<span style="font-size:11px;color:var(--ink4)">';
+  var kpiStrip='<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:14px;">'
+    +cell('Median Sale', K.median_sale?S+Math.round(K.median_sale).toLocaleString()+u+'/m²</span>':'—', sig&&sig.price_momentum_pct!=null?(dlt(sig.price_momentum_pct)+' QoQ'):'builds weekly')
+    +cell('Prime Rent', K.prime_office_rent?S+Math.round(K.prime_office_rent).toLocaleString()+u+'/mo</span>':'—','office /m²')
+    +cell('Active Listings', sig?Number(sig.total_listings).toLocaleString():'—','live inventory')
+    +cell('Gross Yield', (sig&&sig.gross_yield_pct)?sig.gross_yield_pct+'%':'—','rent ÷ price')
+    +cell('IOS Score', sig?sig.ios_score+u+'/100</span>':'—','opportunity')
+    +cell('Liquidity', sig?sig.liquidity_score+u+'/100</span>':'—','market depth')
+    +cell('Momentum', sig&&sig.price_momentum_pct!=null?dlt(sig.price_momentum_pct):'—','vs last wk')
+    +cell('Supply Δ', sig&&sig.supply_change_pct!=null?dlt(sig.supply_change_pct):'—','listings WoW')
     +'</div>';
-  el.innerHTML='<div style="margin-bottom:16px;"><div class="pg-title" style="margin-bottom:2px;">Market Command Center</div>'
-    +'<div style="font-size:12px;color:var(--ink4);">'+lbl+' &middot; '+(f.asset==='all'?'All assets':_cap(f.asset))+' &middot; <span style="color:var(--green);">● Live</span></div></div>'
-    +kpiRow
-    +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">'
-      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Market Map</div><button class="pa-btn" onclick="nav(\'map-view\')">Full map →</button></div><div id="overview-map" style="height:420px;"></div></div>'
-      +'<div><div class="panel" style="margin-bottom:16px;"><div class="panel-hd"><div class="panel-title">Market Insight</div></div><div class="panel-body" id="ov-insight" style="font-size:12.5px;line-height:1.6;color:var(--ink2);">Loading…</div></div>'
-      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Recent Reports</div><button class="pa-btn" onclick="nav(\'market-reports\')">All →</button></div><div id="ov-reports"></div></div></div>'
+  el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:16px;flex-wrap:wrap;">'
+      +'<div><div class="pg-title" style="margin-bottom:1px;">Market Command Center</div><div style="font-size:12px;color:var(--ink4);">'+lbl+' &middot; '+(f.asset==='all'?'All assets':_cap(f.asset))+' &middot; <span style="color:var(--green);">● Live</span></div></div>'
+      +'<div id="ov-macro" style="display:flex;gap:1px;background:var(--border);border:1px solid var(--border);"></div>'
     +'</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;">'
-      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Listings by Asset Class</div></div><div class="panel-body"><div style="height:230px;"><canvas id="ov-assetmix"></canvas></div></div></div>'
-      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Median Price by City</div></div><div class="panel-body"><div style="height:230px;"><canvas id="ov-pricecity"></canvas></div></div></div>'
-      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Top Districts</div></div><div id="ov-topdist"></div></div>'
+    +kpiStrip
+    +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px;">'
+      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Market Map</div><button class="pa-btn" onclick="nav(\'map-view\')">Full map →</button></div><div id="overview-map" style="height:360px;"></div></div>'
+      +'<div><div class="panel" style="margin-bottom:14px;"><div class="panel-hd"><div class="panel-title">Market Insight</div></div><div class="panel-body" id="ov-insight" style="font-size:12px;line-height:1.55;color:var(--ink2);max-height:150px;overflow:auto;">Loading…</div></div>'
+      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Reports</div><button class="pa-btn" onclick="nav(\'market-reports\')">All →</button></div><div id="ov-reports"></div></div></div>'
     +'</div>'
-    +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;">'
-      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Market &amp; Development News</div></div><div id="overview-news-list" style="border-top:1px solid var(--border);"><div style="padding:18px;color:var(--ink5);font-size:12px;">Loading…</div></div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:14px;">'
+      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Asset Mix</div></div><div class="panel-body"><div style="height:200px;"><canvas id="ov-assetmix"></canvas></div></div></div>'
+      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Price by City</div></div><div class="panel-body"><div style="height:200px;"><canvas id="ov-pricecity"></canvas></div></div></div>'
+      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Yield by City</div></div><div class="panel-body"><div style="height:200px;"><canvas id="ov-yieldcity"></canvas></div></div></div>'
+      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Top Districts</div></div><div id="ov-topdist" style="max-height:220px;overflow:auto;"></div></div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px;">'
+      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Key Indicators — City × Asset</div></div><div id="ov-keyind" style="max-height:300px;overflow:auto;"></div></div>'
       +'<div class="panel"><div class="panel-hd"><div class="panel-title">Live Markets</div></div><div id="ov-topmarkets"></div></div>'
-    +'</div>';
-  renderOvMap(country,K,f); renderOvAssetMix(K); renderOvPriceByCity(K); renderOvTopDistricts(country,f,S);
-  renderOvInsight(country); renderOvReports(country); renderOvTopMarkets(); loadMarketNews(country);
+    +'</div>'
+    +'<div class="panel"><div class="panel-hd"><div class="panel-title">Market &amp; Development News</div></div><div id="overview-news-list" style="border-top:1px solid var(--border);"><div style="padding:16px;color:var(--ink5);font-size:12px;">Loading…</div></div></div>';
+  renderOvMap(country,K,f); renderOvAssetMix(K); renderOvPriceByCity(K); renderOvYieldByCity(K); renderOvTopDistricts(country,f,S);
+  renderOvKeyInd(f,S); renderOvInsight(country); renderOvReports(country); renderOvTopMarkets(); renderOvMacro(country); loadMarketNews(country);
+}
+function renderOvYieldByCity(K){
+  _ovDestroy('ov-yieldcity'); var cv=document.getElementById('ov-yieldcity'); if(!cv||!window.Chart) return;
+  var rows=(K.cities||[]).map(function(r){ var y=(r.sale_median&&r.rent_median)?Math.round(r.rent_median*12/r.sale_median*1000)/10:null; return {city:r.city,y:y}; }).filter(function(r){return r.y;}).sort(function(a,b){return b.y-a.y;}).slice(0,8);
+  if(!rows.length) return;
+  _ovCharts['ov-yieldcity']=new Chart(cv,{type:'bar',data:{labels:rows.map(function(r){return r.city;}),datasets:[{data:rows.map(function(r){return r.y;}),backgroundColor:'#3f7a52',borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8c8c8c'}},y:{grid:{color:'#ebebea'},ticks:{font:{family:'DM Mono',size:10},color:'#8c8c8c',callback:function(v){return v+'%';}}}}}});
+}
+function renderOvKeyInd(f,S){
+  var el=document.getElementById('ov-keyind'); if(!el) return;
+  var ind=(window._kpiInd||[]).filter(function(r){return (f.asset==='all'||r.ac===f.asset)&&(f.type==='all'||r.tt===f.type);}).slice(0,40);
+  el.innerHTML= ind.length?('<table class="dt" style="width:100%"><thead><tr><th>City</th><th>Asset</th><th>Type</th><th>Median/m²</th><th>Listings</th></tr></thead><tbody>'
+    +ind.map(function(r){return '<tr><td class="dt-city">'+r.city+'</td><td>'+_cap(r.ac)+'</td><td>'+(r.tt==='sale'?'Sale':'Rent')+'</td><td class="mono">'+S+r.med.toLocaleString()+'</td><td class="mono">'+r.count+'</td></tr>';}).join('')+'</tbody></table>'):'<div style="padding:14px;color:var(--ink5);font-size:12px;">No indicators for this filter.</div>';
+}
+function renderOvMacro(country){
+  var el=document.getElementById('ov-macro'); if(!el) return;
+  var wb=COUNTRIES[country]?COUNTRIES[country].wbCode:null; if(!wb){ el.innerHTML=''; return; }
+  function box(l,v){ return '<div style="background:var(--surface);padding:8px 12px;min-width:76px;"><div style="font-size:8.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4);">'+l+'</div><div style="font-family:var(--mono);font-size:13px;color:var(--ink);margin-top:3px;">'+v+'</div></div>'; }
+  var inds=[['SP.POP.TOTL','Population','pop'],['NY.GDP.MKTP.KD.ZG','GDP Growth','pct'],['NY.GDP.PCAP.CD','GDP/Capita','usd'],['FP.CPI.TOTL.ZG','Inflation','pct']];
+  el.innerHTML=inds.map(function(ind){return box(ind[1],'…');}).join('');
+  Promise.all(inds.map(function(ind){ return fetch('https://api.worldbank.org/v2/country/'+wb+'/indicator/'+ind[0]+'?format=json&mrv=1&per_page=1').then(function(r){return r.json();}).then(function(j){ var d=j&&j[1]&&j[1][0]; return d?d.value:null; }).catch(function(){return null;}); })).then(function(vals){
+    function fmt(v,t){ if(v==null)return '—'; if(t==='pop')return (v/1e6).toFixed(1)+'M'; if(t==='pct')return (v>=0?'+':'')+v.toFixed(1)+'%'; if(t==='usd')return '$'+Math.round(v).toLocaleString(); return v; }
+    el.innerHTML=inds.map(function(ind,i){return box(ind[1],fmt(vals[i],ind[2]));}).join('');
+  }).catch(function(){ el.innerHTML=''; });
 }
 function renderOvMap(country,K,f){
   var el=document.getElementById('overview-map'); if(!el||!window.L) return;
