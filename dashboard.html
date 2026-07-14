@@ -2843,7 +2843,8 @@ function renderMkMap(country,df,f,cur){
   var el=document.getElementById('mk-map'); if(!el||!window.L) return;
   if(_mkMap){try{_mkMap.remove();}catch(e){}_mkMap=null;}
   var view=COUNTRY_VIEW[country]||[[0,20],5];
-  _mkMap=L.map('mk-map',{zoomControl:true,attributionControl:false}).setView(view[0],view[1]);
+  _mkMap=L.map('mk-map',{zoomControl:true,attributionControl:false,zoomSnap:.5});
+  _mkMap.setView(view[0],view[1],{animate:false});
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,className:'sat-dim'}).addTo(_mkMap);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:18,opacity:.85}).addTo(_mkMap);
   var tt=f.type==='rent'?'rent':'sale', K=_B2K||{};
@@ -2866,7 +2867,7 @@ function renderMkMap(country,df,f,cur){
     if(z>=DZ&&distLayer.getLayers().length>0){ if(_mkMap.hasLayer(cityLayer))_mkMap.removeLayer(cityLayer); if(!_mkMap.hasLayer(distLayer))_mkMap.addLayer(distLayer); }
     else{ if(_mkMap.hasLayer(distLayer))_mkMap.removeLayer(distLayer); if(!_mkMap.hasLayer(cityLayer))_mkMap.addLayer(cityLayer); } }
   _mkMap.on('zoomend',sync); sync();
-  setTimeout(function(){ if(_mkMap)_mkMap.invalidateSize(); },200);
+  setTimeout(function(){ if(_mkMap){ _mkMap.invalidateSize(); _mkMap.setView(view[0],view[1],{animate:false}); } },220);
 }
 async function renderResearchPanel(country){
   var slot=document.getElementById('mk-research'); if(!slot||!sb) return;
@@ -3080,7 +3081,8 @@ async function renderMap(country,K){
   if(_liveMap){try{_liveMap.remove();}catch(e){}_liveMap=null;}
   if(!window.L) return;
   var view=COUNTRY_VIEW[country]||[[0,20],4];
-  _liveMap=L.map('map-live',{zoomControl:true,attributionControl:false}).setView(view[0],view[1]);
+  _liveMap=L.map('map-live',{zoomControl:true,attributionControl:false,zoomSnap:.5});
+  _liveMap.setView(view[0],view[1],{animate:false});
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(_liveMap);
   var pop=function(t,med,n,unit){ return '<div style="font-family:Inter,sans-serif;min-width:150px;"><b style="font-size:12.5px;">'+t+'</b>'
     +'<div style="font-size:11.5px;margin-top:3px;">Median '+tt+': <b>'+(med!=null?money(med,cur)+'/m²'+(unit||''):'—')+'</b></div>'
@@ -3101,7 +3103,7 @@ async function renderMap(country,K){
     if(z>=DZOOM&&districtLayer.getLayers().length>0){ if(_liveMap.hasLayer(cityLayer))_liveMap.removeLayer(cityLayer); if(!_liveMap.hasLayer(districtLayer))_liveMap.addLayer(districtLayer); }
     else{ if(_liveMap.hasLayer(districtLayer))_liveMap.removeLayer(districtLayer); if(!_liveMap.hasLayer(cityLayer))_liveMap.addLayer(cityLayer); } }
   _liveMap.on('zoomend',syncLayers); syncLayers();
-  setTimeout(function(){ if(_liveMap)_liveMap.invalidateSize(); },200);
+  setTimeout(function(){ if(_liveMap){ _liveMap.invalidateSize(); _liveMap.setView(view[0],view[1],{animate:false}); } },220);
 }
 function _bars(rows,cur){
   if(!rows||!rows.length) return '<div style="padding:14px;color:var(--ink5);font-size:12px;">No district data under current filters.</div>';
