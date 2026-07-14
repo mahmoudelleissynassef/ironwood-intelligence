@@ -628,7 +628,7 @@ button{cursor:pointer;font-family:var(--sans);}
       <div class="pg-sub">Full indicator set by city and asset class. All metrics carry source classification and confidence scoring.</div>
       <div class="panel">
         <div class="panel-hd">
-          <div><div class="panel-title">Asking Price Indicators — All Cities</div><div class="panel-sub">Listings-derived · Median asking prices · March 2026 · <span class="ds-tag ds-listings">Measured</span></div></div>
+          <div><div class="panel-title">Asking Price Indicators</div><div class="panel-sub">Listings-derived median asking prices for the selected market</div></div>
           <button class="pa-btn gold" onclick="exportTable('indicators-table','xlsx')">↓ Excel</button>
         </div>
         <table class="dt" id="indicators-table">
@@ -2187,6 +2187,8 @@ function blankHardcoded(){
    'liq-full-table','radar-table','city-trend-table','city-pipeline-table','city-txn-table'].forEach(function(id){
     var t=document.getElementById(id); if(t){ var tb=t.querySelector('tbody'); if(tb) tb.innerHTML=''; }});
   var ms=document.getElementById('macro-src-tbody'); if(ms) ms.innerHTML='';
+  var sbl=document.getElementById('sb-live-indicator'); if(sbl) sbl.innerHTML='<div class="live-dot"></div>Loading…';
+  var mts=document.getElementById('mt-subtitle'); if(mts) mts.textContent='Loading market data…';
   ['kpi-median-price','kpi-prime-rent','kpi-active-listings','kpi-yield','kpi-liquidity','kpi-pipeline',
    'kpi-price-growth','kpi-median-sub','kpi-listings-chg','kpi-prime-rent-chg','kpi-liquidity-chg',
    'c-med-price','c-prime-rent','c-listings','c-yield','c-liq','c-pipeline'].forEach(function(id){
@@ -2933,8 +2935,13 @@ function destroyChart(id){
   if(existing) existing.destroy();
 }
 function buildCharts(){
-  if(_chartsBuilt) return;
+  // NEUTRALISED: every Chart.js canvas (trends/growth/city/liquidity) lived on
+  // pages that are now gated or replaced by live renderers, and the old chart
+  // code synthesised fake quarters ('Q1 25'…) from interpolated growth. Real
+  // time-series charts will be rebuilt from market_snapshots once history exists.
   _chartsBuilt=true;
+  return;
+  /* eslint-disable no-unreachable */
   const c=COUNTRIES[ACTIVE_COUNTRY];
   const cityData=c?c.cityData:{};
   const cityNames=Object.keys(cityData);
