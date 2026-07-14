@@ -1909,6 +1909,7 @@ function switchCountry(name){
   loadLiveKPIs(name);
   loadMarketNews(name);
   loadMarketSignals(name);
+  loadHonestLayer(name);
 
   // Reload macro page if open
   var activePg=document.querySelector('.pg.active');
@@ -1962,7 +1963,7 @@ async function loadMarketNews(country){
     renderNews(pipeEl, ranked, true);
     renderNews(ovEl, rows.slice(0,6), true);
     var sub=document.getElementById('news-pipe-sub');
-    if(sub) sub.innerHTML=(COUNTRIES[country]?COUNTRIES[country].label:country)+' · '+rows.length+' items · Auto-fetched Mon &amp; Thu · <span class="ds-tag ds-macro">News feed</span>';
+    if(sub) sub.textContent=(COUNTRIES[country]?COUNTRIES[country].label:country)+' · '+rows.length+' items';
   }catch(e){
     if(pipeEl) pipeEl.innerHTML='<div style="padding:18px;color:var(--ink5);font-size:12px;">News feed unavailable right now.</div>';
   }
@@ -1990,6 +1991,141 @@ async function loadMarketSignals(country){
     var sub=document.getElementById('signals-sub');
     if(sub) sub.innerHTML=(COUNTRIES[country]?COUNTRIES[country].label:country)+' · as of '+(s.as_of||'—')+' · '+(s.snapshots||0)+' weekly snapshot(s) · <span class="ds-tag ds-model">Modeled</span>';
   }catch(e){}
+}
+
+// ══════════════════════════════════════════════════════════════
+// HONESTY LAYER — no guessed data anywhere. Runs on every market switch.
+//  • Buildable pages (Countries, Liquidity, Investment Radar) render from
+//    live data (market_signals / market_kpis RPCs + COUNTRIES config).
+//  • Pages with no data source yet show a clean, honest state instead of the
+//    old hardcoded demo rows.
+//  • Strips the Signal Registry + Pipeline Register demo tables and the
+//    "Measured / Modeled / DEMO DATA / Auto-fetched" micro-labels.
+// ══════════════════════════════════════════════════════════════
+var COMINGSOON={
+  'pg-transactions':['Transactions','Recorded-transaction data needs land-registry / deal feeds we don’t yet license. Asking-price evidence is available under Data › Listings.'],
+  'pg-occupiers':['Corporate Occupiers','Corporate-occupier data is not yet sourced for this market.'],
+  'pg-infrastructure':['Infrastructure Projects','Infrastructure projects populate from the AI news pipeline (Mon & Thu) and appear here as they are detected for this market.'],
+  'pg-price-trends':['Price Trends','Trend lines need several weekly snapshots. History is captured automatically each Monday — trends appear once enough accrues.'],
+  'pg-map-view':['Market Map','The market map is being rebuilt on live per-district data from the listings database.'],
+  'pg-heatmaps':['Heatmaps','Heatmaps are being rebuilt on live per-district data from the listings database.'],
+  'pg-market-reports':['Market Reports','AI-written market reports generate monthly from Ironwood’s live data. Coming soon.'],
+  'pg-insights':['Insights','AI insights generate from live data. Coming soon.'],
+  'pg-data-explorer':['Data Explorer','The interactive data explorer is being built.'],
+  'pg-exports':['Exports','Bulk dataset exports are being built.'],
+  'pg-api-access':['API Access','Programmatic API access is coming soon.']
+};
+function _emptyState(msg){
+  return '<div class="panel"><div class="panel-body" style="padding:46px 32px;text-align:center;">'
+    +'<div style="font-size:13px;color:var(--ink4);max-width:540px;margin:0 auto;line-height:1.65;">'+msg+'</div>'
+    +'<div style="margin-top:14px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink5);">No estimated or placeholder figures shown</div>'
+    +'</div></div>';
+}
+function _stat(label,val,sub){
+  return '<div style="background:var(--surface);padding:16px 18px;"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:6px;">'+label+'</div>'
+    +'<div style="font-family:var(--serif);font-size:24px;color:var(--ink);">'+val+'</div>'
+    +'<div style="font-size:10.5px;color:var(--ink5);">'+sub+'</div></div>';
+}
+function renderComingSoonPages(){
+  for(var id in COMINGSOON){ var el=document.getElementById(id); if(!el) continue; var t=COMINGSOON[id];
+    el.innerHTML='<div class="eyebrow">Ironwood</div><div class="pg-title">'+t[0]+'</div><div class="pg-sub">'+t[1]+'</div>'+_emptyState(t[1]); }
+}
+function _killPanelsContaining(pageId,texts){
+  var pg=document.getElementById(pageId); if(!pg) return;
+  pg.querySelectorAll('.panel').forEach(function(p){ var tx=p.textContent||'';
+    if(texts.some(function(x){return tx.indexOf(x)>-1;})) p.remove(); });
+}
+function stripMicroLabels(){
+  document.querySelectorAll('.ds-tag').forEach(function(e){e.remove();});
+  document.querySelectorAll('.export-row span, .conf').forEach(function(e){
+    if(/DEMO DATA|Not investment advice|indicative|Asking price indicators|Listings-derived|Estimates only|Size estimates/i.test(e.textContent||'')) e.remove(); });
+}
+async function renderCountries(){
+  var el=document.getElementById('pg-countries'); if(!el||!sb) return;
+  var rows='';
+  for(var k in COUNTRIES){ var c=COUNTRIES[k];
+    if(c.status==='live'){
+      var med='—', cnt='—';
+      try{ var r=await sb.rpc('market_kpis',{p_country:k}); var d=r&&r.data?r.data:null;
+        if(d){ cnt=Number(d.total_count||d.dedup_count||0).toLocaleString();
+          med=d.median_sale?(Math.round(d.median_sale).toLocaleString()+' '+c.currency+'/m²'):'—'; } }catch(e){}
+      rows+='<tr><td class="dt-city">'+c.flag+' '+c.label+'</td><td>'+c.region+'</td><td><span class="sig sig-up">● Live</span></td><td class="mono">'+(c.cities?c.cities.length:'—')+'</td><td class="mono">'+cnt+'</td><td class="mono">'+med+'</td></tr>';
+    } else {
+      rows+='<tr><td class="dt-city">'+c.flag+' '+c.label+'</td><td>'+c.region+'</td><td><span class="sig sig-neutral">○ Coming soon</span></td><td class="mono dt-muted">—</td><td class="mono dt-muted">—</td><td class="mono dt-muted">—</td></tr>';
+    }
+  }
+  el.innerHTML='<div class="eyebrow">Markets</div><div class="pg-title">Countries</div>'
+    +'<div class="pg-sub">Live markets have active data collection from listing portals. Others activate as reliable sources come online.</div>'
+    +'<div class="panel"><div class="panel-hd"><div class="panel-title">Coverage Registry</div></div>'
+    +'<table class="dt"><thead><tr><th>Country</th><th>Region</th><th>Status</th><th>Cities</th><th>Listings</th><th>Median Sale</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+async function renderSignalsPages(country){
+  if(!sb) return;
+  var lbl=COUNTRIES[country]?COUNTRIES[country].label:country;
+  var s=null; try{ var r=await sb.rpc('market_signals',{p_country:country}); s=r&&r.data?r.data:null; }catch(e){}
+  var liq=document.getElementById('pg-liquidity-index');
+  if(liq){
+    var body = (!s||s.liquidity_score==null) ? _emptyState('No liquidity signal for '+lbl+' yet — needs listing data.') :
+      '<div class="panel"><div class="panel-hd"><div><div class="panel-title">Liquidity — '+lbl+'</div>'
+      +'<div class="panel-sub">Composite of market depth (listing volume) and supply dynamics</div></div></div>'
+      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-top:1px solid var(--border);">'
+      +_stat('Liquidity Score', s.liquidity_score, '0–100 depth proxy')
+      +_stat('Active Listings', s.listing_count!=null?Number(s.listing_count).toLocaleString():'—', 'with price/m²')
+      +_stat('Supply Change', s.supply_change_pct!=null?((s.supply_change_pct>0?'+':'')+s.supply_change_pct+'%'):'baseline', s.momentum_ready?'week over week':'from next Monday')
+      +'</div></div>';
+    liq.innerHTML='<div class="eyebrow">Analytics</div><div class="pg-title">Liquidity Index</div>'
+      +'<div class="pg-sub">Ironwood liquidity scoring from live listing depth and supply dynamics. Modelled indicator.</div>'+body;
+  }
+  var inv=document.getElementById('pg-investment-radar');
+  if(inv){
+    var body2 = (!s||s.ios_score==null) ? _emptyState('No investment score for '+lbl+' yet — needs listing data.') :
+      '<div class="panel"><div class="panel-hd"><div><div class="panel-title">Investment Opportunity — '+lbl+'</div>'
+      +'<div class="panel-sub">Modelled composite — not investment advice</div></div></div>'
+      +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-top:1px solid var(--border);">'
+      +_stat('IOS Score', s.ios_score, '0–100 composite')
+      +_stat('Gross Yield', s.gross_yield_pct!=null?s.gross_yield_pct+'%':'—', 'rent ÷ price')
+      +_stat('Price Momentum', s.price_momentum_pct!=null?((s.price_momentum_pct>0?'+':'')+s.price_momentum_pct+'%'):'baseline', s.momentum_ready?'vs last week':'from next Monday')
+      +_stat('Liquidity', s.liquidity_score!=null?s.liquidity_score:'—', 'depth 0–100')
+      +'</div></div>';
+    inv.innerHTML='<div class="eyebrow">Analytics</div><div class="pg-title">Investment Radar</div>'
+      +'<div class="pg-sub">Composite opportunity scoring from live yield, momentum and liquidity. Modelled — not investment advice.</div>'+body2;
+  }
+}
+// Cities page: hide the (demo-seeded) city profile for markets with no data,
+// and remove the hardcoded city demo panels so no guessed data shows.
+function renderCitiesGate(country){
+  var c=COUNTRIES[country];
+  var prof=document.getElementById('city-profile');
+  var tabs=document.getElementById('city-tabs-bar');
+  var pg=document.getElementById('pg-cities'); if(!pg) return;
+  var gate=document.getElementById('cities-empty-gate');
+  if(!gate&&prof){ gate=document.createElement('div'); gate.id='cities-empty-gate'; prof.parentNode.insertBefore(gate,prof); }
+  var live=c&&c.status==='live';
+  if(live){ if(prof)prof.style.display=''; if(tabs)tabs.style.display=''; if(gate)gate.innerHTML=''; }
+  else { if(prof)prof.style.display='none'; if(tabs)tabs.style.display='none';
+    if(gate)gate.innerHTML=_emptyState('City profiles activate once '+(c?c.label:country)+' has live listing data.'); }
+  // strip the hardcoded demo panels regardless (no guessed data even for live markets)
+  _killPanelsContaining('pg-cities',['Development Pipeline —','Transaction Evidence','Price Trend Data —']);
+}
+// Pending markets: clean "no data" on the main terminal instead of stale/dummy numbers.
+function renderMarketGate(country){
+  var c=COUNTRIES[country]; if(c&&c.status==='live') return;
+  ['kpi-median-price','kpi-active-listings','kpi-yield','kpi-liquidity','kpi-prime-rent','kpi-pipeline','kpi-median-sub'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent='—';});
+  ['kpi-price-growth','kpi-listings-chg','kpi-prime-rent-chg','kpi-liquidity-chg'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent='';});
+  var mtSub=document.getElementById('mt-subtitle'); if(mtSub) mtSub.textContent=(c?c.label:country)+' — no live data yet. Coverage activates once a reliable listings source is online.';
+  var liveEl=document.querySelector('.sb-live'); if(liveEl) liveEl.innerHTML='<div class="live-dot" style="background:var(--ink5);"></div>'+(c?c.label:country)+' · Coming soon';
+}
+function loadHonestLayer(country){
+  try{
+    renderComingSoonPages();
+    _killPanelsContaining('pg-market-signals',['Signal Registry']);
+    _killPanelsContaining('pg-pipeline',['Pipeline Register']);
+    renderCountries();
+    renderSignalsPages(country);
+    renderCitiesGate(country);
+    renderMarketGate(country);
+    stripMicroLabels();
+  }catch(e){ console.warn('honest layer',e); }
 }
 
 // ── LIVE KPI LOADER ──
@@ -2639,6 +2775,7 @@ async function boot(){
     await loadLiveKPIs(ACTIVE_COUNTRY);
     loadMarketNews(ACTIVE_COUNTRY);
     loadMarketSignals(ACTIVE_COUNTRY);
+    loadHonestLayer(ACTIVE_COUNTRY);
     loadProgress(90,'Ready.');
     clearTimeout(safetyTimer);
     setTimeout(hideLoader,300);
