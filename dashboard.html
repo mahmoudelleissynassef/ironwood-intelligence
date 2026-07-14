@@ -48,7 +48,7 @@ button{cursor:pointer;font-family:var(--sans);}
 .app{display:flex;height:100vh;overflow:hidden;}
 
 /* ── SIDEBAR ── */
-.sidebar{width:var(--sw);flex-shrink:0;background:var(--ink);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+.sidebar{width:var(--sw);flex-shrink:0;background:#0c1017;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
 .sb-head{padding:20px 16px 12px;border-bottom:1px solid rgba(255,255,255,.08);}
 .sb-wordmark{font-family:var(--serif);font-size:15px;color:#fff;letter-spacing:.01em;}
 .sb-wordmark em{color:var(--gold);font-style:normal;}
@@ -57,12 +57,12 @@ button{cursor:pointer;font-family:var(--sans);}
 .sb-mkt:hover{background:rgba(255,255,255,.04);}
 .sb-mkt-name{font-size:12px;color:rgba(255,255,255,.7);font-weight:500;}
 .sb-mkt-caret{font-size:10px;color:rgba(255,255,255,.3);}
-.country-opt{display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:12.5px;cursor:pointer;color:#2a2a2a;transition:background .1s;}
+.country-opt{display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:12.5px;cursor:pointer;color:var(--ink2);transition:background .1s;}
 .country-opt:hover{background:var(--surface2);}
-.country-opt.active{background:#f0fdf4;color:#166534;font-weight:500;}
+.country-opt.active{background:var(--gold-pale);color:var(--gold);font-weight:500;}
 .sb-section{padding:16px 10px 2px;flex-shrink:0;}
 .sb-section-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.25);padding:0 8px;margin-bottom:2px;}
-.ni{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:2px;color:rgba(255,255,255,.5);font-size:12px;cursor:pointer;transition:all .12s;white-space:nowrap;}
+.ni{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:2px;color:rgba(255,255,255,.62);font-size:12px;cursor:pointer;transition:all .12s;white-space:nowrap;}
 .ni:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.8);}
 .ni.active{background:rgba(255,255,255,.1);color:#fff;}
 .ni-icon{font-size:11px;width:14px;text-align:center;flex-shrink:0;opacity:.6;}
@@ -80,7 +80,16 @@ button{cursor:pointer;font-family:var(--sans);}
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
 
 /* ── TOPBAR ── */
-.topbar{height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0;gap:16px;}
+.topbar{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;gap:16px;}
+.tb-search{flex:1;max-width:480px;display:flex;align-items:center;gap:9px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:0 12px;height:34px;}
+.tb-search input{flex:1;background:none;border:none;outline:none;color:var(--ink);font-family:var(--sans);font-size:13px;}
+.tb-search input::placeholder{color:var(--ink4);}
+.tb-search-ic{color:var(--ink4);font-size:14px;}
+.tb-actions{display:flex;align-items:center;gap:14px;padding-left:14px;margin-left:2px;border-left:1px solid var(--border);}
+.tb-ic{position:relative;color:var(--ink3);font-size:15px;cursor:pointer;}
+.tb-ic:hover{color:var(--ink);}
+.tb-ic .badge{position:absolute;top:-6px;right:-8px;background:var(--gold);color:#0a0e14;font-size:8px;font-weight:700;padding:1px 4px;border-radius:8px;}
+.tb-av{width:28px;height:28px;border-radius:50%;background:var(--gold);color:#0a0e14;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;cursor:pointer;}
 .tb-breadcrumb{font-size:12px;color:var(--ink4);font-weight:400;}
 .tb-breadcrumb span{color:var(--ink);font-weight:500;}
 .tb-right{display:flex;align-items:center;gap:12px;}
@@ -95,7 +104,7 @@ button{cursor:pointer;font-family:var(--sans);}
 .conf-e .conf-dot{background:var(--ink4);}
 .tb-filter{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--ink4);}
 .tb-filter select{border:1px solid var(--border);background:var(--surface);padding:3px 6px;font-size:11.5px;font-family:var(--sans);border-radius:2px;color:var(--ink);}
-.tb-export{padding:5px 12px;background:var(--ink);color:#fff;border:none;font-size:11.5px;font-weight:500;border-radius:2px;}
+.tb-export{padding:5px 12px;background:var(--gold);color:#0a0e14;border:none;font-size:11.5px;font-weight:600;border-radius:2px;}
 
 /* ── DATA SOURCE TAGS ── */
 .ds-tag{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:1px;border:1px solid;}
@@ -491,8 +500,9 @@ button{cursor:pointer;font-family:var(--sans);}
     <button class="mobile-nav-btn" onclick="toggleSidebar()" aria-label="Menu">
       <span></span><span></span><span></span>
     </button>
-    <div class="tb-left">
-      <div class="tb-breadcrumb" id="tb-bc">Overview <span>/ Market Terminal</span></div>
+    <div class="tb-search">
+      <span class="tb-search-ic">⌕</span>
+      <input type="text" placeholder="Search market, city, district…" aria-label="Search"/>
     </div>
     <div class="tb-right">
       <div class="tb-filter">
@@ -508,12 +518,16 @@ button{cursor:pointer;font-family:var(--sans);}
       </div>
       <div class="tb-filter">
         <span>Type:</span>
-        <div id="type-toggle" style="display:inline-flex;border:1px solid var(--border2);">
-          <button data-t="sale" onclick="setType('sale')" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;font-family:var(--sans);background:var(--ink);color:#fff;">Sale</button>
+        <div id="type-toggle" style="display:inline-flex;border:1px solid var(--border2);border-radius:3px;overflow:hidden;">
+          <button data-t="sale" onclick="setType('sale')" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;font-family:var(--sans);background:var(--gold);color:#0a0e14;font-weight:600;">Sale</button>
           <button data-t="rent" onclick="setType('rent')" style="padding:5px 14px;font-size:12px;border:none;cursor:pointer;font-family:var(--sans);background:var(--surface);color:var(--ink3);">Rent</button>
         </div>
       </div>
-      <button class="tb-export" onclick="nav('exports')">↓ Export</button>
+      <div class="tb-actions">
+        <span class="tb-ic" title="Alerts — coming soon">🔔</span>
+        <span class="tb-ic" title="Saved — coming soon">☆</span>
+        <span class="tb-av" title="Mahmoud Nassef">MN</span>
+      </div>
     </div>
   </div>
 
@@ -2115,7 +2129,7 @@ function renderXmMap(data){ var el=document.getElementById('xm-map'); if(!el||!w
   _xmMap=L.map('xm-map',{zoomControl:true,attributionControl:false}).setView([9,18],3);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(_xmMap);
   data.forEach(function(d){ var v=COUNTRY_VIEW[d.k]; if(!v)return;
-    L.circleMarker(v[0],{radius:Math.max(10,Math.sqrt(d.listings/40)),fillColor:d.color,color:'#0a0e14',weight:2,fillOpacity:.9}).addTo(_xmMap)
+    L.circleMarker(v[0],{radius:Math.min(24,Math.max(9,Math.sqrt(d.listings/180))),fillColor:d.color,color:'#0a0e14',weight:2,fillOpacity:.9}).addTo(_xmMap)
       .bindPopup('<div style="font-family:DM Sans,sans-serif"><b>'+d.c.label+'</b><br>'+d.listings.toLocaleString()+' listings</div>'); });
   setTimeout(function(){if(_xmMap)_xmMap.invalidateSize();},250);
 }
@@ -2306,7 +2320,7 @@ var _liveMap=null,_cityActive=null;
 function _mapCol(t){ return t<0.34?'#3f7a52':t<0.67?'#b8933f':'#c0603a'; }
 var _typeFilter='sale';
 function setType(t){ _typeFilter=t;
-  document.querySelectorAll('#type-toggle button').forEach(function(b){ var on=b.getAttribute('data-t')===t; b.style.background=on?'var(--ink)':'var(--surface)'; b.style.color=on?'#fff':'var(--ink3)'; });
+  document.querySelectorAll('#type-toggle button').forEach(function(b){ var on=b.getAttribute('data-t')===t; b.style.background=on?'var(--gold)':'var(--surface)'; b.style.color=on?'#0a0e14':'var(--ink3)'; b.style.fontWeight=on?'600':'400'; });
   applyFilters();
 }
 function _curFilters(){ return { asset:(document.getElementById('asset-filter')||{}).value||'all', type:_typeFilter||'sale' }; }
