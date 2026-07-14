@@ -2830,84 +2830,82 @@ async function renderResearchPanel(country){
   try{ var a=await sb.rpc('listed_area',{p_country:country}); area=(a&&a.data)||[]; }catch(e){}
   var pubs={}; rows.forEach(function(x){pubs[x.publisher]=1;});
   var method='<div class="method-note"><strong style="color:var(--ink2);">Methodology.</strong> Every figure is quoted verbatim from a published report ('
-    +Object.keys(pubs).join(', ')+'); the period shown is the one the publisher states. When publishers disagree on the same metric and period, all values are shown side by side — <strong style="color:var(--ink2);">never silently averaged</strong>. Units are stored exactly as published; conversions, where needed for derived metrics, are stated in the formula. Sources are re-checked and extended automatically every two months. Hover any chart point for its source.</div>';
+    +(Object.keys(pubs).join(', ')||'sourcing in progress')+'). Where several editions cover the same metric, the chart plots the most recent edition per year and the tooltip names it — figures are <strong style="color:var(--ink2);">never blended across publishers</strong>. Units are stored as published; the supply chart converts floor areas to m² and states so. Sources are re-checked and extended automatically every two months. The full audit trail below lists every figure with its quote.</div>';
   if(!rows.length){
     slot.innerHTML='<section class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">Supply &amp; occupancy — research layer</div></div></div>'
       +'<div class="panel-body2"><div class="empty-trend" style="height:110px;">Research figures for '+lbl+' are being sourced and verified.</div>'+method+'</div></div></section>';
     return;
   }
-  var UNIT_L={sqm:'m²',sqft:'sq ft',mn_sqft:'M sq ft',rooms:'rooms',keys:'keys'};
-  function fv(x){ var v=Number(x.value), u=(x.unit||'').split(' ')[0];
-    if(u==='pct') return v.toFixed(1)+'%';
-    if(u==='sqm'||u==='sqft') return (v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e3?Math.round(v/1e3)+'k':v)+' '+(UNIT_L[u]||u);
-    if(u==='mn_sqft') return v+' M sq ft'+(/oversupply/.test(x.unit||'')?' (oversupply)':'');
-    return v.toLocaleString('en-US')+' '+(UNIT_L[u]||x.unit||''); }
+  function toM2(v,unit){ var u=(unit||'').split(' ')[0];
+    return u==='sqm'?v:u==='sqft'?v*0.092903:u==='mn_sqft'?v*1e6*0.092903:null; }
+  function cityOf(x){ return (x.city||lbl).split(' - ')[0]; }
+  function isNode(x){ return (x.city||'').indexOf(' - ')>-1; }
 
-  // ---- SUPPLY (left): stock rows + completions/pipeline bars by period ----
-  var supply=rows.filter(function(x){return x.metric==='total_stock';})
-    .sort(function(a,b){return _asofKey(b.as_of)-_asofKey(a.as_of);});
-  var stockHtml=supply.map(function(x){
-    return '<div class="seg-bar" style="grid-template-columns:150px 1fr;"><div class="sb-n">'+(x.city||lbl)+' · '+(x.asset_class||'all')+'</div>'
-      +'<div><span class="rs-val">'+fv(x)+'</span> <span class="rs-badge" title="'+_newsEsc(x.quote||'')+'">'+_newsEsc(x.publisher)+' '+_newsEsc(x.as_of)+'</span></div></div>'; }).join('')
-    ||'<div style="font-size:11px;color:var(--ink4);padding:6px 0;">No published total-stock figures for '+lbl+' yet.</div>';
+  // ---- SUPPLY: stacked bar per city ----
+  var stock=rows.filter(function(x){return x.metric==='total_stock';});
+  var latest={};   // city|class -> row (latest edition, m2 only)
+  var roomsRows=[];
+  stock.forEach(function(x){
+    var m2=toM2(Number(x.value),x.unit);
+    if(m2==null){ roomsRows.push(x); return; }
+    var k=cityOf(x)+'|'+(x.asset_class||'all');
+    if(!latest[k]||_asofKey(x.as_of)>_asofKey(latest[k].as_of)) latest[k]=x;
+  });
+  var cities={}, classes={};
+  Object.keys(latest).forEach(function(k){ var p=k.split('|'); cities[p[0]]=1; classes[p[1]]=1; });
+  var cityList=Object.keys(cities), classList=Object.keys(classes);
+  var SUP_COL={offices:'#C89B5A',retail:'#55A899',residential:'#6E8FBF',industrial:'#8E99A9',hospitality:'#B87E76',all:'#D8A94E'};
+  var supDs=classList.map(function(cl){ return { label:_cap(cl),
+    backgroundColor:SUP_COL[cl]||'#62708A', borderWidth:0, maxBarThickness:64,
+    data:cityList.map(function(ct){ var g=latest[ct+'|'+cl];
+      return g?{x:ct,y:toM2(Number(g.value),g.unit),src:g.publisher+' '+g.as_of+' — '+((g.unit||'').split(' ')[0]!=='sqm'?'converted to m²':'as published')}:null; }) }; });
+  var roomsHtml=roomsRows.sort(function(a,b){return _asofKey(b.as_of)-_asofKey(a.as_of);}).map(function(x){
+    return '<div class="seg-bar" style="grid-template-columns:150px 1fr;"><div class="sb-n">'+cityOf(x)+' · '+(x.asset_class||'')+'</div>'
+      +'<div><span class="rs-val">'+Number(x.value).toLocaleString('en-US')+' '+(x.unit||'')+'</span> <span class="rs-badge" title="'+_newsEsc(x.quote||'')+'">'+_newsEsc(x.publisher)+' '+_newsEsc(x.as_of)+'</span></div></div>'; }).join('');
   var addRows=rows.filter(function(x){return x.metric==='completions'||x.metric==='pipeline_supply';})
     .sort(function(a,b){return _asofKey(a.as_of)-_asofKey(b.as_of);});
-  var maxAdd=Math.max.apply(null,addRows.map(function(x){return Number(x.value)*(String(x.unit).indexOf('mn_')===0?1e6:1);}).concat([1]));
   var addHtml=addRows.map(function(x){
-    var norm=Number(x.value)*(String(x.unit).indexOf('mn_')===0?1e6:1);
-    var col=x.metric==='completions'?'linear-gradient(90deg,#8A6534,var(--gold))':'linear-gradient(90deg,#3E6B62,var(--teal))';
-    return '<div class="seg-bar"><div class="sb-n" title="'+_newsEsc(x.quote||'')+'">'+_newsEsc(x.as_of)+' · '+(x.asset_class||'')+'</div>'
-      +'<div class="sb-t"><div class="sb-f" style="width:'+Math.max(3,norm/maxAdd*100).toFixed(1)+'%;background:'+col+';"></div></div>'
-      +'<div class="sb-v">'+fv(x)+' <span class="rs-badge">'+_newsEsc(x.publisher)+'</span></div></div>'; }).join('');
+    var col=x.metric==='completions'?'var(--gold)':'var(--teal)';
+    var u=(x.unit||'').split(' ')[0], v=Number(x.value);
+    var vs=(u==='sqm'||u==='sqft')?((v>=1e6?(v/1e6).toFixed(2)+'M':Math.round(v/1e3)+'k')+' '+(u==='sqm'?'m²':'sq ft')):(u==='mn_sqft'?v+' M sq ft':v.toLocaleString('en-US')+' '+(x.unit||''));
+    return '<div class="seg-bar" style="grid-template-columns:190px 1fr;"><div class="sb-n" title="'+_newsEsc(x.quote||'')+'"><span style="color:'+col+';">■</span> '+_newsEsc(x.as_of)+' · '+(x.asset_class||'')+' '+(x.metric==='completions'?'completed':'pipeline')+'</div>'
+      +'<div><span class="rs-val">'+vs+'</span> <span class="rs-badge">'+_newsEsc(x.publisher)+'</span></div></div>'; }).join('');
 
-  // ---- OCCUPANCY (right): time series chart ----
-  var occ=rows.filter(function(x){return (x.metric==='occupancy_pct'||x.metric==='vacancy_pct')&&_asofKey(x.as_of)>0;});
-  var series={};
-  occ.forEach(function(x){ var k=(x.city||lbl).split(' - ')[0]+' '+(x.asset_class||'')+(x.metric==='vacancy_pct'?' (vacancy)':'');
-    series[k]=series[k]||[]; series[k].push({x:_asofKey(x.as_of),y:Number(x.value),src:x.publisher+' '+x.as_of}); });
-  Object.keys(series).forEach(function(k){ series[k].sort(function(a,b){return a.x-b.x;});
-    if(series[k].length<2) delete series[k]; });
-  var singles=occ.filter(function(x){ var k=(x.city||lbl).split(' - ')[0]+' '+(x.asset_class||'')+(x.metric==='vacancy_pct'?' (vacancy)':''); return !series[k]; });
-  var singleHtml=singles.map(function(x){
-    return '<div class="seg-bar" style="grid-template-columns:150px 1fr;"><div class="sb-n">'+(x.city||lbl)+' · '+(x.asset_class||'')+' '+(x.metric==='vacancy_pct'?'vacancy':'occupancy')+'</div>'
-      +'<div><span class="rs-val">'+fv(x)+'</span> <span class="rs-badge" title="'+_newsEsc(x.quote||'')+'">'+_newsEsc(x.publisher)+' '+_newsEsc(x.as_of)+'</span></div></div>'; }).join('');
+  // ---- OCCUPANCY: one line per asset class across years ----
+  var occ=rows.filter(function(x){return (x.metric==='occupancy_pct'||x.metric==='vacancy_pct')&&!isNode(x)&&_asofKey(x.as_of)>0;});
+  var byClsYear={};  // class|vac|year -> latest row
+  occ.forEach(function(x){ var y=Math.floor(_asofKey(x.as_of));
+    var k=(x.asset_class||'all')+'|'+(x.metric==='vacancy_pct'?'v':'o')+'|'+y;
+    if(!byClsYear[k]||_asofKey(x.as_of)>_asofKey(byClsYear[k].as_of)) byClsYear[k]=x; });
+  var occSeries={};
+  Object.keys(byClsYear).forEach(function(k){ var p=k.split('|'); var x=byClsYear[k];
+    var name=_cap(p[0])+(p[1]==='v'?' — vacancy':'');
+    occSeries[name]=occSeries[name]||[];
+    occSeries[name].push({x:+p[2],y:Number(x.value),src:x.publisher+' '+x.as_of+' ('+cityOf(x)+')'}); });
+  Object.keys(occSeries).forEach(function(k){ occSeries[k].sort(function(a,b){return a.x-b.x;}); });
 
-  // ---- derived: visible float ----
-  var derived='';
-  rows.filter(function(x){return x.metric==='total_stock';}).forEach(function(g){
-    var u=(g.unit||'').split(' ')[0];
-    var stockM2=u==='sqm'?Number(g.value):u==='sqft'?Number(g.value)*0.092903:u==='mn_sqft'?Number(g.value)*1e6*0.092903:null;
-    if(stockM2==null) return;
-    var cityK=(g.city||'').split(' - ')[0], acK=g.asset_class||'all';
-    var la=area.filter(function(x){ return (!cityK||x.city===cityK) && (acK==='all'||x.ac.indexOf(acK.slice(0,5))>-1); })
-      .reduce(function(t,x){return t+Number(x.sqm||0);},0);
-    if(la>0&&stockM2>0){
-      derived+='<div class="seg-bar" style="grid-template-columns:150px 1fr;"><div class="sb-n">'+(g.city||lbl)+' · '+acK+'</div>'
-        +'<div><span class="rs-val">'+(la/stockM2*100).toFixed(1)+'%</span> <span style="font-size:10px;color:var(--ink4);">= '+Math.round(la).toLocaleString('en-US')+' m² listed ÷ '+fv(g)+(u!=='sqm'?' (converted to m²)':'')+' · '+_newsEsc(g.publisher)+' '+_newsEsc(g.as_of)+'</span></div></div>';
-    } });
-
-  // ---- audit table (collapsible) ----
-  var audit=rows.slice().sort(function(a,b){return (a.metric+a.city).localeCompare(b.metric+b.city);}).map(function(x){
+  var audit=rows.slice().sort(function(a,b){return (a.metric+(a.city||'')).localeCompare(b.metric+(b.city||''));}).map(function(x){
+    var u=(x.unit||'').split(' ')[0];
+    var val=u==='pct'?Number(x.value).toFixed(1)+'%':Number(x.value).toLocaleString('en-US')+' '+(x.unit||'');
     return '<tr><td style="text-align:left;padding-left:8px;">'+x.metric.replace(/_/g,' ')+'</td><td style="text-align:left;">'+(x.city||lbl)+'</td>'
-      +'<td style="text-align:left;">'+(x.asset_class||'')+'</td><td class="num">'+fv(x)+'</td><td style="text-align:left;">'+_newsEsc(x.as_of)+'</td>'
+      +'<td style="text-align:left;">'+(x.asset_class||'')+'</td><td class="num">'+val+'</td><td style="text-align:left;">'+_newsEsc(x.as_of)+'</td>'
       +'<td style="text-align:left;"><a class="panel-link" style="display:inline-flex;" href="'+_newsEsc(_safeUrl(x.url))+'" target="_blank" rel="noopener">'+_newsEsc(x.publisher)+'</a></td>'
       +'<td style="text-align:left;max-width:340px;white-space:normal;font-size:10px;color:var(--ink4);">'+_newsEsc((x.quote||'').slice(0,160))+'</td></tr>'; }).join('');
 
   slot.innerHTML='<section class="grid g-split">'
-   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Supply — research layer</div>'
-   +'<div class="panel-sub">Published total stock, completions &amp; pipeline · units as published</div></div>'
-   +'<span class="n-tag num">'+(supply.length+addRows.length)+' figures</span></div>'
-   +'<div class="panel-body2"><div class="pr-sec" style="margin-top:0;">Total stock</div>'+stockHtml
-   +(addRows.length?'<div class="pr-sec">Completions <span style="color:var(--gold);">■</span> &amp; pipeline <span style="color:var(--teal);">■</span> by period</div>'+addHtml:'')
-   +(derived?'<div class="pr-sec">Visible float — Ironwood listed m² ÷ published stock</div>'+derived:'')
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Supply — published total stock by city</div>'
+   +'<div class="panel-sub">Stacked by asset class · floor areas normalised to m² · hover for source</div></div>'
+   +'<span class="n-tag num">'+stock.length+' figures</span></div>'
+   +'<div class="panel-body2">'
+   +(cityList.length?'<div class="rs-chart"><canvas id="rs-supply"></canvas></div>':'<div class="empty-trend" style="height:120px;">No published m²-denominated stock for '+lbl+' yet.</div>')
+   +(roomsHtml?'<div class="pr-sec">Hospitality stock (rooms — not stackable with m²)</div>'+roomsHtml:'')
+   +(addHtml?'<div class="pr-sec">Completions <span style="color:var(--gold);">■</span> &amp; announced pipeline <span style="color:var(--teal);">■</span> — as published</div>'+addHtml:'')
    +'</div></div>'
-   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Occupancy &amp; vacancy — research layer</div>'
-   +'<div class="panel-sub">Publisher-reported rates over time · hover points for source</div></div>'
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Occupancy by asset class — across years</div>'
+   +'<div class="panel-sub">One line per asset class · latest edition per year · dashed = vacancy · hover cites source</div></div>'
    +'<span class="n-tag num">'+occ.length+' figures</span></div>'
    +'<div class="panel-body2">'
-   +(Object.keys(series).length?'<div class="rs-chart"><canvas id="rs-occ"></canvas></div>':'')
-   +(singleHtml?'<div class="pr-sec">'+(Object.keys(series).length?'Point-in-time figures':'Published rates')+'</div>'+singleHtml:'')
-   +((!Object.keys(series).length&&!singleHtml)?'<div class="empty-trend" style="height:120px;">No published occupancy series for '+lbl+' yet.</div>':'')
+   +(Object.keys(occSeries).length?'<div class="rs-chart" style="height:300px;"><canvas id="rs-occ"></canvas></div>':'<div class="empty-trend" style="height:120px;">No published occupancy series for '+lbl+' yet.</div>')
    +'</div></div>'
    +'</section>'
    +'<section class="grid"><div class="panel"><div class="panel-body2">'
@@ -2915,20 +2913,33 @@ async function renderResearchPanel(country){
    +'<div style="overflow-x:auto;"><table class="xmt" style="margin-top:8px;"><thead><tr><th style="text-align:left;">Metric</th><th style="text-align:left;">Market</th><th style="text-align:left;">Asset</th><th>Value</th><th style="text-align:left;">As of</th><th style="text-align:left;">Source</th><th style="text-align:left;">Quote</th></tr></thead><tbody>'
    +audit+'</tbody></table></div></details>'+method+'</div></div></section>';
 
-  if(Object.keys(series).length&&window.Chart){
-    _rsD('rs-occ');
-    var COLS=['#C89B5A','#55A899','#6E8FBF','#B87E76','#8E99A9','#D8A94E'];
-    var ds=Object.keys(series).map(function(k,i){ return {label:k, data:series[k],
-      borderColor:COLS[i%COLS.length], backgroundColor:COLS[i%COLS.length], borderWidth:2,
-      pointRadius:3.5, tension:.25, borderDash:/vacancy/.test(k)?[5,4]:[], fill:false, parsing:false}; });
-    _rsCharts['rs-occ']=new Chart(document.getElementById('rs-occ'),{type:'line',
-      data:{datasets:ds},
-      options:{responsive:true,maintainAspectRatio:false,
-        interaction:{mode:'nearest',intersect:false},
-        plugins:{legend:{labels:{font:{family:'Inter',size:10},color:'#9AA6B6',boxWidth:10,padding:10}},
-          tooltip:{callbacks:{label:function(ctx){ var p=ctx.raw; return ctx.dataset.label+': '+p.y+'% — '+p.src; }}}},
-        scales:{x:{type:'linear',ticks:{font:{family:'Inter',size:10},color:'#5F6B7C',callback:function(v){return Math.floor(v);},stepSize:1},grid:{color:'rgba(148,168,196,.07)'}},
-          y:{ticks:{font:{family:'Inter',size:10},color:'#5F6B7C',callback:function(v){return v+'%';}},grid:{color:'rgba(148,168,196,.07)'}}}}});
+  if(window.Chart){
+    if(cityList.length){ _rsD('rs-supply');
+      _rsCharts['rs-supply']=new Chart(document.getElementById('rs-supply'),{type:'bar',
+        data:{labels:cityList,datasets:supDs},
+        options:{responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{labels:{font:{family:'Inter',size:10},color:'#9AA6B6',boxWidth:10,padding:10}},
+            tooltip:{callbacks:{label:function(ctx){ var p=ctx.raw; if(!p) return '';
+              return ctx.dataset.label+': '+(p.y>=1e6?(p.y/1e6).toFixed(2)+'M':Math.round(p.y/1e3)+'k')+' m² — '+p.src; }}}},
+          scales:{x:{stacked:true,grid:{display:false},ticks:{font:{family:'Inter',size:10},color:'#9AA6B6'}},
+            y:{stacked:true,grid:{color:'rgba(148,168,196,.07)'},ticks:{font:{family:'Inter',size:10},color:'#5F6B7C',
+              callback:function(v){return v>=1e6?(v/1e6)+'M':(v/1e3)+'k';}},title:{display:true,text:'m²',color:'#5F6B7C',font:{size:9}}}}}});
+    }
+    if(Object.keys(occSeries).length){ _rsD('rs-occ');
+      var OC={'Offices':'#C89B5A','Retail':'#55A899','Hospitality':'#B87E76','Industrial':'#8E99A9','Residential':'#6E8FBF'};
+      var ds=Object.keys(occSeries).map(function(k,i){ var base=k.replace(' — vacancy','');
+        return {label:k, data:occSeries[k], parsing:false,
+          borderColor:OC[base]||'#D8A94E', backgroundColor:OC[base]||'#D8A94E',
+          borderWidth:2, pointRadius:4, tension:.25, borderDash:/vacancy/.test(k)?[5,4]:[], fill:false}; });
+      _rsCharts['rs-occ']=new Chart(document.getElementById('rs-occ'),{type:'line',
+        data:{datasets:ds},
+        options:{responsive:true,maintainAspectRatio:false,
+          interaction:{mode:'nearest',intersect:false},
+          plugins:{legend:{labels:{font:{family:'Inter',size:10},color:'#9AA6B6',boxWidth:10,padding:10}},
+            tooltip:{callbacks:{label:function(ctx){ var p=ctx.raw; return ctx.dataset.label+': '+p.y+'% — '+p.src; }}}},
+          scales:{x:{type:'linear',ticks:{font:{family:'Inter',size:10},color:'#5F6B7C',stepSize:1,callback:function(v){return Math.floor(v);}},grid:{color:'rgba(148,168,196,.07)'}},
+            y:{min:0,max:100,ticks:{font:{family:'Inter',size:10},color:'#5F6B7C',callback:function(v){return v+'%';}},grid:{color:'rgba(148,168,196,.07)'}}}}});
+    }
   }
 }
 async function renderPipelineRegister(country){
@@ -3816,6 +3827,75 @@ async function loadLiveKPIs(country){
   }
 }
 
+async function renderMacroExtras(country){
+  var slot=document.getElementById('macro-extra'); if(!slot||!sb) return;
+  var c=COUNTRIES[country], lbl=c?c.label:country, rows=[];
+  try{ var r=await sb.from('macro_stats').select('*').eq('country',country); rows=(r&&r.data)||[]; }catch(e){}
+  var note='<div class="method-note">Beyond-World-Bank figures are quoted from national tourism authorities, the World Economic Forum and UN trade data, each badge naming its publisher and year. This layer is re-checked and extended automatically every two months.</div>';
+  if(!rows.length){
+    slot.innerHTML='<div class="panel"><div class="panel-head"><div><div class="panel-title">Tourism source markets, competitiveness &amp; trade</div>'
+      +'<div class="panel-sub">National tourism statistics · WEF · UN trade data</div></div></div>'
+      +'<div class="panel-body2"><div class="empty-trend" style="height:100px;">Cited figures for '+lbl+' are being sourced and verified — they appear here automatically once confirmed.</div>'+note+'</div></div>';
+    return;
+  }
+  // tourism origins: lines per origin country across years
+  var tor=rows.filter(function(x){return x.metric==='tourist_arrivals_by_origin'&&x.dim;});
+  var latestYear=Math.max.apply(null,tor.map(function(x){return +x.as_of||0;}).concat([0]));
+  var topOrigins={};
+  tor.filter(function(x){return +x.as_of===latestYear;}).sort(function(a,b){return b.value-a.value;}).slice(0,7)
+    .forEach(function(x){topOrigins[x.dim]=1;});
+  var series={};
+  tor.filter(function(x){return topOrigins[x.dim];}).forEach(function(x){
+    series[x.dim]=series[x.dim]||[];
+    series[x.dim].push({x:+x.as_of,y:Number(x.value),src:x.publisher+' '+x.as_of,unit:x.unit}); });
+  Object.keys(series).forEach(function(k){series[k].sort(function(a,b){return a.x-b.x;});});
+  var ttdi=rows.filter(function(x){return x.metric==='ttdi_score'||x.metric==='ttdi_rank';})
+    .sort(function(a,b){return (+b.as_of||0)-(+a.as_of||0);});
+  var exp=rows.filter(function(x){return x.metric==='export_partner_share';}).sort(function(a,b){return b.value-a.value;}).slice(0,5);
+  var imp=rows.filter(function(x){return x.metric==='import_partner_share';}).sort(function(a,b){return b.value-a.value;}).slice(0,5);
+  function partnerList(arr){ var mx=Math.max.apply(null,arr.map(function(x){return x.value;}).concat([1]));
+    return arr.map(function(x){ return '<div class="seg-bar" style="grid-template-columns:100px 1fr 90px;"><div class="sb-n">'+_newsEsc(x.dim)+'</div>'
+      +'<div class="sb-t"><div class="sb-f" style="width:'+(x.value/mx*100).toFixed(1)+'%;background:linear-gradient(90deg,#3E6B62,var(--teal));"></div></div>'
+      +'<div class="sb-v">'+Number(x.value).toFixed(1)+'%<span class="hbar-n" title="'+_newsEsc(x.publisher+' '+x.as_of)+'">'+_newsEsc(x.as_of)+'</span></div></div>'; }).join('')
+      ||'<div style="font-size:11px;color:var(--ink4);">Being sourced.</div>'; }
+  var ttdiHtml=ttdi.length?ttdi.slice(0,4).map(function(x){
+      return '<div class="seg-bar" style="grid-template-columns:1fr 1fr;"><div class="sb-n" style="text-align:left;">'+(x.metric==='ttdi_score'?'TTDI score':'TTDI rank')+' · '+_newsEsc(x.as_of)+'</div>'
+        +'<div><span class="rs-val">'+Number(x.value)+(x.metric==='ttdi_rank'?'':' / 7')+'</span> <span class="rs-badge">'+_newsEsc(x.publisher)+'</span></div></div>'; }).join('')
+    :'<div style="font-size:11px;color:var(--ink4);">Being sourced.</div>';
+  slot.innerHTML='<section class="grid g-split">'
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Tourism source markets — arrivals by origin</div>'
+   +'<div class="panel-sub">Top origins across years · national tourism statistics · hover cites source</div></div>'
+   +'<span class="n-tag num">'+tor.length+' figures</span></div>'
+   +'<div class="panel-body2">'
+   +(Object.keys(series).length?'<div class="rs-chart" style="height:280px;"><canvas id="mx-origins"></canvas></div>'
+     :'<div class="empty-trend" style="height:120px;">Origin-market series for '+lbl+' being sourced and verified.</div>')
+   +'</div></div>'
+   +'<div><div class="panel" style="margin-bottom:14px;"><div class="panel-head"><div><div class="panel-title">Travel &amp; Tourism Development Index</div>'
+   +'<div class="panel-sub">World Economic Forum</div></div></div><div class="panel-body2">'+ttdiHtml+'</div></div>'
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Top trade partners</div>'
+   +'<div class="panel-sub">Share of trade · UN trade data</div></div></div>'
+   +'<div class="panel-body2">'+(exp.length?'<div class="pr-sec" style="margin-top:0;">Exports</div>'+partnerList(exp):'')
+   +(imp.length?'<div class="pr-sec">Imports</div>'+partnerList(imp):'')
+   +((!exp.length&&!imp.length)?'<div style="font-size:11px;color:var(--ink4);">Being sourced.</div>':'')
+   +'</div></div></div>'
+   +'</section>'+note;
+  if(Object.keys(series).length&&window.Chart){
+    _rsD('mx-origins');
+    var COLS=['#C89B5A','#55A899','#6E8FBF','#B87E76','#8E99A9','#D8A94E','#63B98B'];
+    var ds=Object.keys(series).map(function(k,i){ return {label:k,data:series[k],parsing:false,
+      borderColor:COLS[i%COLS.length],backgroundColor:COLS[i%COLS.length],borderWidth:2,pointRadius:3.5,tension:.25,fill:false}; });
+    _rsCharts['mx-origins']=new Chart(document.getElementById('mx-origins'),{type:'line',
+      data:{datasets:ds},
+      options:{responsive:true,maintainAspectRatio:false,
+        interaction:{mode:'nearest',intersect:false},
+        plugins:{legend:{labels:{font:{family:'Inter',size:10},color:'#9AA6B6',boxWidth:10,padding:8}},
+          tooltip:{callbacks:{label:function(ctx){ var p=ctx.raw;
+            var v=p.unit==='pct'?p.y.toFixed(1)+'%':(p.y>=1e6?(p.y/1e6).toFixed(2)+'M':p.y>=1e3?Math.round(p.y/1e3)+'k':p.y);
+            return ctx.dataset.label+': '+v+' — '+p.src; }}}},
+        scales:{x:{type:'linear',ticks:{font:{family:'Inter',size:10},color:'#5F6B7C',stepSize:1,callback:function(v){return Math.floor(v);}},grid:{color:'rgba(148,168,196,.07)'}},
+          y:{ticks:{font:{family:'Inter',size:10},color:'#5F6B7C',callback:function(v){return v>=1e6?(v/1e6)+'M':v>=1e3?(v/1e3)+'k':v;}},grid:{color:'rgba(148,168,196,.07)'}}}}});
+  }
+}
 async function loadMacroData(country){
   var root=document.getElementById('macro-root'); if(!root) return;
   var c=COUNTRIES[country]; var wb=c?c.wbCode:null; var lbl=c?c.label:country;
@@ -3844,6 +3924,7 @@ async function loadMacroData(country){
         +'<div class="mc-latest" id="mcl-'+i+'"><span style="color:var(--ink5);">loading…</span></div>'
         +'<div class="mc-chart"><canvas id="mcc-'+i+'"></canvas></div>'
         +'<div class="mc-src">World Bank · '+x[0]+'</div></div>'; }).join('')+'</div>'
+   +'<div id="macro-extra"></div>'
    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Economy, tourism &amp; policy news — '+lbl+'</div>'
    +'<div class="panel-sub">Macro-tagged items from the observed news pipeline · refreshed Mon &amp; Thu</div></div></div>'
    +'<div id="macro-news-list"><div style="padding:18px;color:var(--ink5);font-size:12px;">Loading news…</div></div></div>';
@@ -3875,6 +3956,7 @@ async function loadMacroData(country){
             scales:{x:{type:'linear',display:false},y:{display:false}}}});
       }).catch(function(){ var el=document.getElementById('mcl-'+i); if(el) el.innerHTML='<span style="color:var(--ink5);">unavailable</span>'; });
   });
+  renderMacroExtras(country);
   try{
     var res=await sb.from('market_news').select('title,url,source,summary,published_at,category,is_pipeline')
       .eq('country',country).eq('category','macro').order('published_at',{ascending:false,nullsFirst:false}).limit(20);
