@@ -16,21 +16,24 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  /* Dark command-center theme */
-  --bg:#0a0e14;--bg2:#0d121a;--surface:#131a24;--surface2:#1a222e;
-  --border:#232c38;--border2:#2f3a48;
-  --ink:#eef1f5;--ink2:#c4ccd6;--ink3:#8b95a3;--ink4:#68727f;--ink5:#4c5563;
-  --gold:#c9a86c;--gold2:#d9bd88;--gold-pale:rgba(201,168,108,.12);
-  --green:#4ade80;--green-bg:rgba(74,222,128,.12);
-  --red:#f87171;--red-bg:rgba(248,113,113,.12);
-  --amber:#fbbf24;--amber-bg:rgba(251,191,36,.12);
-  --blue:#60a5fa;--blue-bg:rgba(96,165,250,.12);
-  --sw:228px;
+  /* Deep-navy command-center theme (ported from prototype) */
+  --bg:#06111f;--bg2:#081625;--surface:#0c1e31;--surface2:#102538;
+  --border:rgba(145,166,188,.18);--border2:rgba(145,166,188,.30);
+  --ink:#f4f7fb;--ink2:#cbd4df;--ink3:#91a3b7;--ink4:#7f92a7;--ink5:#6f8398;
+  --gold:#d4a93f;--gold2:#f2c95d;--gold-pale:rgba(212,169,63,.12);
+  --green:#5bbd8a;--green-bg:rgba(91,189,138,.14);
+  --red:#f06c70;--red-bg:rgba(240,108,112,.14);
+  --amber:#e7b64f;--amber-bg:rgba(231,182,79,.14);
+  --blue:#5f8cc9;--blue-bg:rgba(95,140,201,.14);
+  --sw:238px;
+  --radius:13px;
+  --panel-grad:linear-gradient(180deg,rgba(12,30,49,.96),rgba(8,24,41,.96));
+  --shadow:0 16px 50px rgba(0,0,0,.26);
   --serif:'DM Serif Display',Georgia,serif;
   --sans:'DM Sans',system-ui,sans-serif;
   --mono:'DM Mono','Courier New',monospace;
 }
-html,body{height:100%;font-family:var(--sans);font-size:13px;line-height:1.5;color:var(--ink);-webkit-font-smoothing:antialiased;}
+html,body{height:100%;font-family:var(--sans);font-size:13px;line-height:1.5;color:var(--ink);-webkit-font-smoothing:antialiased;background:#06111f;}
 a{text-decoration:none;color:inherit;cursor:pointer;}
 button{cursor:pointer;font-family:var(--sans);}
 
@@ -48,7 +51,7 @@ button{cursor:pointer;font-family:var(--sans);}
 .app{display:flex;height:100vh;overflow:hidden;}
 
 /* ── SIDEBAR ── */
-.sidebar{width:var(--sw);flex-shrink:0;background:#0c1017;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+.sidebar{width:var(--sw);flex-shrink:0;background:linear-gradient(180deg,rgba(5,18,32,.98),rgba(6,20,34,.96));border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
 .sb-head{padding:20px 16px 12px;border-bottom:1px solid rgba(255,255,255,.08);}
 .sb-wordmark{font-family:var(--serif);font-size:15px;color:#fff;letter-spacing:.01em;}
 .sb-wordmark em{color:var(--gold);font-style:normal;}
@@ -62,10 +65,10 @@ button{cursor:pointer;font-family:var(--sans);}
 .country-opt.active{background:var(--gold-pale);color:var(--gold);font-weight:500;}
 .sb-section{padding:16px 10px 2px;flex-shrink:0;}
 .sb-section-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.25);padding:0 8px;margin-bottom:2px;}
-.ni{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:2px;color:rgba(255,255,255,.62);font-size:12px;cursor:pointer;transition:all .12s;white-space:nowrap;}
-.ni:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.8);}
-.ni.active{background:rgba(255,255,255,.1);color:#fff;}
-.ni-icon{font-size:11px;width:14px;text-align:center;flex-shrink:0;opacity:.6;}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;border-left:3px solid transparent;color:rgba(203,212,223,.82);font-size:12.5px;cursor:pointer;transition:all .15s;white-space:nowrap;margin:1px 0;}
+.ni:hover{background:rgba(255,255,255,.045);color:#fff;}
+.ni.active{background:linear-gradient(90deg,rgba(212,169,63,.18),rgba(255,255,255,.045));color:var(--gold2);border-left-color:var(--gold);}
+.ni-icon{font-size:11px;width:15px;text-align:center;flex-shrink:0;opacity:.7;}
 .ni.active .ni-icon{opacity:1;}
 .ni-badge{margin-left:auto;font-size:8.5px;font-weight:700;letter-spacing:.06em;background:var(--gold);color:#fff;padding:1px 5px;border-radius:1px;}
 .sb-foot{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);}
@@ -80,8 +83,9 @@ button{cursor:pointer;font-family:var(--sans);}
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
 
 /* ── TOPBAR ── */
-.topbar{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;gap:16px;}
-.tb-search{flex:1;max-width:480px;display:flex;align-items:center;gap:9px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:0 12px;height:34px;}
+.topbar{height:62px;background:rgba(5,16,29,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0;gap:16px;position:relative;z-index:20;}
+.tb-search{flex:1;max-width:520px;display:flex;align-items:center;gap:9px;background:rgba(10,24,40,.8);border:1px solid var(--border2);border-radius:7px;padding:0 14px;height:38px;transition:border-color .15s,box-shadow .15s;}
+.tb-search:focus-within{border-color:rgba(212,169,63,.55);box-shadow:0 0 0 3px rgba(212,169,63,.08);}
 .tb-search input{flex:1;background:none;border:none;outline:none;color:var(--ink);font-family:var(--sans);font-size:13px;}
 .tb-search input::placeholder{color:var(--ink4);}
 .tb-search-ic{color:var(--ink4);font-size:14px;}
@@ -104,7 +108,8 @@ button{cursor:pointer;font-family:var(--sans);}
 .conf-e .conf-dot{background:var(--ink4);}
 .tb-filter{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--ink4);}
 .tb-filter select{border:1px solid var(--border);background:var(--surface);padding:3px 6px;font-size:11.5px;font-family:var(--sans);border-radius:2px;color:var(--ink);}
-.tb-export{padding:5px 12px;background:var(--gold);color:#0a0e14;border:none;font-size:11.5px;font-weight:600;border-radius:2px;}
+.tb-export{padding:8px 15px;background:linear-gradient(180deg,#e0bc5a,#cfa13b);color:#211803;border:1px solid rgba(212,169,63,.52);font-size:11.5px;font-weight:700;border-radius:7px;display:inline-flex;align-items:center;gap:7px;}
+.tb-export:hover{background:linear-gradient(180deg,#e8c66a,#d7a943);}
 
 /* ── DATA SOURCE TAGS ── */
 .ds-tag{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:1px;border:1px solid;}
@@ -117,7 +122,7 @@ button{cursor:pointer;font-family:var(--sans);}
 .ds-infra{background:#f0f9ff;color:#075985;border-color:#bae6fd;}
 
 /* ── CONTENT AREA ── */
-.content{flex:1;overflow-y:auto;background:var(--bg);}
+.content{flex:1;overflow-y:auto;background:radial-gradient(circle at 78% -5%,#0b2137 0,transparent 34%),linear-gradient(160deg,#04101d 0%,#06111f 52%,#081625 100%);}
 .pg{display:none;padding:28px 28px 40px;}
 .pg.active{display:block;}
 .eyebrow{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
@@ -125,8 +130,8 @@ button{cursor:pointer;font-family:var(--sans);}
 .pg-sub{font-size:13px;color:var(--ink4);margin-bottom:24px;line-height:1.6;max-width:700px;}
 
 /* ── KPI GRID ── */
-.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px;}
-.kpi{background:var(--surface);padding:16px 18px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px;}
+.kpi{background:var(--panel-grad);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:15px 16px;}
 .kpi-lbl{font-size:10.5px;color:var(--ink4);margin-bottom:6px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
 .kpi-val{font-family:var(--serif);font-size:22px;line-height:1;margin-bottom:3px;}
 .kpi-sub{font-size:10.5px;color:var(--ink5);margin-bottom:4px;}
@@ -135,17 +140,48 @@ button{cursor:pointer;font-family:var(--sans);}
 .chg.pos,.pos{color:var(--green);}
 .chg.neg,.neg{color:var(--red);}
 
+/* ── PROTOTYPE COMPONENTS (Dashboard) ── */
+.kpi-ico{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(212,169,63,.11);color:var(--gold2);border:1px solid rgba(212,169,63,.16);font-size:14px;flex-shrink:0;}
+.mini-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px;}
+.mini{background:var(--panel-grad);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:13px 15px 10px;min-height:118px;display:flex;flex-direction:column;}
+.mini-t{display:flex;align-items:center;gap:5px;color:var(--ink2);font-size:11px;}
+.mini-t .i{color:var(--ink5);font-size:10px;cursor:help;}
+.mini-v{font-family:var(--serif);font-size:21px;margin-top:11px;line-height:1;}
+.delta{font-family:var(--mono);font-size:10px;margin-left:6px;font-weight:500;}
+.delta.up{color:var(--green);}
+.delta.down{color:var(--red);}
+.delta.flat{color:var(--ink5);}
+.spark{width:100%;height:34px;margin-top:auto;}
+.status-strip{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:rgba(7,20,34,.84);box-shadow:var(--shadow);}
+.status{padding:13px 15px;min-height:72px;border-right:1px solid var(--border);display:flex;gap:10px;align-items:center;}
+.status:last-child{border-right:0;}
+.status-ico{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:rgba(91,189,138,.12);color:var(--green);font-size:13px;flex-shrink:0;}
+.status-ico.g{background:rgba(212,169,63,.11);color:var(--gold2);}
+.status-lbl{color:var(--ink4);text-transform:uppercase;font-size:8.5px;letter-spacing:.06em;}
+.status-val{margin-top:4px;font-size:11px;color:var(--ink2);line-height:1.35;}
+.progress{width:100%;height:4px;background:rgba(255,255,255,.08);margin-top:7px;border-radius:999px;overflow:hidden;}
+.progress span{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));}
+.inv-wrap{display:grid;grid-template-columns:1.05fr .95fr;align-items:center;gap:6px;}
+.inv-list{display:grid;gap:13px;}
+.inv-item{display:flex;align-items:center;gap:9px;}
+.inv-item .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.inv-item strong{display:block;font-size:11px;font-weight:500;color:var(--ink2);}
+.inv-item span{color:var(--ink4);font-size:10px;}
+.tab-switch{display:flex;gap:14px;font-size:10px;color:var(--ink4);margin-left:auto;}
+.tab-switch button{border:0;background:transparent;color:inherit;padding:0 0 5px;font-family:var(--sans);}
+.tab-switch .active{color:var(--gold2);border-bottom:1px solid var(--gold);}
+
 /* ── PANELS ── */
-.panel{background:var(--surface);border:1px solid var(--border);border-radius:2px;margin-bottom:16px;overflow:hidden;}
-.panel-hd{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.panel{background:var(--panel-grad);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden;}
+.panel-hd{padding:15px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
 .panel-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;}
-.panel-sub{font-size:11px;color:var(--ink4);}
+.panel-sub{font-size:10.5px;color:var(--ink4);}
 .panel-body{padding:14px 18px;}
 .panel-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;}
 .pa-btn{padding:4px 10px;font-size:11px;font-weight:500;border:1px solid var(--border);background:var(--surface);border-radius:2px;color:var(--ink3);white-space:nowrap;}
-.pa-btn.gold{background:var(--gold);color:#fff;border-color:var(--gold);}
-.pa-btn:hover{background:var(--bg2);}
-.pa-btn.gold:hover{background:var(--gold2);}
+.pa-btn.gold{background:linear-gradient(180deg,#e0bc5a,#cfa13b);color:#211803;border-color:rgba(212,169,63,.52);font-weight:700;}
+.pa-btn:hover{background:var(--surface2);color:var(--ink2);}
+.pa-btn.gold:hover{background:linear-gradient(180deg,#e8c66a,#d7a943);color:#211803;}
 
 /* ── SECTION DIVIDER ── */
 .sec-div{display:flex;align-items:center;gap:10px;margin:20px 0 12px;}
@@ -198,8 +234,8 @@ button{cursor:pointer;font-family:var(--sans);}
 .ep-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:6px;}
 
 /* ── SIGNAL BARS ── */
-.signal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px;}
-.signal-card{background:var(--surface);padding:16px 18px;}
+.signal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.signal-card{background:var(--panel-grad);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;}
 .signal-name{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink4);margin-bottom:8px;}
 .signal-bar-track{height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-bottom:6px;}
 .signal-bar-fill{height:100%;border-radius:2px;transition:width .5s ease;}
@@ -294,7 +330,8 @@ button{cursor:pointer;font-family:var(--sans);}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
 
 /* ── RESPONSIVE ── */
-@media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr);}.signal-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr);}.signal-grid{grid-template-columns:repeat(2,1fr);}.mini-grid{grid-template-columns:repeat(3,1fr);}.status-strip{grid-template-columns:repeat(3,1fr);}.status:nth-child(3n){border-right:0;}.status:nth-child(-n+3){border-bottom:1px solid var(--border);}}
+@media(max-width:600px){.mini-grid{grid-template-columns:repeat(2,1fr);}.status-strip{grid-template-columns:1fr 1fr;}}
 @media(max-width:960px){.two-col,.three-col{grid-template-columns:1fr;}}
 
 /* ── MOBILE SIDEBAR TOGGLE ── */
@@ -434,9 +471,18 @@ button{cursor:pointer;font-family:var(--sans);}
 <!-- ════ SIDEBAR ════ -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 <aside class="sidebar">
-  <div class="sb-head">
-    <div class="sb-wordmark">Ironwood <em>Intelligence</em></div>
-    <div class="sb-tag">Market Terminal · v3.0</div>
+  <div class="sb-head" style="display:flex;align-items:center;gap:11px;">
+    <svg width="30" height="37" viewBox="0 0 48 56" aria-hidden="true" style="flex-shrink:0;">
+      <path d="M24 52V16M24 20L13 10M24 24L35 12M24 28L10 22M24 31L39 23M24 37L14 33M24 39L34 35" stroke="#e2b74f" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="13" cy="10" r="4" stroke="#e2b74f" fill="none"/><circle cx="35" cy="12" r="4" stroke="#e2b74f" fill="none"/>
+      <circle cx="10" cy="22" r="4" stroke="#e2b74f" fill="none"/><circle cx="39" cy="23" r="4" stroke="#e2b74f" fill="none"/>
+      <circle cx="14" cy="33" r="4" stroke="#e2b74f" fill="none"/><circle cx="34" cy="35" r="4" stroke="#e2b74f" fill="none"/>
+      <path d="M17 52h14" stroke="#e2b74f" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <div class="sb-wordmark">Ironwood <em>Intelligence</em></div>
+      <div class="sb-tag">Market Terminal · v3.0</div>
+    </div>
   </div>
   <div class="sb-mkt" id="sb-mkt-btn" onclick="toggleCountryDropdown()">
     <span class="sb-mkt-name" id="sb-mkt-label">🇲🇦 Morocco</span>
@@ -2085,44 +2131,56 @@ async function renderCrossMarket(){
   var avgYld=meanOf(data.map(function(d){return d.sig.gross_yield_pct;})); avgYld=avgYld!=null?avgYld.toFixed(1):null;
   var avgLiq=meanOf(data.map(function(d){return d.sig.liquidity_score;})); avgLiq=avgLiq!=null?Math.round(avgLiq):null;
   var rentUSD=meanOf(data.map(function(d){return _usd(d.kpi.median_rent,d.cur,fx);}));
-  var K1=function(l,v,s){ return '<div style="background:var(--surface);padding:16px 18px;border:1px solid var(--border);"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:8px;">'+l+'</div><div style="font-family:var(--serif);font-size:24px;color:var(--ink);line-height:1;">'+v+'</div><div style="font-size:10.5px;color:var(--ink4);margin-top:7px;">'+(s||'')+'</div></div>'; };
+  // Cross-market USD city medians (for price bar + distribution histogram)
+  var cityUSD=[]; data.forEach(function(d){ (d.kpi.cities||[]).forEach(function(c){ var u=_usd(c.sale_median,d.cur,fx); if(u) cityUSD.push(u); }); });
+  var K1=function(ic,l,v,s){ return '<div class="kpi"><div style="display:flex;gap:11px;align-items:flex-start;"><div class="kpi-ico">'+ic+'</div><div style="min-width:0;"><div class="kpi-lbl" style="margin-bottom:7px;">'+l+'</div><div class="kpi-val">'+v+'</div><div class="kpi-sub" style="margin-top:6px;">'+(s||'')+'</div></div></div></div>'; };
+  var MINI=function(l,v,color,note){ var sp='<svg class="spark" viewBox="0 0 180 34" preserveAspectRatio="none"><line x1="2" y1="24" x2="178" y2="24" stroke="'+color+'" stroke-width="1.5" stroke-dasharray="3 5" opacity=".55"/><circle cx="176" cy="24" r="2.6" fill="'+color+'"/></svg>';
+    return '<div class="mini"><div class="mini-t">'+l+'<span class="i" title="Level shown from latest scrape. Week-over-week trend line activates once a second weekly snapshot exists.">ⓘ</span></div><div style="display:flex;align-items:baseline;"><span class="mini-v">'+v+'</span>'+(note?'<span class="delta flat">'+note+'</span>':'')+'</div>'+sp+'</div>'; };
   el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:16px;flex-wrap:wrap;">'
-    +'<div><div class="pg-title" style="margin-bottom:2px;">Welcome back, Mahmoud</div><div style="font-size:13px;color:var(--ink3);">Real-time intelligence from property listings across Africa &amp; emerging markets.</div></div>'
-    +'<button class="pa-btn gold" onclick="nav(\'market-reports\')">↓ Reports &amp; Insights</button></div>'
-    +'<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px;">'
-      +K1('Live Markets', lives.length, data.map(function(d){return d.c.label;}).join(', '))
-      +K1('Total Listings', totalListings>=1000?'~'+Math.round(totalListings/1000)+'k':totalListings, 'across all markets')
-      +K1('Cities Covered', cityCount, 'across all districts')
-      +K1('Update Frequency','Weekly','automated collection')
-      +K1('Latest Refresh', refresh, 'all markets')
-      +K1('Data Completeness', comp+'%','listings with price/m²')
+    +'<div><div class="pg-title" style="margin-bottom:2px;">Welcome back, Mahmoud</div><div style="font-size:12.5px;color:var(--ink3);">Real-time intelligence from property listings across Africa &amp; emerging markets.</div></div>'
+    +'<button class="tb-export" onclick="nav(\'market-reports\')">↓ Reports &amp; Insights</button></div>'
+    +'<div class="kpi-grid">'
+      +K1('◎','Live Markets', lives.length, data.map(function(d){return d.c.label;}).join(', '))
+      +K1('▤','Total Listings', totalListings>=1000?'~'+Math.round(totalListings/1000)+'k':totalListings, 'across all markets')
+      +K1('▥','Cities Covered', cityCount, 'across all districts')
+      +K1('↻','Update Frequency','Weekly','automated collection')
+      +K1('◔','Latest Refresh', refresh, 'all markets')
+      +K1('◈','Data Completeness', comp+'%','listings with price/m²')
     +'</div>'
-    +'<div style="display:grid;grid-template-columns:1.3fr 1.3fr 1fr;gap:14px;margin-bottom:14px;">'
-      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Market Coverage Map</div><span style="font-size:10px;color:var(--green);font-weight:700;">● LIVE</span></div><div id="xm-map" style="height:300px;"></div></div>'
-      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Median Asking Price / m² (Sale)</div><div class="panel-sub">USD · top cities</div></div><div class="panel-body"><div style="height:260px;"><canvas id="xm-price"></canvas></div></div></div>'
-      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Listings by Market</div></div><div class="panel-body"><div style="height:260px;"><canvas id="xm-inv"></canvas></div></div></div>'
+    +'<div style="display:grid;grid-template-columns:1.28fr 1.22fr .96fr;gap:12px;margin-bottom:14px;">'
+      +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Market Coverage Map</div><div class="panel-sub">where we collect data</div></div><span style="font-size:9px;color:var(--green);font-weight:700;letter-spacing:.05em;">● LIVE</span></div><div id="xm-map" style="height:264px;"></div></div>'
+      +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Median Asking Price / m² · Sale</div><div class="panel-sub">USD · top cities</div></div></div><div class="panel-body"><div style="height:248px;"><canvas id="xm-price"></canvas></div></div></div>'
+      +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Listings by Market</div><div class="panel-sub">total active listings</div></div></div><div class="panel-body"><div class="inv-wrap"><div style="height:206px;"><canvas id="xm-inv"></canvas></div><div class="inv-list" id="xm-invlist"></div></div></div></div>'
     +'</div>'
-    +'<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:14px;">'
-      +K1('Median Rent (USD)', rentUSD?'$'+rentUSD.toFixed(1):'—','/m²/mo · avg')
-      +K1('Avg Gross Yield', avgYld?avgYld+'%':'—','across markets')
-      +K1('Avg Liquidity', avgLiq!=null?avgLiq+'/100':'—','market depth')
-      +K1('Avg IOS', avgIOS!=null?avgIOS+'/100':'—','opportunity')
-      +K1('Price Momentum','—','builds weekly')
-      +K1('Inventory Momentum','—','builds weekly')
+    +'<div class="mini-grid">'
+      +MINI('Median Rent', rentUSD?'$'+rentUSD.toFixed(1):'—','var(--gold)', rentUSD?'baseline':null)
+      +MINI('Avg Gross Yield', avgYld?avgYld+'%':'—','var(--blue)', avgYld?'baseline':null)
+      +MINI('Avg Liquidity', avgLiq!=null?avgLiq+'/100':'—','var(--green)', avgLiq!=null?'baseline':null)
+      +MINI('Avg IOS', avgIOS!=null?avgIOS+'/100':'—','var(--gold)', avgIOS!=null?'baseline':null)
+      +MINI('Price Momentum (WoW)','—','var(--green)','builds weekly')
+      +MINI('Inventory Momentum (WoW)','—','var(--blue)','builds weekly')
     +'</div>'
-    +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px;">'
-      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Top Districts by Activity</div><div class="panel-sub">across all markets</div></div><div id="xm-districts" style="max-height:300px;overflow:auto;"></div></div>'
-      +'<div class="panel"><div class="panel-hd"><div class="panel-title">Markets</div></div><div id="xm-markets"></div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1.05fr 1.05fr 1fr;gap:12px;margin-bottom:14px;">'
+      +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Price Distribution · Sale</div><div class="panel-sub">covered cities · USD/m²</div></div></div><div class="panel-body"><div style="height:186px;"><canvas id="xm-dist"></canvas></div></div></div>'
+      +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Top Districts by Activity</div><div class="panel-sub">all markets</div></div></div><div id="xm-districts" style="max-height:230px;overflow:auto;"></div></div>'
+      +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Markets</div><div class="panel-sub">click to open</div></div></div><div id="xm-markets"></div></div>'
+      +'<div class="panel" style="margin:0;"><div class="panel-hd"><div><div class="panel-title">Biggest Price Changes</div><div class="panel-sub">week-over-week</div></div><div class="tab-switch"><button class="active">Increases</button><button>Decreases</button></div></div><div class="panel-body" style="color:var(--ink4);font-size:11.5px;line-height:1.6;">Week-over-week movers activate once a second weekly snapshot exists. First deltas land after next Monday’s scrape.</div></div>'
     +'</div>'
-    +'<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);border:1px solid var(--border);">'
-      +_statCell('Scrape Status','All markets completed','var(--green)')
-      +_statCell('Data Freshness','Updated this week','var(--green)')
-      +_statCell('Coverage',comp+'% critical fields','var(--gold)')
-      +_statCell('Source Health',data.length+' portals operational','var(--green)')
-      +_statCell('Avg / Market','~'+Math.round(totalListings/Math.max(lives.length,1)/1000)+'k listings','var(--ink3)')
-      +_statCell('Next Refresh',_nextMon(),'var(--ink3)')
+    +'<div class="status-strip">'
+      +'<div class="status"><div class="status-ico">✓</div><div><div class="status-lbl">Latest Scrape</div><div class="status-val">All markets completed<br><span style="color:var(--ink5);">'+refresh+'</span></div></div></div>'
+      +'<div class="status"><div class="status-ico">◉</div><div><div class="status-lbl">Data Freshness</div><div class="status-val">Updated this week<br><span style="color:var(--ink5);">100% markets</span></div></div></div>'
+      +'<div class="status"><div style="width:100%;"><div class="status-lbl">Coverage · Critical Fields</div><div class="status-val" style="font-family:var(--serif);font-size:14px;">'+comp+'%</div><div class="progress"><span style="width:'+comp+'%;"></span></div></div></div>'
+      +'<div class="status"><div class="status-ico">●</div><div><div class="status-lbl">Source Health</div><div class="status-val">'+data.length+' portals operational<br><span style="color:var(--ink5);">active collectors</span></div></div></div>'
+      +'<div class="status"><div><div class="status-lbl">Avg / Market</div><div class="status-val">~'+Math.round(totalListings/Math.max(lives.length,1)/1000)+'k listings<br><span style="color:var(--ink5);">this week</span></div></div></div>'
+      +'<div class="status"><div class="status-ico g">▫</div><div><div class="status-lbl">Next Refresh</div><div class="status-val">'+_nextMon()+'<br><span style="color:var(--ink5);">weekly cycle</span></div></div></div>'
     +'</div>';
-  renderXmMap(data); renderXmPrice(data,fx); renderXmInv(data); renderXmDistricts(data); renderXmMarkets(data,fx);
+  renderXmMap(data); renderXmPrice(data,fx); renderXmInv(data); renderXmDistricts(data); renderXmMarkets(data,fx); renderXmDist(cityUSD);
+}
+function renderXmDist(vals){ _xmD('xm-dist'); var cv=document.getElementById('xm-dist'); if(!cv||!window.Chart)return;
+  if(!vals||!vals.length){ return; }
+  var bands=[['<500',0,500],['500–1k',500,1000],['1k–1.5k',1000,1500],['1.5k–2k',1500,2000],['2k–3k',2000,3000],['>3k',3000,1e9]];
+  var counts=bands.map(function(b){ return vals.filter(function(v){return v>=b[1]&&v<b[2];}).length; });
+  _xmCharts['xm-dist']=new Chart(cv,{type:'bar',data:{labels:bands.map(function(b){return b[0];}),datasets:[{data:counts,backgroundColor:'#d4a93f',borderWidth:0,borderRadius:2,barPercentage:.66}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+' cities';}}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:8.5},color:'#7f92a7'}},y:{beginAtZero:true,grid:{color:'rgba(255,255,255,.06)'},ticks:{stepSize:1,font:{family:'DM Mono',size:9},color:'#7f92a7'}}}}});
 }
 function renderXmMap(data){ var el=document.getElementById('xm-map'); if(!el||!window.L) return;
   if(_xmMap){try{_xmMap.remove();}catch(e){}_xmMap=null;}
@@ -2139,7 +2197,9 @@ function renderXmPrice(data,fx){ _xmD('xm-price'); var cv=document.getElementByI
   _xmCharts['xm-price']=new Chart(cv,{type:'bar',data:{labels:rows.map(function(r){return r.city;}),datasets:[{data:rows.map(function(r){return Math.round(r.usd);}),backgroundColor:rows.map(function(r){return r.color;}),borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10},color:'#8b95a3'}},y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{family:'DM Mono',size:10},color:'#8b95a3',callback:function(v){return '$'+v;}}}}}});
 }
 function renderXmInv(data){ _xmD('xm-inv'); var cv=document.getElementById('xm-inv'); if(!cv||!window.Chart)return;
-  _xmCharts['xm-inv']=new Chart(cv,{type:'doughnut',data:{labels:data.map(function(d){return d.c.label;}),datasets:[{data:data.map(function(d){return d.listings;}),backgroundColor:data.map(function(d){return d.color;}),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'64%',plugins:{legend:{position:'right',labels:{font:{family:'DM Sans',size:11},color:'#8b95a3',boxWidth:8,padding:8}}}}});
+  var tot=data.reduce(function(a,d){return a+d.listings;},0)||1;
+  _xmCharts['xm-inv']=new Chart(cv,{type:'doughnut',data:{labels:data.map(function(d){return d.c.label;}),datasets:[{data:data.map(function(d){return d.listings;}),backgroundColor:data.map(function(d){return d.color;}),borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw.toLocaleString();}}}}},plugins:[{id:'ctr',afterDraw:function(ch){var a=ch.chartArea,x=(a.left+a.right)/2,y=(a.top+a.bottom)/2,ctx=ch.ctx;ctx.save();ctx.textAlign='center';ctx.fillStyle='#f4f7fb';ctx.font='400 21px "DM Serif Display"';ctx.fillText(tot>=1000?'~'+Math.round(tot/1000)+'k':tot,x,y-1);ctx.fillStyle='#7f92a7';ctx.font='10px "DM Sans"';ctx.fillText('Total',x,y+15);ctx.restore();}}]});
+  var ll=document.getElementById('xm-invlist'); if(ll){ ll.innerHTML=data.slice().sort(function(a,b){return b.listings-a.listings;}).map(function(d){ return '<div class="inv-item"><span class="dot" style="background:'+d.color+';"></span><div><strong>'+d.c.label+'</strong><span>'+d.listings.toLocaleString()+' ('+Math.round(d.listings/tot*100)+'%)</span></div></div>'; }).join(''); }
 }
 function renderXmDistricts(data){ var el=document.getElementById('xm-districts'); if(!el)return;
   var rows=[]; data.forEach(function(d){ (d.kpi.districts||[]).forEach(function(x){ rows.push({sub:x.submarket,market:d.c.label,n:Number(x.count)}); }); });
