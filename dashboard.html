@@ -705,6 +705,11 @@ table.xmt{width:100%;border-collapse:collapse;}
 .heat-cell .hc-v{font-size:13px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums;}
 .heat-cell .hc-s{font-size:9.5px;color:var(--ink4);margin-top:1px;}
 </style>
+<style>
+.skel{background:linear-gradient(90deg,rgba(148,168,196,.08) 25%,rgba(148,168,196,.16) 50%,rgba(148,168,196,.08) 75%);background-size:200% 100%;animation:skel 1.4s ease infinite;border-radius:6px;}
+@keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.skel{animation:none;}}
+</style>
 </head>
 <body>
 
@@ -889,90 +894,26 @@ table.xmt{width:100%;border-collapse:collapse;}
     ══════════════════════════════════════════════ -->
     <div class="pg" id="pg-markets"></div>
     <div class="pg active" id="pg-market-terminal">
-      <div class="eyebrow">Overview</div>
-      <div class="pg-title">Market Terminal</div>
-      <div class="pg-sub" id="mt-subtitle">Morocco real estate intelligence — March 2026. Click any metric to view the evidence behind it. All indicators show source classification and confidence level.</div>
-
-      <!-- KPI Snapshot -->
-      <div class="kpi-grid">
-        <div class="kpi" onclick="showEvidence('prime-rent')" style="cursor:pointer;" title="Click to view evidence">
-          <div class="kpi-lbl">Prime Office Rent <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
-          <div class="kpi-val" id="kpi-prime-rent">DH 142</div>
-          <div class="kpi-sub">per m²/mo · Casablanca CBD</div>
-          <div class="kpi-chg" id="kpi-prime-rent-chg">▲ +4.4% 12M</div>
-          <div style="margin-top:6px;"><span class="ds-tag ds-listings">Measured</span></div>
-        </div>
-        <div class="kpi" onclick="showEvidence('median-price')" style="cursor:pointer;">
-          <div class="kpi-lbl">Median Sale Price <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
-          <div class="kpi-val" id="kpi-median-price">DH 18,400</div>
-          <div class="kpi-sub" id="kpi-median-sub">per m² · all assets</div>
-          <div class="kpi-chg chg pos" id="kpi-price-growth">▲ +6.1% 12M</div>
-          <div style="margin-top:6px;"><span class="ds-tag ds-listings">Measured</span></div>
-        </div>
-        <div class="kpi" onclick="showEvidence('listings-volume')" style="cursor:pointer;">
-          <div class="kpi-lbl">Active Listings <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
-          <div class="kpi-val" id="kpi-active-listings">12,806</div>
-          <div class="kpi-sub">verified · all asset classes</div>
-          <div class="kpi-chg" id="kpi-listings-chg">▲ +8.3% MoM</div>
-          <div style="margin-top:6px;"><span class="ds-tag ds-listings">Measured</span></div>
-        </div>
-        <div class="kpi" onclick="showEvidence('yield-estimate')" style="cursor:pointer;">
-          <div class="kpi-lbl">Yield Estimate <span class="conf conf-e"><span class="conf-dot"></span>Est.</span></div>
-          <div class="kpi-val" id="kpi-yield">5.8%</div>
-          <div class="kpi-sub">gross · Casablanca resi.</div>
-          <div class="kpi-chg" style="color:var(--ink4);">→ Stable</div>
-          <div style="margin-top:6px;"><span class="ds-tag ds-model">Modeled</span></div>
-        </div>
-        <div class="kpi" onclick="showEvidence('liquidity')" style="cursor:pointer;">
-          <div class="kpi-lbl">Liquidity Score <span class="conf conf-m"><span class="conf-dot"></span>Med.</span></div>
-          <div class="kpi-val" id="kpi-liquidity">6.4<span style="font-size:14px;color:var(--ink4);">/10</span></div>
-          <div class="kpi-sub">Ironwood Liquidity Index</div>
-          <div class="kpi-chg" id="kpi-liquidity-chg">▲ +0.3 pts MoM</div>
-          <div style="margin-top:6px;"><span class="ds-tag ds-model">Modeled</span></div>
-        </div>
-        <div class="kpi" onclick="showEvidence('pipeline')" style="cursor:pointer;">
-          <div class="kpi-lbl">Pipeline Supply <span class="conf conf-m"><span class="conf-dot"></span>Med.</span></div>
-          <div class="kpi-val" id="kpi-pipeline">~340k</div>
-          <div class="kpi-sub">m² GFA · 33 tracked projects</div>
-          <div class="kpi-chg" style="color:var(--amber);">⚠ Elevated</div>
-          <div style="margin-top:6px;"><span class="ds-tag ds-pipeline">Pipeline</span></div>
-        </div>
+      <span id="mt-subtitle" style="display:none;"></span>
+      <div class="v2-head"><div>
+        <div class="skel" style="width:130px;height:12px;margin-bottom:12px;"></div>
+        <div class="skel" style="width:340px;height:30px;margin-bottom:10px;"></div>
+        <div class="skel" style="width:460px;height:13px;"></div>
+      </div></div>
+      <div class="kpis">
+        <div class="kpi"><div class="skel" style="width:70%;height:11px;"></div><div class="skel" style="width:45%;height:24px;margin-top:12px;"></div><div class="skel" style="width:85%;height:9px;margin-top:14px;"></div></div>
+        <div class="kpi"><div class="skel" style="width:70%;height:11px;"></div><div class="skel" style="width:45%;height:24px;margin-top:12px;"></div><div class="skel" style="width:85%;height:9px;margin-top:14px;"></div></div>
+        <div class="kpi"><div class="skel" style="width:70%;height:11px;"></div><div class="skel" style="width:45%;height:24px;margin-top:12px;"></div><div class="skel" style="width:85%;height:9px;margin-top:14px;"></div></div>
+        <div class="kpi"><div class="skel" style="width:70%;height:11px;"></div><div class="skel" style="width:45%;height:24px;margin-top:12px;"></div><div class="skel" style="width:85%;height:9px;margin-top:14px;"></div></div>
+        <div class="kpi"><div class="skel" style="width:70%;height:11px;"></div><div class="skel" style="width:45%;height:24px;margin-top:12px;"></div><div class="skel" style="width:85%;height:9px;margin-top:14px;"></div></div>
+        <div class="kpi"><div class="skel" style="width:70%;height:11px;"></div><div class="skel" style="width:45%;height:24px;margin-top:12px;"></div><div class="skel" style="width:85%;height:9px;margin-top:14px;"></div></div>
       </div>
-
-      <!-- Ranked City Table (real, from listings) -->
-      <div>
-        <div class="panel">
-          <div class="panel-hd">
-            <div>
-              <div class="panel-title">City Rankings</div>
-              <div class="panel-sub">Median asking price by city · listings-derived</div>
-            </div>
-            <button class="pa-btn" onclick="exportTable('city-rank-table')">↓ CSV</button>
-          </div>
-          <table class="dt" id="city-rank-table">
-            <thead><tr><th>#</th><th>City</th><th>Prime Rent DH/m²</th><th>12M Chg</th><th>Listings</th><th>Liq. Score</th></tr></thead>
-            <tbody id="city-rank-body">
-              <tr><td class="dt-rank">01</td><td class="dt-city">Casablanca</td><td class="mono">142</td><td class="chg pos">+4.4%</td><td class="mono">4,218</td><td class="mono">7.0</td></tr>
-              <tr><td class="dt-rank">02</td><td class="dt-city">Marrakech</td><td class="mono">118</td><td class="chg pos">+8.4%</td><td class="mono">2,847</td><td class="mono">6.8</td></tr>
-              <tr><td class="dt-rank">03</td><td class="dt-city">Rabat</td><td class="mono">98</td><td class="chg pos">+2.6%</td><td class="mono">2,340</td><td class="mono">6.0</td></tr>
-              <tr><td class="dt-rank">04</td><td class="dt-city">Tangiers</td><td class="mono">88</td><td class="chg pos">+1.3%</td><td class="mono">1,509</td><td class="mono">5.2</td></tr>
-              <tr><td class="dt-rank">05</td><td class="dt-city">Fez</td><td class="mono">72</td><td class="chg neg">-2.1%</td><td class="mono">892</td><td class="mono">3.8</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Market & Development News (live — fed by fetch_news.py, Mon+Thu) -->
-      <div class="panel">
-        <div class="panel-hd">
-          <div>
-            <div class="panel-title">Market &amp; Development News</div>
-            <div class="panel-sub">Latest for this market · <span class="ds-tag ds-macro">Auto-fetched Mon &amp; Thu</span></div>
-          </div>
-        </div>
-        <div id="overview-news-list" style="border-top:1px solid var(--border);"><div style="padding:18px;color:var(--ink5);font-size:12px;">Loading news…</div></div>
-      </div>
-    </div><!-- /pg-market-terminal -->
+      <section class="grid g-main">
+        <div class="panel"><div class="panel-body2"><div class="skel" style="width:40%;height:13px;margin-bottom:16px;"></div><div class="skel" style="width:100%;height:250px;"></div></div></div>
+        <div class="panel"><div class="panel-body2"><div class="skel" style="width:45%;height:13px;margin-bottom:16px;"></div><div class="skel" style="width:100%;height:250px;"></div></div></div>
+      </section>
+      <div style="text-align:center;padding:8px 0 20px;font-size:11px;color:var(--ink5);">Loading live coverage…</div>
+    </div>
 
     <!-- ══════════════════════════════════════════════
          KEY INDICATORS
