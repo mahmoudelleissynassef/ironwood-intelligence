@@ -374,3 +374,16 @@ DONE since this doc was originally written (do NOT redo):
 - Email: business@ironwoodintelligence.com
 - Phone: +971 50 123 4567
 - Office: Meydan Free Zone, Dubai, UAE
+
+---
+
+## DESIGN DIRECTION (July 2026)
+The canonical UI design is in design-v2/ (index.html = Africa overview, markets.html = city markets page).
+All dashboard work must adopt its design system:
+- Dark ink #0A0D12 bg, surfaces #10141C, bronze accent #C89B5A / #E3BC7E, teal #55A899 secondary
+- Fraunces (display serif, titles only) + Inter with tabular numerals for all data
+- Every metric shows its data basis ("Based on n listings"), units always explicit (USD, /m², sale vs rent)
+- Asking prices are never presented as transaction prices; medians preferred over means
+- No backdrop-filter on sticky elements (breaks rendering in some browsers)
+- design-v2 pages use placeholder data — the DATA is not canonical, only the design is
+- dashboard.html is the functional source of truth: its Supabase RPC wiring (market_kpis, market_signals, market_filtered, live FX, World Bank) must be preserved through any re-skin. Zero fabricated data — metrics without real inputs show "—" with an honest note.
