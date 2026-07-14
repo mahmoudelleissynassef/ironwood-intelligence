@@ -2053,6 +2053,7 @@ async function loadBatch2(country){
   renderHeat(country,K);
   renderMap(country,K);
   renderCitiesPage(country);
+  renderDistrictsPage(country);
   renderExplorer(country,K);
   renderExportsPage(country,K);
   renderReports(country);
@@ -2128,6 +2129,33 @@ function renderCityProfile(country,city){
   var ab=cc.filter(function(r){return type==='all'||r.tt===type;}).sort(function(a,b){return b.med-a.med;}).map(function(r){return '<tr><td>'+_cap(r.ac)+'</td><td>'+(r.tt==='sale'?'Sale':'Rent')+'</td><td class="mono">'+S+Math.round(r.med).toLocaleString()+'</td><td class="mono">'+r.count+'</td></tr>';}).join('');
   var at=ab?('<div class="panel"><div class="panel-hd"><div class="panel-title">By Asset Class — '+city+'</div></div><table class="dt"><thead><tr><th>Asset</th><th>Type</th><th>Median/m²</th><th>Listings</th></tr></thead><tbody>'+ab+'</tbody></table></div>'):'';
   el.innerHTML=kpis+dist+at;
+}
+function renderDistrictsPage(country){
+  var el=document.getElementById('pg-districts'); if(!el) return;
+  var c=COUNTRIES[country], K=_B2K, S=_B2S;
+  if(!c||c.status!=='live'||!K||!(K.districts||[]).length){
+    el.innerHTML='<div class="eyebrow">Markets</div><div class="pg-title">Districts</div><div class="pg-sub">District profiles activate once '+(c?c.label:country)+' has live listing data.</div>'+_emptyState('No district data yet.'); return; }
+  var ds=(K.districts||[]).slice().sort(function(a,b){return b.med-a.med;});
+  var rows=ds.map(function(r){ var cm=(K.cities||[]).filter(function(x){return x.city===r.city;})[0];
+    var base=cm&&cm.sale_median?cm.sale_median:null, pct=base?Math.round((r.med-base)/base*100):null;
+    return '<tr><td class="dt-city">'+(r.submarket||'—')+'</td><td class="dt-muted">'+r.city+'</td><td class="mono">'+S+Math.round(r.med).toLocaleString()+'</td><td class="mono">'+r.count+'</td><td class="'+(pct>0?'chg pos':pct<0?'chg neg':'mono')+'">'+(pct==null?'—':(pct>0?'+':'')+pct+'% vs city')+'</td></tr>'; }).join('');
+  el.innerHTML='<div class="eyebrow">Markets</div><div class="pg-title">Districts</div>'
+    +'<div class="pg-sub">Sub-market median asking prices for '+c.label+' — listings-derived.</div>'
+    +'<div class="panel"><div class="panel-hd"><div class="panel-title">District Profiles — '+c.label+'</div><div class="panel-sub">'+ds.length+' sub-markets</div></div>'
+    +'<table class="dt"><thead><tr><th>District</th><th>City</th><th>Median/m²</th><th>Listings</th><th>vs City</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+// Wipe every hardcoded demo table/value at boot so nothing fabricated ever shows,
+// even for a frame. Live renderers then fill real data into the empty containers.
+function blankHardcoded(){
+  ['indicators-table','city-rank-table','yield-table','district-full-table','macro-table','city-macro-table',
+   'listings-table','txn-table','pipeline-full-table','occupiers-table','infra-table','trend-table',
+   'liq-full-table','radar-table','city-trend-table','city-pipeline-table','city-txn-table'].forEach(function(id){
+    var t=document.getElementById(id); if(t){ var tb=t.querySelector('tbody'); if(tb) tb.innerHTML=''; }});
+  var ms=document.getElementById('macro-src-tbody'); if(ms) ms.innerHTML='';
+  ['kpi-median-price','kpi-prime-rent','kpi-active-listings','kpi-yield','kpi-liquidity','kpi-pipeline',
+   'kpi-price-growth','kpi-median-sub','kpi-listings-chg','kpi-prime-rent-chg','kpi-liquidity-chg',
+   'c-med-price','c-prime-rent','c-listings','c-yield','c-liq','c-pipeline'].forEach(function(id){
+    var e=document.getElementById(id); if(e) e.textContent='—'; });
 }
 async function renderInfra(country){
   var el=document.getElementById('pg-infrastructure'); if(!el) return;
@@ -2865,6 +2893,7 @@ async function boot(){
     const initials=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
     document.getElementById('sb-av').textContent=initials;
     document.getElementById('sb-un').textContent=name;
+    blankHardcoded();
     buildCountryDropdown();
     loadProgress(50,'Loading market data...');
     await loadListings();
@@ -3114,15 +3143,7 @@ const EVIDENCE_DATA={
   'pipeline':{title:'Pipeline Supply — Morocco',sub:'Evidence behind this metric',note:'Sum of tracked GFA across 33 development projects in Morocco. Based on developer announcements, planning data, and press. Figures are estimates — actual completions may differ.',meta:[['Dataset','Development pipeline (Raw layer)'],['Source classification','Pipeline data'],['Projects tracked','33'],['Source types','Developer announcements · Press · Planning'],['GFA estimate','~340,000 m²'],['Confidence','Medium'],['As of','March 2026'],['Important','Estimates only — subject to delivery delays']]},
 };
 
-function showEvidence(key){
-  const d=EVIDENCE_DATA[key];
-  if(!d) return;
-  document.getElementById('ep-title').textContent=d.title;
-  document.getElementById('ep-sub').textContent=d.sub;
-  document.getElementById('ep-note').textContent=d.note;
-  document.getElementById('ep-meta').innerHTML=d.meta.map(([l,v])=>`<div class="ep-meta-row"><span class="ep-meta-lbl">${l}</span><span class="ep-meta-val">${v}</span></div>`).join('');
-  document.getElementById('evidence-panel').classList.add('open');
-}
+function showEvidence(key){ /* disabled — the old evidence panel held hardcoded figures; no fabricated evidence is shown */ }
 function closeEvidence(){ document.getElementById('evidence-panel').classList.remove('open'); }
 
 // ── EXPORT ──
