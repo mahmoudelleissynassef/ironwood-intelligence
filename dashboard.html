@@ -3454,12 +3454,13 @@ function exportAgg(kind){
 async function renderReports(country){
   var el=document.getElementById('pg-market-reports'); if(!el||!sb) return;
   var c=COUNTRIES[country], lbl=c?c.label:country, rows=[];
-  try{ var r=await sb.from('market_reports').select('period,title,summary').eq('country',country).order('period',{ascending:false}).limit(12); rows=(r&&r.data)||[]; }catch(e){}
-  el.innerHTML=V2HEAD(country,'Market Reports',['Monthly AI-written market reports from live aggregates &amp; observed news'],null)
+  try{ var r=await sb.from('market_reports').select('period,title,summary,pdf_url').eq('country',country).order('period',{ascending:false}).limit(12); rows=(r&&r.data)||[]; }catch(e){}
+  el.innerHTML=V2HEAD(country,'Market Reports',['Monthly institutional PDF reports · macro + asking-price landscape + pipeline + research layer'],null)
    +(rows.length?rows.map(function(x){ return '<div class="panel"><div class="panel-head"><div><div class="panel-title">'+(x.title||lbl+' Market Report')+'</div>'
-      +'<div class="panel-sub num">'+(x.period||'')+'</div></div></div>'
+      +'<div class="panel-sub num">'+(x.period||'')+'</div></div>'
+      +(x.pdf_url?'<div class="panel-actions"><a class="btn btn-primary" href="'+_newsEsc(_safeUrl(x.pdf_url))+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download PDF</a></div>':'')+'</div>'
       +'<div class="panel-body2" style="white-space:pre-wrap;font-size:12.5px;line-height:1.7;color:var(--ink2);">'+_newsEsc(x.summary||'')+'</div></div>'; }).join('')
-    :_emptyState('The first monthly AI market report for '+lbl+' is generated at month-end from live data. None published yet.'));
+    :_emptyState('The first monthly PDF report for '+lbl+' is generated at month-start from live data. None published yet.'));
 }
 function renderInsights(country,K){
   var el=document.getElementById('pg-insights'); if(!el) return;
