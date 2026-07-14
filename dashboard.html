@@ -492,17 +492,13 @@ button{cursor:pointer;font-family:var(--sans);}
 
   <div class="sb-section">
     <div class="sb-section-lbl">Markets</div>
-    <div class="ni" onclick="nav('countries')"><span class="ni-icon">🌍</span>Countries</div>
     <div class="ni" onclick="nav('cities')"><span class="ni-icon">◫</span>Cities</div>
     <div class="ni" onclick="nav('districts')"><span class="ni-icon">◪</span>Districts</div>
   </div>
 
   <div class="sb-section">
     <div class="sb-section-lbl">Data</div>
-    <div class="ni" onclick="nav('listings')"><span class="ni-icon">≡</span>Listings</div>
-    <div class="ni" onclick="nav('transactions')"><span class="ni-icon">⟳</span>Transactions</div>
     <div class="ni" onclick="nav('pipeline')"><span class="ni-icon">◱</span>Dev. Pipeline</div>
-    <div class="ni" onclick="nav('occupiers')"><span class="ni-icon">◧</span>Corp. Occupiers</div>
     <div class="ni" onclick="nav('infrastructure')"><span class="ni-icon">⬡</span>Infrastructure</div>
     <div class="ni" onclick="nav('macro-indicators')"><span class="ni-icon">◐</span>Macro Indicators</div>
   </div>
@@ -556,17 +552,6 @@ button{cursor:pointer;font-family:var(--sans);}
       <div class="tb-breadcrumb" id="tb-bc">Overview <span>/ Market Terminal</span></div>
     </div>
     <div class="tb-right">
-      <div class="tb-conf">
-        <span>Confidence:</span>
-        <span class="conf conf-h"><span class="conf-dot"></span>High</span>
-        <span class="conf conf-m"><span class="conf-dot"></span>Med.</span>
-        <span class="conf conf-e"><span class="conf-dot"></span>Est.</span>
-      </div>
-      <div class="tb-conf" title="Measured = computed directly from listings. Modeled = derived with assumptions (e.g. yield, liquidity).">
-        <span>Source:</span>
-        <span class="ds-tag ds-listings">Measured</span>
-        <span class="ds-tag ds-model">Modeled</span>
-      </div>
       <div class="tb-filter">
         <span>Asset:</span>
         <select id="asset-filter" onchange="applyFilters()">
@@ -579,11 +564,11 @@ button{cursor:pointer;font-family:var(--sans);}
         </select>
       </div>
       <div class="tb-filter">
-        <span>Period:</span>
-        <select id="period-filter" onchange="applyFilters()">
-          <option value="latest">Mar 2026</option>
-          <option value="q4-2025">Q4 2025</option>
-          <option value="q3-2025">Q3 2025</option>
+        <span>Type:</span>
+        <select id="type-filter" onchange="applyFilters()">
+          <option value="all">Sale &amp; Rent</option>
+          <option value="sale">Sale</option>
+          <option value="rent">Rent</option>
         </select>
       </div>
       <button class="tb-export" onclick="nav('exports')">↓ Export</button>
@@ -2003,7 +1988,8 @@ async function loadMarketSignals(country){
 //    "Measured / Modeled / DEMO DATA / Auto-fetched" micro-labels.
 // ══════════════════════════════════════════════════════════════
 var COMINGSOON={
-  'pg-transactions':['Transactions','Recorded-transaction data needs land-registry / deal feeds we don’t yet license. Asking-price evidence is available under Data › Listings.'],
+  'pg-listings':['Listings','Raw individual listing records are not exposed in the client. The market intelligence derived from them is available under Key Indicators, Market Signals, Cities and Districts.'],
+  'pg-transactions':['Transactions','Recorded-transaction data needs land-registry / deal feeds we don’t yet license.'],
   'pg-occupiers':['Corporate Occupiers','Corporate-occupier data is not yet sourced for this market.'],
   'pg-infrastructure':['Infrastructure Projects','Infrastructure projects populate from the AI news pipeline (Mon & Thu) and appear here as they are detected for this market.'],
   'pg-price-trends':['Price Trends','Trend lines need several weekly snapshots. History is captured automatically each Monday — trends appear once enough accrues.'],
@@ -2386,6 +2372,10 @@ async function loadLiveKPIs(country){
           +'Yield requires both sale and rent listings in same city. Upload rent listings to activate.</td></tr>';
       }
     }
+
+    // store the per-market rows for the top-bar Asset/Type filter, then apply selection
+    window._kpiInd=indicatorRows; window._kpiYld=yieldRows; window._kpiS=S; window._kpiNow=nowStr;
+    applyFilters();
 
     // ── UPDATE: Listings Page ──
     var listBody=document.querySelector('#listings-table tbody');
@@ -3040,7 +3030,35 @@ function exportTable(id,fmt='csv'){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download=`ironwood-${id}-${new Date().toISOString().slice(0,10)}.csv`;a.click();
 }
-function applyFilters(){ console.log('Filters applied'); }
+function _cap(s){ return s?s.charAt(0).toUpperCase()+s.slice(1):s; }
+// Top-bar Asset + Type filter — re-renders the Key Indicators and Yield tables
+// for the SELECTED MARKET only (no cross-market). Uses data cached by loadLiveKPIs.
+function applyFilters(){
+  var asset=(document.getElementById('asset-filter')||{}).value||'all';
+  var type=(document.getElementById('type-filter')||{}).value||'all';
+  var ind=window._kpiInd||[], yld=window._kpiYld||[], S=window._kpiS||'', now=window._kpiNow||'';
+  var indBody=document.querySelector('#indicators-table tbody');
+  if(indBody){
+    var rows=ind.filter(function(r){ return (asset==='all'||r.ac===asset)&&(type==='all'||r.tt===type); });
+    indBody.innerHTML=rows.length?rows.slice(0,40).map(function(r){
+      var u=r.tt==='rent'?'/m²/mo':'/m²';
+      return '<tr><td class="dt-city">'+r.city+'</td><td>'+_cap(r.ac)+'</td><td>'+(r.tt==='sale'?'Sale':'Rent')
+        +'</td><td class="mono">'+S+r.med.toLocaleString()+u+'</td><td class="mono">'+r.count
+        +'</td><td class="chg">—</td><td><span class="conf conf-h"><span class="conf-dot"></span>Live</span></td>'
+        +'<td class="mono dt-muted">'+now+'</td></tr>';
+    }).join(''):'<tr><td colspan="8" style="text-align:center;padding:16px;color:var(--ink5);">No listings for this asset / type in the selected market.</td></tr>';
+  }
+  var yBody=document.querySelector('#yield-table tbody');
+  if(yBody){
+    var yr=yld.filter(function(r){ return asset==='all'||r.ac===asset; });
+    yBody.innerHTML=yr.length?yr.map(function(r){
+      var col=r.y>=6?'color:var(--green)':r.y>=4?'color:var(--amber)':'color:var(--red)';
+      return '<tr><td class="dt-city">'+r.city+'</td><td>'+_cap(r.ac)+'</td><td class="mono">'+S+r.mS.toLocaleString()
+        +'</td><td class="mono">'+S+r.mR.toLocaleString()+'/mo</td><td class="mono" style="font-weight:600;'+col+'">'+r.y
+        +'%</td><td><span class="conf conf-e"><span class="conf-dot"></span>Calc.</span></td></tr>';
+    }).join(''):'<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--ink5);">No paired sale+rent data for this asset in the selected market.</td></tr>';
+  }
+}
 
 // ── REPORTS ──
 const REPORTS={
