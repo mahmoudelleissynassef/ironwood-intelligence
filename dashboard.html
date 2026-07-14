@@ -733,6 +733,39 @@ table.xmt{width:100%;border-collapse:collapse;}
 .rs-badge{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:600;padding:1.5px 8px;border-radius:20px;background:var(--blue-bg);color:var(--blue);white-space:nowrap;}
 .rs-val{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;}
 </style>
+
+<style>
+/* ═══ round 2: chips, fx pill, research charts, city map, macro cards ═══ */
+.chip-row{display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.a-chip{padding:5.5px 12px;font-size:11.5px;border:1px solid var(--border);background:var(--surface);border-radius:8px;color:var(--ink4);cursor:pointer;font-family:var(--sans);font-weight:500;transition:all .15s;}
+.a-chip:hover{color:var(--ink2);border-color:var(--border2);}
+.a-chip.on{background:var(--gold-pale);color:var(--gold2);border-color:rgba(200,155,90,.4);font-weight:600;}
+.fx-pill{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;color:var(--ink4);background:var(--surface);border:1px solid var(--border);padding:5.5px 10px;border-radius:20px;white-space:nowrap;font-variant-numeric:tabular-nums;}
+body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-toggle,body.no-filters #period-toggle,body.no-filters #fx-note{display:none!important;}
+.rs-chart{height:230px;position:relative;}
+.rs-audit summary{cursor:pointer;font-size:11px;color:var(--ink4);padding:8px 0;list-style:none;}
+.rs-audit summary:hover{color:var(--gold2);}
+.rs-audit summary::before{content:'▸ ';}
+.rs-audit[open] summary::before{content:'▾ ';}
+.city-map-frame{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);height:380px;background:#0C1017;}
+.city-map-frame .lmap{position:absolute;inset:0;z-index:1;}
+.seg-bar{display:grid;grid-template-columns:120px 1fr 130px;gap:10px;align-items:center;padding:3px 0;}
+.seg-bar .sb-n{font-size:11px;color:var(--ink3);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.seg-bar .sb-t{height:12px;border-radius:3px;background:rgba(148,168,196,.05);overflow:hidden;}
+.seg-bar .sb-f{height:100%;border-radius:3px;}
+.seg-bar .sb-v{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}
+</style>
+
+<style>
+.mcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:14px;}
+.mcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px 10px;transition:border-color .2s;}
+.mcard:hover{border-color:#283242;}
+.mcard .mc-t{font-size:11px;color:var(--ink3);font-weight:500;display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
+.mcard .mc-latest{font-size:15px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums;}
+.mcard .mc-latest .yr{font-size:10px;color:var(--ink4);font-weight:500;margin-right:5px;}
+.mcard .mc-chart{height:64px;margin-top:8px;position:relative;}
+.mcard .mc-src{font-size:9px;color:var(--ink5);margin-top:6px;letter-spacing:.04em;text-transform:uppercase;}
+</style>
 </head>
 <body>
 
@@ -881,27 +914,29 @@ table.xmt{width:100%;border-collapse:collapse;}
     </div>
     <div class="topbar-right">
       <div class="freshness"><span class="pulse"></span> Data as of&nbsp;<strong class="num" id="tb-fresh" style="color:var(--ink)">—</strong></div>
-      <div class="f-chip"><span>Asset</span>
-        <select id="asset-filter" onchange="applyFilters()">
-          <option value="all">All classes</option>
-          <option value="apartments">Apartments</option>
-          <option value="offices">Offices</option>
-          <option value="retail">Retail</option>
-          <option value="villas">Villas</option>
-          <option value="land">Land</option>
-        </select>
+      <div class="chip-row" id="asset-chips">
+        <button class="a-chip on" data-a="apartments" onclick="setAsset('apartments')">Apartments</button>
+        <button class="a-chip" data-a="villas" onclick="setAsset('villas')">Villas</button>
+        <button class="a-chip" data-a="houses" onclick="setAsset('houses')">Houses</button>
+        <button class="a-chip" data-a="offices" onclick="setAsset('offices')">Offices</button>
+        <button class="a-chip" data-a="retail" onclick="setAsset('retail')">Retail</button>
+        <button class="a-chip" data-a="land" onclick="setAsset('land')">Land</button>
       </div>
       <div class="f-seg" id="type-toggle">
         <button data-t="sale" class="on" onclick="setType('sale')">Sale</button>
         <button data-t="rent" onclick="setType('rent')">Rent</button>
       </div>
+      <div class="f-seg" id="period-toggle" title="Listings recency window">
+        <button data-p="90" onclick="setPeriod(90)">90d</button>
+        <button data-p="180" onclick="setPeriod(180)">180d</button>
+        <button data-p="365" onclick="setPeriod(365)">1y</button>
+        <button data-p="all" class="on" onclick="setPeriod(null)">All</button>
+      </div>
       <div class="f-seg" id="ccy-toggle" title="Currency — cross-market Overview always shows USD">
         <button data-c="usd" onclick="setCcy('usd')">USD</button>
         <button data-c="local" id="ccy-local-lbl" onclick="setCcy('local')">MAD</button>
       </div>
-      <button class="icon-btn" aria-label="Notifications" title="Alerts — coming soon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      </button>
+      <span class="fx-pill" id="fx-note" title="USD figures are the listing's scraped local price converted at this live interbank rate (open.er-api.com)">FX —</span>
       <button class="btn btn-primary" onclick="nav('exports')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export report
@@ -1830,100 +1865,10 @@ table.xmt{width:100%;border-collapse:collapse;}
          MACRO INDICATORS
     ══════════════════════════════════════════════ -->
     <div class="pg" id="pg-macro-indicators">
-      <div class="v2-head"><div>
-        <div class="crumb"><a onclick="nav('market-terminal')">Africa</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:10px;height:10px;"><polyline points="9 18 15 12 9 6"/></svg><span class="here">Macro Indicators</span></div>
-        <h1 class="v2-title">Macro Indicators</h1>
-        <div class="page-context"><span>Macroeconomic &amp; demographic indicators relevant to real-estate demand</span><span class="ctx-dot"></span><span>All figures are <strong style="color:var(--ink)">observed external data</strong></span></div>
-      </div></div>
-      <div id="macro-data-banner" class="method-note" style="margin:0 0 16px;">
-        <strong style="color:var(--ink2);">Source:</strong> <span id="macro-banner-sources">World Bank Open Data</span> — native units (GDP figures in USD); the currency toggle does not convert macro data.
-      </div>
-
-      <!-- Source Registry -->
-      <div class="panel" style="margin-bottom:16px;">
-        <div class="panel-hd"><div class="panel-title">Source Registry</div><div class="panel-sub" id="macro-src-sub">Macro data sources · Morocco</div></div>
-        <table class="dt">
-          <thead><tr><th>Dataset</th><th>Source</th><th>Indicator Type</th><th>Update Cadence</th><th>URL</th><th>Confidence</th></tr></thead>
-          <tbody id="macro-src-tbody">
-            <tr><td class="dt-city">Population &amp; Demographics</td><td class="dt-muted">HCP Morocco</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Annual / Census</td><td class="mono dt-muted">hcp.ma</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
-            <tr><td class="dt-city">GDP &amp; Growth</td><td class="dt-muted">World Bank / HCP</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Annual</td><td class="mono dt-muted">data.worldbank.org</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
-            <tr><td class="dt-city">Interest Rates / Monetary</td><td class="dt-muted">Bank Al-Maghrib</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Monthly</td><td class="mono dt-muted">bkam.ma</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
-            <tr><td class="dt-city">Tourism Arrivals</td><td class="dt-muted">ONMT (Observatoire)</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Monthly</td><td class="mono dt-muted">onmt.ma</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
-            <tr><td class="dt-city">Household Formation</td><td class="dt-muted">HCP Morocco</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Census / Est.</td><td class="mono dt-muted">hcp.ma</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
-            <tr><td class="dt-city">Income Levels</td><td class="dt-muted">World Bank / HCP</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">Annual</td><td class="mono dt-muted">data.worldbank.org</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Macro data table — full spec fields -->
-      <div class="panel">
-        <div class="panel-hd">
-          <div><div class="panel-title">Macro Indicators Register</div><div class="panel-sub">Morocco · <span class="ds-tag ds-macro">Macro / observed</span> · Fields: population, GDP growth, household formation, tourism arrivals, income levels</div></div>
-          <button class="pa-btn gold" onclick="exportTable('macro-table','xlsx')">↓ Excel</button>
-        </div>
-        <table class="dt" id="macro-table">
-          <thead>
-            <tr><th>Year</th><th>Population</th><th>Pop. Growth %</th><th>GDP Growth %</th><th>Household Formation</th><th>Tourism Arrivals</th><th>GDP/Capita (USD)</th><th>Source</th><th>Confidence</th></tr>
-          </thead>
-          <tbody>
-            <tr><td class="mono dt-muted">2020</td><td class="mono">36.0M</td><td class="mono chg neg">+0.9%</td><td class="mono chg neg">-6.3%</td><td class="mono">~240k/yr</td><td class="mono">~1.3M</td><td class="mono">3,280</td><td class="dt-muted">World Bank / HCP</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
-            <tr><td class="mono dt-muted">2021</td><td class="mono">36.3M</td><td class="mono chg pos">+0.8%</td><td class="mono chg pos">+7.9%</td><td class="mono">~244k/yr</td><td class="mono">~2.4M</td><td class="mono">3,440</td><td class="dt-muted">World Bank / HCP</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
-            <tr><td class="mono dt-muted">2022</td><td class="mono">36.6M</td><td class="mono chg pos">+0.9%</td><td class="mono chg pos">+1.3%</td><td class="mono">~248k/yr</td><td class="mono">~9.8M</td><td class="mono">3,680</td><td class="dt-muted">World Bank / HCP</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
-            <tr><td class="mono dt-muted">2023</td><td class="mono">36.8M</td><td class="mono chg pos">+0.9%</td><td class="mono chg pos">+3.4%</td><td class="mono">~252k/yr</td><td class="mono">~14.5M</td><td class="mono">3,840</td><td class="dt-muted">World Bank / HCP</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
-            <tr><td class="mono dt-muted">2024</td><td class="mono">37.1M</td><td class="mono chg pos">+0.9%</td><td class="mono chg pos">+3.1%</td><td class="mono">~256k/yr</td><td class="mono">~17.4M</td><td class="mono">4,020</td><td class="dt-muted">World Bank / HCP</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
-            <tr><td class="mono dt-muted">2025E</td><td class="mono">37.4M</td><td class="mono chg pos">+0.9%</td><td class="mono chg pos">~3.8%</td><td class="mono">~260k/yr</td><td class="mono">~19M (est.)</td><td class="mono">~4,200</td><td class="dt-muted">IMF / HCP estimate</td><td><span class="conf conf-e"><span class="conf-dot"></span>Est.</span></td></tr>
-          </tbody>
-        </table>
-        <div class="export-row">
-          <button class="exp-btn primary" onclick="exportTable('macro-table')">↓ CSV</button>
-          <button class="exp-btn" onclick="exportTable('macro-table','xlsx')">↓ Excel</button>
-          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">Macro indicators · Observed external data · 2025E = estimate · Not investment advice</span>
-        </div>
-      </div>
-
-      <!-- City-level demographic snapshot -->
-      <div class="sec-div"><span class="sd-label">City-Level Demographics — Morocco</span></div>
-      <div class="panel">
-        <div class="panel-hd">
-          <div><div class="panel-title">City Population &amp; Household Data</div><div class="panel-sub">Estimates · <span class="ds-tag ds-macro">Macro / observed</span> · Source: HCP Morocco</div></div>
-          <button class="pa-btn gold" onclick="exportTable('city-macro-table','xlsx')">↓ Excel</button>
-        </div>
-        <table class="dt" id="city-macro-table">
-          <thead><tr><th>City</th><th>Population Est.</th><th>Pop. Growth (5yr)</th><th>Households Est.</th><th>Urbanisation Rate</th><th>Median Age</th><th>GDP Share</th><th>Source</th></tr></thead>
-          <tbody>
-            <tr><td class="dt-city">Casablanca</td><td class="mono">4.4M</td><td class="chg pos">+8.2%</td><td class="mono">~1.1M</td><td class="mono">98%</td><td class="mono">32</td><td class="mono">~35% national</td><td class="dt-muted">HCP 2024</td></tr>
-            <tr><td class="dt-city">Rabat</td><td class="mono">1.9M</td><td class="chg pos">+6.4%</td><td class="mono">~480k</td><td class="mono">97%</td><td class="mono">33</td><td class="mono">~12% national</td><td class="dt-muted">HCP 2024</td></tr>
-            <tr><td class="dt-city">Fez</td><td class="mono">1.2M</td><td class="chg pos">+3.1%</td><td class="mono">~290k</td><td class="mono">88%</td><td class="mono">28</td><td class="mono">~5% national</td><td class="dt-muted">HCP 2024</td></tr>
-            <tr><td class="dt-city">Marrakech</td><td class="mono">1.1M</td><td class="chg pos">+9.8%</td><td class="mono">~260k</td><td class="mono">92%</td><td class="mono">30</td><td class="mono">~6% national</td><td class="dt-muted">HCP 2024</td></tr>
-            <tr><td class="dt-city">Tangiers</td><td class="mono">1.1M</td><td class="chg pos">+12.4%</td><td class="mono">~255k</td><td class="mono">95%</td><td class="mono">29</td><td class="mono">~7% national</td><td class="dt-muted">HCP 2024</td></tr>
-          </tbody>
-        </table>
-        <div class="export-row">
-          <button class="exp-btn primary" onclick="exportTable('city-macro-table')">↓ CSV</button>
-          <button class="exp-btn" onclick="exportTable('city-macro-table','xlsx')">↓ Excel</button>
-          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">DEMO DATA · Estimates from HCP Morocco · Not investment advice</span>
-        </div>
-      </div>
-
-      <!-- RE demand drivers -->
-      <div class="two-col">
-        <div class="panel">
-          <div class="panel-hd"><div class="panel-title">Key RE Demand Drivers</div><div class="panel-sub">Morocco · Macro context for real estate demand</div></div>
-          <div class="panel-body">
-            <div class="ep-meta-row"><span class="ep-meta-lbl">Annual HH Formation</span><span class="ep-meta-val">~260,000 / year</span></div>
-            <div class="ep-meta-row"><span class="ep-meta-lbl">Urban pop. share</span><span class="ep-meta-val">~63% (2024)</span></div>
-            <div class="ep-meta-row"><span class="ep-meta-lbl">Tourism growth</span><span class="ep-meta-val">+19% YoY (2024E)</span></div>
-            <div class="ep-meta-row"><span class="ep-meta-lbl">Diaspora remittances</span><span class="ep-meta-val">~USD 11B/year</span></div>
-            <div class="ep-meta-row"><span class="ep-meta-lbl">FDI inflows</span><span class="ep-meta-val">~USD 2.8B (2024E)</span></div>
-            <div class="ep-meta-row"><span class="ep-meta-lbl">Policy rate (BAM)</span><span class="ep-meta-val">2.75% (Q1 2026)</span></div>
-          </div>
-        </div>
-      </div>
+      <div id="macro-root"><div class="empty-trend" style="height:160px;">Loading macro indicators…</div></div>
     </div>
 
-  </div><!-- /content -->
-</div><!-- /main -->
-</div><!-- /app -->
+    <!-- /app -->
 
 <script>
 const SB_URL='https://ujhqkirhfmumvvnfvgnz.supabase.co';
@@ -2133,7 +2078,10 @@ function setCcy(m){ _ccyMode=m; try{localStorage.setItem('iw_ccy',m);}catch(e){}
   document.querySelectorAll('#ccy-toggle button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-c')===m);});
   if(_B2C){ loadBatch2(_B2C); } else { applyFilters(); } }
 function _syncCcyUI(cur){ var b=document.getElementById('ccy-local-lbl'); if(b) b.textContent=cur||'Local';
-  document.querySelectorAll('#ccy-toggle button').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-c')===_ccyMode);}); }
+  document.querySelectorAll('#ccy-toggle button').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-c')===_ccyMode);});
+  var fp=document.getElementById('fx-note');
+  if(fp){ var r=_fxCache&&cur?_fxCache[cur]:null;
+    fp.textContent=r?('1 USD = '+(r>=100?Math.round(r):r.toFixed(2))+' '+cur+' · live'):'FX —'; } }
 
 /* ── SHARED v2 PAGE HEAD ── */
 var _CHEV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>';
@@ -2710,8 +2658,8 @@ async function renderOverview(country){
     el.innerHTML=V2HEAD(country,'Markets',[],null)+_emptyState('Coverage activates once '+lbl+' has listing data.'); return; }
   var f=_curFilters(), cur=c.currency, fx=await _fx();
   var res=await Promise.all([
-    sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type}).then(function(r){return r&&r.data||[];}).catch(function(){return [];}),
-    sb.rpc('market_filtered',{p_country:country,p_asset:f.asset}).then(function(r){return r&&r.data;}).catch(function(){return null;}),
+    sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days}).then(function(r){return r&&r.data||[];}).catch(function(){return [];}),
+    sb.rpc('market_filtered',{p_country:country,p_asset:f.asset,p_days:f.days}).then(function(r){return r&&r.data;}).catch(function(){return null;}),
     sb.rpc('market_signals',{p_country:country}).then(function(r){return r&&r.data;}).catch(function(){return null;})]);
   var df=res[0]||[], mf=res[1]||{}, sig=res[2]||{};
   var nf=function(v){return Number(v||0).toLocaleString('en-US');};
@@ -2869,76 +2817,176 @@ function renderMkMap(country,df,f,cur){
   _mkMap.on('zoomend',sync); sync();
   setTimeout(function(){ if(_mkMap){ _mkMap.invalidateSize(); _mkMap.setView(view[0],view[1],{animate:false}); } },220);
 }
+var _rsCharts={};
+function _rsD(id){ if(_rsCharts[id]){try{_rsCharts[id].destroy();}catch(e){}delete _rsCharts[id];} }
+function _asofKey(a){ var y=(String(a).match(/20\d\d/)||[0])[0]*1; if(!y) return 0;
+  var q=/Q1|H1|Jan|Feb|Mar|Apr|May|Jun/i.test(a)?0.25:/Q3/i.test(a)?0.6:/Q4|H2|Dec|end/i.test(a)?0.85:0.5;
+  return y+q; }
 async function renderResearchPanel(country){
   var slot=document.getElementById('mk-research'); if(!slot||!sb) return;
   var c=COUNTRIES[country], lbl=c?c.label:country;
   var rows=[], area=[];
-  try{ var r=await sb.from('market_research_stats').select('*').eq('country',country).order('as_of',{ascending:false}); rows=(r&&r.data)||[]; }catch(e){}
+  try{ var r=await sb.from('market_research_stats').select('*').eq('country',country); rows=(r&&r.data)||[]; }catch(e){}
   try{ var a=await sb.rpc('listed_area',{p_country:country}); area=(a&&a.data)||[]; }catch(e){}
-  var note='<div class="method-note">Research-derived figures cite their publisher and edition; ranges are shown when publishers disagree — never silently blended. '
-    +'Derived metrics state their formula. Listings-derived inputs come from the live Ironwood collection.</div>';
+  var pubs={}; rows.forEach(function(x){pubs[x.publisher]=1;});
+  var method='<div class="method-note"><strong style="color:var(--ink2);">Methodology.</strong> Every figure is quoted verbatim from a published report ('
+    +Object.keys(pubs).join(', ')+'); the period shown is the one the publisher states. When publishers disagree on the same metric and period, all values are shown side by side — <strong style="color:var(--ink2);">never silently averaged</strong>. Units are stored exactly as published; conversions, where needed for derived metrics, are stated in the formula. Sources are re-checked and extended automatically every two months. Hover any chart point for its source.</div>';
   if(!rows.length){
-    slot.innerHTML='<section class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">Supply &amp; occupancy — research layer</div>'
-      +'<div class="panel-sub">Total stock, vacancy and occupancy from published market research (JLL, CBRE, Knight Frank, Colliers…)</div></div></div>'
-      +'<div class="panel-body2"><div class="empty-trend" style="height:120px;">Research figures for '+lbl+' are being sourced and verified — each figure will cite its publisher, report and year before it appears here.</div>'+note+'</div></div></section>';
+    slot.innerHTML='<section class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">Supply &amp; occupancy — research layer</div></div></div>'
+      +'<div class="panel-body2"><div class="empty-trend" style="height:110px;">Research figures for '+lbl+' are being sourced and verified.</div>'+method+'</div></div></section>';
     return;
   }
-  var groups={};
-  rows.forEach(function(x){ var k=(x.city||'(country)')+'|'+(x.asset_class||'all')+'|'+x.metric;
-    groups[k]=groups[k]||[]; groups[k].push(x); });
-  var UNIT_LBL={sqm:'m²',sqft:'sq ft',mn_sqft:'M sq ft',rooms:'rooms',keys:'keys',pct:'%',
-    usd_psm_month:'US$/m²/mo',usd_psf_month:'US$/sq ft/mo',kes_psf_month:'KES/sq ft/mo',mad_psm_month:'MAD/m²/mo'};
-  function fmtVal(x){
-    var v=Number(x.value), u=(x.unit||'').split(' ')[0];
+  var UNIT_L={sqm:'m²',sqft:'sq ft',mn_sqft:'M sq ft',rooms:'rooms',keys:'keys'};
+  function fv(x){ var v=Number(x.value), u=(x.unit||'').split(' ')[0];
     if(u==='pct') return v.toFixed(1)+'%';
-    if(u==='sqm'||u==='sqft') return (v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e3?Math.round(v/1e3)+'k':v)+' '+(UNIT_LBL[u]||u);
-    if(u==='mn_sqft') return v+' '+UNIT_LBL[u]+(/oversupply/.test(x.unit||'')?' (oversupply)':'');
-    return v.toLocaleString('en-US')+' '+(UNIT_LBL[u]||x.unit||'');
-  }
-  var METRIC_LBL={total_stock:'Total stock',vacancy_pct:'Vacancy',occupancy_pct:'Occupancy',prime_rent:'Prime rent',prime_yield_pct:'Prime yield',completions:'Completions',pipeline_supply:'Pipeline supply'};
-  var body=Object.keys(groups).sort().map(function(k){
-    var g=groups[k].sort(function(a,b){return (b.as_of||'').localeCompare(a.as_of||'');});
-    var parts=k.split('|');
-    var vals=g.map(function(x){ return '<span style="margin-right:12px;white-space:nowrap;"><span class="rs-val">'+fmtVal(x)+'</span> <span class="rs-badge" title="'+_newsEsc(x.report_title||'')+'">'+_newsEsc(x.publisher)+' '+_newsEsc(x.as_of)+'</span></span>'; }).join('');
-    return '<tr><td style="text-align:left;padding-left:8px;" class="mkt-name">'+(METRIC_LBL[parts[2]]||parts[2])+'</td>'
-      +'<td style="text-align:left;">'+(parts[0]==='(country)'?lbl:parts[0])+'</td>'
-      +'<td style="text-align:left;">'+parts[1]+'</td>'
-      +'<td style="text-align:left;white-space:normal;">'+vals+'</td></tr>'; }).join('');
-  // derived: visible float where stock + listed area exist for same city+asset
+    if(u==='sqm'||u==='sqft') return (v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e3?Math.round(v/1e3)+'k':v)+' '+(UNIT_L[u]||u);
+    if(u==='mn_sqft') return v+' M sq ft'+(/oversupply/.test(x.unit||'')?' (oversupply)':'');
+    return v.toLocaleString('en-US')+' '+(UNIT_L[u]||x.unit||''); }
+
+  // ---- SUPPLY (left): stock rows + completions/pipeline bars by period ----
+  var supply=rows.filter(function(x){return x.metric==='total_stock';})
+    .sort(function(a,b){return _asofKey(b.as_of)-_asofKey(a.as_of);});
+  var stockHtml=supply.map(function(x){
+    return '<div class="seg-bar" style="grid-template-columns:150px 1fr;"><div class="sb-n">'+(x.city||lbl)+' · '+(x.asset_class||'all')+'</div>'
+      +'<div><span class="rs-val">'+fv(x)+'</span> <span class="rs-badge" title="'+_newsEsc(x.quote||'')+'">'+_newsEsc(x.publisher)+' '+_newsEsc(x.as_of)+'</span></div></div>'; }).join('')
+    ||'<div style="font-size:11px;color:var(--ink4);padding:6px 0;">No published total-stock figures for '+lbl+' yet.</div>';
+  var addRows=rows.filter(function(x){return x.metric==='completions'||x.metric==='pipeline_supply';})
+    .sort(function(a,b){return _asofKey(a.as_of)-_asofKey(b.as_of);});
+  var maxAdd=Math.max.apply(null,addRows.map(function(x){return Number(x.value)*(String(x.unit).indexOf('mn_')===0?1e6:1);}).concat([1]));
+  var addHtml=addRows.map(function(x){
+    var norm=Number(x.value)*(String(x.unit).indexOf('mn_')===0?1e6:1);
+    var col=x.metric==='completions'?'linear-gradient(90deg,#8A6534,var(--gold))':'linear-gradient(90deg,#3E6B62,var(--teal))';
+    return '<div class="seg-bar"><div class="sb-n" title="'+_newsEsc(x.quote||'')+'">'+_newsEsc(x.as_of)+' · '+(x.asset_class||'')+'</div>'
+      +'<div class="sb-t"><div class="sb-f" style="width:'+Math.max(3,norm/maxAdd*100).toFixed(1)+'%;background:'+col+';"></div></div>'
+      +'<div class="sb-v">'+fv(x)+' <span class="rs-badge">'+_newsEsc(x.publisher)+'</span></div></div>'; }).join('');
+
+  // ---- OCCUPANCY (right): time series chart ----
+  var occ=rows.filter(function(x){return (x.metric==='occupancy_pct'||x.metric==='vacancy_pct')&&_asofKey(x.as_of)>0;});
+  var series={};
+  occ.forEach(function(x){ var k=(x.city||lbl).split(' - ')[0]+' '+(x.asset_class||'')+(x.metric==='vacancy_pct'?' (vacancy)':'');
+    series[k]=series[k]||[]; series[k].push({x:_asofKey(x.as_of),y:Number(x.value),src:x.publisher+' '+x.as_of}); });
+  Object.keys(series).forEach(function(k){ series[k].sort(function(a,b){return a.x-b.x;});
+    if(series[k].length<2) delete series[k]; });
+  var singles=occ.filter(function(x){ var k=(x.city||lbl).split(' - ')[0]+' '+(x.asset_class||'')+(x.metric==='vacancy_pct'?' (vacancy)':''); return !series[k]; });
+  var singleHtml=singles.map(function(x){
+    return '<div class="seg-bar" style="grid-template-columns:150px 1fr;"><div class="sb-n">'+(x.city||lbl)+' · '+(x.asset_class||'')+' '+(x.metric==='vacancy_pct'?'vacancy':'occupancy')+'</div>'
+      +'<div><span class="rs-val">'+fv(x)+'</span> <span class="rs-badge" title="'+_newsEsc(x.quote||'')+'">'+_newsEsc(x.publisher)+' '+_newsEsc(x.as_of)+'</span></div></div>'; }).join('');
+
+  // ---- derived: visible float ----
   var derived='';
-  Object.keys(groups).forEach(function(k){ var parts=k.split('|'); if(parts[2]!=='total_stock') return;
-    var g=groups[k][0]; var cityK=parts[0], acK=parts[1];
+  rows.filter(function(x){return x.metric==='total_stock';}).forEach(function(g){
     var u=(g.unit||'').split(' ')[0];
     var stockM2=u==='sqm'?Number(g.value):u==='sqft'?Number(g.value)*0.092903:u==='mn_sqft'?Number(g.value)*1e6*0.092903:null;
     if(stockM2==null) return;
-    var la=area.filter(function(x){ return (cityK==='(country)'||x.city===cityK.split(' - ')[0]) && (acK==='all'||x.ac.indexOf(acK.slice(0,5))>-1); })
+    var cityK=(g.city||'').split(' - ')[0], acK=g.asset_class||'all';
+    var la=area.filter(function(x){ return (!cityK||x.city===cityK) && (acK==='all'||x.ac.indexOf(acK.slice(0,5))>-1); })
       .reduce(function(t,x){return t+Number(x.sqm||0);},0);
     if(la>0&&stockM2>0){
-      var pct=(la/stockM2*100);
-      derived+='<tr><td style="text-align:left;padding-left:8px;" class="mkt-name">Visible float</td>'
-        +'<td style="text-align:left;">'+(cityK==='(country)'?lbl:cityK)+'</td><td style="text-align:left;">'+acK+'</td>'
-        +'<td style="text-align:left;"><span class="rs-val">'+pct.toFixed(1)+'%</span> <span style="font-size:10px;color:var(--ink4);">= '+Math.round(la).toLocaleString('en-US')+' m² listed ÷ '+fmtVal(g)+' stock'+(u!=='sqm'?' (converted to m²)':'')+' · '+_newsEsc(g.publisher)+' '+_newsEsc(g.as_of)+'</span></td></tr>';
+      derived+='<div class="seg-bar" style="grid-template-columns:150px 1fr;"><div class="sb-n">'+(g.city||lbl)+' · '+acK+'</div>'
+        +'<div><span class="rs-val">'+(la/stockM2*100).toFixed(1)+'%</span> <span style="font-size:10px;color:var(--ink4);">= '+Math.round(la).toLocaleString('en-US')+' m² listed ÷ '+fv(g)+(u!=='sqm'?' (converted to m²)':'')+' · '+_newsEsc(g.publisher)+' '+_newsEsc(g.as_of)+'</span></div></div>';
     } });
-  slot.innerHTML='<section class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">Supply &amp; occupancy — research layer</div>'
-    +'<div class="panel-sub">Published market research, reconciled per figure · derived metrics show their formula</div></div>'
-    +'<span class="n-tag num">'+rows.length+' figures</span></div>'
-    +'<div class="panel-body2" style="padding-top:8px;"><table class="xmt"><thead><tr><th style="text-align:left;">Metric</th><th style="text-align:left;">Market</th><th style="text-align:left;">Asset</th><th style="text-align:left;">Value · source</th></tr></thead>'
-    +'<tbody>'+body+derived+'</tbody></table>'+note+'</div></div></section>';
+
+  // ---- audit table (collapsible) ----
+  var audit=rows.slice().sort(function(a,b){return (a.metric+a.city).localeCompare(b.metric+b.city);}).map(function(x){
+    return '<tr><td style="text-align:left;padding-left:8px;">'+x.metric.replace(/_/g,' ')+'</td><td style="text-align:left;">'+(x.city||lbl)+'</td>'
+      +'<td style="text-align:left;">'+(x.asset_class||'')+'</td><td class="num">'+fv(x)+'</td><td style="text-align:left;">'+_newsEsc(x.as_of)+'</td>'
+      +'<td style="text-align:left;"><a class="panel-link" style="display:inline-flex;" href="'+_newsEsc(_safeUrl(x.url))+'" target="_blank" rel="noopener">'+_newsEsc(x.publisher)+'</a></td>'
+      +'<td style="text-align:left;max-width:340px;white-space:normal;font-size:10px;color:var(--ink4);">'+_newsEsc((x.quote||'').slice(0,160))+'</td></tr>'; }).join('');
+
+  slot.innerHTML='<section class="grid g-split">'
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Supply — research layer</div>'
+   +'<div class="panel-sub">Published total stock, completions &amp; pipeline · units as published</div></div>'
+   +'<span class="n-tag num">'+(supply.length+addRows.length)+' figures</span></div>'
+   +'<div class="panel-body2"><div class="pr-sec" style="margin-top:0;">Total stock</div>'+stockHtml
+   +(addRows.length?'<div class="pr-sec">Completions <span style="color:var(--gold);">■</span> &amp; pipeline <span style="color:var(--teal);">■</span> by period</div>'+addHtml:'')
+   +(derived?'<div class="pr-sec">Visible float — Ironwood listed m² ÷ published stock</div>'+derived:'')
+   +'</div></div>'
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Occupancy &amp; vacancy — research layer</div>'
+   +'<div class="panel-sub">Publisher-reported rates over time · hover points for source</div></div>'
+   +'<span class="n-tag num">'+occ.length+' figures</span></div>'
+   +'<div class="panel-body2">'
+   +(Object.keys(series).length?'<div class="rs-chart"><canvas id="rs-occ"></canvas></div>':'')
+   +(singleHtml?'<div class="pr-sec">'+(Object.keys(series).length?'Point-in-time figures':'Published rates')+'</div>'+singleHtml:'')
+   +((!Object.keys(series).length&&!singleHtml)?'<div class="empty-trend" style="height:120px;">No published occupancy series for '+lbl+' yet.</div>':'')
+   +'</div></div>'
+   +'</section>'
+   +'<section class="grid"><div class="panel"><div class="panel-body2">'
+   +'<details class="rs-audit"><summary>Audit trail — all '+rows.length+' figures with verbatim quotes</summary>'
+   +'<div style="overflow-x:auto;"><table class="xmt" style="margin-top:8px;"><thead><tr><th style="text-align:left;">Metric</th><th style="text-align:left;">Market</th><th style="text-align:left;">Asset</th><th>Value</th><th style="text-align:left;">As of</th><th style="text-align:left;">Source</th><th style="text-align:left;">Quote</th></tr></thead><tbody>'
+   +audit+'</tbody></table></div></details>'+method+'</div></div></section>';
+
+  if(Object.keys(series).length&&window.Chart){
+    _rsD('rs-occ');
+    var COLS=['#C89B5A','#55A899','#6E8FBF','#B87E76','#8E99A9','#D8A94E'];
+    var ds=Object.keys(series).map(function(k,i){ return {label:k, data:series[k],
+      borderColor:COLS[i%COLS.length], backgroundColor:COLS[i%COLS.length], borderWidth:2,
+      pointRadius:3.5, tension:.25, borderDash:/vacancy/.test(k)?[5,4]:[], fill:false, parsing:false}; });
+    _rsCharts['rs-occ']=new Chart(document.getElementById('rs-occ'),{type:'line',
+      data:{datasets:ds},
+      options:{responsive:true,maintainAspectRatio:false,
+        interaction:{mode:'nearest',intersect:false},
+        plugins:{legend:{labels:{font:{family:'Inter',size:10},color:'#9AA6B6',boxWidth:10,padding:10}},
+          tooltip:{callbacks:{label:function(ctx){ var p=ctx.raw; return ctx.dataset.label+': '+p.y+'% — '+p.src; }}}},
+        scales:{x:{type:'linear',ticks:{font:{family:'Inter',size:10},color:'#5F6B7C',callback:function(v){return Math.floor(v);},stepSize:1},grid:{color:'rgba(148,168,196,.07)'}},
+          y:{ticks:{font:{family:'Inter',size:10},color:'#5F6B7C',callback:function(v){return v+'%';}},grid:{color:'rgba(148,168,196,.07)'}}}}});
+  }
 }
 async function renderPipelineRegister(country){
   var slot=document.getElementById('pipe-register'); if(!slot||!sb) return;
   var c=COUNTRIES[country], lbl=c?c.label:country, rows=[];
-  try{ var r=await sb.from('pipeline_projects').select('*').eq('country',country).order('quantum_value',{ascending:false,nullsFirst:false}).limit(60); rows=(r&&r.data)||[]; }catch(e){}
+  try{ var r=await sb.from('pipeline_projects').select('*').eq('country',country).order('quantum_value',{ascending:false,nullsFirst:false}).limit(80); rows=(r&&r.data)||[]; }catch(e){}
   if(!rows.length){
     slot.innerHTML='<div class="panel"><div class="panel-head"><div><div class="panel-title">Project register — '+lbl+'</div>'
       +'<div class="panel-sub">Structured projects extracted from the observed news pipeline</div></div></div>'
       +'<div class="panel-body2"><div class="empty-trend" style="height:100px;">No quantified projects extracted for '+lbl+' yet — the register fills as the Mon/Thu news runs surface named projects.</div></div></div>';
     return;
   }
+  var nf=function(v){return Number(v||0).toLocaleString('en-US');};
   function q(x){ if(x.quantum_value==null) return '—';
     var v=Number(x.quantum_value), u=x.quantum_unit;
-    var vs=v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?Math.round(v/1e3)+'k':''+Math.round(v);
-    return vs+' '+(u==='sqm_gfa'?'m²':u==='usd'?'USD':u||''); }
+    var vs=v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?Math.round(v/1e3)+'k':''+Math.round(v);
+    return vs+' '+(u==='sqm_gfa'?'m²':u==='usd'?'USD':u==='local_currency'?(c?c.currency:'local'):u||''); }
+  function segBars(items,valFn,fmtFn,color){
+    var mx=Math.max.apply(null,items.map(function(x){return valFn(x);}).concat([1]));
+    return items.map(function(x){ return '<div class="seg-bar"><div class="sb-n">'+_newsEsc(x.k)+'</div>'
+      +'<div class="sb-t"><div class="sb-f" style="width:'+Math.max(3,valFn(x)/mx*100).toFixed(1)+'%;background:'+color+';"></div></div>'
+      +'<div class="sb-v">'+fmtFn(x)+'</div></div>'; }).join(''); }
+  // by asset class
+  var byAc={};
+  rows.forEach(function(x){ var k=_cap((x.asset_class||'unclassified'));
+    byAc[k]=byAc[k]||{k:k,n:0,gfa:0,units:0};
+    byAc[k].n++;
+    if(x.quantum_unit==='sqm_gfa') byAc[k].gfa+=Number(x.quantum_value||0);
+    if(x.quantum_unit==='units') byAc[k].units+=Number(x.quantum_value||0); });
+  var acArr=Object.keys(byAc).map(function(k){return byAc[k];}).sort(function(a,b){return b.n-a.n;});
+  var acHtml=segBars(acArr,function(x){return x.n;},function(x){return x.n+' project'+(x.n>1?'s':'')
+    +(x.gfa?' · '+(x.gfa>=1e6?(x.gfa/1e6).toFixed(1)+'M':Math.round(x.gfa/1e3)+'k')+' m²':'')
+    +(x.units?' · '+nf(x.units)+' units':'');},'linear-gradient(90deg,#8A6534,var(--gold))');
+  // by developer
+  var byDev={};
+  rows.forEach(function(x){ if(!x.developer) return; var k=x.developer;
+    byDev[k]=byDev[k]||{k:k,n:0}; byDev[k].n++; });
+  var devArr=Object.keys(byDev).map(function(k){return byDev[k];}).sort(function(a,b){return b.n-a.n;}).slice(0,8);
+  var devHtml=devArr.length?segBars(devArr,function(x){return x.n;},function(x){return x.n+' project'+(x.n>1?'s':'');},'linear-gradient(90deg,#3E6B62,var(--teal))')
+    :'<div style="font-size:11px;color:var(--ink4);">Developers undisclosed in source articles.</div>';
+  // financing price tags
+  var usdTotal=rows.filter(function(x){return x.quantum_unit==='usd';}).reduce(function(a,x){return a+Number(x.quantum_value||0);},0);
+  var usdN=rows.filter(function(x){return x.quantum_unit==='usd';}).length;
+  var localTags=rows.filter(function(x){return x.quantum_unit==='local_currency';})
+    .map(function(x){return '<span class="mover-chip" title="'+_newsEsc(x.project_name)+'">'+_newsEsc((x.project_name||'').slice(0,28))+' · '+q(x)+'</span>';}).join(' ');
+  var finHtml='<div style="font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;">'+(usdTotal?('$'+(usdTotal>=1e9?(usdTotal/1e9).toFixed(1)+'B':(usdTotal/1e6).toFixed(0)+'M')):'—')+'</div>'
+    +'<div style="font-size:10.5px;color:var(--ink4);margin-top:3px;">disclosed USD value across '+usdN+' projects (stated figures only)</div>'
+    +(localTags?'<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">'+localTags+'</div>':'');
+  // delivery years
+  var byYear={};
+  rows.forEach(function(x){ if(x.quantum_unit==='sqm_gfa'&&x.quantum_value&&x.expected_delivery){
+    var y=(String(x.expected_delivery).match(/20\d\d/)||[])[0]; if(!y) return;
+    byYear[y]=(byYear[y]||0)+Number(x.quantum_value); } });
+  var years=Object.keys(byYear).sort();
+  var yearArr=years.map(function(y){return {k:y,v:byYear[y]};});
+  var yrHtml=years.length?segBars(yearArr,function(x){return x.v;},function(x){return (x.v>=1e6?(x.v/1e6).toFixed(2)+'M':Math.round(x.v/1e3)+'k')+' m²';},'linear-gradient(90deg,#8A6534,var(--gold))')
+    :'<div style="font-size:11px;color:var(--ink4);">No projects with both stated GFA and delivery year yet.</div>';
+
   var stageCls=function(st){ return st==='under_construction'?'uc':(st==='announced'?'an':''); };
   var body=rows.slice(0,25).map(function(x,i){
     var cit=(x.citations||[])[0]||{}; var nCit=(x.citations||[]).length;
@@ -2950,22 +2998,18 @@ async function renderPipelineRegister(country){
       +'<td>'+(x.stage?'<span class="pp-badge '+stageCls(x.stage)+'">'+x.stage.replace(/_/g,' ')+'</span>':'—')+'</td>'
       +'<td class="num">'+_newsEsc(x.expected_delivery||'—')+'</td>'
       +'<td><a class="panel-link" style="display:inline-flex;" href="'+_newsEsc(_safeUrl(cit.url))+'" target="_blank" rel="noopener">'+nCit+' source'+(nCit>1?'s':'')+'</a></td></tr>'; }).join('');
-  var byYear={};
-  rows.forEach(function(x){ if(x.quantum_unit==='sqm_gfa'&&x.quantum_value&&x.expected_delivery){
-    var y=(String(x.expected_delivery).match(/20\d\d/)||[])[0]; if(!y) return;
-    byYear[y]=(byYear[y]||0)+Number(x.quantum_value); } });
-  var years=Object.keys(byYear).sort();
-  var maxY=Math.max.apply(null,years.map(function(y){return byYear[y];}).concat([1]));
-  var proj=years.length?('<div class="pr-sec" style="margin-top:16px;">Expected additions — stated GFA by delivery year</div><div class="bed-rows">'
-    +years.map(function(y){ return '<div class="bed-row" style="grid-template-columns:52px 1fr 110px;"><div class="bed-name num">'+y+'</div>'
-      +'<div class="bed-track"><div class="bed-fill" style="width:'+(byYear[y]/maxY*100).toFixed(1)+'%;background:linear-gradient(90deg,#8A6534,var(--gold));"></div></div>'
-      +'<div class="bed-val num">'+(byYear[y]/1e3>=1000?(byYear[y]/1e6).toFixed(2)+'M':Math.round(byYear[y]/1e3)+'k')+' m²</div></div>'; }).join('')
-    +'</div><div class="axis-note"><span>Sums only quantums explicitly stated in source articles · not total market pipeline</span><span class="num">'+years.length+' delivery years</span></div>'):'';
-  slot.innerHTML='<div class="panel"><div class="panel-head"><div><div class="panel-title">Project register — '+lbl+'</div>'
-    +'<div class="panel-sub">Extracted from observed news · every row cites its sources · nothing inferred</div></div>'
-    +'<span class="n-tag num">'+rows.length+' projects</span></div>'
-    +'<div class="panel-body2" style="padding-top:8px;"><table class="xmt"><thead><tr><th>Project</th><th style="text-align:left;">City</th><th style="text-align:left;">Class</th><th>Quantum</th><th>Stage</th><th>Delivery</th><th>Sources</th></tr></thead>'
-    +'<tbody>'+body+'</tbody></table>'+proj+'</div></div>';
+
+  slot.innerHTML='<section class="grid g-four" style="grid-template-columns:1.1fr 1fr 1fr 1.1fr;">'
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">By asset class</div><div class="panel-sub">Projects · stated GFA / units</div></div></div><div class="panel-body2">'+acHtml+'</div></div>'
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Named developers</div><div class="panel-sub">From source articles</div></div></div><div class="panel-body2">'+devHtml+'</div></div>'
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Disclosed financing</div><div class="panel-sub">Stated price tags only</div></div></div><div class="panel-body2">'+finHtml+'</div></div>'
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Stated GFA by delivery year</div><div class="panel-sub">Announced additions to stock</div></div></div><div class="panel-body2">'+yrHtml+'</div></div>'
+   +'</section>'
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Project register — '+lbl+'</div>'
+   +'<div class="panel-sub">Extracted from observed news · every row cites its sources · nothing inferred</div></div>'
+   +'<span class="n-tag num">'+rows.length+' projects</span></div>'
+   +'<div class="panel-body2" style="padding-top:8px;"><table class="xmt"><thead><tr><th>Project</th><th style="text-align:left;">City</th><th style="text-align:left;">Class</th><th>Quantum</th><th>Stage</th><th>Delivery</th><th>Sources</th></tr></thead>'
+   +'<tbody>'+body+'</tbody></table></div></div>';
 }
 function openCity(c){ _cityActive=c; nav('cities'); }
 var _prMap=null;
@@ -3065,7 +3109,14 @@ function setType(t){ _typeFilter=t;
   document.querySelectorAll('#type-toggle button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-t')===t); });
   applyFilters();
 }
-function _curFilters(){ return { asset:(document.getElementById('asset-filter')||{}).value||'all', type:_typeFilter||'sale' }; }
+var _assetFilter='apartments', _periodFilter=null;
+function setAsset(a){ _assetFilter=a;
+  document.querySelectorAll('#asset-chips .a-chip').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-a')===a);});
+  applyFilters(); }
+function setPeriod(d){ _periodFilter=d;
+  document.querySelectorAll('#period-toggle button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-p')===(d==null?'all':String(d)));});
+  applyFilters(); }
+function _curFilters(){ return { asset:_assetFilter||'apartments', type:_typeFilter||'sale', days:_periodFilter }; }
 function _cityMed(K,city,asset,tt){
   if(asset==='all'){ var ci=(K.cities||[]).filter(function(r){return r.city===city;})[0]; return ci?(tt==='rent'?ci.rent_median:ci.sale_median):null; }
   var cc=(K.city_class||[]).filter(function(r){return r.city===city&&r.ac===asset&&r.tt===tt;})[0]; return cc?cc.med:null;
@@ -3100,7 +3151,7 @@ async function renderMap(country,K){
     L.circleMarker(xy,{radius:Math.min(26,Math.max(8,Math.sqrt((n||1))/4)),fillColor:'#E3BC7E',color:'rgba(10,13,18,.85)',weight:1.5,fillOpacity:.8})
       .bindPopup(pop(ct.city,med,n,tt==='rent'?'/mo':'')).addTo(cityLayer); });
   try{
-    var dr=await sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type});
+    var dr=await sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days});
     ((dr&&dr.data)||[]).forEach(function(d){ if(d.lat==null) return;
       L.circleMarker([d.lat,d.lng],{radius:Math.min(15,Math.max(5,Math.sqrt((d.listings||1))/3)),fillColor:'#C89B5A',color:'rgba(10,13,18,.85)',weight:1,fillOpacity:.75})
         .bindPopup(pop(d.submarket+' · '+(d.city||''),d.median_ppsqm,d.listings,tt==='rent'?'/mo':'')).addTo(districtLayer); });
@@ -3136,49 +3187,77 @@ async function renderCitiesPage(country){
    +'<div class="city-cards">'+chips+'</div><div id="city-profile-live"></div>';
   renderCityProfile(country,_cityActive);
 }
+var _cityMap=null;
 async function renderCityProfile(country,city){
   var slot=document.getElementById('city-profile-live'); if(!slot||!city) return;
   var c=COUNTRIES[country], K=_B2K; if(!c||!K) return;
   var f=_curFilters(), cur=c.currency, tt=f.type==='rent'?'rent':'sale'; await _fx();
-  var cc=(K.city_class||[]).filter(function(x){return x.city===city&&(f.asset==='all'||(x.ac||'').toLowerCase()===f.asset);});
+  var cc=(K.city_class||[]).filter(function(x){return x.city===city&&(x.ac||'').toLowerCase()===f.asset;});
   var saleN=cc.filter(function(x){return x.tt==='sale';}).reduce(function(a,x){return a+Number(x.count||0);},0);
   var rentN=cc.filter(function(x){return x.tt==='rent';}).reduce(function(a,x){return a+Number(x.count||0);},0);
   var med=_cityMed(K,city,f.asset,'sale'), medR=_cityMed(K,city,f.asset,'rent');
   var yld=(med&&medR)?Math.round(medR*12/med*1000)/10:null;
   var ci=(K.cities||[]).filter(function(x){return x.city===city;})[0]||{};
   var listAll=Number(ci.listings||0);
-  var img=cityImg(city);
-  var hero=img?'<div class="city-hero"><img src="'+img+'" alt="'+city+' at night, aerial view" loading="lazy"/><div class="ch-cap"><strong>'+city+'</strong>'+c.label+' · '+listAll.toLocaleString('en-US')+' observed listings</div></div>':'';
-  // by asset class table (respects type filter)
-  var acRows=(K.city_class||[]).filter(function(x){return x.city===city&&x.tt===tt&&(f.asset==='all'||(x.ac||'').toLowerCase()===f.asset);})
-    .sort(function(a,b){return Number(b.count||0)-Number(a.count||0);});
-  var acHtml=acRows.map(function(r){ return '<tr><td style="text-align:left;padding-left:8px;" class="mkt-name">'+_cap(r.ac)+'</td>'
-      +'<td class="num">'+Number(r.count||0).toLocaleString('en-US')+'</td>'
-      +'<td class="num">'+(r.med!=null?money(Number(r.med),cur):'—')+'</td></tr>'; }).join('');
-  slot.innerHTML=hero
-   +'<div class="stat-band">'
+  slot.innerHTML=
+   '<div class="stat-band">'
     +'<div class="stat-cell"><div class="sc-label">Observed listings</div><div class="sc-value num">'+listAll.toLocaleString('en-US')+'</div><div class="sc-note">'+city+' · all classes</div></div>'
-    +'<div class="stat-cell"><div class="sc-label">Median sale /m²</div><div class="sc-value num">'+(med?money(med,cur):'—')+'</div><div class="sc-note">'+(f.asset==='all'?'all classes':f.asset)+' · asking</div></div>'
-    +'<div class="stat-cell"><div class="sc-label">Median rent /m²</div><div class="sc-value num">'+(medR?money(medR,cur):'—')+'<span class="unit">/mo</span></div><div class="sc-note">asking rents</div></div>'
+    +'<div class="stat-cell"><div class="sc-label">Median sale /m² · '+f.asset+'</div><div class="sc-value num">'+(med?money(med,cur):'—')+'</div><div class="sc-note">asking, not transaction</div></div>'
+    +'<div class="stat-cell"><div class="sc-label">Median rent /m² · '+f.asset+'</div><div class="sc-value num">'+(medR?money(medR,cur):'—')+'<span class="unit">/mo</span></div><div class="sc-note">asking rents</div></div>'
     +'<div class="stat-cell"><div class="sc-label">Gross yield</div><div class="sc-value num">'+(yld!=null?yld+'%':'—')+'</div><div class="sc-note">rent×12 ÷ sale price</div></div>'
-    +'<div class="stat-cell"><div class="sc-label">Sale / rent split</div><div class="sc-value num">'+saleN.toLocaleString('en-US')+' <span class="unit">/ '+rentN.toLocaleString('en-US')+'</span></div><div class="sc-note">'+(f.asset==='all'?'all classes':f.asset)+'</div></div>'
+    +'<div class="stat-cell"><div class="sc-label">Sale / rent split</div><div class="sc-value num">'+saleN.toLocaleString('en-US')+' <span class="unit">/ '+rentN.toLocaleString('en-US')+'</span></div><div class="sc-note">'+f.asset+'</div></div>'
    +'</div>'
    +'<div class="grid g-split">'
     +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Top districts — '+city+'</div>'
-    +'<div class="panel-sub">Median asking /m² · '+tt+' · '+_ccyName(cur)+'</div></div></div>'
+    +'<div class="panel-sub">Median asking /m² · '+f.asset+' · '+tt+' · '+_ccyName(cur)+'</div></div></div>'
     +'<div class="panel-body2" id="city-dist-slot"><div style="padding:14px;color:var(--ink5);font-size:12px;">Loading districts…</div></div></div>'
-    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">By asset class</div>'
-    +'<div class="panel-sub">'+city+' · for '+tt+'</div></div></div>'
-    +'<div class="panel-body2" style="padding-top:8px;"><table class="xmt"><thead><tr><th style="text-align:left;">Class</th><th>Listings</th><th>Median /m²</th></tr></thead>'
-    +'<tbody>'+(acHtml||'<tr><td colspan="3" style="text-align:left;color:var(--ink5);">No rows under current filters.</td></tr>')+'</tbody></table></div></div>'
-   +'</div>';
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">District price map — '+city+'</div>'
+    +'<div class="panel-sub">Bubble colour = median asking /m² (dark → bright bronze) · size ∝ listings</div></div></div>'
+    +'<div class="panel-body2"><div class="city-map-frame"><div class="lmap" id="city-map"></div></div></div></div>'
+   +'</div>'
+   +'<div class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">By asset class</div>'
+   +'<div class="panel-sub">'+city+' · for '+tt+'</div></div></div>'
+   +'<div class="panel-body2" style="padding-top:8px;" id="city-ac-slot"></div></div></div>';
+  var acRows=(K.city_class||[]).filter(function(x){return x.city===city&&x.tt===tt;})
+    .sort(function(a,b){return Number(b.count||0)-Number(a.count||0);});
+  var acHtml=acRows.map(function(r){ return '<tr'+((r.ac||'').toLowerCase()===f.asset?' class="selected"':'')+'><td style="text-align:left;padding-left:8px;" class="mkt-name">'+_cap(r.ac)+'</td>'
+      +'<td class="num">'+Number(r.count||0).toLocaleString('en-US')+'</td>'
+      +'<td class="num">'+(r.med!=null?money(Number(r.med),cur):'—')+'</td></tr>'; }).join('');
+  var acs=document.getElementById('city-ac-slot');
+  if(acs) acs.innerHTML='<table class="xmt"><thead><tr><th style="text-align:left;">Class</th><th>Listings</th><th>Median /m²</th></tr></thead><tbody>'
+    +(acHtml||'<tr><td colspan="3" style="text-align:left;color:var(--ink5);">No class data for '+city+'.</td></tr>')+'</tbody></table>';
   try{
-    var dr=await sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type});
+    var dr=await sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days});
     if(_cityActive!==city) return;
-    var rows=((dr&&dr.data)||[]).filter(function(d){return d.city===city&&d.median_ppsqm!=null;})
-      .map(function(d){return {k:d.submarket,v:Number(d.median_ppsqm),n:Number(d.listings||0)};})
-      .sort(function(a,b){return b.v-a.v;}).slice(0,12);
-    var ds=document.getElementById('city-dist-slot'); if(ds) ds.innerHTML=_bars(rows,cur);
+    var all=((dr&&dr.data)||[]).filter(function(d){return d.city===city&&d.median_ppsqm!=null;})
+      .map(function(d){return {k:d.submarket,v:Number(d.median_ppsqm),n:Number(d.listings||0),lat:d.lat,lng:d.lng};})
+      .sort(function(a,b){return b.v-a.v;});
+    var ds=document.getElementById('city-dist-slot'); if(ds) ds.innerHTML=_bars(all.slice(0,12),cur);
+    // district price map
+    var me=document.getElementById('city-map');
+    if(me&&window.L){
+      if(_cityMap){try{_cityMap.remove();}catch(e){}_cityMap=null;}
+      var ctr=CITY_COORDS[city]||(all.filter(function(d){return d.lat!=null;})[0]?[all.filter(function(d){return d.lat!=null;})[0].lat,all.filter(function(d){return d.lat!=null;})[0].lng]:null);
+      if(ctr){
+        _cityMap=L.map('city-map',{zoomControl:true,attributionControl:false,scrollWheelZoom:false,zoomSnap:.5});
+        _cityMap.setView(ctr,11.5,{animate:false});
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(_cityMap);
+        var geo=all.filter(function(d){return d.lat!=null;});
+        var meds=geo.map(function(d){return d.v;}).sort(function(a,b){return a-b;});
+        function shade(v){ if(!meds.length) return '#C89B5A';
+          var idx=meds.findIndex(function(m){return v<=m;}); var t=idx<0?1:idx/Math.max(1,meds.length-1);
+          var lo=[92,72,27], hi=[227,188,126];
+          var c2=lo.map(function(l,i){return Math.round(l+(hi[i]-l)*t);});
+          return 'rgb('+c2.join(',')+')'; }
+        geo.forEach(function(d){
+          L.circleMarker([d.lat,d.lng],{radius:Math.min(15,Math.max(5,Math.sqrt(d.n)/2)),fillColor:shade(d.v),color:'rgba(10,13,18,.85)',weight:1,fillOpacity:.88})
+            .bindPopup('<div style="font-family:Inter,sans-serif;min-width:140px;"><b style="font-size:12px;">'+_newsEsc(d.k)+'</b>'
+              +'<div style="font-size:11px;margin-top:2px;">Median: <b>'+money(d.v,cur)+'/m²'+(tt==='rent'?'/mo':'')+'</b></div>'
+              +'<div style="font-size:10px;color:#5F6B7C;">'+d.n.toLocaleString('en-US')+' listings</div></div>').addTo(_cityMap);
+        });
+        setTimeout(function(){ if(_cityMap){ _cityMap.invalidateSize(); _cityMap.setView(ctr,11.5,{animate:false}); } },220);
+      }
+    }
   }catch(e){}
 }
 async function renderDistrictsPage(country){
@@ -3187,7 +3266,7 @@ async function renderDistrictsPage(country){
   if(!c||c.status!=='live'){ el.innerHTML=V2HEAD(country,'Districts',[],null)+_emptyState('District analytics activate once '+(c?c.label:country)+' has listing data.'); return; }
   var f=_curFilters(), cur=c.currency; await _fx();
   var rows=[];
-  try{ var r=await sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type}); rows=(r&&r.data)||[]; }catch(e){}
+  try{ var r=await sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days}); rows=(r&&r.data)||[]; }catch(e){}
   rows=rows.map(function(x){return {sub:x.submarket,city:x.city,med:x.median_ppsqm!=null?Number(x.median_ppsqm):null,n:Number(x.listings||0)};})
       .sort(function(a,b){return b.n-a.n;});
   var tot=rows.reduce(function(a,r){return a+r.n;},0);
@@ -3228,19 +3307,47 @@ function blankHardcoded(){
 }
 async function renderInfra(country){
   var el=document.getElementById('pg-infrastructure'); if(!el||!sb) return;
-  var lbl=COUNTRIES[country]?COUNTRIES[country].label:country, items=[];
+  var lbl=COUNTRIES[country]?COUNTRIES[country].label:country, items=[], proj=[];
   try{
     var res=await sb.from('market_news').select('title,url,source,summary,published_at,category,is_pipeline')
       .eq('country',country).order('published_at',{ascending:false,nullsFirst:false}).limit(80);
     var rx=/(road|rail|metro|port|airport|bridge|highway|dam|power plant|grid|water|transit|tram|expressway|interchange|infrastructure)/i;
     items=((res&&res.data)||[]).filter(function(n){ return n.category==='infrastructure'||rx.test((n.title||'')+' '+(n.summary||'')); });
   }catch(e){}
+  try{ var pr=await sb.from('pipeline_projects').select('*').eq('country',country).eq('asset_class','infrastructure'); proj=(pr&&pr.data)||[]; }catch(e){}
+  // segment news by infrastructure type
+  var SEGS=[['Rail & transit',/rail|metro|tram|transit|monorail/i],['Roads & bridges',/road|highway|bridge|expressway|interchange/i],
+            ['Ports',/port(?!folio)|harbour|harbor/i],['Airports',/airport/i],['Energy',/power|grid|energy|solar|wind|lng|gas/i],['Water',/water|dam|desalin/i]];
+    var segArr=SEGS.map(function(sg){ return {k:sg[0], n:items.filter(function(x){return sg[1].test((x.title||'')+' '+(x.summary||''));}).length}; })
+    .filter(function(x){return x.n>0;}).sort(function(a,b){return b.n-a.n;});
+  var mx=Math.max.apply(null,segArr.map(function(x){return x.n;}).concat([1]));
+  var segHtml=segArr.map(function(x){ return '<div class="seg-bar"><div class="sb-n">'+x.k+'</div>'
+    +'<div class="sb-t"><div class="sb-f" style="width:'+(x.n/mx*100).toFixed(1)+'%;background:linear-gradient(90deg,#3E6B62,var(--teal));"></div></div>'
+    +'<div class="sb-v">'+x.n+' signal'+(x.n>1?'s':'')+'</div></div>'; }).join('')
+    ||'<div style="font-size:11px;color:var(--ink4);">No infrastructure signals categorised yet.</div>';
+  var projHtml=proj.length?proj.map(function(x){ var cit=(x.citations||[])[0]||{};
+    var vq=x.quantum_value!=null?((Number(x.quantum_value)>=1e9?(x.quantum_value/1e9).toFixed(1)+'B':(x.quantum_value/1e6).toFixed(0)+'M')+' '+(x.quantum_unit==='usd'?'USD':x.quantum_unit||'')):'—';
+    return '<tr><td style="text-align:left;padding-left:8px;" class="mkt-name">'+_newsEsc(x.project_name)+'</td>'
+      +'<td style="text-align:left;">'+_newsEsc(x.city||'—')+'</td><td class="num">'+vq+'</td>'
+      +'<td>'+(x.stage?'<span class="pp-badge">'+x.stage.replace(/_/g,' ')+'</span>':'—')+'</td>'
+      +'<td><a class="panel-link" style="display:inline-flex;" href="'+_newsEsc(_safeUrl(cit.url))+'" target="_blank" rel="noopener">source</a></td></tr>'; }).join(''):'';
   el.innerHTML=V2HEAD(country,'Infrastructure',
     ['Transport, utilities &amp; public-works signals','Observed news feed · refreshed Mon &amp; Thu'],null)
+   +'<section class="grid g-split">'
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Signals by segment</div>'
+   +'<div class="panel-sub">Categorised from '+items.length+' observed items</div></div></div>'
+   +'<div class="panel-body2">'+segHtml+'</div></div>'
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Named infrastructure projects</div>'
+   +'<div class="panel-sub">Extracted with stated price tags · cited</div></div>'
+   +'<span class="n-tag num">'+proj.length+' projects</span></div>'
+   +'<div class="panel-body2" style="padding-top:8px;">'
+   +(projHtml?'<table class="xmt"><thead><tr><th style="text-align:left;">Project</th><th style="text-align:left;">City</th><th>Value</th><th>Stage</th><th>Src</th></tr></thead><tbody>'+projHtml+'</tbody></table>'
+     :'<div class="empty-trend" style="height:110px;">No named infrastructure projects extracted for '+lbl+' yet.</div>')
+   +'</div></div></section>'
    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Infrastructure signals — '+lbl+'</div>'
    +'<div class="panel-sub">Filtered from the observed market-news pipeline</div></div>'
    +'<span class="n-tag num">'+items.length+' items</span></div>'
-   +'<div style="padding-top:6px;">'+(items.length?'':'')+'</div><div id="infra-news-list"></div></div>';
+   +'<div id="infra-news-list"></div></div>';
   renderNews(document.getElementById('infra-news-list'), items, false);
   if(!items.length){ var l=document.getElementById('infra-news-list'); if(l) l.innerHTML='<div style="padding:18px;color:var(--ink5);font-size:12px;">No infrastructure-tagged items for '+lbl+' yet.</div>'; }
 }
@@ -3262,7 +3369,7 @@ async function renderHeat(country,K){
   if(!c||c.status!=='live'){ el.innerHTML=V2HEAD(country,'Heatmaps',[],null)+_emptyState('Heatmaps activate once '+(c?c.label:country)+' has listing data.'); return; }
   var f=_curFilters(), cur=c.currency; await _fx();
   var rows=[];
-  try{ var r=await sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type}); rows=(r&&r.data)||[]; }catch(e){}
+  try{ var r=await sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days}); rows=(r&&r.data)||[]; }catch(e){}
   rows=rows.filter(function(x){return x.median_ppsqm!=null;}).map(function(x){return {sub:x.submarket,city:x.city,med:Number(x.median_ppsqm),n:Number(x.listings||0)};})
       .sort(function(a,b){return b.med-a.med;}).slice(0,60);
   var ttl=rows.reduce(function(a,r){return a+r.n;},0);
@@ -3709,188 +3816,72 @@ async function loadLiveKPIs(country){
 }
 
 async function loadMacroData(country){
-  var wbCode = COUNTRIES[country] ? COUNTRIES[country].wbCode : null;
-  if(!wbCode) return;
-
-  // ── Honest macro config — the ONLY macro source we actually fetch is the
-  //    World Bank Open Data API. No HCP / central-bank / city-demographic data
-  //    is sourced, so none is shown (was hardcoded/fabricated before). ──
-  var cfg = {
-    sources: 'World Bank Open Data',
-    sourceRows: [
-      ['Population','World Bank · SP.POP.TOTL','Annual','data.worldbank.org'],
-      ['Population growth','World Bank · SP.POP.GROW','Annual','data.worldbank.org'],
-      ['GDP growth','World Bank · NY.GDP.MKTP.KD.ZG','Annual','data.worldbank.org'],
-      ['GDP per capita','World Bank · NY.GDP.PCAP.CD','Annual','data.worldbank.org'],
-      ['Inflation (CPI)','World Bank · FP.CPI.TOTL.ZG','Annual','data.worldbank.org'],
-      ['Unemployment','World Bank · SL.UEM.TOTL.ZS','Annual','data.worldbank.org'],
-      ['Lending rate','World Bank · FR.INR.LEND','Annual','data.worldbank.org'],
-      ['Tourism arrivals','World Bank · ST.INT.ARVL','Annual','data.worldbank.org'],
-    ].map(function(r){ return [r[0], r[1], r[2], r[3], 'conf-h', 'High']; }),
-    cities: [],   // no city-level demographic source — shows "coming soon", never fabricated
-    demandDrivers: [
-      ['Currency', (COUNTRIES[country]&&COUNTRIES[country].currency)||'—'],
-    ],
-    citySectionLabel: 'City-Level Demographics — ' + country,
-  };
-
-  // ── Update static country references in the page ──
-
-  // Data banner — direct ID
-  var bannerSrc = document.getElementById('macro-banner-sources');
-  if(bannerSrc) bannerSrc.textContent = cfg.sources;
-
-  // Source registry — direct IDs
-  var srcSub = document.getElementById('macro-src-sub');
-  if(srcSub) srcSub.textContent = 'Macro data sources · ' + country;
-  var srcTbody = document.getElementById('macro-src-tbody');
-  if(srcTbody){
-    srcTbody.innerHTML = cfg.sourceRows.map(function(r){
-      return '<tr><td class="dt-city">'+r[0]+'</td><td class="dt-muted">'+r[1]+'</td><td><span class="ds-tag ds-macro">Macro · Observed</span></td><td class="mono dt-muted">'+r[2]+'</td><td class="mono dt-muted">'+r[3]+'</td><td><span class="conf '+r[4]+'"><span class="conf-dot"></span>'+r[5]+'</span></td></tr>';
-    }).join('');
+  var root=document.getElementById('macro-root'); if(!root) return;
+  var c=COUNTRIES[country]; var wb=c?c.wbCode:null; var lbl=c?c.label:country;
+  if(!wb){ root.innerHTML=V2HEAD(country,'Macro Indicators',[],null)+_emptyState('No macro source mapped for '+lbl+'.'); return; }
+  if(window._macroCharts){ Object.keys(_macroCharts).forEach(function(k){try{_macroCharts[k].destroy();}catch(e){}}); }
+  window._macroCharts={};
+  var IND=[
+    ['NY.GDP.MKTP.KD.ZG','GDP growth','%',1],
+    ['NY.GDP.PCAP.CD','GDP per capita','$',0],
+    ['FP.CPI.TOTL.ZG','Inflation (CPI)','%',1],
+    ['SL.UEM.TOTL.ZS','Unemployment','%',1],
+    ['SP.POP.TOTL','Population','',0],
+    ['SP.URB.TOTL.IN.ZS','Urban population share','%',1],
+    ['ST.INT.ARVL','Tourism arrivals','',0],
+    ['ST.INT.RCPT.CD','Tourism receipts','$',0],
+    ['BX.KLT.DINV.CD.WD','FDI net inflows','$',0],
+    ['NE.TRD.GNFS.ZS','Trade openness (% GDP)','%',1],
+    ['BX.TRF.PWKR.CD.DT','Remittances received','$',0],
+    ['FR.INR.LEND','Lending interest rate','%',1],
+    ['FS.AST.PRVT.GD.ZS','Credit to private sector (% GDP)','%',1]
+  ];
+  root.innerHTML=V2HEAD(country,'Macro Indicators',
+    ['Live from the World Bank Open Data API','Native units — the currency toggle does not convert macro data'],null)
+   +'<div class="mcards" id="mc-grid">'+IND.map(function(x,i){
+      return '<div class="mcard"><div class="mc-t"><span>'+x[1]+'</span></div>'
+        +'<div class="mc-latest" id="mcl-'+i+'"><span style="color:var(--ink5);">loading…</span></div>'
+        +'<div class="mc-chart"><canvas id="mcc-'+i+'"></canvas></div>'
+        +'<div class="mc-src">World Bank · '+x[0]+'</div></div>'; }).join('')+'</div>'
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Economy, tourism &amp; policy news — '+lbl+'</div>'
+   +'<div class="panel-sub">Macro-tagged items from the observed news pipeline · refreshed Mon &amp; Thu</div></div></div>'
+   +'<div id="macro-news-list"><div style="padding:18px;color:var(--ink5);font-size:12px;">Loading news…</div></div></div>';
+  function fmtV(v,unit,dec){
+    if(v==null) return '—';
+    if(unit==='%') return v.toFixed(dec)+'%';
+    var a=Math.abs(v), sfx=a>=1e9?[1e9,'B']:a>=1e6?[1e6,'M']:a>=1e3?[1e3,'k']:[1,''];
+    return (unit==='$'?'$':'')+(v/sfx[0]).toFixed(sfx[1]?1:dec)+sfx[1];
   }
-
-  // Macro table panel subtitle
-  var macroPanel = document.getElementById('macro-table');
-  if(macroPanel){
-    var macroSub = macroPanel.closest('.panel') && macroPanel.closest('.panel').querySelector('.panel-sub');
-    if(macroSub) macroSub.innerHTML = country + ' · <span class="ds-tag ds-macro">Macro / observed</span> · Fields: population, GDP growth, inflation, unemployment, tourism arrivals, GDP/capita';
-  }
-
-  // City section divider label
-  var secDiv = document.querySelector('#pg-macro-indicators .sec-div .sd-label');
-  if(secDiv) secDiv.textContent = cfg.citySectionLabel;
-
-  // City macro table subtitle
-  var cityPanel = document.getElementById('city-macro-table');
-  if(cityPanel){
-    var citySub = cityPanel.closest('.panel') && cityPanel.closest('.panel').querySelector('.panel-sub');
-    if(citySub) citySub.innerHTML = 'Estimates · <span class="ds-tag ds-macro">Macro / observed</span> · Source: ' + (country==='Morocco'?'HCP Morocco':'NBS Nigeria');
-  }
-
-  // City macro table body
-  var cityBody = document.querySelector('#city-macro-table tbody');
-  if(cityBody){
-    if(cfg.cities && cfg.cities.length > 0){
-      cityBody.innerHTML = cfg.cities.map(function(c){
-        return '<tr><td class="dt-city">'+c[0]+'</td><td class="mono">'+c[1]+'</td><td class="chg pos">'+c[2]+'</td><td class="mono">'+c[3]+'</td><td class="mono">'+c[4]+'</td><td class="mono">'+c[5]+'</td><td class="mono">'+c[6]+'</td><td class="dt-muted">'+c[7]+'</td></tr>';
-      }).join('');
-    } else {
-      cityBody.innerHTML = '<tr><td colspan="8" style="padding:16px;text-align:center;color:var(--ink4);">City-level demographic data for '+country+' coming soon</td></tr>';
-    }
-  }
-
-  // Demand drivers panel subtitle
-  document.querySelectorAll('#pg-macro-indicators .two-col .panel').forEach(function(p){
-    var ptitle = p.querySelector('.panel-title');
-    if(ptitle && ptitle.textContent.includes('RE Demand Drivers')){
-      var psub = p.querySelector('.panel-sub');
-      if(psub) psub.textContent = country + ' · Macro context for real estate demand';
-      var body = p.querySelector('.panel-body');
-      if(body){
-        body.innerHTML = cfg.demandDrivers.map(function(d){
-          return '<div class="ep-meta-row"><span class="ep-meta-lbl">'+d[0]+'</span><span class="ep-meta-val">'+d[1]+'</span></div>';
-        }).join('');
-      }
-    }
+  IND.forEach(function(x,i){
+    fetch('https://api.worldbank.org/v2/country/'+wb+'/indicator/'+x[0]+'?format=json&per_page=60')
+      .then(function(r){return r.json();})
+      .then(function(j){
+        var arr=(j&&j[1])||[];
+        var pts=arr.filter(function(p){return p.value!=null;})
+          .map(function(p){return {x:+p.date,y:+p.value};})
+          .sort(function(a,b){return a.x-b.x;})
+          .filter(function(p){return p.x>=2000;});
+        var el=document.getElementById('mcl-'+i); if(!el) return;
+        if(!pts.length){ el.innerHTML='<span style="color:var(--ink5);">not published for '+lbl+'</span>'; return; }
+        var last=pts[pts.length-1];
+        el.innerHTML='<span class="yr">'+last.x+' —</span>'+fmtV(last.y,x[2],x[3]);
+        var cv=document.getElementById('mcc-'+i); if(!cv||!window.Chart) return;
+        _macroCharts[i]=new Chart(cv,{type:'line',data:{datasets:[{data:pts,parsing:false,
+          borderColor:'#C89B5A',borderWidth:1.6,pointRadius:0,pointHoverRadius:3,tension:.3,fill:{target:'origin',above:'rgba(200,155,90,.07)'}}]},
+          options:{responsive:true,maintainAspectRatio:false,
+            interaction:{mode:'nearest',intersect:false},
+            plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.raw.x+': '+fmtV(ctx.raw.y,x[2],x[3]);}}}},
+            scales:{x:{type:'linear',display:false},y:{display:false}}}});
+      }).catch(function(){ var el=document.getElementById('mcl-'+i); if(el) el.innerHTML='<span style="color:var(--ink5);">unavailable</span>'; });
   });
-
-  // ── Now fetch World Bank data ──
-  var macroBody = document.querySelector('#macro-table tbody');
-  if(macroBody) macroBody.innerHTML = '<tr><td colspan="9" style="padding:16px;text-align:center;color:var(--ink4);">Loading World Bank data…</td></tr>';
-
-  var indicators = {
-    'SP.POP.TOTL':     'population',
-    'SP.POP.GROW':     'popGrowth',
-    'NY.GDP.MKTP.KD.ZG':'gdpGrowth',
-    'NY.GDP.PCAP.CD':  'gdpPerCapita',
-    'FP.CPI.TOTL.ZG':  'inflation',
-    'SL.UEM.TOTL.ZS':  'unemployment',
-    'FR.INR.LEND':     'lendingRate',
-    'ST.INT.ARVL':     'tourists',
-  };
-
-  var results = {};
   try{
-    await Promise.all(Object.entries(indicators).map(async function([ind,key]){
-      try{
-        var url = 'https://api.worldbank.org/v2/country/'+wbCode+'/indicator/'+ind+'?format=json&mrv=7&per_page=7';
-        var r = await fetch(url);
-        var j = await r.json();
-        if(j && j[1]){
-          results[key] = j[1].filter(function(d){ return d.value!==null; }).map(function(d){ return {year:d.date, value:d.value}; });
-        }
-      }catch(e){ results[key]=[]; }
-    }));
-  }catch(e){ console.warn('World Bank fetch error:',e); }
-
-  // Build year map
-  var yearMap = {};
-  function addToYear(key,arr){
-    (arr||[]).forEach(function(d){
-      if(!yearMap[d.year]) yearMap[d.year] = {};
-      yearMap[d.year][key] = d.value;
-    });
-  }
-  Object.entries(results).forEach(function([key,arr]){ addToYear(key,arr); });
-
-  var years = Object.keys(yearMap).sort().reverse().slice(0,6).reverse();
-  if(!years.length){
-    if(macroBody) macroBody.innerHTML = '<tr><td colspan="9" style="padding:16px;text-align:center;color:var(--ink4);">World Bank data unavailable — check network</td></tr>';
-    return;
-  }
-
-  function fmt(v,type){
-    if(v===null||v===undefined||v==='') return '—';
-    if(type==='pop')    return (v/1e6).toFixed(1)+'M';
-    if(type==='pct')    return (v>=0?'+':'')+v.toFixed(1)+'%';
-    if(type==='gdppc')  return '$'+Math.round(v).toLocaleString();
-    if(type==='tourists') return v>1e6?(v/1e6).toFixed(1)+'M':Math.round(v).toLocaleString();
-    return v;
-  }
-
-  // Update macro table header to include new columns
-  var macroThead = document.querySelector('#macro-table thead tr');
-  if(macroThead) macroThead.innerHTML = '<th>Year</th><th>Population</th><th>Pop. Growth %</th><th>GDP Growth %</th><th>Inflation (CPI %)</th><th>Unemployment %</th><th>Lending Rate %</th><th>Tourism Arrivals</th><th>GDP/Capita (USD)</th><th>Source</th><th>Conf.</th>';
-
-  if(macroBody){
-    macroBody.innerHTML = years.map(function(yr,i){
-      var d = yearMap[yr]||{};
-      var isEst = parseInt(yr)>=2025;
-      var conf = isEst ? 'conf-e' : 'conf-h';
-      var confLbl = isEst ? 'Est.' : 'High';
-      var gdpClass = (d.gdpGrowth>0)?'chg pos':'chg neg';
-      var infClass = (d.inflation>5)?'chg neg':'chg pos';
-      return '<tr>'
-        +'<td class="mono dt-muted">'+yr+(isEst?'E':'')+'</td>'
-        +'<td class="mono">'+(d.population?fmt(d.population,'pop'):'—')+'</td>'
-        +'<td class="mono '+(d.popGrowth>0?'chg pos':'chg neg')+'">'+fmt(d.popGrowth,'pct')+'</td>'
-        +'<td class="mono '+gdpClass+'">'+fmt(d.gdpGrowth,'pct')+'</td>'
-        +'<td class="mono '+infClass+'">'+fmt(d.inflation,'pct')+'</td>'
-        +'<td class="mono">'+fmt(d.unemployment,'pct')+'</td>'
-        +'<td class="mono">'+fmt(d.lendingRate,'pct')+'</td>'
-        +'<td class="mono">'+(d.tourists?fmt(d.tourists,'tourists'):'—')+'</td>'
-        +'<td class="mono">'+(d.gdpPerCapita?fmt(d.gdpPerCapita,'gdppc'):'—')+'</td>'
-        +'<td class="dt-muted">World Bank API</td>'
-        +'<td><span class="conf '+conf+'"><span class="conf-dot"></span>'+confLbl+'</span></td>'
-        +'</tr>';
-    }).join('');
-  }
-
-  // Update demand drivers panel with live urbanisation from World Bank
-  var urbanRate = Object.values(yearMap).filter(function(d){ return d.urbanisation; }).slice(-1)[0];
-  if(urbanRate){
-    document.querySelectorAll('#pg-macro-indicators .ep-meta-val').forEach(function(val){
-      var lbl = val.previousElementSibling;
-      if(lbl && lbl.textContent.includes('Urban pop')){
-        val.textContent = urbanRate.urbanisation ? urbanRate.urbanisation.toFixed(1)+'% (World Bank live)' : cfg.demandDrivers[1][1];
-      }
-    });
-  }
-
-  // Update "live" indicator in sidebar
-  var liveEl = document.querySelector('.sb-live');
-  if(liveEl) liveEl.innerHTML = '<div class="live-dot"></div>'+country+' · Updated '+new Date().toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+    var res=await sb.from('market_news').select('title,url,source,summary,published_at,category,is_pipeline')
+      .eq('country',country).eq('category','macro').order('published_at',{ascending:false,nullsFirst:false}).limit(20);
+    var rows=(res&&res.data)||[];
+    var ml=document.getElementById('macro-news-list');
+    if(ml){ if(rows.length) renderNews(ml, rows, false);
+      else ml.innerHTML='<div style="padding:18px;color:var(--ink5);font-size:12px;">No macro-tagged news for '+lbl+' yet — the feed refreshes Monday &amp; Thursday.</div>'; }
+  }catch(e){}
 }
 
 // ── LOADER ──
@@ -3995,6 +3986,8 @@ function nav(id, fromRoute){
     'insights':'Research / Insights','data-explorer':'Tools / Data Explorer','exports':'Tools / Exports','api-access':'Tools / API Access'};
   var t=(titles[id]||id).split(' / ');
   var bc=document.getElementById('tb-bc'); if(bc)bc.innerHTML=t.length>1?(t[0]+' / <span>'+t[1]+'</span>'):('<span>'+t[0]+'</span>');
+  var NOFILTER={'pipeline':1,'infrastructure':1,'macro-indicators':1,'market-reports':1,'api-access':1,'insights':1,'exports':1};
+  document.body.classList.toggle('no-filters', !!NOFILTER[id]);
   if(!fromRoute) _routePush(id);
   if(id==='map-view'&&_B2C){ renderMap(_B2C,_B2K); }
   if(id==='cities'&&_B2C&&_cityActive){ renderCityProfile(_B2C,_cityActive); }
@@ -4229,8 +4222,7 @@ function _cap(s){ return s?s.charAt(0).toUpperCase()+s.slice(1):s; }
 // Top-bar Asset + Type filter — re-renders the Key Indicators and Yield tables
 // for the SELECTED MARKET only (no cross-market). Uses data cached by loadLiveKPIs.
 function applyFilters(skipPage){
-  var assetSel=document.getElementById('asset-filter');
-  var asset=assetSel?assetSel.value:'all';
+  var asset=_assetFilter||'apartments';
   var type=_typeFilter||'sale';
   var cur=(COUNTRIES[_B2C||ACTIVE_COUNTRY]||{}).currency||window._kpiCur||'';
   var it=document.getElementById('indicators-table');
@@ -4456,5 +4448,6 @@ function closeSidebar() {
   document.getElementById('sidebar-overlay').classList.remove('open');
 }
 </script>
+</div></div></div>
 </body>
 </html>
