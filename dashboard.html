@@ -2917,7 +2917,7 @@ async function renderResearchPanel(country){
       var pct=(la/stockM2*100);
       derived+='<tr><td style="text-align:left;padding-left:8px;" class="mkt-name">Visible float</td>'
         +'<td style="text-align:left;">'+(cityK==='(country)'?lbl:cityK)+'</td><td style="text-align:left;">'+acK+'</td>'
-        +'<td style="text-align:left;"><span class="rs-val">'+pct.toFixed(1)+'%</span> <span style="font-size:10px;color:var(--ink4);">= '+Math.round(la).toLocaleString('en-US')+' m² listed ÷ '+fmtVal(g)+' stock ('+_newsEsc(g.publisher)+' '+_newsEsc(g.as_of)+')</span></td></tr>';
+        +'<td style="text-align:left;"><span class="rs-val">'+pct.toFixed(1)+'%</span> <span style="font-size:10px;color:var(--ink4);">= '+Math.round(la).toLocaleString('en-US')+' m² listed ÷ '+fmtVal(g)+' stock'+(u!=='sqm'?' (converted to m²)':'')+' · '+_newsEsc(g.publisher)+' '+_newsEsc(g.as_of)+'</span></td></tr>';
     } });
   slot.innerHTML='<section class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">Supply &amp; occupancy — research layer</div>'
     +'<div class="panel-sub">Published market research, reconciled per figure · derived metrics show their formula</div></div>'
