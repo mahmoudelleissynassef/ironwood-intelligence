@@ -3,6 +3,9 @@ Allow: /
 
 Sitemap: https://ironwoodintelligence.com/sitemap.xml
 
-# Block admin and API paths from indexing
+# Block the gated application, admin, and API paths from indexing.
+# Only the public marketing pages (/en, /fr and their sections) should be crawled.
 Disallow: /admin
 Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboard/
