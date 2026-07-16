@@ -1,0 +1,9 @@
+.git
+.claude
+scraper-factory
+design-v2
+node_modules
+*.pdf
+AGENTS.md
+CLAUDE.md
+api

@@ -1,0 +1,12 @@
+{
+  "name": "ironwood-intelligence-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ironwood Intelligence static site + terminal (Railway)",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
