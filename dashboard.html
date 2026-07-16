@@ -2772,7 +2772,7 @@ async function renderOverview(country){
     +'<span class="num">City medians: '+nf(Math.round(medN))+' listings · '+fmt(medU)+' / m²</span></div></div></div></div>'
    +'</section>'
 
-   +'<section class="grid g-bottom"><div class="panel"><div class="panel-head"><div><div class="panel-title">All markets — '+lbl+'</div>'
+   +'<section class="grid g-split"><div class="panel"><div class="panel-head"><div><div class="panel-title">All markets — '+lbl+'</div>'
     +'<div class="panel-sub">Click a row to load its profile · medians are asking prices, for '+ttLbl+', '+ccy+'</div></div>'
     +'<div class="panel-actions"><span class="n-tag num">'+df.length+' markets</span><button class="panel-link" onclick="nav(\'districts\')">All districts'+_CHEV+'</button></div></div>'
     +'<div class="panel-body2" style="padding-top:8px"><table class="xmt"><thead><tr><th>Market</th><th>Listings</th><th>Share</th><th>Median /m²</th><th>Δ wk</th></tr></thead><tbody>'+rows+'</tbody></table>'
