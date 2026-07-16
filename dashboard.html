@@ -947,7 +947,7 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
         <button data-c="usd" onclick="setCcy('usd')">USD</button>
         <button data-c="local" id="ccy-local-lbl" onclick="setCcy('local')">MAD</button>
       </div>
-      <span class="fx-pill" id="fx-note" title="USD figures are the listing's scraped local price converted at this live interbank rate (open.er-api.com)">FX —</span>
+      <span class="fx-pill" id="fx-note" title="USD figures are the listing's observed local price converted at this live interbank rate (open.er-api.com)">FX —</span>
       <button class="btn btn-primary" onclick="nav('exports')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export report
@@ -1324,7 +1324,7 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
       <div class="pg-sub">Raw listings observations. This is the base dataset — immutable, append-only, never overwritten by analytics logic. All asking price metrics derive from this layer.</div>
 
       <div style="padding:10px 14px;background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:2px;margin-bottom:16px;font-size:12px;color:var(--blue);">
-        <strong>Data Layer:</strong> Raw Data Layer · Listings-derived only · Read-only · Append-only · Source: Mubawab Morocco scrape · 62,052 records ingested
+        <strong>Data Layer:</strong> Raw Data Layer · Listings-derived only · Read-only · Append-only · Source: Mubawab Morocco collection · 62,052 records ingested
       </div>
 
       <div class="panel">
@@ -1885,6 +1885,18 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
 const SB_URL='https://ujhqkirhfmumvvnfvgnz.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqaHFraXJoZm11bXZ2bmZ2Z256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjkzMDYsImV4cCI6MjA4ODgwNTMwNn0.m_RPKmKN_GJgsCKDzuWpsSKHrAMITf5gjw8vOesy3ik';
 let sb=null;
+/* ── usage telemetry: fire-and-forget inserts into usage_events (insert-only RLS; admin-only read) ── */
+var _iwSess=null; try{ _iwSess=sessionStorage.iw_sess||(sessionStorage.iw_sess=Math.random().toString(36).slice(2)+Date.now().toString(36)); }catch(e){}
+var _iwUid=null;
+function iwTrack(event,meta){
+  try{
+    if(!sb) return;
+    sb.from('usage_events').insert({user_id:_iwUid,session_id:_iwSess,event:event,
+      page:(location.pathname.match(/dashboard\/?([a-z-]*)/)||[])[1]||'overview',
+      country:typeof ACTIVE_COUNTRY!=='undefined'?ACTIVE_COUNTRY:null,meta:meta||null})
+      .then(function(){},function(){});
+  }catch(e){}
+}
 let _map=null,_chartsBuilt=false;
 
 // ── COUNTRY CONFIG ──
@@ -2019,6 +2031,7 @@ document.addEventListener('click',function(e){
 });
 
 function switchCountry(name){
+  iwTrack('market_switch',{to:name});
   if(!COUNTRIES[name]) return;
   ACTIVE_COUNTRY=name;
   var c=COUNTRIES[name];
@@ -4029,6 +4042,7 @@ async function boot(){
     loadProgress(20,'Authenticating...');
     const{data:sess}=await sb.auth.getSession();
     const user=sess?.session?.user;
+    _iwUid=user?user.id:null; iwTrack('session_start');
     if(!user&&AUTH_GATE){
       clearTimeout(safetyTimer);
       hideLoader();
@@ -4065,6 +4079,7 @@ async function boot(){
 
 // ── NAVIGATION ──
 function nav(id, fromRoute){
+  iwTrack('page_view',{to:id});
   document.querySelectorAll('.ni').forEach(function(n){n.classList.remove('active');});
   var act=document.querySelector('.ni[onclick*="\''+id+'\'"]'); if(act)act.classList.add('active');
   document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('active');});
