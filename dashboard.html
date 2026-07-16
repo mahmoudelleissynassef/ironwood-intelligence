@@ -2947,7 +2947,7 @@ async function renderResearchPanel(country){
         options:{responsive:true,maintainAspectRatio:false,
           interaction:{mode:'nearest',intersect:false},
           plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:10},color:'#A8A08F',boxWidth:10,padding:10}},
-            tooltip:{callbacks:{label:function(ctx){ var p=ctx.raw; return ctx.dataset.label+': '+p.y+'% — '+p.src; }}}},
+            tooltip:{callbacks:{title:function(items){return String(Math.floor(items[0].parsed.x));},label:function(ctx){ var p=ctx.raw; return ctx.dataset.label+': '+p.y+'% — '+p.src; }}}},
           scales:{x:{type:'linear',ticks:{font:{family:'IBM Plex Mono',size:10},color:'#6E685C',stepSize:1,callback:function(v){return Math.floor(v);}},grid:{color:'rgba(228,221,207,.07)'}},
             y:{min:0,max:100,ticks:{font:{family:'IBM Plex Mono',size:10},color:'#6E685C',callback:function(v){return v+'%';}},grid:{color:'rgba(228,221,207,.07)'}}}}});
     }
@@ -3877,8 +3877,8 @@ async function renderMacroExtras(country){
    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Tourism source markets — arrivals by origin</div>'
    +'<div class="panel-sub">Top origins across years · national tourism statistics · hover cites source</div></div>'
    +'<span class="n-tag num">'+tor.length+' figures</span></div>'
-   +'<div class="panel-body2">'
-   +(Object.keys(series).length?'<div class="rs-chart" style="height:280px;"><canvas id="mx-origins"></canvas></div>'
+   +'<div class="panel-body2" style="flex:1;display:flex;flex-direction:column;">'
+   +(Object.keys(series).length?'<div class="rs-chart" style="flex:1;min-height:280px;position:relative;"><canvas id="mx-origins"></canvas></div>'
      :'<div class="empty-trend" style="height:120px;">Origin-market series for '+lbl+' being sourced and verified.</div>')
    +'</div></div>'
    +'<div><div class="panel" style="margin-bottom:14px;"><div class="panel-head"><div><div class="panel-title">Travel &amp; Tourism Development Index</div>'
@@ -3900,7 +3900,7 @@ async function renderMacroExtras(country){
       options:{responsive:true,maintainAspectRatio:false,
         interaction:{mode:'nearest',intersect:false},
         plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:10},color:'#A8A08F',boxWidth:10,padding:8}},
-          tooltip:{callbacks:{label:function(ctx){ var p=ctx.raw;
+          tooltip:{callbacks:{title:function(items){return String(Math.floor(items[0].parsed.x));},label:function(ctx){ var p=ctx.raw;
             var v=p.unit==='pct'?p.y.toFixed(1)+'%':(p.y>=1e6?(p.y/1e6).toFixed(2)+'M':p.y>=1e3?Math.round(p.y/1e3)+'k':p.y);
             return ctx.dataset.label+': '+v+' — '+p.src; }}}},
         scales:{x:{type:'linear',ticks:{font:{family:'IBM Plex Mono',size:10},color:'#6E685C',stepSize:1,callback:function(v){return Math.floor(v);}},grid:{color:'rgba(228,221,207,.07)'}},
