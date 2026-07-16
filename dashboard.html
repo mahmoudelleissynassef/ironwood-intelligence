@@ -2574,7 +2574,7 @@ async function renderCrossMarket(){
     +KPI(icoGlobe,'Countries covered',''+data.length,flat('live')+'<span>'+byCty.map(function(d){return d.c.label;}).join(', ')+'</span>','Markets with active collection')
     +KPI(icoCity,'Cities covered',''+cityCount,flat('stable')+'<span>this period</span>','Metro areas with active collection')
     +KPI(icoPin,'Markets tracked',nf(distCount),flat('growing')+'<span>district level</span>','Neighbourhoods &amp; submarkets, standardised')
-    +KPI(icoAct,'Active sources',''+SOURCES.length,flat('active')+'<span>last run '+refresh+'</span>','Listing portals scraped weekly')
+    +KPI(icoAct,'Active sources',''+SOURCES.length,flat('active')+'<span>last run '+refresh+'</span>','Listing portals monitored weekly')
     +KPI(icoShield,'Data completeness',comp+'<span class="unit">%</span>',flat('baseline')+'<span>critical fields</span>','Listings with computable price per m²')
    +'</section>'
 
@@ -3682,7 +3682,7 @@ async function loadLiveKPIs(country){
       var sign=priceGrowthPct>=0?'▲ +':'▼ ';
       safeSet('kpi-price-growth', sign+Math.abs(Math.round(priceGrowthPct*10)/10)+'% ('+quarters[0]+'→'+quarters[quarters.length-1]+')');
     } else {
-      safeSet('kpi-price-growth', '— (upload 2+ scrapes for growth)');
+      safeSet('kpi-price-growth', '— (needs 2+ collection runs for growth)');
     }
 
     if(grossYieldAll!==null){
@@ -3793,7 +3793,7 @@ async function loadLiveKPIs(country){
           +'<td class="mono">'+ppsm+'</td>'
           +'<td class="mono">-</td>'
           +'<td class="mono dt-muted">'+dt+'</td>'
-          +'<td class="dt-muted">Scraped</td>'
+          +'<td class="dt-muted">Observed</td>'
           +'<td><span class="conf conf-h"><span class="conf-dot"></span>Live</span></td>'
           +'</tr>';
       }).join('');
