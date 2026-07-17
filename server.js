@@ -86,6 +86,12 @@ const server = http.createServer((req, res) => {
   // cleanUrls: .html URLs redirect to extensionless
   if (pathname.endsWith('.html')) return redirect(res, pathname.slice(0, -5) || '/');
 
+  // Bare domain -> www with the path preserved (relevant once apex DNS points
+  // here, e.g. after a Cloudflare cutover; GoDaddy's forwarder drops paths).
+  if (host === 'ironwoodintelligence.com') {
+    return redirect(res, 'https://www.ironwoodintelligence.com' + pathname);
+  }
+
   // ── rewrites (mirror vercel.json) ──
   let file = null;
   if (host.startsWith('admin.')) {
