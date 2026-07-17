@@ -1,7 +1,7 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ironwoodintelligence.com/sitemap.xml
+Sitemap: https://www.ironwoodintelligence.com/sitemap.xml
 
 # Block the gated application, admin, and API paths from indexing.
 # Only the public marketing pages (/en, /fr and their sections) should be crawled.
