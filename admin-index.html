@@ -6,20 +6,25 @@
 <title>Ironwood Intelligence — Data Operations</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --bg:#08090d;--surface:#0e1018;--surface2:#12151f;--surface3:#191c27;
-  --border:#1a1d27;--border2:#252836;
-  --ink:#f0f0f2;--ink2:#c8cad4;--ink3:#9a9cac;--ink4:#666880;--ink5:#3e4050;
-  --blue:#4f6ef7;--blue-d:#3d5ce0;--blue-dim:#1a1f3d;
-  --green:#22c55e;--green-d:#16a34a;--green-dim:#052e16;
-  --red:#f87171;--red-d:#dc2626;--red-dim:#2d0a0a;
-  --amber:#f59e0b;--amber-dim:#2d1a00;
-  --gold:#b8963a;--gold-dim:#1e1608;
-  --radius:3px;
-  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  --mono:'SF Mono','Fira Code',monospace;
+  /* Market Terminal light theme (matches dashboard.html) */
+  --bg:#f5f5f3;--surface:#ffffff;--surface2:#f9f9f7;--surface3:#eeeeeb;
+  --border:#e3e3df;--border2:#d0d0cb;
+  --ink:#0d0d0d;--ink2:#2a2a2a;--ink3:#5a5a5a;--ink4:#8c8c8c;--ink5:#b8b8b5;
+  /* Brand accent: gold (was blue) */
+  --blue:#b8933f;--blue-d:#a07f34;--blue-dim:rgba(184,147,63,0.10);
+  --green:#166534;--green-d:#16a34a;--green-dim:#f0fdf4;
+  --red:#dc2626;--red-d:#b91c1c;--red-dim:#fef2f2;
+  --amber:#92400e;--amber-dim:#fffbeb;
+  --gold:#b8933f;--gold-dim:rgba(184,147,63,0.10);
+  --radius:0px;
+  --font:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --serif:'DM Serif Display',Georgia,serif;
+  --mono:'DM Mono','SF Mono',Menlo,monospace;
 }
 body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;font-size:13px;}
 
@@ -34,7 +39,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:10
 .fg input{width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border2);font-size:13px;color:var(--ink);outline:none;font-family:var(--font);}
 .fg input:focus{border-color:var(--blue);}
 .fg input::placeholder{color:var(--ink5);}
-.login-btn{width:100%;padding:10px;background:var(--blue);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px;font-family:var(--font);}
+.login-btn{width:100%;padding:10px;background:var(--blue);color:#0d0d0d;border:none;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px;font-family:var(--font);}
 .login-btn:hover{background:var(--blue-d);}
 .login-btn:disabled{background:var(--surface3);color:var(--ink5);cursor:not-allowed;}
 .login-err{color:var(--red);font-size:12px;margin-top:10px;padding:8px 12px;background:var(--red-dim);border:1px solid #7f1d1d;display:none;}
@@ -115,7 +120,7 @@ table.dt tr:last-child td{border-bottom:none;}
 
 /* ── BUTTONS ── */
 .btn{padding:7px 14px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .12s;}
-.btn-primary{background:var(--blue);color:#fff;}
+.btn-primary{background:var(--blue);color:#0d0d0d;}
 .btn-primary:hover{background:var(--blue-d);}
 .btn-success{background:var(--green-d);color:#fff;}
 .btn-success:hover{background:#15803d;}
@@ -157,7 +162,7 @@ table.dt tr:last-child td{border-bottom:none;}
 
 /* ── UPLOAD ── */
 .dropzone{border:1px dashed var(--border2);padding:28px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px;}
-.dropzone:hover,.dropzone.drag{border-color:var(--blue);background:#0e1220;}
+.dropzone:hover,.dropzone.drag{border-color:var(--blue);background:var(--blue-dim);}
 .dropzone input{display:none;}
 .dz-icon{font-size:28px;margin-bottom:8px;}
 .dz-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:3px;}
@@ -298,7 +303,7 @@ table.dt tr:last-child td{border-bottom:none;}
 /* ── TABS ── */
 .tabs{display:flex;gap:3px;margin-bottom:16px;background:var(--bg);padding:3px;border:1px solid var(--border);width:fit-content;}
 .tab{padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink5);transition:all .12s;}
-.tab.active{background:var(--blue);color:#fff;}
+.tab.active{background:var(--blue);color:#0d0d0d;}
 .tab-content{display:none;}
 .tab-content.active{display:block;}
 
@@ -364,6 +369,12 @@ table.dt tr:last-child td{border-bottom:none;}
         <div class="sb-lbl">Overview</div>
         <div class="sb-item active" onclick="showPg('dashboard',this)"><span class="sb-icon">◈</span>Dashboard</div>
         <div class="sb-item" onclick="showPg('data-health',this)"><span class="sb-icon">⬛</span>Data Health <span class="sb-badge-red" id="badge-health" style="display:none;">0</span></div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-lbl">Analytics</div>
+        <div class="sb-item" onclick="showPg('analytics',this)"><span class="sb-icon">∿</span>Platform Usage</div>
+        <div class="sb-item" onclick="showPg('members',this)"><span class="sb-icon">◫</span>Users</div>
+        <div class="sb-item" onclick="showPg('revenue',this)"><span class="sb-icon">◈</span>Revenue</div>
       </div>
       <div class="sb-section">
         <div class="sb-lbl">Data Pipeline</div>
@@ -720,19 +731,19 @@ table.dt tr:last-child td{border-bottom:none;}
           <div class="panel-body">
             <div style="display:flex;flex-direction:column;gap:12px;">
               <div style="display:flex;gap:12px;padding:12px;border:1px solid var(--border);">
-                <div style="width:24px;height:24px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">1</div>
+                <div style="width:24px;height:24px;background:var(--blue);color:#0d0d0d;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">1</div>
                 <div><strong style="font-size:12.5px;color:var(--ink);">Go to script.google.com</strong><div style="font-size:11.5px;color:var(--ink5);margin-top:3px;">Create a new project. Delete the placeholder code. Paste the contents of <code style="background:var(--bg);padding:1px 5px;font-family:monospace;">ironwood_drive_sync.gs</code> (provided separately).</div></div>
               </div>
               <div style="display:flex;gap:12px;padding:12px;border:1px solid var(--border);">
-                <div style="width:24px;height:24px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">2</div>
+                <div style="width:24px;height:24px;background:var(--blue);color:#0d0d0d;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">2</div>
                 <div><strong style="font-size:12.5px;color:var(--ink);">Fill in SUPABASE_SERVICE_KEY and FOLDER_ID</strong><div style="font-size:11.5px;color:var(--ink5);margin-top:3px;">Service Role Key: Supabase → Settings → API → service_role → Reveal. Folder ID: the long string in your Drive folder URL.</div></div>
               </div>
               <div style="display:flex;gap:12px;padding:12px;border:1px solid var(--border);">
-                <div style="width:24px;height:24px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">3</div>
+                <div style="width:24px;height:24px;background:var(--blue);color:#0d0d0d;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">3</div>
                 <div><strong style="font-size:12.5px;color:var(--ink);">Enable Drive API</strong><div style="font-size:11.5px;color:var(--ink5);margin-top:3px;">In Apps Script editor: left sidebar → + next to Services → Google Drive API → Add.</div></div>
               </div>
               <div style="display:flex;gap:12px;padding:12px;border:1px solid var(--border);">
-                <div style="width:24px;height:24px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">4</div>
+                <div style="width:24px;height:24px;background:var(--blue);color:#0d0d0d;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">4</div>
                 <div><strong style="font-size:12.5px;color:var(--ink);">Run testConnection, then syncAllCountries</strong><div style="font-size:11.5px;color:var(--ink5);margin-top:3px;">Select the function from the dropdown → click Run → check Logs. Once working, set a nightly Time-driven trigger on syncAllCountries.</div></div>
               </div>
             </div>
@@ -1249,6 +1260,93 @@ table.dt tr:last-child td{border-bottom:none;}
         </div>
       </div>
 
+      <!-- ══ PLATFORM USAGE ANALYTICS ══ -->
+      <div class="pg" id="pg-analytics">
+        <div class="pg-eyebrow">Analytics</div>
+        <div class="pg-title">Platform Usage</div>
+        <div class="pg-sub">Live telemetry from the terminal — sessions, page views and market activity recorded in <span class="mono">usage_events</span>. Collection began 17 Jul 2026.</div>
+
+        <div class="metrics-grid">
+          <div class="metric"><div class="metric-lbl">Events · 7 days</div><div class="metric-val" id="an-events7">—</div><div class="metric-sub" id="an-events7-sub">all event types</div></div>
+          <div class="metric"><div class="metric-lbl">Sessions · 7 days</div><div class="metric-val" id="an-sess7">—</div><div class="metric-sub">distinct browser sessions</div></div>
+          <div class="metric"><div class="metric-lbl">Signed-in users · 7 days</div><div class="metric-val" id="an-users7">—</div><div class="metric-sub">distinct authenticated users</div></div>
+          <div class="metric"><div class="metric-lbl">Page views · today</div><div class="metric-val" id="an-today">—</div><div class="metric-sub" id="an-today-sub">UTC day</div></div>
+        </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-hd"><div><div class="panel-title">Activity — last 30 days</div><div class="panel-sub">Events and sessions per day</div></div></div>
+            <div class="panel-body"><div style="height:240px;position:relative;"><canvas id="an-chart-daily"></canvas></div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-hd"><div><div class="panel-title">Pages viewed — last 30 days</div><div class="panel-sub">page_view events by terminal page</div></div></div>
+            <div class="panel-body"><div style="height:240px;position:relative;"><canvas id="an-chart-pages"></canvas></div></div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-hd"><div><div class="panel-title">Markets viewed</div><div class="panel-sub">market_switch events by destination market</div></div></div>
+            <div class="panel-body" id="an-markets"><div style="color:var(--ink5);font-size:12px;">Loading…</div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-hd"><div><div class="panel-title">Latest events</div><div class="panel-sub">most recent 25</div></div></div>
+            <div class="table-wrap">
+              <table class="dt"><thead><tr><th>When</th><th>Event</th><th>Page</th><th>Market</th><th>Session</th></tr></thead>
+              <tbody id="an-recent"><tr><td colspan="5" style="text-align:center;padding:18px;color:var(--ink5);">Loading…</td></tr></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PLATFORM USERS ══ -->
+      <div class="pg" id="pg-members">
+        <div class="pg-eyebrow">Analytics</div>
+        <div class="pg-title">Users</div>
+        <div class="pg-sub">Every account on the platform, with plan, status and activity derived from telemetry. Anonymous visitors are aggregated in the last row.</div>
+
+        <div class="metrics-grid">
+          <div class="metric"><div class="metric-lbl">Accounts</div><div class="metric-val" id="mb-total">—</div><div class="metric-sub">registered profiles</div></div>
+          <div class="metric"><div class="metric-lbl">Active · 7 days</div><div class="metric-val" id="mb-active7">—</div><div class="metric-sub">signed-in with events</div></div>
+          <div class="metric"><div class="metric-lbl">Paying</div><div class="metric-val" id="mb-paying">—</div><div class="metric-sub">active subscriptions</div></div>
+          <div class="metric"><div class="metric-lbl">New · 30 days</div><div class="metric-val" id="mb-new30">—</div><div class="metric-sub">signups</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-hd"><div><div class="panel-title">User roster</div><div class="panel-sub">profiles × usage telemetry</div></div></div>
+          <div class="table-wrap">
+            <table class="dt"><thead><tr><th>User</th><th>Plan</th><th>Status</th><th>Joined</th><th>Last active</th><th>Sessions</th><th>Events</th></tr></thead>
+            <tbody id="mb-roster"><tr><td colspan="7" style="text-align:center;padding:18px;color:var(--ink5);">Loading…</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ REVENUE ══ -->
+      <div class="pg" id="pg-revenue">
+        <div class="pg-eyebrow">Analytics</div>
+        <div class="pg-title">Revenue</div>
+        <div class="pg-sub">Income ledger fed by Stripe webhook events into <span class="mono">payment_events</span>. Nothing here is estimated — every figure is a recorded payment event.</div>
+
+        <div id="rev-banner" style="display:none;background:var(--amber-dim);border:1px solid var(--amber);color:var(--amber);padding:12px 16px;font-size:12.5px;margin-bottom:16px;">
+          Billing is not connected yet — Stripe integration is deferred until commercial launch. This page activates automatically the moment payment events start arriving; no rebuild needed.
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric"><div class="metric-lbl">Collected · 30 days</div><div class="metric-val" id="rv-30">—</div><div class="metric-sub">sum of paid events</div></div>
+          <div class="metric"><div class="metric-lbl">Collected · all time</div><div class="metric-val" id="rv-all">—</div><div class="metric-sub">since ledger start</div></div>
+          <div class="metric"><div class="metric-lbl">Paying customers</div><div class="metric-val" id="rv-cust">—</div><div class="metric-sub">distinct Stripe customers</div></div>
+          <div class="metric"><div class="metric-lbl">Payment events</div><div class="metric-val" id="rv-events">—</div><div class="metric-sub">all webhook events logged</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-hd"><div><div class="panel-title">Payment ledger</div><div class="panel-sub">latest 100 events</div></div></div>
+          <div class="table-wrap">
+            <table class="dt"><thead><tr><th>When</th><th>Type</th><th>Amount</th><th>Email</th><th>Plan</th><th>Customer</th></tr></thead>
+            <tbody id="rv-ledger"><tr><td colspan="6" style="text-align:center;padding:18px;color:var(--ink5);">Loading…</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+
       <!-- ══ API MANAGEMENT ══ -->
       <div class="pg" id="pg-api-mgmt">
         <div class="pg-eyebrow">Admin</div>
@@ -1414,6 +1512,9 @@ function showPg(name,el){
   else{var item=document.querySelector(`.sb-item[onclick*="'${name}'"]`);if(item)item.classList.add('active');}
   if(name==='dashboard')loadDashboard();
   if(name==='users')loadAdminUsers();
+  if(name==='analytics')loadAnalytics();
+  if(name==='members')loadMembers();
+  if(name==='revenue')loadRevenue();
   if(name==='dataset-explorer')loadExplorer('properties',document.querySelector('.de-tab'));
   if(name==='data-health')runHealthScan();
   if(name==='activity')renderLog();
@@ -1994,6 +2095,132 @@ function dlTemplate(name){
   var wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Template');
   XLSX.writeFile(wb,'ironwood_'+name+'_template.xlsx');
+}
+</script>
+<script>
+/* ══ ANALYTICS SUITE — usage_events / profiles / payment_events (admin-only RLS) ══ */
+var _anCharts={};
+function _anKill(id){ if(_anCharts[id]){_anCharts[id].destroy();delete _anCharts[id];} }
+function _rel(ts){
+  if(!ts) return '—';
+  var s=(Date.now()-new Date(ts).getTime())/1000;
+  if(s<60) return 'just now';
+  if(s<3600) return Math.floor(s/60)+'m ago';
+  if(s<86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+function _esc(x){ return String(x==null?'':x).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function _money(cents,cur){ if(cents==null) return '—'; return (cur||'usd').toUpperCase()+' '+(cents/100).toLocaleString(undefined,{minimumFractionDigits:2}); }
+
+async function loadAnalytics(){
+  if(!sb) return;
+  var since=new Date(Date.now()-30*86400e3).toISOString();
+  var {data:ev,error}=await sb.from('usage_events')
+    .select('created_at,session_id,user_id,event,page,country,meta')
+    .gte('created_at',since).order('created_at',{ascending:false}).limit(10000);
+  if(error){ document.getElementById('an-recent').innerHTML='<tr><td colspan="5" style="text-align:center;padding:18px;color:var(--red);">'+_esc(error.message)+'</td></tr>'; return; }
+  ev=ev||[];
+  var now=Date.now(), d7=now-7*86400e3, today=new Date().toISOString().slice(0,10);
+  var e7=ev.filter(function(e){return new Date(e.created_at).getTime()>=d7;});
+  var sess7={},users7={};
+  e7.forEach(function(e){ if(e.session_id)sess7[e.session_id]=1; if(e.user_id)users7[e.user_id]=1; });
+  document.getElementById('an-events7').textContent=e7.length.toLocaleString();
+  document.getElementById('an-sess7').textContent=Object.keys(sess7).length.toLocaleString();
+  document.getElementById('an-users7').textContent=Object.keys(users7).length.toLocaleString();
+  document.getElementById('an-today').textContent=ev.filter(function(e){return e.event==='page_view'&&e.created_at.slice(0,10)===today;}).length.toLocaleString();
+
+  // daily series — 30 slots
+  var days=[],evByDay={},sessByDay={};
+  for(var i=29;i>=0;i--){ var d=new Date(now-i*86400e3).toISOString().slice(0,10); days.push(d); evByDay[d]=0; sessByDay[d]={}; }
+  ev.forEach(function(e){ var d=e.created_at.slice(0,10); if(evByDay[d]!=null){ evByDay[d]++; if(e.session_id)sessByDay[d][e.session_id]=1; } });
+  _anKill('daily');
+  _anCharts.daily=new Chart(document.getElementById('an-chart-daily'),{type:'line',
+    data:{labels:days.map(function(d){return d.slice(5);}),datasets:[
+      {label:'Events',data:days.map(function(d){return evByDay[d];}),borderColor:'#b8933f',backgroundColor:'rgba(184,147,63,.12)',fill:true,tension:.3,pointRadius:0,borderWidth:2},
+      {label:'Sessions',data:days.map(function(d){return Object.keys(sessByDay[d]).length;}),borderColor:'#166534',tension:.3,pointRadius:0,borderWidth:1.5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},
+      scales:{x:{ticks:{font:{size:9},maxTicksLimit:10},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10},precision:0},grid:{color:'#eeeeeb'}}}}});
+
+  // top pages
+  var pages={};
+  ev.forEach(function(e){ if(e.event==='page_view'){ var p=e.page||'overview'; pages[p]=(pages[p]||0)+1; } });
+  var top=Object.entries(pages).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
+  _anKill('pages');
+  _anCharts.pages=new Chart(document.getElementById('an-chart-pages'),{type:'bar',
+    data:{labels:top.map(function(x){return x[0];}),datasets:[{data:top.map(function(x){return x[1];}),backgroundColor:'#b8933f',borderRadius:1}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{beginAtZero:true,ticks:{font:{size:10},precision:0},grid:{color:'#eeeeeb'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
+  if(!top.length){ document.getElementById('an-chart-pages').parentElement.innerHTML='<div style="color:var(--ink5);font-size:12px;padding:20px;">No page views recorded in this window yet.</div>'; }
+
+  // markets
+  var mkts={};
+  ev.forEach(function(e){ var m=(e.event==='market_switch'&&e.meta&&e.meta.to)||null; if(m)mkts[m]=(mkts[m]||0)+1; });
+  var mHtml=Object.entries(mkts).sort(function(a,b){return b[1]-a[1];}).map(function(x){
+    return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bg);font-size:12.5px;"><span>'+_esc(x[0])+'</span><span class="mono">'+x[1]+'</span></div>';}).join('');
+  document.getElementById('an-markets').innerHTML=mHtml||'<div style="color:var(--ink5);font-size:12px;">No market switches recorded in this window yet.</div>';
+
+  // recent
+  var rows=ev.slice(0,25).map(function(e){
+    return '<tr><td class="mono">'+_rel(e.created_at)+'</td><td>'+_esc(e.event)+'</td><td>'+_esc(e.page||'—')+'</td><td>'+_esc((e.meta&&e.meta.to)||e.country||'—')+'</td><td class="mono">'+_esc((e.session_id||'').slice(0,8))+'</td></tr>';}).join('');
+  document.getElementById('an-recent').innerHTML=rows||'<tr><td colspan="5" style="text-align:center;padding:18px;color:var(--ink5);">No events yet — telemetry started 17 Jul 2026.</td></tr>';
+}
+
+async function loadMembers(){
+  if(!sb) return;
+  var [{data:profs,error:pe},{data:ev}]=await Promise.all([
+    sb.from('profiles').select('id,email,full_name,plan,subscription_status,is_admin,created_at').order('created_at'),
+    sb.from('usage_events').select('user_id,session_id,created_at').order('created_at',{ascending:false}).limit(10000)
+  ]);
+  if(pe){ document.getElementById('mb-roster').innerHTML='<tr><td colspan="7" style="text-align:center;padding:18px;color:var(--red);">'+_esc(pe.message)+'</td></tr>'; return; }
+  profs=profs||[]; ev=ev||[];
+  var agg={},anon={sessions:{},events:0,last:null};
+  ev.forEach(function(e){
+    if(e.user_id){ var a=agg[e.user_id]=agg[e.user_id]||{sessions:{},events:0,last:null};
+      a.events++; if(e.session_id)a.sessions[e.session_id]=1; if(!a.last||e.created_at>a.last)a.last=e.created_at; }
+    else { anon.events++; if(e.session_id)anon.sessions[e.session_id]=1; if(!anon.last||e.created_at>anon.last)anon.last=e.created_at; }
+  });
+  var d7=Date.now()-7*86400e3, d30=Date.now()-30*86400e3;
+  document.getElementById('mb-total').textContent=profs.length;
+  document.getElementById('mb-active7').textContent=profs.filter(function(p){var a=agg[p.id];return a&&a.last&&new Date(a.last).getTime()>=d7;}).length;
+  document.getElementById('mb-paying').textContent=profs.filter(function(p){return p.subscription_status==='active'&&p.plan&&p.plan!=='free';}).length;
+  document.getElementById('mb-new30').textContent=profs.filter(function(p){return new Date(p.created_at).getTime()>=d30;}).length;
+  var rows=profs.map(function(p){
+    var a=agg[p.id]||{sessions:{},events:0,last:null};
+    var name=_esc(p.full_name||p.email||p.id.slice(0,8));
+    return '<tr><td><strong>'+name+'</strong>'+(p.is_admin?' <span class="badge badge-admin">admin</span>':'')+'<br><span style="color:var(--ink5);font-size:11px;">'+_esc(p.email||'')+'</span></td>'
+      +'<td>'+_esc(p.plan||'—')+'</td><td>'+_esc(p.subscription_status||'—')+'</td>'
+      +'<td class="mono">'+(p.created_at||'').slice(0,10)+'</td><td class="mono">'+_rel(a.last)+'</td>'
+      +'<td class="mono">'+Object.keys(a.sessions).length+'</td><td class="mono">'+a.events+'</td></tr>';
+  }).join('');
+  rows+='<tr style="background:var(--surface2);"><td><strong>Anonymous visitors</strong><br><span style="color:var(--ink5);font-size:11px;">not signed in (build mode)</span></td>'
+    +'<td>—</td><td>—</td><td>—</td><td class="mono">'+_rel(anon.last)+'</td>'
+    +'<td class="mono">'+Object.keys(anon.sessions).length+'</td><td class="mono">'+anon.events+'</td></tr>';
+  document.getElementById('mb-roster').innerHTML=rows;
+}
+
+async function loadRevenue(){
+  if(!sb) return;
+  var {data:pev,error}=await sb.from('payment_events')
+    .select('created_at,type,amount_cents,currency,email,plan,customer_id')
+    .order('created_at',{ascending:false}).limit(100);
+  if(error){ document.getElementById('rv-ledger').innerHTML='<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--red);">'+_esc(error.message)+'</td></tr>'; return; }
+  pev=pev||[];
+  document.getElementById('rev-banner').style.display=pev.length?'none':'block';
+  var paidTypes={'checkout.session.completed':1,'invoice.paid':1};
+  var d30=Date.now()-30*86400e3;
+  var paid=pev.filter(function(e){return paidTypes[e.type]&&e.amount_cents;});
+  var sum30=paid.filter(function(e){return new Date(e.created_at).getTime()>=d30;}).reduce(function(s,e){return s+e.amount_cents;},0);
+  var sumAll=paid.reduce(function(s,e){return s+e.amount_cents;},0);
+  var cur=(paid[0]&&paid[0].currency)||'usd';
+  document.getElementById('rv-30').textContent=paid.length?_money(sum30,cur):'—';
+  document.getElementById('rv-all').textContent=paid.length?_money(sumAll,cur):'—';
+  var cust={}; pev.forEach(function(e){ if(e.customer_id)cust[e.customer_id]=1; });
+  document.getElementById('rv-cust').textContent=pev.length?Object.keys(cust).length:'—';
+  document.getElementById('rv-events').textContent=pev.length||'0';
+  var rows=pev.map(function(e){
+    return '<tr><td class="mono">'+(e.created_at||'').replace('T',' ').slice(0,16)+'</td><td>'+_esc(e.type)+'</td><td class="mono">'+_money(e.amount_cents,e.currency)+'</td>'
+      +'<td>'+_esc(e.email||'—')+'</td><td>'+_esc(e.plan||'—')+'</td><td class="mono">'+_esc((e.customer_id||'—').slice(0,14))+'</td></tr>';}).join('');
+  document.getElementById('rv-ledger').innerHTML=rows||'<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--ink5);">No payment events — the ledger fills automatically once Stripe is connected at commercial launch.</td></tr>';
 }
 </script>
 </body>
