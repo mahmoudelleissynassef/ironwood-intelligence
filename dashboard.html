@@ -644,10 +644,10 @@ table.xmt{width:100%;border-collapse:collapse;}
 .crumb svg{width:10px;height:10px;}
 .crumb .here{color:var(--ink3);}
 .stat-band{display:flex;align-items:stretch;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden;flex-wrap:wrap;}
-.stat-cell{flex:1;padding:13px 20px;border-right:1px solid var(--hairline);min-width:150px;}
+.stat-cell{flex:1;padding:13px 20px;border-right:1px solid var(--hairline);min-width:150px;min-width:0;overflow:hidden;}
 .stat-cell:last-child{border-right:none;}
 .stat-cell .sc-label{font-size:10.5px;color:var(--ink4);font-weight:500;}
-.stat-cell .sc-value{font-size:17px;font-weight:600;margin-top:3px;letter-spacing:-.01em;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.stat-cell .sc-value{font-size:17px;font-weight:600;margin-top:3px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;}
 .stat-cell .sc-value .unit{font-size:11.5px;color:var(--ink3);font-weight:500;}
 .stat-cell .sc-note{font-size:10px;color:var(--ink4);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;}
 .g-split{grid-template-columns:1.5fr 1fr;}
@@ -2750,8 +2750,8 @@ async function renderOverview(country){
     +'<div class="stat-cell"><div class="sc-label">Observed listings</div><div class="sc-value num">'+nf(totalAll)+'</div><div class="sc-note">across '+df.length+' markets</div></div>'
     +'<div class="stat-cell"><div class="sc-label">Median asking /m² · '+ttLbl+'</div><div class="sc-value num">'+(mfc.median!=null?fmt(mfc.median):'—')+'<span class="unit">'+unit+'</span></div><div class="sc-note">n = '+nf(mfc.count)+' · asking, not transaction</div></div>'
     +'<div class="stat-cell"><div class="sc-label">Median rent /m²</div><div class="sc-value num">'+(mrent.median!=null?fmt(mrent.median,{dec:_ccyMode==='usd'?1:0}):'—')+'<span class="unit">/m²/mo</span></div><div class="sc-note">n = '+nf(mrent.count)+'</div></div>'
-    +'<div class="stat-cell"><div class="sc-label">Most expensive market</div><div class="sc-value">'+(mostExp?mostExp.sub:'—')+'</div><div class="sc-note num">'+(mostExp?fmt(mostExp.med)+' / m² median · n='+nf(mostExp.n):'needs ≥30 priced listings')+'</div></div>'
-    +'<div class="stat-cell"><div class="sc-label">Deepest market</div><div class="sc-value">'+(deepest?deepest.sub:'—')+'</div><div class="sc-note num">'+(deepest?nf(deepest.n)+' listings · '+(dfTotal?(deepest.n/dfTotal*100).toFixed(1):0)+'% share':'')+'</div></div>'
+    +'<div class="stat-cell"><div class="sc-label">Most expensive market</div><div class="sc-value" title="'+(mostExp?_newsEsc(mostExp.sub):'')+'">'+(mostExp?_newsEsc(mostExp.sub):'—')+'</div><div class="sc-note num">'+(mostExp?fmt(mostExp.med)+' / m² median · n='+nf(mostExp.n):'needs ≥30 priced listings')+'</div></div>'
+    +'<div class="stat-cell"><div class="sc-label">Deepest market</div><div class="sc-value" title="'+(deepest?_newsEsc(deepest.sub):'')+'">'+(deepest?_newsEsc(deepest.sub):'—')+'</div><div class="sc-note num">'+(deepest?nf(deepest.n)+' listings · '+(dfTotal?(deepest.n/dfTotal*100).toFixed(1):0)+'% share':'')+'</div></div>'
     +'<div class="stat-cell"><div class="sc-label">Fastest-growing</div><div class="sc-value" style="color:var(--ink4);">—</div><div class="sc-note">weekly movers begin '+_nextMon()+'</div></div>'
    +'</div>'
 
@@ -3134,9 +3134,17 @@ async function loadBatch2(country){
 var CITY_COORDS={
   Casablanca:[33.5731,-7.5898],Rabat:[33.9716,-6.8498],Marrakech:[31.6295,-7.9811],Agadir:[30.4278,-9.5981],Tangier:[35.7595,-5.8340],Tangiers:[35.7595,-5.8340],Fez:[34.0333,-5.0003],
   Tunis:[36.8065,10.1815],Sfax:[34.7406,10.7603],Sousse:[35.8256,10.6084],Nabeul:[36.4513,10.7357],Ariana:[36.8625,10.1956],Bizerte:[37.2744,9.8739],Monastir:[35.7643,10.8113],Hammamet:[36.4000,10.6167],'La Marsa':[36.8765,10.3247],'Ben Arous':[36.7533,10.2282],
-  Nairobi:[-1.2921,36.8219],Mombasa:[-4.0435,39.6682],Kisumu:[-0.0917,34.7680],Kiambu:[-1.1714,36.8356],Thika:[-1.0333,37.0693],Machakos:[-1.5177,37.2634]
+  Nairobi:[-1.2921,36.8219],Mombasa:[-4.0435,39.6682],Kisumu:[-0.0917,34.7680],Kiambu:[-1.1714,36.8356],Thika:[-1.0333,37.0693],Machakos:[-1.5177,37.2634],
+  Cairo:[30.0444,31.2357],Giza:[30.0131,31.2089],Alexandria:[31.2001,29.9187],
+  Lagos:[6.5244,3.3792],Abuja:[9.0765,7.3986],'Port Harcourt':[4.8156,7.0498],
+  Johannesburg:[-26.2041,28.0473],'Cape Town':[-33.9249,18.4241],Durban:[-29.8587,31.0218],Pretoria:[-25.7479,28.2293],
+  Kampala:[0.3476,32.5825],Wakiso:[0.4044,32.4594],
+  'Addis Ababa':[9.0320,38.7469],
+  Dakar:[14.7167,-17.4677],Abidjan:[5.3600,-4.0083]
 };
-var COUNTRY_VIEW={Morocco:[[31.7,-7],5.4],Tunisia:[[35.6,9.9],6.2],Kenya:[[-0.6,37.9],6]};
+var COUNTRY_VIEW={Morocco:[[31.7,-7],5.4],Tunisia:[[35.6,9.9],6.2],Kenya:[[-0.6,37.9],6],
+  Egypt:[[28.5,30.8],5.6],Nigeria:[[8.5,7.5],5.4],SouthAfrica:[[-29.5,25.0],5.2],
+  Uganda:[[1.0,32.4],6.4],Ethiopia:[[9.0,38.7],6.4],Senegal:[[14.6,-15.5],6.6],CoteIvoire:[[6.9,-5.3],6.4]};
 var _liveMap=null,_cityActive=null;
 function _mapCol(t){ return t<0.34?'#3f7a52':t<0.67?'#D8A94E':'#c0603a'; }
 var _typeFilter='sale';
