@@ -28,6 +28,7 @@
   --border:#2B2820;--border2:#3A362C;--hairline:rgba(228,221,207,.10);
   --ink:#F3EEE4;--ink2:#D8D1C2;--ink3:#A8A08F;--ink4:#6E685C;--ink5:#565043;
   --gold:#C9A96A;--gold2:#DAC28C;--gold-deep:#B0894C;--gold-pale:rgba(201,169,106,.14);
+
   --teal:#55A899;--teal-bg:rgba(85,168,153,.12);
   --green:#63B98B;--green-bg:rgba(99,185,139,.12);
   --red:#D07A6A;--red-bg:rgba(208,122,106,.12);
@@ -42,6 +43,27 @@
   --sans:'Archivo',system-ui,sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,'Cascadia Mono',monospace;
 }
+#auth-gate{position:fixed;inset:0;z-index:9998;background:var(--bg);display:none;align-items:center;justify-content:center;padding:24px;}
+#auth-gate.on{display:flex;}
+.ag-card{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:32px 28px;}
+.ag-logo{font-family:'Fraunces',Georgia,serif;font-size:20px;color:var(--ink);letter-spacing:-.01em;}
+.ag-logo em{font-style:normal;color:var(--gold);}
+.ag-sub{font-size:11px;color:var(--ink4);letter-spacing:.08em;text-transform:uppercase;margin:4px 0 22px;}
+.ag-lab{display:block;font-size:10.5px;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px;}
+.ag-in{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:4px;color:var(--ink);
+  font-size:13.5px;padding:9px 11px;margin-bottom:14px;font-family:inherit;}
+.ag-in:focus{outline:none;border-color:var(--gold-deep);}
+.ag-btn{width:100%;background:var(--gold);color:#14130F;border:0;border-radius:4px;font-weight:700;
+  font-size:13px;letter-spacing:.04em;padding:10px;cursor:pointer;font-family:inherit;}
+.ag-btn:hover{background:var(--gold2);}
+.ag-btn[disabled]{opacity:.6;cursor:default;}
+.ag-err{color:#c0603a;font-size:11.5px;margin-top:10px;min-height:14px;}
+.ag-note{font-size:11px;color:var(--ink4);margin-top:16px;line-height:1.55;}
+.ag-note a{color:var(--gold);}
+.u-out{margin-left:auto;background:none;border:0;color:var(--ink4);font-family:var(--mono),monospace;
+  font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;padding:4px 2px;}
+.u-out:hover{color:var(--gold);}
+
 html,body{height:100%;font-family:var(--sans);font-size:13px;line-height:1.5;color:var(--ink);-webkit-font-smoothing:antialiased;background:var(--bg);}
 .num{font-variant-numeric:tabular-nums lining-nums;letter-spacing:-.01em;font-family:var(--mono);}
 td{font-family:var(--mono);font-variant-numeric:tabular-nums lining-nums;}
@@ -790,6 +812,22 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
   <div class="ld-msg" id="ld-msg">Initialising...</div>
 </div>
 
+<!-- SIGN-IN GATE -->
+<div id="auth-gate">
+  <form class="ag-card" id="ag-form" autocomplete="on">
+    <div class="ag-logo">Ironwood <em>Intelligence</em></div>
+    <div class="ag-sub">Market Intelligence Terminal</div>
+    <label class="ag-lab" for="ag-email">Email</label>
+    <input class="ag-in" id="ag-email" type="email" name="email" autocomplete="username" required/>
+    <label class="ag-lab" for="ag-pass">Password</label>
+    <input class="ag-in" id="ag-pass" type="password" name="password" autocomplete="current-password" required/>
+    <button class="ag-btn" id="ag-btn" type="submit">Sign in</button>
+    <div class="ag-err" id="ag-err"></div>
+    <div class="ag-note">Access is licensed. To request an account, contact
+      <a href="mailto:business@ironwoodintelligence.com">business@ironwoodintelligence.com</a>.</div>
+  </form>
+</div>
+
 <!-- EVIDENCE PANEL -->
 <div id="evidence-panel">
   <div class="ep-head">
@@ -891,6 +929,7 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
         <div class="u-name" id="sb-un">Loading...</div>
         <div class="u-plan">MEMBER</div>
       </div>
+      <button class="u-out" onclick="doSignOut()" title="Sign out" aria-label="Sign out">Sign out</button>
     </div>
     <span id="sb-live-indicator" style="display:none;"></span>
   </div>
@@ -4038,6 +4077,42 @@ function placeholderizeDemoPages(){
   });
 }
 
+// ── SIGN-IN GATE ──
+function showAuthGate(){
+  var g=document.getElementById('auth-gate'); if(!g) return;
+  g.classList.add('on');
+  var em=document.getElementById('ag-email'); if(em) em.focus();
+}
+async function doSignIn(e){
+  if(e) e.preventDefault();
+  var em=document.getElementById('ag-email'), pw=document.getElementById('ag-pass'),
+      btn=document.getElementById('ag-btn'), err=document.getElementById('ag-err');
+  if(!em||!pw||!sb) return false;
+  err.textContent=''; btn.disabled=true; btn.textContent='Signing in…';
+  try{
+    var r=await sb.auth.signInWithPassword({email:em.value.trim(),password:pw.value});
+    if(r.error){
+      // Never distinguish "no such account" from "wrong password" — that would
+      // let anyone enumerate who holds a licence.
+      err.textContent='Those credentials were not accepted.';
+      btn.disabled=false; btn.textContent='Sign in';
+      return false;
+    }
+    location.reload();
+  }catch(ex){
+    err.textContent='Sign-in is unavailable right now. Please try again.';
+    btn.disabled=false; btn.textContent='Sign in';
+  }
+  return false;
+}
+async function doSignOut(){
+  try{ if(sb) await sb.auth.signOut(); }catch(e){}
+  location.href='/dashboard';
+}
+document.addEventListener('DOMContentLoaded',function(){
+  var f=document.getElementById('ag-form'); if(f) f.addEventListener('submit',doSignIn);
+});
+
 // ── BOOT ──
 async function boot(){
   placeholderizeDemoPages();
@@ -4045,25 +4120,24 @@ async function boot(){
   const safetyTimer=setTimeout(()=>{ hideLoader(); buildCharts(); },4000);
   try{
     if(!sb) throw new Error('Supabase unavailable');
-    var AUTH_GATE=false; /* BUILD MODE: login gate off. Re-enable (true) + drop the
-       build_mode_anon_* Supabase policies before commercial launch. */
     loadProgress(20,'Authenticating...');
     const{data:sess}=await sb.auth.getSession();
     const user=sess?.session?.user;
-    _iwUid=user?user.id:null; iwTrack('session_start');
-    if(!user&&AUTH_GATE){
+    _iwUid=user?user.id:null;
+    if(!user){
+      /* The terminal is licensed. Without a session there is nothing to load —
+         and the database refuses anonymous reads, so showing the app shell
+         would only render empty panels. */
       clearTimeout(safetyTimer);
       hideLoader();
-      if(location.protocol.indexOf('http')===0){
-        try{ sessionStorage.setItem('iw_next', location.pathname); }catch(e){}
-        window.location.href='/en/login';
-      }
+      showAuthGate();
       return;
     }
-    const name=user?(user.user_metadata?.full_name||user.email.split('@')[0]):'Preview';
-    const initials=user?name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2):'IW';
+    iwTrack('session_start');
+    const name=user.user_metadata?.full_name||user.email.split('@')[0];
+    const initials=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
     document.getElementById('sb-av').textContent=initials;
-    document.getElementById('sb-un').textContent=user?name:'Build preview — gate off';
+    document.getElementById('sb-un').textContent=name;
     blankHardcoded();
     buildCountryDropdown();
     loadProgress(50,'Loading market data...');
