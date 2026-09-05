@@ -60,6 +60,11 @@
 .ag-err{color:#c0603a;font-size:11.5px;margin-top:10px;min-height:14px;}
 .ag-note{font-size:11px;color:var(--ink4);margin-top:16px;line-height:1.55;}
 .ag-note a{color:var(--gold);}
+.ag-step{font-size:12px;color:var(--ink2);font-weight:600;margin-bottom:14px;}
+.ag-link{display:block;width:100%;background:none;border:0;color:var(--ink4);font-family:inherit;
+  font-size:11.5px;margin-top:12px;cursor:pointer;text-align:center;}
+.ag-link:hover{color:var(--gold);}
+.ag-ok{color:#63B98B;font-size:11.5px;margin-top:10px;}
 .u-out{margin-left:auto;background:none;border:0;color:var(--ink4);font-family:var(--mono),monospace;
   font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;padding:4px 2px;}
 .u-out:hover{color:var(--gold);}
@@ -814,18 +819,44 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
 
 <!-- SIGN-IN GATE -->
 <div id="auth-gate">
-  <form class="ag-card" id="ag-form" autocomplete="on">
+  <div class="ag-card">
     <div class="ag-logo">Ironwood <em>Intelligence</em></div>
     <div class="ag-sub">Market Intelligence Terminal</div>
-    <label class="ag-lab" for="ag-email">Email</label>
-    <input class="ag-in" id="ag-email" type="email" name="email" autocomplete="username" required/>
-    <label class="ag-lab" for="ag-pass">Password</label>
-    <input class="ag-in" id="ag-pass" type="password" name="password" autocomplete="current-password" required/>
-    <button class="ag-btn" id="ag-btn" type="submit">Sign in</button>
+
+    <!-- 1. sign in -->
+    <form id="ag-form" autocomplete="on">
+      <label class="ag-lab" for="ag-email">Email</label>
+      <input class="ag-in" id="ag-email" type="email" name="email" autocomplete="username" required/>
+      <label class="ag-lab" for="ag-pass">Password</label>
+      <input class="ag-in" id="ag-pass" type="password" name="password" autocomplete="current-password" required/>
+      <button class="ag-btn" id="ag-btn" type="submit">Sign in</button>
+      <button class="ag-link" type="button" onclick="agShow('reset')">Forgot your password?</button>
+    </form>
+
+    <!-- 2. request a reset link -->
+    <form id="ag-reset" style="display:none;" autocomplete="on">
+      <div class="ag-step">Reset password</div>
+      <label class="ag-lab" for="ag-remail">Email</label>
+      <input class="ag-in" id="ag-remail" type="email" name="email" autocomplete="username" required/>
+      <button class="ag-btn" id="ag-rbtn" type="submit">Email me a reset link</button>
+      <button class="ag-link" type="button" onclick="agShow('signin')">Back to sign in</button>
+    </form>
+
+    <!-- 3. set a new password (shown when arriving from the emailed link) -->
+    <form id="ag-newpw" style="display:none;" autocomplete="on">
+      <div class="ag-step">Choose a new password</div>
+      <label class="ag-lab" for="ag-pw1">New password</label>
+      <input class="ag-in" id="ag-pw1" type="password" autocomplete="new-password" minlength="8" required/>
+      <label class="ag-lab" for="ag-pw2">Confirm new password</label>
+      <input class="ag-in" id="ag-pw2" type="password" autocomplete="new-password" minlength="8" required/>
+      <button class="ag-btn" id="ag-pwbtn" type="submit">Set password and sign in</button>
+    </form>
+
     <div class="ag-err" id="ag-err"></div>
+    <div class="ag-ok"  id="ag-ok"></div>
     <div class="ag-note">Access is licensed. To request an account, contact
       <a href="mailto:business@ironwoodintelligence.com">business@ironwoodintelligence.com</a>.</div>
-  </form>
+  </div>
 </div>
 
 <!-- EVIDENCE PANEL -->
@@ -4078,30 +4109,99 @@ function placeholderizeDemoPages(){
 }
 
 // ── SIGN-IN GATE ──
-function showAuthGate(){
+/* Supabase puts the recovery token in the URL fragment and createClient()
+   consumes it, so the flag has to be read before the client is constructed. */
+var _agRecovery = /[#&]type=recovery/.test(location.hash || '');
+var _agLinkError = (function(){
+  var m = /error_description=([^&]*)/.exec(location.hash || '');
+  return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+})();
+
+function agShow(which){
+  var panes = {signin:'ag-form', reset:'ag-reset', newpw:'ag-newpw'};
+  for (var k in panes){
+    var el = document.getElementById(panes[k]);
+    if (el) el.style.display = (k === which) ? '' : 'none';
+  }
+  agMsg('', '');
+  var first = {signin:'ag-email', reset:'ag-remail', newpw:'ag-pw1'}[which];
+  var f = document.getElementById(first); if (f) f.focus();
+}
+
+function agMsg(err, ok){
+  var e = document.getElementById('ag-err'), o = document.getElementById('ag-ok');
+  if (e) e.textContent = err || '';
+  if (o) o.textContent = ok || '';
+}
+
+function showAuthGate(mode){
   var g=document.getElementById('auth-gate'); if(!g) return;
   g.classList.add('on');
-  var em=document.getElementById('ag-email'); if(em) em.focus();
+  agShow(mode || 'signin');
+  if (_agLinkError) agMsg('That link is no longer valid — it may have expired or been used already. Request a new one.', '');
 }
+
 async function doSignIn(e){
   if(e) e.preventDefault();
   var em=document.getElementById('ag-email'), pw=document.getElementById('ag-pass'),
-      btn=document.getElementById('ag-btn'), err=document.getElementById('ag-err');
+      btn=document.getElementById('ag-btn');
   if(!em||!pw||!sb) return false;
-  err.textContent=''; btn.disabled=true; btn.textContent='Signing in…';
+  agMsg('',''); btn.disabled=true; btn.textContent='Signing in…';
   try{
     var r=await sb.auth.signInWithPassword({email:em.value.trim(),password:pw.value});
     if(r.error){
       // Never distinguish "no such account" from "wrong password" — that would
       // let anyone enumerate who holds a licence.
-      err.textContent='Those credentials were not accepted.';
+      agMsg('Those credentials were not accepted.','');
       btn.disabled=false; btn.textContent='Sign in';
       return false;
     }
     location.reload();
   }catch(ex){
-    err.textContent='Sign-in is unavailable right now. Please try again.';
+    agMsg('Sign-in is unavailable right now. Please try again.','');
     btn.disabled=false; btn.textContent='Sign in';
+  }
+  return false;
+}
+
+async function doResetRequest(e){
+  if(e) e.preventDefault();
+  var em=document.getElementById('ag-remail'), btn=document.getElementById('ag-rbtn');
+  if(!em||!sb) return false;
+  agMsg('',''); btn.disabled=true; btn.textContent='Sending…';
+  try{
+    await sb.auth.resetPasswordForEmail(em.value.trim(), {
+      redirectTo: location.origin + '/dashboard'
+    });
+  }catch(ex){ /* fall through — the message below is deliberately the same either way */ }
+  // Always the same response, whether or not the address has an account: the
+  // form must not reveal who holds a licence.
+  agMsg('', 'If that address has an account, a reset link is on its way. The link expires in one hour.');
+  btn.disabled=false; btn.textContent='Email me a reset link';
+  return false;
+}
+
+async function doSetPassword(e){
+  if(e) e.preventDefault();
+  var a=document.getElementById('ag-pw1'), b=document.getElementById('ag-pw2'),
+      btn=document.getElementById('ag-pwbtn');
+  if(!a||!b||!sb) return false;
+  if(a.value.length < 8){ agMsg('Use at least 8 characters.',''); return false; }
+  if(a.value !== b.value){ agMsg('Those two passwords do not match.',''); return false; }
+  agMsg('',''); btn.disabled=true; btn.textContent='Saving…';
+  try{
+    var r = await sb.auth.updateUser({ password: a.value });
+    if(r.error){
+      agMsg(r.error.message || 'That password could not be set.','');
+      btn.disabled=false; btn.textContent='Set password and sign in';
+      return false;
+    }
+    // Drop the recovery fragment so a refresh does not re-enter this state.
+    history.replaceState(null, '', '/dashboard');
+    location.reload();
+  }catch(ex){
+    agMsg('That password could not be set. Request a fresh link and try again.','');
+    btn.disabled=false; btn.textContent='Set password and sign in';
   }
   return false;
 }
@@ -4110,7 +4210,9 @@ async function doSignOut(){
   location.href='/dashboard';
 }
 document.addEventListener('DOMContentLoaded',function(){
-  var f=document.getElementById('ag-form'); if(f) f.addEventListener('submit',doSignIn);
+  var f=document.getElementById('ag-form');  if(f) f.addEventListener('submit',doSignIn);
+  var r=document.getElementById('ag-reset'); if(r) r.addEventListener('submit',doResetRequest);
+  var n=document.getElementById('ag-newpw'); if(n) n.addEventListener('submit',doSetPassword);
 });
 
 // ── BOOT ──
@@ -4124,6 +4226,14 @@ async function boot(){
     const{data:sess}=await sb.auth.getSession();
     const user=sess?.session?.user;
     _iwUid=user?user.id:null;
+    if(_agRecovery || _agLinkError){
+      /* A recovery link signs the visitor in, so without this the terminal would
+         load and they would never get the chance to set a new password. */
+      clearTimeout(safetyTimer);
+      hideLoader();
+      showAuthGate(_agLinkError ? 'reset' : 'newpw');
+      return;
+    }
     if(!user){
       /* The terminal is licensed. Without a session there is nothing to load —
          and the database refuses anonymous reads, so showing the app shell
