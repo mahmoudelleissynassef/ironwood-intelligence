@@ -63,6 +63,29 @@ function serveFile(req, res, filePath) {
   });
 }
 
+// Files that are in the repo but must never be served. .railwayignore does NOT
+// do this: it applies to `railway up` CLI uploads, not to GitHub-triggered
+// builds, so everything committed was reachable — CLAUDE.md included, which
+// lists the admin account, infrastructure URLs, sheet and credential IDs.
+const BLOCKED_FILES = new Set([
+  '/server.js', '/package.json', '/package-lock.json',
+  '/railway.json', '/vercel.json', '/.railwayignore', '/.gitignore',
+]);
+const BLOCKED_EXTS = new Set([
+  '.md', '.sql', '.py', '.toml', '.lock', '.env', '.yml', '.yaml', '.ini', '.cfg',
+]);
+const BLOCKED_DIRS = ['/email-templates/', '/.git/', '/.claude/', '/api/', '/scraper-factory/', '/design-v2/'];
+
+function isBlocked(pathname) {
+  const lower = pathname.toLowerCase();
+  if (BLOCKED_FILES.has(lower)) return true;
+  if (BLOCKED_EXTS.has(path.extname(lower))) return true;
+  if (BLOCKED_DIRS.some((d) => lower.startsWith(d))) return true;
+  // Any dotfile or dot-directory.
+  if (lower.split('/').some((seg) => seg.startsWith('.') && seg.length > 1)) return true;
+  return false;
+}
+
 // Resolve a URL path to a file inside ROOT, or null. Guards against traversal.
 function resolveSafe(urlPath) {
   const resolved = path.normalize(path.join(ROOT, urlPath));
@@ -80,6 +103,10 @@ const server = http.createServer((req, res) => {
   if (pathname.includes('\0')) return send(res, 400, 'Bad request', { 'Content-Type': 'text/plain' });
 
   const host = (req.headers.host || '').toLowerCase();
+
+  // Refuse repo files outright — checked before the cleanUrls redirect so a
+  // blocked path cannot be laundered through it.
+  if (isBlocked(pathname)) return send(res, 404, 'Not found', { 'Content-Type': 'text/plain' });
 
   // trailingSlash: false
   if (pathname.length > 1 && pathname.endsWith('/')) return redirect(res, pathname.slice(0, -1));
