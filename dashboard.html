@@ -818,7 +818,7 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
 </div>
 
 <!-- SIGN-IN GATE -->
-<div id="auth-gate">
+<div id="auth-gate" class="on">
   <div class="ag-card">
     <div class="ag-logo">Ironwood <em>Intelligence</em></div>
     <div class="ag-sub">Market Intelligence Terminal</div>
@@ -4219,7 +4219,14 @@ document.addEventListener('DOMContentLoaded',function(){
 async function boot(){
   placeholderizeDemoPages();
   try{ sb=supabase.createClient(SB_URL,SB_KEY); }catch(e){ sb=null; }
-  const safetyTimer=setTimeout(()=>{ hideLoader(); buildCharts(); },4000);
+  /* Fail closed. This timer used to call buildCharts(), so a slow getSession()
+     revealed the whole terminal with no sign-in card. Anything that stops us
+     confirming a session must land on the gate, never past it. */
+  const safetyTimer=setTimeout(()=>{
+    hideLoader();
+    showAuthGate();
+    agMsg('We could not verify your session. Please sign in.','');
+  },8000);
   try{
     if(!sb) throw new Error('Supabase unavailable');
     loadProgress(20,'Authenticating...');
@@ -4243,6 +4250,8 @@ async function boot(){
       showAuthGate();
       return;
     }
+    /* Confirmed session — only now is the terminal uncovered. */
+    var _g=document.getElementById('auth-gate'); if(_g) _g.classList.remove('on');
     iwTrack('session_start');
     const name=user.user_metadata?.full_name||user.email.split('@')[0];
     const initials=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
@@ -4262,10 +4271,13 @@ async function boot(){
     setTimeout(hideLoader,300);
     buildCharts();
   }catch(e){
+    /* Supabase blocked, offline, CDN down — previously this fell through to
+       buildCharts() and handed over the terminal. It must not. */
     console.warn('Boot:',e);
     clearTimeout(safetyTimer);
     hideLoader();
-    buildCharts();
+    showAuthGate();
+    agMsg('We could not verify your session. Please sign in.','');
   }
 }
 
