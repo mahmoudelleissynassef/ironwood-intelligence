@@ -920,6 +920,7 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
     <div class="ni" onclick="nav('markets')"><span class="ni-icon" data-icon="globe"></span>Markets</div>
     <div class="ni" onclick="nav('cities')"><span class="ni-icon" data-icon="city"></span>Cities</div>
     <div class="ni" onclick="nav('districts')"><span class="ni-icon" data-icon="map"></span>Districts</div>
+    <div class="ni" onclick="nav('bedrooms')"><span class="ni-icon" data-icon="layers"></span>By Bedroom</div>
   </div>
 
   <div class="sb-section">
@@ -1384,6 +1385,11 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
         </div>
       </div>
     </div>
+
+    <!-- ══════════════════════════════════════════════
+         BY BEDROOM
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-by-bedroom"></div>
 
     <!-- ══════════════════════════════════════════════
          LISTINGS
@@ -2193,6 +2199,7 @@ function V2HEAD(country,page,ctxBits,basisN,btnHtml){
 
 /* ── CLIENT ROUTING: /dashboard/:page ── */
 var ROUTES={'overview':'market-terminal','markets':'markets','cities':'cities','districts':'districts',
+  'bedrooms':'by-bedroom',
   'pipeline':'pipeline','infrastructure':'infrastructure','macro':'macro-indicators','map':'map-view',
   'heatmaps':'heatmaps','reports':'market-reports','data':'data-explorer','exports':'exports','api':'api-access'};
 var SLUGS={}; for(var _rk in ROUTES) SLUGS[ROUTES[_rk]]=_rk;
@@ -3373,6 +3380,140 @@ async function renderCityProfile(country,city){
     }
   }catch(e){}
 }
+// ── BY BEDROOM ──
+// Two metrics side by side, because the portals differ in what they publish.
+// Where a source states floor area (Mubawab, Aqarmap, PropertyFinder) both the
+// per-bedroom median and the price/m² are shown. Where it does not
+// (NigeriaPropertyCentre, BuyRentKenya), the per-bedroom median stands alone
+// and the /m² column reads "—" with the reason, rather than quoting a rate
+// derived from the handful of sellers who happened to mention a size.
+//
+// median_price is the median asking price OF homes with that bedroom count.
+// It is not price ÷ bedrooms: a 3-bed is not three 1-beds, and dividing would
+// invent a per-room unit price nobody transacts in.
+function _bedLabel(b){ b=Number(b); return b===0?'Studio':(b+' bed'); }
+
+async function renderByBedroomPage(country){
+  var el=document.getElementById('pg-by-bedroom'); if(!el) return;
+  var c=COUNTRIES[country];
+  if(!c||c.status!=='live'){
+    el.innerHTML=V2HEAD(country,'By Bedroom',[],null)
+      +_emptyState('Bedroom analytics activate once '+(c?c.label:country)+' has listing data.');
+    return;
+  }
+  var f=_curFilters(), cur=c.currency; await _fx();
+  el.innerHTML=V2HEAD(country,'By Bedroom',['Loading…'],null);
+
+  var rows=[];
+  try{
+    var r=await sb.rpc('market_by_bedroom',{p_country:country,p_asset:f.asset,p_type:f.type,p_min_n:8});
+    rows=(r&&r.data)||[];
+  }catch(e){}
+
+  rows=rows.map(function(x){return {
+    city:x.city, beds:Number(x.bedrooms), n:Number(x.n||0),
+    med:x.median_price!=null?Number(x.median_price):null,
+    p25:x.p25!=null?Number(x.p25):null,
+    p75:x.p75!=null?Number(x.p75):null,
+    ppsqm:x.median_ppsqm!=null?Number(x.median_ppsqm):null,
+    nArea:Number(x.n_with_area||0)
+  };});
+
+  var tot=rows.reduce(function(a,r){return a+r.n;},0);
+  if(!rows.length){
+    el.innerHTML=V2HEAD(country,'By Bedroom',
+      [(f.asset==='all'?'All classes':f.asset)+' · For '+f.type],null)
+     +_emptyState('No bedroom counts published for '+c.label+' under these filters. '
+       +'Portals that list only a price and a location cannot support this view.');
+    return;
+  }
+
+  // Does this market support price/m² at all, and on what basis?
+  var withRate=rows.filter(function(r){return r.ppsqm!=null;});
+  var areaN=rows.reduce(function(a,r){return a+r.nArea;},0);
+  var rateShare=tot?Math.round(areaN/tot*100):0;
+  var isRateMarket=withRate.length>0;
+
+  // Group by city, biggest sample first.
+  var byCity={}, order=[];
+  rows.forEach(function(r){
+    if(!byCity[r.city]){ byCity[r.city]=[]; order.push(r.city); }
+    byCity[r.city].push(r);
+  });
+  order.sort(function(a,b){
+    var sa=byCity[a].reduce(function(x,r){return x+r.n;},0);
+    var sb2=byCity[b].reduce(function(x,r){return x+r.n;},0);
+    return sb2-sa;
+  });
+
+  var rentUnit=(f.type==='rent')?'/mo':'';
+  var tables=order.slice(0,12).map(function(city){
+    var rs=byCity[city].sort(function(a,b){return a.beds-b.beds;});
+    var cityN=rs.reduce(function(a,r){return a+r.n;},0);
+    var body=rs.map(function(r){
+      var spread=(r.p25!=null&&r.p75!=null)
+        ? money(r.p25,cur)+' – '+money(r.p75,cur) : '—';
+      var rate='<span style="color:var(--ink4);">—</span>';
+      if(r.ppsqm!=null){
+        rate=money(r.ppsqm,cur)+'<span class="unit"> /m²'+rentUnit+'</span>';
+      }else if(r.nArea>0){
+        // Say which bar was missed: too few sized listings outright, or enough
+        // of them but too small a share of the group to speak for it.
+        var why=(r.nArea<20)
+          ? ('only '+r.nArea+' listing'+(r.nArea===1?'':'s')+' here state a floor area (20 needed)')
+          : (r.nArea+' of '+r.n+' listings state a floor area — under the 30% of the group needed');
+        rate='<span style="color:var(--ink4);" title="No rate shown: '+why+'">—</span>';
+      }
+      return '<tr>'
+        +'<td><div class="mkt-cell"><div><div class="mkt-name">'+_bedLabel(r.beds)+'</div>'
+        +'<div class="mkt-cat">'+r.n.toLocaleString('en-US')+' listings</div></div></div></td>'
+        +'<td class="num">'+(r.med!=null?money(r.med,cur):'—')+(r.med!=null&&rentUnit?'<span class="unit"> '+rentUnit+'</span>':'')+'</td>'
+        +'<td class="num" style="color:var(--ink3);">'+spread+'</td>'
+        +'<td class="num">'+rate+'</td>'
+        +'<td class="num" style="color:var(--ink4);">'+(r.nArea?r.nArea.toLocaleString('en-US'):'—')+'</td>'
+        +'</tr>';
+    }).join('');
+    return '<div class="panel"><div class="panel-head"><div>'
+      +'<div class="panel-title">'+_newsEsc(city)+'</div>'
+      +'<div class="panel-sub">Median asking price by bedroom count · '+_ccyName(cur)+'</div></div>'
+      +'<span class="n-tag num">'+cityN.toLocaleString('en-US')+' listings</span></div>'
+      +'<div class="panel-body2" style="padding-top:8px;"><table class="xmt"><thead><tr>'
+      +'<th>Configuration</th><th class="num">Median asking</th><th class="num">P25 – P75</th>'
+      +'<th class="num">Median /m²</th><th class="num">With area</th>'
+      +'</tr></thead><tbody>'+body+'</tbody></table></div></div>';
+  }).join('');
+
+  var basisNote = isRateMarket
+    ? 'Both metrics shown — '+rateShare+'% of listings here state a floor area'
+    : 'Per-bedroom only — this market’s portals publish price and location, not floor area';
+
+  el.innerHTML=V2HEAD(country,'By Bedroom',
+      [(f.asset==='all'?'All classes':f.asset)+' · For '+f.type,
+       'Asking prices in '+_ccyName(cur), basisNote], tot)
+   +'<section class="kpis">'
+   +'<div class="stat-cell"><div class="sc-label">Cities covered</div>'
+     +'<div class="sc-value num">'+order.length+'</div>'
+     +'<div class="sc-note">'+rows.length+' bedroom groups</div></div>'
+   +'<div class="stat-cell"><div class="sc-label">Listings in basis</div>'
+     +'<div class="sc-value num">'+tot.toLocaleString('en-US')+'</div>'
+     +'<div class="sc-note">groups of 8+ listings only</div></div>'
+   +'<div class="stat-cell"><div class="sc-label">Floor area coverage</div>'
+     +'<div class="sc-value num">'+rateShare+'<span class="unit">%</span></div>'
+     +'<div class="sc-note">'+areaN.toLocaleString('en-US')+' listings state a size</div></div>'
+   +'</section>'
+   +'<div class="panel" style="margin:14px 0;"><div class="panel-head"><div>'
+   +'<div class="panel-title">How to read this</div>'
+   +'<div class="panel-sub">Median asking is the median price <em>of homes with that bedroom count</em> — '
+   +'not a price divided by bedrooms. A 3-bed is not three 1-beds, so no per-room unit price is implied. '
+   +'Price /m² appears only where enough listings in the group publish a floor area to support a rate; '
+   +'where they do not, the column reads “—” rather than quoting a figure drawn from a self-selected few. '
+   +'All figures are asking prices, not transactions. '
+   +(isRateMarket?('A rate is shown for '+withRate.length+' of '+rows.length+' groups here.')
+                 :'No group in this market meets that bar, so none is shown.')
+   +'</div></div></div></div>'
+   +tables;
+}
+
 async function renderDistrictsPage(country){
   var el=document.getElementById('pg-districts'); if(!el) return;
   var c=COUNTRIES[country];
@@ -4291,6 +4432,7 @@ function nav(id, fromRoute){
   var titles={'market-terminal':'Overview / Dashboard','markets':'Market Intelligence / Markets',
     'key-indicators':'Market Intelligence / Key Indicators','market-signals':'Market Intelligence / Market Signals',
     'countries':'Coverage / Countries','cities':'Market Intelligence / Cities','districts':'Market Intelligence / Districts',
+    'by-bedroom':'Market Intelligence / By Bedroom',
     'listings':'Data / Listings','transactions':'Data / Transactions','pipeline':'Data / Dev. Pipeline',
     'occupiers':'Data / Corporate Occupiers','infrastructure':'Data / Infrastructure','macro-indicators':'Data / Macro Indicators',
     'price-trends':'Analytics / Price Trends','liquidity-index':'Analytics / Liquidity Index',
@@ -4308,6 +4450,7 @@ function nav(id, fromRoute){
   if(id==='markets'&&_B2C){ renderOverview(_B2C); setTimeout(function(){ if(_prMap)_prMap.invalidateSize(); if(_mkMap)_mkMap.invalidateSize(); },160); }
   if(id==='macro-indicators'){ loadMacroData(ACTIVE_COUNTRY); }
   if(id==='districts'&&_B2C){ renderDistrictsPage(_B2C); }
+  if(id==='by-bedroom'&&_B2C){ renderByBedroomPage(_B2C); }
   if(id==='heatmaps'&&_B2C){ renderHeat(_B2C,_B2K); }
 }
 
@@ -4565,6 +4708,7 @@ function applyFilters(skipPage){
   else if(_ap==='pg-map-view'){ renderMap(_B2C,_B2K); }
   else if(_ap==='pg-markets'){ renderOverview(_B2C); }
   else if(_ap==='pg-districts'){ renderDistrictsPage(_B2C); }
+  else if(_ap==='pg-by-bedroom'){ renderByBedroomPage(_B2C); }
   else if(_ap==='pg-heatmaps'){ renderHeat(_B2C,_B2K); }
   else if(_ap==='pg-data-explorer'){ renderExplorer(_B2C,_B2K); }
 }
