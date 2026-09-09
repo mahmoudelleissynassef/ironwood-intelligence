@@ -921,6 +921,7 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
     <div class="ni" onclick="nav('cities')"><span class="ni-icon" data-icon="city"></span>Cities</div>
     <div class="ni" onclick="nav('districts')"><span class="ni-icon" data-icon="map"></span>Districts</div>
     <div class="ni" onclick="nav('bedrooms')"><span class="ni-icon" data-icon="layers"></span>By Bedroom</div>
+    <div class="ni" onclick="nav('dom')"><span class="ni-icon" data-icon="activity"></span>Days on Market</div>
   </div>
 
   <div class="sb-section">
@@ -1394,6 +1395,11 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
          BY BEDROOM
     ══════════════════════════════════════════════ -->
     <div class="pg" id="pg-by-bedroom"></div>
+
+    <!-- ══════════════════════════════════════════════
+         DAYS ON MARKET
+    ══════════════════════════════════════════════ -->
+    <div class="pg" id="pg-days-on-market"></div>
 
     <!-- ══════════════════════════════════════════════
          LISTINGS
@@ -2203,7 +2209,7 @@ function V2HEAD(country,page,ctxBits,basisN,btnHtml){
 
 /* ── CLIENT ROUTING: /dashboard/:page ── */
 var ROUTES={'overview':'market-terminal','markets':'markets','cities':'cities','districts':'districts',
-  'bedrooms':'by-bedroom',
+  'bedrooms':'by-bedroom','dom':'days-on-market',
   'pipeline':'pipeline','infrastructure':'infrastructure','macro':'macro-indicators','map':'map-view',
   'heatmaps':'heatmaps','reports':'market-reports','data':'data-explorer','exports':'exports','api':'api-access'};
 var SLUGS={}; for(var _rk in ROUTES) SLUGS[ROUTES[_rk]]=_rk;
@@ -3397,6 +3403,147 @@ async function renderCityProfile(country,city){
 // invent a per-room unit price nobody transacts in.
 function _bedLabel(b){ b=Number(b); return b===0?'Studio':(b+' bed'); }
 
+// ── DAYS ON MARKET ──
+// How long listings stay up, measured from the collection history rather than
+// modelled. created_at survives the weekly upsert and scraped_at is rewritten
+// every run, so each listing carries first-seen and last-seen; a listing whose
+// last sighting predates the market's latest run has left the portal, and its
+// days on market is the gap between the two.
+//
+// The honesty problem this has to solve: a listing we FAILED to collect looks
+// exactly like one that was withdrawn. Kenya proved it — 13,621 of 14,722 rows
+// had a stale last-seen date because BuyRentKenya throttled the sweep, not
+// because thirteen thousand sellers withdrew. So every row also carries
+// retention: of the listings alive going into the latest run, the share that
+// run re-found. Below 50% the cell is shown greyed with its retention stated,
+// never silently dropped and never presented as fact.
+//
+// Resolution is the collection interval. The sweep is weekly, so these figures
+// land on multiples of 7 and a listing that appeared and vanished between two
+// runs is never observed twice — those are excluded, not counted as instant sales.
+function _domBand(d){
+  if (d == null) return '';
+  if (d <= 21)  return 'var(--green)';
+  if (d <= 60)  return 'var(--gold)';
+  return 'var(--red)';
+}
+
+async function renderDaysOnMarketPage(country){
+  var el=document.getElementById('pg-days-on-market'); if(!el) return;
+  var c=COUNTRIES[country];
+  if(!c||c.status!=='live'){
+    el.innerHTML=V2HEAD(country,'Days on Market',[],null)
+      +_emptyState('Days on market activates once '+(c?c.label:country)+' has listing data.');
+    return;
+  }
+  var f=_curFilters();
+  el.innerHTML=V2HEAD(country,'Days on Market',['Loading…'],null);
+
+  var rows=[];
+  try{
+    var r=await sb.rpc('market_dom',{p_country:country,p_asset:f.asset,p_type:f.type,p_min_n:15});
+    rows=(r&&r.data)||[];
+  }catch(e){}
+
+  if(!rows.length){
+    el.innerHTML=V2HEAD(country,'Days on Market',
+        [(f.asset==='all'?'All classes':f.asset)+' · For '+f.type],null)
+      +_emptyState('Not enough collection history for '+c.label+' under these filters. '
+        +'A listing has to be seen on two separate runs before its time on market can be measured, '
+        +'so a market needs at least a fortnight of weekly sweeps.');
+    return;
+  }
+
+  rows=rows.map(function(x){return {
+    city:x.city, asset:x.asset_class, txn:x.transaction_type,
+    n:Number(x.n_delisted||0),
+    med:x.median_dom_days!=null?Number(x.median_dom_days):null,
+    p25:x.p25_days!=null?Number(x.p25_days):null,
+    p75:x.p75_days!=null?Number(x.p75_days):null,
+    live:Number(x.n_still_listed||0),
+    age:x.median_age_days!=null?Number(x.median_age_days):null,
+    cov:x.coverage!=null?Number(x.coverage):null,
+    ok:x.reliable===true
+  };});
+
+  var sound=rows.filter(function(r){return r.ok;});
+  var basis=sound.reduce(function(a,r){return a+r.n;},0);
+  var totalAll=rows.reduce(function(a,r){return a+r.n;},0);
+  var live=rows.reduce(function(a,r){return a+r.live;},0);
+
+  // Headline: the median of the reliable cells' medians, weighted by sample.
+  var wsum=0, wtot=0;
+  sound.forEach(function(r){ if(r.med!=null){ wsum+=r.med*r.n; wtot+=r.n; } });
+  var headline=wtot?Math.round(wsum/wtot):null;
+
+  var fastest=sound.filter(function(r){return r.med!=null;})
+                   .sort(function(a,b){return a.med-b.med;})[0];
+  var slowest=sound.filter(function(r){return r.med!=null;})
+                   .sort(function(a,b){return b.med-a.med;})[0];
+
+  var body=rows.sort(function(a,b){return b.n-a.n;}).slice(0,60).map(function(r){
+    var dim=r.ok?'':'opacity:.55;';
+    var covTxt=r.cov!=null?Math.round(r.cov*100)+'%':'—';
+    var flag=r.ok?'':' <span class="n-tag" title="The latest sweep re-found only '+covTxt
+        +' of the listings that were live before it, so most of these disappearances are '
+        +'uncollected rather than withdrawn" style="margin-left:6px;">low retention</span>';
+    return '<tr style="'+dim+'">'
+      +'<td><div class="mkt-cell"><div><div class="mkt-name">'+_newsEsc(r.city)+flag+'</div>'
+      +'<div class="mkt-cat">'+_newsEsc(r.asset)+' · '+r.txn+'</div></div></div></td>'
+      +'<td class="num" style="color:'+(r.ok?_domBand(r.med):'var(--ink4)')+';font-weight:600;">'
+        +(r.med!=null?r.med+'<span class="unit"> d</span>':'—')+'</td>'
+      +'<td class="num" style="color:var(--ink3);">'
+        +(r.p25!=null&&r.p75!=null?r.p25+' – '+r.p75:'—')+'</td>'
+      +'<td class="num">'+r.n.toLocaleString('en-US')+'</td>'
+      +'<td class="num" style="color:var(--ink4);">'+r.live.toLocaleString('en-US')+'</td>'
+      +'<td class="num" style="color:var(--ink4);">'+(r.age!=null?r.age+' d':'—')+'</td>'
+      +'<td class="num" style="color:'+(r.ok?'var(--ink3)':'var(--red)')+';">'+covTxt+'</td>'
+      +'</tr>';
+  }).join('');
+
+  el.innerHTML=V2HEAD(country,'Days on Market',
+      [(f.asset==='all'?'All classes':f.asset)+' · For '+f.type,
+       'Measured from weekly collection, not modelled',
+       sound.length+' of '+rows.length+' groups pass the retention test'], basis)
+   +'<section class="kpis">'
+   +'<div class="stat-cell"><div class="sc-label">Median days on market</div>'
+     +'<div class="sc-value num" style="color:'+_domBand(headline)+';">'
+       +(headline!=null?headline:'—')+'<span class="unit"> days</span></div>'
+     +'<div class="sc-note">across '+basis.toLocaleString('en-US')+' withdrawn listings</div></div>'
+   +'<div class="stat-cell"><div class="sc-label">Fastest to clear</div>'
+     +'<div class="sc-value">'+(fastest?_newsEsc(fastest.city):'—')+'</div>'
+     +'<div class="sc-note num">'+(fastest?fastest.asset+' · '+fastest.med+' days':'')+'</div></div>'
+   +'<div class="stat-cell"><div class="sc-label">Slowest to clear</div>'
+     +'<div class="sc-value">'+(slowest?_newsEsc(slowest.city):'—')+'</div>'
+     +'<div class="sc-note num">'+(slowest?slowest.asset+' · '+slowest.med+' days':'')+'</div></div>'
+   +'<div class="stat-cell"><div class="sc-label">Currently listed</div>'
+     +'<div class="sc-value num">'+live.toLocaleString('en-US')+'</div>'
+     +'<div class="sc-note">still on the portals at the last sweep</div></div>'
+   +'</section>'
+   +'<div class="panel" style="margin:14px 0;"><div class="panel-head"><div>'
+   +'<div class="panel-title">How this is measured</div>'
+   +'<div class="panel-sub">A listing’s days on market is the gap between the first and last '
+   +'time our weekly sweep saw it, counted only once it has stopped appearing. Because the sweep '
+   +'is weekly, figures land on multiples of seven and a listing that came and went inside one '
+   +'week is never seen twice — those are excluded rather than counted as instant sales. '
+   +'<strong>A listing we failed to collect looks identical to one that was withdrawn</strong>, so '
+   +'each row shows retention: the share of previously-live listings the latest sweep re-found. '
+   +'Rows under 50% are greyed and flagged, because their disappearances are mostly ours, not the '
+   +'market’s. These are asking-side withdrawals, not confirmed sales.</div></div></div>'
+   +'<div class="panel"><div class="panel-head"><div>'
+   +'<div class="panel-title">Time on market by city and class — '+c.label+'</div>'
+   +'<div class="panel-sub">Ranked by sample size · median with the interquartile range</div></div>'
+   +'<span class="n-tag num">'+totalAll.toLocaleString('en-US')+' withdrawn</span></div>'
+   +'<div class="panel-body2" style="padding-top:8px;"><table class="xmt"><thead><tr>'
+   +'<th>Market</th><th class="num">Median</th><th class="num">P25 – P75</th>'
+   +'<th class="num">Withdrawn</th><th class="num">Still listed</th>'
+   +'<th class="num">Age of live stock</th><th class="num">Retention</th>'
+   +'</tr></thead><tbody>'+body+'</tbody></table>'
+   +'<div class="axis-note" style="margin-top:6px;"><span>Showing '+Math.min(60,rows.length)
+   +' of '+rows.length+' groups</span><span class="num">'+sound.length+' pass retention</span>'
+   +'</div></div></div>';
+}
+
 async function renderByBedroomPage(country){
   var el=document.getElementById('pg-by-bedroom'); if(!el) return;
   var c=COUNTRIES[country];
@@ -4437,6 +4584,7 @@ function nav(id, fromRoute){
     'key-indicators':'Market Intelligence / Key Indicators','market-signals':'Market Intelligence / Market Signals',
     'countries':'Coverage / Countries','cities':'Market Intelligence / Cities','districts':'Market Intelligence / Districts',
     'by-bedroom':'Market Intelligence / By Bedroom',
+    'days-on-market':'Market Intelligence / Days on Market',
     'listings':'Data / Listings','transactions':'Data / Transactions','pipeline':'Data / Dev. Pipeline',
     'occupiers':'Data / Corporate Occupiers','infrastructure':'Data / Infrastructure','macro-indicators':'Data / Macro Indicators',
     'price-trends':'Analytics / Price Trends','liquidity-index':'Analytics / Liquidity Index',
@@ -4455,6 +4603,7 @@ function nav(id, fromRoute){
   if(id==='macro-indicators'){ loadMacroData(ACTIVE_COUNTRY); }
   if(id==='districts'&&_B2C){ renderDistrictsPage(_B2C); }
   if(id==='by-bedroom'&&_B2C){ renderByBedroomPage(_B2C); }
+  if(id==='days-on-market'&&_B2C){ renderDaysOnMarketPage(_B2C); }
   if(id==='heatmaps'&&_B2C){ renderHeat(_B2C,_B2K); }
 }
 
@@ -4713,6 +4862,7 @@ function applyFilters(skipPage){
   else if(_ap==='pg-markets'){ renderOverview(_B2C); }
   else if(_ap==='pg-districts'){ renderDistrictsPage(_B2C); }
   else if(_ap==='pg-by-bedroom'){ renderByBedroomPage(_B2C); }
+  else if(_ap==='pg-days-on-market'){ renderDaysOnMarketPage(_B2C); }
   else if(_ap==='pg-heatmaps'){ renderHeat(_B2C,_B2K); }
   else if(_ap==='pg-data-explorer'){ renderExplorer(_B2C,_B2K); }
 }
