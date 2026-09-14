@@ -920,8 +920,8 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
     <div class="ni" onclick="nav('markets')"><span class="ni-icon" data-icon="globe"></span>Markets</div>
     <div class="ni" onclick="nav('cities')"><span class="ni-icon" data-icon="city"></span>Cities</div>
     <div class="ni" onclick="nav('districts')"><span class="ni-icon" data-icon="map"></span>Districts</div>
-    <div class="ni" onclick="nav('bedrooms')"><span class="ni-icon" data-icon="layers"></span>By Bedroom</div>
-    <div class="ni" onclick="nav('dom')"><span class="ni-icon" data-icon="activity"></span>Days on Market</div>
+    <div class="ni" onclick="nav('by-bedroom')"><span class="ni-icon" data-icon="layers"></span>By Bedroom</div>
+    <div class="ni" onclick="nav('days-on-market')"><span class="ni-icon" data-icon="activity"></span>Days on Market</div>
   </div>
 
   <div class="sb-section">
@@ -2120,6 +2120,7 @@ function switchCountry(name){
   iwTrack('market_switch',{to:name});
   if(!COUNTRIES[name]) return;
   ACTIVE_COUNTRY=name;
+  _bumpView();          // every request still in flight for the last market is now stale
   var c=COUNTRIES[name];
   // For pending markets, show KPIs from COUNTRIES config (dummy data)
   // and still allow macro data to load
@@ -2157,6 +2158,7 @@ function switchCountry(name){
   loadMarketNews(name);
   loadMarketSignals(name);
   loadHonestLayer(name);
+  loadFreshness(name);
 
   // Reload macro page if open
   var activePg=document.querySelector('.pg.active');
@@ -2184,7 +2186,7 @@ function money(v,cur,o){ o=o||{}; if(v==null||isNaN(Number(v))) return '\u2014';
   if(_ccyMode==='usd'&&cur!=='USD'){ var r=_fxCache&&_fxCache[cur]; if(r){ var u=v/r;
       return '$'+(o.dec!=null?u.toFixed(o.dec):Math.round(u).toLocaleString('en-US')); } }
   return _lsym(cur)+(o.dec!=null?v.toFixed(o.dec):Math.round(v).toLocaleString('en-US')); }
-function setCcy(m){ _ccyMode=m; try{localStorage.setItem('iw_ccy',m);}catch(e){}
+function setCcy(m){ _ccyMode=m; _bumpView(); try{localStorage.setItem('iw_ccy',m);}catch(e){}
   document.querySelectorAll('#ccy-toggle button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-c')===m);});
   if(_B2C){ loadBatch2(_B2C); } else { applyFilters(); } }
 function _syncCcyUI(cur){ var b=document.getElementById('ccy-local-lbl'); if(b) b.textContent=cur||'Local';
@@ -2207,22 +2209,34 @@ function V2HEAD(country,page,ctxBits,basisN,btnHtml){
    +'</div></div>'+(btnHtml||'')+'</div>';
 }
 
-/* ── CLIENT ROUTING: /dashboard/:page ── */
+/* ── CLIENT ROUTING: /dashboard/:page ──
+   One table for every page: its URL slug -> its page id. The sidebar, nav()
+   and the address bar all go through it, so a page cannot exist in one and be
+   missing from another -- which is how the sidebar came to call nav('bedrooms')
+   for a page whose id is 'by-bedroom' (a blank screen), and how every page not
+   listed here reloaded as the Overview. Short slugs are aliases; a page's own
+   id always works as its slug too. */
 var ROUTES={'overview':'market-terminal','markets':'markets','cities':'cities','districts':'districts',
   'bedrooms':'by-bedroom','dom':'days-on-market',
   'pipeline':'pipeline','infrastructure':'infrastructure','macro':'macro-indicators','map':'map-view',
   'heatmaps':'heatmaps','reports':'market-reports','data':'data-explorer','exports':'exports','api':'api-access'};
 var SLUGS={}; for(var _rk in ROUTES) SLUGS[ROUTES[_rk]]=_rk;
+function _pageExists(id){ return !!document.getElementById('pg-'+id); }
+function _pageForSlug(slug){
+  if(ROUTES[slug]&&_pageExists(ROUTES[slug])) return ROUTES[slug];
+  if(_pageExists(slug)) return slug;
+  return null;
+}
 function _routePush(id){
   if(location.protocol.indexOf('http')!==0) return;
-  var slug=SLUGS[id]||'overview';
+  var slug=SLUGS[id]||(_pageExists(id)?id:'overview');
   try{ history.pushState({pg:id},'','/dashboard/'+slug); }catch(e){}
 }
 function _routeInit(){
   if(location.protocol.indexOf('http')!==0) return;
-  var m=location.pathname.match(/^\/dashboard\/([a-z-]+)\/?$/);
-  var id=(m&&ROUTES[m[1]])||'market-terminal';
-  try{ history.replaceState({pg:id},'','/dashboard/'+(SLUGS[id]||'overview')); }catch(e){}
+  var m=location.pathname.match(/^\/dashboard\/([a-z0-9-]+)\/?$/);
+  var id=(m&&_pageForSlug(m[1]))||'market-terminal';
+  try{ history.replaceState({pg:id},'','/dashboard/'+(SLUGS[id]||id)); }catch(e){}
   if(id!=='market-terminal') nav(id,true);
 }
 window.addEventListener('popstate',function(e){
@@ -2322,6 +2336,61 @@ function _emptyState(msg){
     +'<div style="font-size:13px;color:var(--ink4);max-width:540px;margin:0 auto;line-height:1.65;">'+msg+'</div>'
     +'<div style="margin-top:14px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink5);">No estimated or placeholder figures shown</div>'
     +'</div></div>';
+}
+/* ── LOAD STATE: failed is not empty, and a stale answer is not an answer ──
+   Every data panel used to catch its request's error and render "no data" —
+   so an outage, an expired session and a genuinely empty market looked the
+   same. _rpc() keeps the difference; _errorState() says the load failed and
+   offers a retry. _viewGen is bumped whenever the market, filters or currency
+   change; a render that started under an older generation discards its answer
+   instead of painting last market's figures over this one's. */
+var _viewGen=0;
+function _bumpView(){ return ++_viewGen; }
+function _stale(g){ return g!==_viewGen; }
+async function _rpc(name,args){
+  if(!sb) return {ok:false,error:'not connected'};
+  try{
+    var r=await sb.rpc(name,args);
+    if(r&&r.error) return {ok:false,error:r.error.message||String(r.error)};
+    return {ok:true,data:r?r.data:null};
+  }catch(e){ return {ok:false,error:(e&&e.message)||String(e)}; }
+}
+function _errorState(what,err,retryJs){
+  return '<div class="panel"><div class="panel-body" style="padding:40px 32px;text-align:center;">'
+    +'<div style="font-size:13px;color:var(--red);max-width:540px;margin:0 auto;line-height:1.65;">'
+    +_newsEsc(what)+' could not be loaded.</div>'
+    +'<div style="font-size:11.5px;color:var(--ink4);margin-top:6px;">'+_newsEsc(err||'')+'</div>'
+    +(retryJs?'<button class="btn btn-ghost" style="margin-top:14px;" onclick="'+retryJs+'">Try again</button>':'')
+    +'<div style="margin-top:12px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink5);">This is a loading failure, not an empty market</div>'
+    +'</div></div>';
+}
+function _dataBanner(msg,retry){
+  var b=document.getElementById('iw-data-banner');
+  if(!b){ b=document.createElement('div'); b.id='iw-data-banner';
+    b.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:9999;background:var(--surface);border:1px solid var(--red);color:var(--ink);padding:10px 14px;font-size:12.5px;max-width:560px;';
+    document.body.appendChild(b); }
+  b.innerHTML=_newsEsc(msg)+' <button class="btn btn-ghost" style="margin-left:8px;">Retry</button> <button class="btn btn-ghost" aria-label="Dismiss">×</button>';
+  var bs=b.querySelectorAll('button');
+  bs[0].onclick=function(){ b.remove(); if(retry) retry(); };
+  bs[1].onclick=function(){ b.remove(); };
+}
+/* Freshness: when the market's figures were last published, whether that run
+   covered it fully, and whether the latest run failed and left the previous
+   figures in place (data_status, fed by the weekly run's publication record). */
+async function loadFreshness(country){
+  var g=_viewGen, el=document.querySelector('.sb-live'); if(!el) return;
+  var r=await _rpc('data_status',{});
+  if(_stale(g)||country!==ACTIVE_COUNTRY) return;
+  if(!r.ok){ el.innerHTML='<div class="live-dot" style="background:var(--ink5)"></div>'+_newsEsc(country)+' · status unavailable'; return; }
+  var s=(r.data||[]).filter(function(x){return (x.country||'').toLowerCase()===country.toLowerCase();})[0];
+  if(!s||!s.last_published_at){ el.innerHTML='<div class="live-dot" style="background:var(--ink5)"></div>'+_newsEsc(country)+' · not yet published'; return; }
+  var d=new Date(s.last_published_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  var note=s.stale?' · last run '+_newsEsc(s.last_run_status||'failed')+', showing previous figures'
+          :(s.coverage==='partial'?' · partial coverage':'');
+  el.innerHTML='<div class="live-dot"'+(s.stale?' style="background:var(--amber)"':'')+'></div>'
+    +_newsEsc(country)+' · published '+d+note;
+  el.title='Figures published '+new Date(s.last_published_at).toISOString()+'; coverage '+(s.coverage||'—')
+    +'; latest run '+(s.last_run_status||'—')+(s.last_run_at?' at '+new Date(s.last_run_at).toISOString():'');
 }
 function _stat(label,val,sub){
   return '<div style="background:var(--surface);padding:16px 18px;"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:6px;">'+label+'</div>'
@@ -2565,7 +2634,7 @@ async function renderCrossMarket(){
   var topCities=cityRows.slice(0,10), maxUsd=topCities.length?topCities[0].usd:1;
   var hbarN=topCities.reduce(function(a,r){return a+r.n;},0);
   var hbars=topCities.map(function(r){
-    return '<div class="hbar-row"><div class="hbar-name">'+r.city+'<span class="sub">'+r.country+'</span></div>'
+    return '<div class="hbar-row"><div class="hbar-name">'+_newsEsc(r.city)+'<span class="sub">'+r.country+'</span></div>'
       +'<div class="hbar-track"><div class="hbar-fill" style="width:'+(r.usd/maxUsd*100).toFixed(1)+'%"></div></div>'
       +'<div class="hbar-val num">'+usd0(r.usd)+'<span class="hbar-n">n='+nf(r.n)+'</span></div></div>'; }).join('');
   var spread=topCities.length?usd0(topCities[topCities.length-1].usd)+' – '+usd0(topCities[0].usd)+' / m²':'—';
@@ -2595,7 +2664,7 @@ async function renderCrossMarket(){
     .map(function(x){x.tot=x.sale+x.rent;return x;}).filter(function(x){return x.tot>200;})
     .sort(function(a,b){return b.tot-a.tot;}).slice(0,8);
   var stkRows=pc.map(function(x){var sp=Math.round(x.sale/x.tot*100);
-    return '<div class="stk-row"><div class="stk-name">'+x.city+'</div>'
+    return '<div class="stk-row"><div class="stk-name">'+_newsEsc(x.city)+'</div>'
       +'<div class="stk-track"><div class="stk-sale" style="width:'+sp+'%"></div><div class="stk-rent" style="width:'+(100-sp)+'%"></div></div>'
       +'<div class="stk-val num"><strong>'+sp+'</strong> / '+(100-sp)+'</div></div>';}).join('');
 
@@ -2603,7 +2672,7 @@ async function renderCrossMarket(){
   rentRows.sort(function(a,b){return b.usd-a.usd;});
   var topRent=rentRows.slice(0,8), maxRent=topRent.length?topRent[0].usd:1;
   var rentBars=topRent.map(function(r){
-    return '<div class="bed-row"><div class="bed-name">'+r.city+'</div>'
+    return '<div class="bed-row"><div class="bed-name">'+_newsEsc(r.city)+'</div>'
       +'<div class="bed-track"><div class="bed-fill" style="width:'+(r.usd/maxRent*100).toFixed(1)+'%"></div></div>'
       +'<div class="bed-val num">$'+r.usd.toFixed(1)+'<span class="hbar-n">/m²/mo</span></div></div>';}).join('');
 
@@ -2614,7 +2683,7 @@ async function renderCrossMarket(){
   lead.sort(function(a,b){return b.n-a.n;});
   var lead8=lead.slice(0,8), maxLead=lead8.length?lead8[0].n:1;
   var leadRows=lead8.map(function(r,i){
-    return '<tr><td><div class="mkt-cell"><span class="mkt-rank num">'+(i+1)+'</span><div><div class="mkt-name">'+r.city+'</div><div class="mkt-cat">'+r.country+'</div></div></div></td>'
+    return '<tr><td><div class="mkt-cell"><span class="mkt-rank num">'+(i+1)+'</span><div><div class="mkt-name">'+_newsEsc(r.city)+'</div><div class="mkt-cat">'+r.country+'</div></div></div></td>'
       +'<td class="num">'+nf(r.n)+'</td>'
       +'<td><div class="share-cell"><div class="share-track"><div class="share-fill" style="width:'+(r.n/maxLead*100).toFixed(1)+'%"></div></div><span class="num">'+(totalListings?(r.n/totalListings*100).toFixed(1):'0')+'%</span></div></td>'
       +'<td class="num">'+(r.mkts||'—')+'</td>'
@@ -2767,12 +2836,20 @@ async function renderOverview(country){
   var c=COUNTRIES[country], lbl=c?c.label:country;
   if(!c||c.status!=='live'){
     el.innerHTML=V2HEAD(country,'Markets',[],null)+_emptyState('Coverage activates once '+lbl+' has listing data.'); return; }
-  var f=_curFilters(), cur=c.currency, fx=await _fx();
+  var f=_curFilters(), cur=c.currency, g=_viewGen, fx=await _fx();
   var res=await Promise.all([
-    sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days}).then(function(r){return r&&r.data||[];}).catch(function(){return [];}),
-    sb.rpc('market_filtered',{p_country:country,p_asset:f.asset,p_days:f.days}).then(function(r){return r&&r.data;}).catch(function(){return null;}),
-    sb.rpc('market_signals',{p_country:country}).then(function(r){return r&&r.data;}).catch(function(){return null;})]);
-  var df=res[0]||[], mf=res[1]||{}, sig=res[2]||{};
+    _rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days}),
+    _rpc('market_filtered',{p_country:country,p_asset:f.asset,p_days:f.days}),
+    _rpc('market_signals',{p_country:country})]);
+  if(_stale(g)) return;
+  // The market figures are the page; if they failed, say so instead of
+  // drawing an empty market. Signals are an add-on and may be missing.
+  if(!res[0].ok||!res[1].ok){
+    el.innerHTML=V2HEAD(country,'Markets',[],null)
+      +_errorState('Market figures for '+lbl,(res[0].error||res[1].error),"renderOverview(_B2C)");
+    return;
+  }
+  var df=res[0].data||[], mf=res[1].data||{}, sig=(res[2].ok&&res[2].data)||{};
   var nf=function(v){return Number(v||0).toLocaleString('en-US');};
   var fmt=function(v,o){return money(v,cur,o);};
 
@@ -2817,7 +2894,7 @@ async function renderOverview(country){
   var lead=df.slice(0,12), maxLead=lead.length?lead[0].n:1;
   var rows=lead.map(function(r,i){ var sel=r.sub===window._mkSel;
     return '<tr class="rowsel'+(sel?' selected':'')+'" data-sub="'+r.sub.replace(/"/g,'&quot;')+'" onclick="selectMarket(this.getAttribute(\'data-sub\'))">'
-      +'<td><div class="mkt-cell"><span class="mkt-rank num">'+(i+1)+'</span><div><div class="mkt-name">'+r.sub+'</div><div class="mkt-cat">'+(r.city||lbl)+'</div></div></div></td>'
+      +'<td><div class="mkt-cell"><span class="mkt-rank num">'+(i+1)+'</span><div><div class="mkt-name">'+_newsEsc(r.sub)+'</div><div class="mkt-cat">'+(r.city||lbl)+'</div></div></div></td>'
       +'<td class="num">'+nf(r.n)+'</td>'
       +'<td><div class="share-cell"><div class="share-track"><div class="share-fill" style="width:'+(r.n/maxLead*100).toFixed(1)+'%"></div></div><span class="num">'+(dfTotal?(r.n/dfTotal*100).toFixed(1):'0')+'%</span></div></td>'
       +'<td class="num">'+(r.med!=null?fmt(r.med):'—')+'</td>'
@@ -2911,12 +2988,12 @@ function renderMkMap(country,df,f,cur){
   (K.cities||[]).forEach(function(ct){ var xy=CITY_COORDS[ct.city]; if(!xy) return;
     var med=_cityMed(K,ct.city,f.asset,tt), n=_cityCnt(K,ct.city,f.asset);
     L.circleMarker(xy,{radius:Math.min(26,Math.max(9,Math.sqrt((n||1))/4)),fillColor:'#DAC28C',color:'rgba(20,19,15,.9)',weight:1.5,fillOpacity:.85})
-      .bindPopup('<div style="font-family:IBM Plex Mono,monospace;min-width:150px;"><b style="font-size:12.5px;">'+ct.city+'</b>'
+      .bindPopup('<div style="font-family:IBM Plex Mono,monospace;min-width:150px;"><b style="font-size:12.5px;">'+_newsEsc(ct.city)+'</b>'
         +'<div style="font-size:11.5px;margin-top:3px;">Median '+tt+': <b>'+(med!=null?money(med,cur)+'/m²'+(tt==='rent'?'/mo':''):'—')+'</b></div>'
         +'<div style="font-size:10.5px;color:#6E685C;">'+Number(n||0).toLocaleString('en-US')+' listings · zoom for districts</div></div>').addTo(cityLayer); });
   df.filter(function(d){return d.lat!=null;}).forEach(function(d){
     var m=L.circleMarker([d.lat,d.lng],{radius:Math.min(16,Math.max(5,Math.sqrt((d.n||1))/2.5)),fillColor:'#C9A96A',color:'rgba(20,19,15,.9)',weight:1,fillOpacity:.8});
-    m.bindPopup('<div style="font-family:IBM Plex Mono,monospace;min-width:150px;"><b style="font-size:12.5px;">'+_newsEsc(d.sub)+'</b> <span style="color:#6E685C;font-size:10px;">'+(d.city||'')+'</span>'
+    m.bindPopup('<div style="font-family:IBM Plex Mono,monospace;min-width:150px;"><b style="font-size:12.5px;">'+_newsEsc(d.sub)+'</b> <span style="color:#6E685C;font-size:10px;">'+_newsEsc(d.city||'')+'</span>'
         +'<div style="font-size:11.5px;margin-top:3px;">Median '+tt+': <b>'+(d.med!=null?money(d.med,cur)+'/m²'+(tt==='rent'?'/mo':''):'—')+'</b></div>'
         +'<div style="font-size:10.5px;color:#6E685C;">'+Number(d.n||0).toLocaleString('en-US')+' listings</div></div>');
     m.on('click',function(){ selectMarket(d.sub); });
@@ -3197,14 +3274,22 @@ async function selectMarket(sub){
 
 async function loadBatch2(country){
   if(!sb) return;
+  var g=_viewGen;
   var c=COUNTRIES[country]; var live=c&&c.status==='live';
+  await _fx();
+  if(_stale(g)) return;   // a later market/currency choice owns the shared state now
   _B2C=country; _B2S=c?_cur(c.currency):'';
-  await _fx(); _syncCcyUI(c?c.currency:'');
+  _syncCcyUI(c?c.currency:'');
   var ph=document.getElementById('pipe-head');
   if(ph) ph.innerHTML=V2HEAD(country,'Development Pipeline',['Observed development &amp; construction news','Refreshed Mon &amp; Thu'],null);
   renderPipelineRegister(country);
   var K=null;
-  if(live){ try{ var r=await sb.rpc('market_kpis',{p_country:country}); K=r&&r.data?r.data:null; }catch(e){} }
+  if(live){
+    var kr=await _rpc('market_kpis',{p_country:country});
+    if(_stale(g)) return;
+    if(kr.ok) K=kr.data;
+    else _dataBanner('Market summary for '+country+' could not be loaded ('+kr.error+').', function(){ loadBatch2(country); });
+  }
   _B2K=K;
   renderOverview(country);
   renderInfra(country);
@@ -3297,7 +3382,7 @@ function _bars(rows,cur){
   if(!rows||!rows.length) return '<div style="padding:14px;color:var(--ink5);font-size:12px;">No district data under current filters.</div>';
   var mx=rows[0].v||1;
   return rows.map(function(r){
-    return '<div class="hbar-row" style="grid-template-columns:110px 1fr 118px;padding:4.5px 0;"><div class="hbar-name">'+r.k+'</div>'
+    return '<div class="hbar-row" style="grid-template-columns:110px 1fr 118px;padding:4.5px 0;"><div class="hbar-name">'+_newsEsc(r.k)+'</div>'
       +'<div class="hbar-track" style="height:13px;"><div class="hbar-fill" style="width:'+(r.v/mx*100).toFixed(1)+'%"></div></div>'
       +'<div class="hbar-val num" style="font-size:11px;">'+money(r.v,cur)+'<span class="hbar-n">n='+Number(r.n||0).toLocaleString('en-US')+'</span></div></div>'; }).join('');
 }
@@ -3308,10 +3393,11 @@ async function renderCitiesPage(country){
   if(!c||c.status!=='live'||!K||!K.cities||!K.cities.length){ el.innerHTML=V2HEAD(country,'Cities',[],null)+_emptyState('City analytics activate once '+(c?c.label:country)+' has listing data.'); return; }
   var cities=K.cities.slice().sort(function(a,b){return (b.listings||0)-(a.listings||0);});
   if(!_cityActive||!cities.some(function(x){return x.city===_cityActive;})) _cityActive=cities[0].city;
+  // City names come from listings; they are text, never markup.
   var chips=cities.map(function(x){ var th=cityImg(x.city,true);
-    return '<button class="city-card'+(x.city===_cityActive?' on':'')+'" data-city="'+x.city.replace(/"/g,'&quot;')+'" onclick="selectCity(this.getAttribute(\'data-city\'))">'
-      +(th?'<img src="'+th+'" alt="'+x.city+' at night" loading="lazy"/>':'')
-      +'<span class="cc-cap"><span class="cc-name">'+x.city+'</span><span class="cc-n num">'+Number(x.listings||0).toLocaleString('en-US')+'</span></span></button>'; }).join('');
+    return '<button class="city-card'+(x.city===_cityActive?' on':'')+'" data-city="'+_newsEsc(x.city)+'" onclick="selectCity(this.getAttribute(\'data-city\'))">'
+      +(th?'<img src="'+th+'" alt="'+_newsEsc(x.city)+' at night" loading="lazy"/>':'')
+      +'<span class="cc-cap"><span class="cc-name">'+_newsEsc(x.city)+'</span><span class="cc-n num">'+Number(x.listings||0).toLocaleString('en-US')+'</span></span></button>'; }).join('');
   var tot=cities.reduce(function(a,x){return a+Number(x.listings||0);},0);
   el.innerHTML=V2HEAD(country,'Cities',['Metro areas with active collection','Asking prices in '+_ccyName(c.currency)],tot)
    +'<div class="city-cards">'+chips+'</div><div id="city-profile-live"></div>';
@@ -3321,45 +3407,56 @@ var _cityMap=null;
 async function renderCityProfile(country,city){
   var slot=document.getElementById('city-profile-live'); if(!slot||!city) return;
   var c=COUNTRIES[country], K=_B2K; if(!c||!K) return;
-  var f=_curFilters(), cur=c.currency, tt=f.type==='rent'?'rent':'sale'; await _fx();
-  var cc=(K.city_class||[]).filter(function(x){return x.city===city&&(x.ac||'').toLowerCase()===f.asset;});
-  var saleN=cc.filter(function(x){return x.tt==='sale';}).reduce(function(a,x){return a+Number(x.count||0);},0);
-  var rentN=cc.filter(function(x){return x.tt==='rent';}).reduce(function(a,x){return a+Number(x.count||0);},0);
-  var med=_cityMed(K,city,f.asset,'sale'), medR=_cityMed(K,city,f.asset,'rent');
+  var f=_curFilters(), cur=c.currency, tt=f.type==='rent'?'rent':'sale', g=_viewGen; await _fx();
+  // One scope for the whole profile: the medians, the counts and the district
+  // bars below all come from the same filters (class, date window). The
+  // header figures used to be all-time market_kpis numbers sitting over
+  // date-windowed district bars, so "last 30 days" changed half the page.
+  var mf=await _rpc('market_filtered',{p_country:country,p_asset:f.asset,p_days:f.days});
+  if(_stale(g)||_cityActive!==city) return;
+  if(!mf.ok){ slot.innerHTML=_errorState(city+' figures',mf.error,"renderCityProfile(_B2C,_cityActive)"); return; }
+  function _pick(tt2){ var s=(mf.data&&mf.data[tt2]&&mf.data[tt2].cities)||[];
+    return s.filter(function(x){return x.city===city;})[0]||null; }
+  var sRow=_pick('sale'), rRow=_pick('rent');
+  var saleN=sRow?Number(sRow.n||0):0, rentN=rRow?Number(rRow.n||0):0;
+  var med=sRow?Number(sRow.med):null, medR=rRow?Number(rRow.med):null;
   var yld=(med&&medR)?Math.round(medR*12/med*1000)/10:null;
-  var ci=(K.cities||[]).filter(function(x){return x.city===city;})[0]||{};
-  var listAll=Number(ci.listings||0);
+  var listAll=saleN+rentN;
+  var scope=(f.asset==='all'?'all classes':f.asset)+(f.days?' · last '+f.days+' days':' · all dates');
+  city=String(city);
+  var cityH=_newsEsc(city);
   slot.innerHTML=
    '<div class="stat-band">'
-    +'<div class="stat-cell"><div class="sc-label">Observed listings</div><div class="sc-value num">'+listAll.toLocaleString('en-US')+'</div><div class="sc-note">'+city+' · all classes</div></div>'
+    +'<div class="stat-cell"><div class="sc-label">Listings with price &amp; area</div><div class="sc-value num">'+listAll.toLocaleString('en-US')+'</div><div class="sc-note">'+cityH+' · '+_newsEsc(scope)+'</div></div>'
     +'<div class="stat-cell"><div class="sc-label">Median sale /m² · '+f.asset+'</div><div class="sc-value num">'+(med?money(med,cur):'—')+'</div><div class="sc-note">asking, not transaction</div></div>'
     +'<div class="stat-cell"><div class="sc-label">Median rent /m² · '+f.asset+'</div><div class="sc-value num">'+(medR?money(medR,cur):'—')+'<span class="unit">/mo</span></div><div class="sc-note">asking rents</div></div>'
     +'<div class="stat-cell"><div class="sc-label">Gross yield</div><div class="sc-value num">'+(yld!=null?yld+'%':'—')+'</div><div class="sc-note">rent×12 ÷ sale price</div></div>'
     +'<div class="stat-cell"><div class="sc-label">Sale / rent split</div><div class="sc-value num">'+saleN.toLocaleString('en-US')+' <span class="unit">/ '+rentN.toLocaleString('en-US')+'</span></div><div class="sc-note">'+f.asset+'</div></div>'
    +'</div>'
    +'<div class="grid g-split">'
-    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Top districts — '+city+'</div>'
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Top districts — '+cityH+'</div>'
     +'<div class="panel-sub">Median asking /m² · '+f.asset+' · '+tt+' · '+_ccyName(cur)+'</div></div></div>'
     +'<div class="panel-body2" id="city-dist-slot"><div style="padding:14px;color:var(--ink5);font-size:12px;">Loading districts…</div></div></div>'
-    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">District price map — '+city+'</div>'
+    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">District price map — '+cityH+'</div>'
     +'<div class="panel-sub">Bubble colour = median asking /m² (dark → bright bronze) · size ∝ listings</div></div></div>'
     +'<div class="panel-body2"><div class="city-map-frame"><div class="lmap" id="city-map"></div></div></div></div>'
    +'</div>'
    +'<div class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">By asset class</div>'
-   +'<div class="panel-sub">'+city+' · for '+tt+'</div></div></div>'
+   +'<div class="panel-sub">'+cityH+' · for '+tt+' · all dates (weekly market summary)</div></div></div>'
    +'<div class="panel-body2" style="padding-top:8px;" id="city-ac-slot"></div></div></div>';
   var acRows=(K.city_class||[]).filter(function(x){return x.city===city&&x.tt===tt;})
     .sort(function(a,b){return Number(b.count||0)-Number(a.count||0);});
-  var acHtml=acRows.map(function(r){ return '<tr'+((r.ac||'').toLowerCase()===f.asset?' class="selected"':'')+'><td style="text-align:left;padding-left:8px;" class="mkt-name">'+_cap(r.ac)+'</td>'
+  var acHtml=acRows.map(function(r){ return '<tr'+((r.ac||'').toLowerCase()===f.asset?' class="selected"':'')+'><td style="text-align:left;padding-left:8px;" class="mkt-name">'+_newsEsc(_cap(r.ac))+'</td>'
       +'<td class="num">'+Number(r.count||0).toLocaleString('en-US')+'</td>'
       +'<td class="num">'+(r.med!=null?money(Number(r.med),cur):'—')+'</td></tr>'; }).join('');
   var acs=document.getElementById('city-ac-slot');
   if(acs) acs.innerHTML='<table class="xmt"><thead><tr><th style="text-align:left;">Class</th><th>Listings</th><th>Median /m²</th></tr></thead><tbody>'
-    +(acHtml||'<tr><td colspan="3" style="text-align:left;color:var(--ink5);">No class data for '+city+'.</td></tr>')+'</tbody></table>';
+    +(acHtml||'<tr><td colspan="3" style="text-align:left;color:var(--ink5);">No class data for '+cityH+'.</td></tr>')+'</tbody></table>';
   try{
-    var dr=await sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days});
-    if(_cityActive!==city) return;
-    var all=((dr&&dr.data)||[]).filter(function(d){return d.city===city&&d.median_ppsqm!=null;})
+    var drr=await _rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days});
+    if(_stale(g)||_cityActive!==city) return;
+    if(!drr.ok){ var dsx=document.getElementById('city-dist-slot'); if(dsx) dsx.innerHTML=_errorState('Districts in '+city,drr.error,"renderCityProfile(_B2C,_cityActive)"); return; }
+    var all=(drr.data||[]).filter(function(d){return d.city===city&&d.median_ppsqm!=null;})
       .map(function(d){return {k:d.submarket,v:Number(d.median_ppsqm),n:Number(d.listings||0),lat:d.lat,lng:d.lng};})
       .sort(function(a,b){return b.v-a.v;});
     var ds=document.getElementById('city-dist-slot'); if(ds) ds.innerHTML=_bars(all.slice(0,12),cur);
@@ -3436,14 +3533,19 @@ async function renderDaysOnMarketPage(country){
       +_emptyState('Days on market activates once '+(c?c.label:country)+' has listing data.');
     return;
   }
-  var f=_curFilters();
+  var f=_curFilters(), g=_viewGen;
   el.innerHTML=V2HEAD(country,'Days on Market',['Loading…'],null);
 
-  var rows=[];
-  try{
-    var r=await sb.rpc('market_dom',{p_country:country,p_asset:f.asset,p_type:f.type,p_min_n:15});
-    rows=(r&&r.data)||[];
-  }catch(e){}
+  var args={p_country:country,p_asset:f.asset,p_type:f.type,p_min_n:15};
+  var res=await Promise.all([_rpc('market_dom',args),_rpc('market_dom_summary',args)]);
+  if(_stale(g)) return;
+  if(!res[0].ok||!res[1].ok){
+    el.innerHTML=V2HEAD(country,'Days on Market',[(f.asset==='all'?'All classes':f.asset)+' · For '+f.type],null)
+      +_errorState('Days on market for '+(c?c.label:country),(res[0].error||res[1].error),"renderDaysOnMarketPage(_B2C)");
+    return;
+  }
+  var rows=res[0].data||[];
+  var pooled=(res[1].data||[])[0]||null;
 
   if(!rows.length){
     el.innerHTML=V2HEAD(country,'Days on Market',
@@ -3471,10 +3573,13 @@ async function renderDaysOnMarketPage(country){
   var totalAll=rows.reduce(function(a,r){return a+r.n;},0);
   var live=rows.reduce(function(a,r){return a+r.live;},0);
 
-  // Headline: the median of the reliable cells' medians, weighted by sample.
-  var wsum=0, wtot=0;
-  sound.forEach(function(r){ if(r.med!=null){ wsum+=r.med*r.n; wtot+=r.n; } });
-  var headline=wtot?Math.round(wsum/wtot):null;
+  // Headline: the median of every withdrawn listing in the groups that pass
+  // the retention test, pooled on the server. It used to be a sample-weighted
+  // average of the group medians, which is not a median at all: thirty
+  // listings at 1 day and fifteen at 100 days pool to a median of 1 day, while
+  // that average said 34 (Morocco, sales: pooled 35 days, the average 65).
+  var headline=pooled&&pooled.median_dom_days!=null?Number(pooled.median_dom_days):null;
+  if(pooled&&pooled.n_delisted!=null) basis=Number(pooled.n_delisted);
 
   var fastest=sound.filter(function(r){return r.med!=null;})
                    .sort(function(a,b){return a.med-b.med;})[0];
@@ -3552,14 +3657,20 @@ async function renderByBedroomPage(country){
       +_emptyState('Bedroom analytics activate once '+(c?c.label:country)+' has listing data.');
     return;
   }
-  var f=_curFilters(), cur=c.currency; await _fx();
+  var f=_curFilters(), cur=c.currency, g=_viewGen; await _fx();
+  if(_stale(g)) return;
   el.innerHTML=V2HEAD(country,'By Bedroom',['Loading…'],null);
 
-  var rows=[];
-  try{
-    var r=await sb.rpc('market_by_bedroom',{p_country:country,p_asset:f.asset,p_type:f.type,p_min_n:8});
-    rows=(r&&r.data)||[];
-  }catch(e){}
+  // p_days: the date window applies here as on every other filtered view (the
+  // request used to leave it out, so a 30-day view showed all-time bedrooms).
+  var res=await _rpc('market_by_bedroom',{p_country:country,p_asset:f.asset,p_type:f.type,p_min_n:8,p_days:f.days});
+  if(_stale(g)) return;
+  if(!res.ok){
+    el.innerHTML=V2HEAD(country,'By Bedroom',[(f.asset==='all'?'All classes':f.asset)+' · For '+f.type],null)
+      +_errorState('Bedroom figures for '+c.label,res.error,"renderByBedroomPage(_B2C)");
+    return;
+  }
+  var rows=res.data||[];
 
   rows=rows.map(function(x){return {
     city:x.city, beds:Number(x.bedrooms), n:Number(x.n||0),
@@ -3669,9 +3780,14 @@ async function renderDistrictsPage(country){
   var el=document.getElementById('pg-districts'); if(!el) return;
   var c=COUNTRIES[country];
   if(!c||c.status!=='live'){ el.innerHTML=V2HEAD(country,'Districts',[],null)+_emptyState('District analytics activate once '+(c?c.label:country)+' has listing data.'); return; }
-  var f=_curFilters(), cur=c.currency; await _fx();
-  var rows=[];
-  try{ var r=await sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days}); rows=(r&&r.data)||[]; }catch(e){}
+  var f=_curFilters(), cur=c.currency, g=_viewGen; await _fx();
+  var dres=await _rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days});
+  if(_stale(g)) return;
+  if(!dres.ok){ el.innerHTML=V2HEAD(country,'Districts',[(f.asset==='all'?'All classes':f.asset)+' · For '+f.type],null)
+      +_errorState('Districts for '+c.label,dres.error,"renderDistrictsPage(_B2C)"); return; }
+  var rows=dres.data||[];
+  if(!rows.length){ el.innerHTML=V2HEAD(country,'Districts',[(f.asset==='all'?'All classes':f.asset)+' · For '+f.type],null)
+      +_emptyState('No district has five or more priced listings for '+c.label+' under these filters.'); return; }
   rows=rows.map(function(x){return {sub:x.submarket,city:x.city,med:x.median_ppsqm!=null?Number(x.median_ppsqm):null,n:Number(x.listings||0)};})
       .sort(function(a,b){return b.n-a.n;});
   var tot=rows.reduce(function(a,r){return a+r.n;},0);
@@ -3680,7 +3796,7 @@ async function renderDistrictsPage(country){
   var cmed=meds.length?(meds.length%2?meds[(meds.length-1)/2]:(meds[meds.length/2-1]+meds[meds.length/2])/2):null;
   var body=rows.slice(0,40).map(function(r,i){
     var d=(r.med!=null&&cmed)?((r.med-cmed)/cmed*100):null;
-    return '<tr><td><div class="mkt-cell"><span class="mkt-rank num">'+(i+1)+'</span><div><div class="mkt-name">'+r.sub+'</div><div class="mkt-cat">'+(r.city||'')+'</div></div></div></td>'
+    return '<tr><td><div class="mkt-cell"><span class="mkt-rank num">'+(i+1)+'</span><div><div class="mkt-name">'+_newsEsc(r.sub)+'</div><div class="mkt-cat">'+_newsEsc(r.city||'')+'</div></div></div></td>'
       +'<td class="num">'+r.n.toLocaleString('en-US')+'</td>'
       +'<td class="num">'+(tot?(r.n/tot*100).toFixed(1):'0')+'%</td>'
       +'<td class="num">'+(r.med!=null?money(r.med,cur):'—')+'</td>'
@@ -3726,7 +3842,7 @@ async function renderInfra(country){
     var segArr=SEGS.map(function(sg){ return {k:sg[0], n:items.filter(function(x){return sg[1].test((x.title||'')+' '+(x.summary||''));}).length}; })
     .filter(function(x){return x.n>0;}).sort(function(a,b){return b.n-a.n;});
   var mx=Math.max.apply(null,segArr.map(function(x){return x.n;}).concat([1]));
-  var segHtml=segArr.map(function(x){ return '<div class="seg-bar"><div class="sb-n">'+x.k+'</div>'
+  var segHtml=segArr.map(function(x){ return '<div class="seg-bar"><div class="sb-n">'+_newsEsc(x.k)+'</div>'
     +'<div class="sb-t"><div class="sb-f" style="width:'+(x.n/mx*100).toFixed(1)+'%;background:linear-gradient(90deg,#3E6B62,var(--teal));"></div></div>'
     +'<div class="sb-v">'+x.n+' signal'+(x.n>1?'s':'')+'</div></div>'; }).join('')
     ||'<div style="font-size:11px;color:var(--ink4);">No infrastructure signals categorised yet.</div>';
@@ -3763,8 +3879,8 @@ function _heatGrid(rows,cur){
   function shade(v){ var t=(v-lo)/span; return 'rgba(201,169,106,'+(0.10+t*0.55).toFixed(2)+')'; }
   return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:9px;">'
     +rows.map(function(r){ return '<div class="heat-cell" style="background:'+shade(r.med)+';">'
-      +'<div class="hc-n">'+r.sub+'</div><div class="hc-v">'+money(r.med,cur)+'/m²</div>'
-      +'<div class="hc-s">'+(r.city||'')+' · n='+Number(r.n).toLocaleString('en-US')+'</div></div>'; }).join('')
+      +'<div class="hc-n">'+_newsEsc(r.sub)+'</div><div class="hc-v">'+money(r.med,cur)+'/m²</div>'
+      +'<div class="hc-s">'+_newsEsc(r.city||'')+' · n='+Number(r.n).toLocaleString('en-US')+'</div></div>'; }).join('')
     +'</div><div class="axis-note" style="margin-top:12px;"><span>Shade ∝ median asking price per m² · districts with ≥5 priced listings</span>'
     +'<span class="num">'+money(lo,cur)+' – '+money(hi,cur)+' /m²</span></div>';
 }
@@ -3799,7 +3915,7 @@ function _aggTables(K,cur,f){
       .sort(function(a,b){return b.n-a.n;});
   }
   var t1='<table class="xmt"><thead><tr><th style="text-align:left;">City</th><th>Listings</th><th>Sale /m²</th><th>Rent /m²/mo</th></tr></thead><tbody>'
-    +cityRows.map(function(r){ return '<tr><td style="text-align:left;padding-left:8px;" class="mkt-name">'+r.city+'</td>'
+    +cityRows.map(function(r){ return '<tr><td style="text-align:left;padding-left:8px;" class="mkt-name">'+_newsEsc(r.city)+'</td>'
       +'<td class="num">'+r.n.toLocaleString('en-US')+'</td><td class="num">'+(r.sale!=null?money(r.sale,cur):'—')+'</td>'
       +'<td class="num">'+(r.rent!=null?money(r.rent,cur):'—')+'</td></tr>'; }).join('')+'</tbody></table>';
   var byAc={};
@@ -3825,7 +3941,7 @@ async function renderExplorer(country,K){
    +'<div class="grid g-split">'
    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">By city</div>'
    +'<div class="panel-sub">Observed listings &amp; median asking prices</div></div></div>'
-   +'<div class="panel-body2" style="padding-top:8px;">'+t.city+'</div></div>'
+   +'<div class="panel-body2" style="padding-top:8px;">'+_newsEsc(t.city)+'</div></div>'
    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">By asset class</div>'
    +'<div class="panel-sub">Median of city medians · for '+f.type+'</div></div></div>'
    +'<div class="panel-body2" style="padding-top:8px;">'+t.ac+'</div></div></div>';
@@ -3877,7 +3993,7 @@ function renderInsights(country,K){
   var items=[];
   if(bp.length) items.push('Highest median sale price: <strong>'+bp[0].city+'</strong> at '+money(bp[0].sale_median,cur)+'/m².');
   if(bp.length>1) items.push('Most affordable: <strong>'+bp[bp.length-1].city+'</strong> at '+money(bp[bp.length-1].sale_median,cur)+'/m².');
-  if(deep) items.push('Deepest market: <strong>'+deep.city+'</strong> with '+Number(deep.listings||0).toLocaleString('en-US')+' observed listings.');
+  if(deep) items.push('Deepest market: <strong>'+_newsEsc(deep.city)+'</strong> with '+Number(deep.listings||0).toLocaleString('en-US')+' observed listings.');
   el.innerHTML=V2HEAD(country,'Insights',['Derived from live listing aggregates'],null)
    +'<div class="panel"><div class="panel-body2"><ul style="margin:4px 0 4px 18px;font-size:12.5px;line-height:2;color:var(--ink2);">'
    +items.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul></div></div>';
@@ -3912,9 +4028,12 @@ async function loadLiveKPIs(country){
   safeSet('kpi-prime-rent-chg','');
   safeSet('kpi-liquidity-chg','');
 
+  var g=_viewGen;
   try {
     // ── Server-side aggregation via RPC (was: paginate 100k+ rows to the browser) ──
     var rpc = await sb.rpc('market_kpis', { p_country: country });
+    // Switched market while this was in flight: its figures belong to the old one.
+    if(_stale(g) || country!==ACTIVE_COUNTRY) return;
     if(rpc.error){ console.error('market_kpis RPC error:', rpc.error); throw rpc.error; }
     var K = rpc.data || {};
     var totalCount = Number(K.total_count) || 0;
@@ -4108,7 +4227,7 @@ async function loadLiveKPIs(country){
       indBody.innerHTML=indicatorRows.slice(0,30).map(function(r){
         var unitLbl=r.tt==='rent'?'/m²/mo':'/m²';
         return '<tr>'
-          +'<td class="dt-city">'+r.city+'</td>'
+          +'<td class="dt-city">'+_newsEsc(r.city)+'</td>'
           +'<td>'+r.ac.charAt(0).toUpperCase()+r.ac.slice(1)+'</td>'
           +'<td>'+(r.tt==='sale'?'Sale':'Rent')+'</td>'
           +'<td class="mono">'+S+r.med.toLocaleString()+unitLbl+'</td>'
@@ -4128,7 +4247,7 @@ async function loadLiveKPIs(country){
         yieldBody.innerHTML=yRows.map(function(r){
           var col=r.y>=6?'color:var(--green)':r.y>=4?'color:var(--amber)':'color:var(--red)';
           return '<tr>'
-            +'<td class="dt-city">'+r.city+'</td>'
+            +'<td class="dt-city">'+_newsEsc(r.city)+'</td>'
             +'<td>'+r.ac.charAt(0).toUpperCase()+r.ac.slice(1)+'</td>'
             +'<td class="mono">'+S+r.mS.toLocaleString()+'</td>'
             +'<td class="mono">'+S+r.mR.toLocaleString()+'/mo</td>'
@@ -4179,8 +4298,8 @@ async function loadLiveKPIs(country){
           '<td class="chg pos">+'+r.vsCityPct+'%</td>':
           '<td class="chg neg">'+r.vsCityPct+'%</td>';
         return '<tr>'
-          +'<td class="dt-city">'+r.sub+'</td>'
-          +'<td class="dt-muted">'+r.city+'</td>'
+          +'<td class="dt-city">'+_newsEsc(r.sub)+'</td>'
+          +'<td class="dt-muted">'+_newsEsc(r.city)+'</td>'
           +'<td class="mono">'+S+r.med.toLocaleString()+'</td>'
           +pct
           +'<td class="mono">—</td>'
@@ -4216,8 +4335,15 @@ async function loadLiveKPIs(country){
     buildCharts();
 
   } catch(err){
+    if(_stale(g)) return;
     console.error('loadLiveKPIs EXCEPTION:', err);
-    safeSet('kpi-median-price','Error — see console');
+    // A failed load says so, everywhere a figure would be -- never "No data",
+    // and never a dash that reads as an empty market.
+    ['kpi-median-price','kpi-active-listings','kpi-price-growth','kpi-yield','kpi-liquidity','kpi-prime-rent']
+      .forEach(function(id){ safeSet(id,'Load failed'); });
+    safeSet('kpi-listings-chg','Could not load '+country+' figures');
+    _dataBanner('Market figures for '+country+' could not be loaded ('+((err&&err.message)||err)+').',
+                function(){ loadLiveKPIs(country); });
   }
 }
 
@@ -4542,7 +4668,11 @@ async function boot(){
       showAuthGate();
       return;
     }
-    /* Confirmed session — only now is the terminal uncovered. */
+    /* Confirmed session — only now is the terminal uncovered. The session
+       timer's job is done the moment the session is confirmed: it used to run
+       on through data loading, so a market that took over 8 s to load put the
+       sign-in card back over a signed-in terminal. */
+    clearTimeout(safetyTimer);
     var _g=document.getElementById('auth-gate'); if(_g) _g.classList.remove('on');
     iwTrack('session_start');
     const name=user.user_metadata?.full_name||user.email.split('@')[0];
@@ -4552,19 +4682,28 @@ async function boot(){
     blankHardcoded();
     buildCountryDropdown();
     loadProgress(50,'Loading market data...');
-    await loadListings();
-    await loadLiveKPIs(ACTIVE_COUNTRY);
+    /* From here on a failure is a DATA failure, never an auth one: the visitor
+       is signed in, so it is reported where the data would be, with a retry. */
+    try{
+      await loadListings();
+      await loadLiveKPIs(ACTIVE_COUNTRY);
+    }catch(dataErr){
+      console.warn('Market data:',dataErr);
+      _dataBanner('The market data could not be loaded ('+(dataErr&&dataErr.message||dataErr)+').',
+                  function(){ switchCountry(ACTIVE_COUNTRY); });
+    }
     loadMarketNews(ACTIVE_COUNTRY);
     loadMarketSignals(ACTIVE_COUNTRY);
     loadHonestLayer(ACTIVE_COUNTRY);
+    loadFreshness(ACTIVE_COUNTRY);
     renderCrossMarket();
     loadProgress(90,'Ready.');
-    clearTimeout(safetyTimer);
     setTimeout(hideLoader,300);
     buildCharts();
   }catch(e){
-    /* Supabase blocked, offline, CDN down — previously this fell through to
-       buildCharts() and handed over the terminal. It must not. */
+    /* Supabase blocked, offline, CDN down before a session was confirmed —
+       previously this fell through to buildCharts() and handed over the
+       terminal. It must not. */
     console.warn('Boot:',e);
     clearTimeout(safetyTimer);
     hideLoader();
@@ -4575,6 +4714,9 @@ async function boot(){
 
 // ── NAVIGATION ──
 function nav(id, fromRoute){
+  // A slug or alias ('bedrooms', 'dom') names its page; an unknown id is not
+  // allowed to blank the screen.
+  if(!_pageExists(id)) id=_pageForSlug(id)||'market-terminal';
   iwTrack('page_view',{to:id});
   document.querySelectorAll('.ni').forEach(function(n){n.classList.remove('active');});
   var act=document.querySelector('.ni[onclick*="\''+id+'\'"]'); if(act)act.classList.add('active');
@@ -4831,6 +4973,7 @@ function _cap(s){ return s?s.charAt(0).toUpperCase()+s.slice(1):s; }
 // Top-bar Asset + Type filter — re-renders the Key Indicators and Yield tables
 // for the SELECTED MARKET only (no cross-market). Uses data cached by loadLiveKPIs.
 function applyFilters(skipPage){
+  if(!skipPage) _bumpView();   // a filter change supersedes renders already in flight
   var asset=_assetFilter||'apartments';
   var type=_typeFilter||'sale';
   var cur=(COUNTRIES[_B2C||ACTIVE_COUNTRY]||{}).currency||window._kpiCur||'';
@@ -4841,7 +4984,7 @@ function applyFilters(skipPage){
     it.innerHTML='<thead><tr><th>#</th><th>City</th><th>Asset Class</th><th>Type</th><th>Median /m² ('+_ccyName(cur)+')</th><th>Observations</th><th>As Of</th></tr></thead><tbody>'
       +(rows.map(function(r,i){
         var u=r.tt==='rent'?'/mo':'';
-        return '<tr><td class="dt-rank">'+String(i+1).padStart(2,'0')+'</td><td class="dt-city">'+r.city+'</td><td>'+_cap(r.ac)+'</td><td>'+_cap(r.tt)+'</td>'
+        return '<tr><td class="dt-rank">'+String(i+1).padStart(2,'0')+'</td><td class="dt-city">'+_newsEsc(r.city)+'</td><td>'+_newsEsc(_cap(r.ac))+'</td><td>'+_newsEsc(_cap(r.tt))+'</td>'
           +'<td class="mono">'+money(r.med,cur)+u+'</td><td class="mono">'+Number(r.count||0).toLocaleString('en-US')+'</td><td class="dt-muted">'+(window._kpiNow||'')+'</td></tr>'; }).join('')
       ||'<tr><td colspan="7" style="color:var(--ink5);">No rows match the current filters.</td></tr>')+'</tbody>';
   }
@@ -4851,7 +4994,7 @@ function applyFilters(skipPage){
     yt.innerHTML='<thead><tr><th>City</th><th>Asset Class</th><th>Median Sale /m² ('+_ccyName(cur)+')</th><th>Median Rent /m²/mo</th><th>Gross Yield</th></tr></thead><tbody>'
       +(yr.map(function(r){
         var col=r.y>=6?'var(--green)':(r.y>=4?'var(--amber)':'var(--red)');
-        return '<tr><td class="dt-city">'+r.city+'</td><td>'+_cap(r.ac)+'</td><td class="mono">'+money(r.mS,cur)+'</td>'
+        return '<tr><td class="dt-city">'+_newsEsc(r.city)+'</td><td>'+_newsEsc(_cap(r.ac))+'</td><td class="mono">'+money(r.mS,cur)+'</td>'
           +'<td class="mono">'+money(r.mR,cur)+'/mo</td><td class="mono" style="color:'+col+';font-weight:600;">'+r.y+'%</td></tr>'; }).join('')
       ||'<tr><td colspan="5" style="color:var(--ink5);">No rows match.</td></tr>')+'</tbody>';
   }

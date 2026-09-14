@@ -778,23 +778,18 @@ table.dt tr:last-child td{border-bottom:none;}
               <label class="mode-opt" id="mode-label-country_replace-properties">
                 <input type="radio" name="umode-properties" value="country_replace" checked onchange="updateModeUI('properties')"/>
                 <div>
-                  <span class="mode-opt-title" style="color:var(--amber);">🔄 Country Replace <span style="color:var(--blue);font-size:10px;font-weight:700;">RECOMMENDED</span></span>
-                  <span class="mode-opt-sub">Detects country from file. Deletes only that country's rows. Reinserts all rows from file. Other countries untouched.</span>
+                  <span class="mode-opt-title" style="color:var(--amber);">🔄 Country Replace</span>
+                  <span class="mode-opt-sub">Matches each row to the stored listing by its link. Matched listings are updated in place (their id, first-seen date and price history are kept), new ones added, and the country's listings the file does not contain are retired — never deleted.</span>
                 </div>
               </label>
               <label class="mode-opt" id="mode-label-append-properties">
-                <input type="radio" name="umode-properties" value="append" onchange="updateModeUI('properties')"/>
-                <div><span class="mode-opt-title">➕ Append</span><span class="mode-opt-sub">Add rows on top of existing. Use for truly incremental data only.</span></div>
-              </label>
-              <label class="mode-opt" id="mode-label-replace-properties">
-                <input type="radio" name="umode-properties" value="replace" onchange="updateModeUI('properties')"/>
-                <div><span class="mode-opt-title" style="color:var(--red);">⚠ Replace All</span><span class="mode-opt-sub">Wipes entire table. All countries deleted. Cannot be undone.</span></div>
+                <input type="radio" name="umode-properties" value="upsert" onchange="updateModeUI('properties')"/>
+                <div><span class="mode-opt-title">➕ Add / update</span><span class="mode-opt-sub">Matches by link: updates listings already stored, adds the rest. Retires nothing.</span></div>
               </label>
             </div>
             <div id="country-replace-info-properties" style="margin-top:10px;padding:8px 12px;background:var(--amber-dim);border:1px solid var(--amber);font-size:11.5px;color:var(--amber);">
-              ✓ Country Replace: the country value will be auto-detected from your file's <strong>country</strong> column when you load it. Only rows matching that country will be deleted before re-insert.
+              ✓ Country Replace: the file is staged and checked on the server first. You see exactly how many listings would be updated, added and retired before anything changes, and nothing is applied until you confirm.
             </div>
-            <div id="replace-warn-properties" style="display:none;margin-top:10px;padding:8px 12px;background:var(--red-dim);border:1px solid #7f1d1d;font-size:11.5px;color:var(--red);">⚠ Replace All will permanently delete ALL rows across ALL countries in this table.</div>
           </div>
 
           <!-- Country detection display -->
@@ -916,15 +911,9 @@ table.dt tr:last-child td{border-bottom:none;}
         <div class="panel" style="border-top:none;">
           <div class="panel-hd">
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-              <select id="ex-city" style="padding:5px 9px;background:var(--bg);border:1px solid var(--border2);font-size:12px;color:var(--ink);font-family:var(--font);" onchange="applyExplorerFilters()">
-                <option value="">All Cities</option>
-                <option>Casablanca</option><option>Marrakech</option><option>Rabat</option><option>Tangiers</option><option>Fez</option>
-              </select>
-              <select id="ex-asset" style="padding:5px 9px;background:var(--bg);border:1px solid var(--border2);font-size:12px;color:var(--ink);font-family:var(--font);" onchange="applyExplorerFilters()">
-                <option value="">All Asset Classes</option>
-                <option>Apartments</option><option>Villas</option><option>Offices</option><option>Retail</option><option>Land</option>
-              </select>
-              <input type="text" id="ex-search" placeholder="Search..." style="padding:5px 9px;background:var(--bg);border:1px solid var(--border2);font-size:12px;color:var(--ink);font-family:var(--font);width:160px;" oninput="applyExplorerFilters()"/>
+              <input type="text" id="ex-city" placeholder="City…" style="padding:5px 9px;background:var(--bg);border:1px solid var(--border2);font-size:12px;color:var(--ink);font-family:var(--font);width:120px;" onchange="applyExplorerFilters()"/>
+              <select id="ex-asset" style="padding:5px 9px;background:var(--bg);border:1px solid var(--border2);font-size:12px;color:var(--ink);font-family:var(--font);" onchange="applyExplorerFilters()"><option value="">All Asset Classes</option><option>Apartments</option><option>Houses</option><option>Villas</option><option>Land</option><option>Offices</option><option>Retail</option><option>Industrial</option><option>Commercial</option><option>Hospitality</option><option>MixedUse</option><option>Other</option></select>
+              <input type="text" id="ex-search" placeholder="Search..." style="padding:5px 9px;background:var(--bg);border:1px solid var(--border2);font-size:12px;color:var(--ink);font-family:var(--font);width:160px;" oninput="_explorerSearchSoon()"/>
               <button class="btn btn-secondary btn-xs" onclick="applyExplorerFilters()">Apply</button>
             </div>
             <div class="panel-actions">
@@ -995,70 +984,10 @@ table.dt tr:last-child td{border-bottom:none;}
       <div class="pg" id="pg-verification">
         <div class="pg-eyebrow">Data Quality</div>
         <div class="pg-title">Verification Queue</div>
-        <div class="pg-sub">Records pending manual review. Verify or reject each record before it is marked as confirmed data. Verified records are used in analytics.</div>
+        <div class="pg-sub">Listings the collection contract flagged: a quarantined value, a conflict between the advert's fields and its words, an assumed rent period, an amount kept out of price statistics. Read-only — there is no manual verify/reject workflow, so none is offered.</div>
+        <div style="margin-bottom:12px;font-size:12px;color:var(--ink4);" id="vq-count"></div>
 
-        <div style="display:flex;gap:8px;margin-bottom:16px;">
-          <button class="btn btn-secondary btn-sm" style="border-color:var(--amber);color:var(--amber);">Needs Review (3)</button>
-          <button class="btn btn-secondary btn-sm">Unverified (—)</button>
-          <button class="btn btn-secondary btn-sm">Verified (—)</button>
-        </div>
-
-        <div id="vq-list">
-          <div class="vq-card">
-            <div class="vq-hd">
-              <div>
-                <div class="vq-title">Casablanca · Office · DH 142/m²/month <span class="badge badge-review">Needs Review</span></div>
-                <div class="vq-meta">Source: Mubawab.ma · Collected: Mar 2026 · Size: 850 m² · District: Maarif<br>Confidence: Medium · <a href="#" style="color:var(--blue);text-decoration:none;">View source URL →</a></div>
-              </div>
-              <div class="vq-actions">
-                <button class="btn btn-success btn-sm" onclick="verifyRecord(this,'verified')">✓ Verify</button>
-                <button class="btn btn-danger btn-sm" onclick="verifyRecord(this,'rejected')">✕ Reject</button>
-                <button class="btn btn-secondary btn-sm">Edit</button>
-              </div>
-            </div>
-            <div style="display:flex;gap:16px;font-size:11.5px;color:var(--ink5);">
-              <span>Field flags: None</span>
-              <span>Validation: Passed</span>
-              <span>Duplicate check: No match</span>
-            </div>
-          </div>
-          <div class="vq-card">
-            <div class="vq-hd">
-              <div>
-                <div class="vq-title">Marrakech · Villa · DH 4,800,000 <span class="badge badge-review">Needs Review</span></div>
-                <div class="vq-meta">Source: Mubawab.ma · Collected: Mar 2026 · Size: 280 m² · District: Palmeraie<br>Confidence: High · <a href="#" style="color:var(--blue);text-decoration:none;">View source URL →</a></div>
-              </div>
-              <div class="vq-actions">
-                <button class="btn btn-success btn-sm" onclick="verifyRecord(this,'verified')">✓ Verify</button>
-                <button class="btn btn-danger btn-sm" onclick="verifyRecord(this,'rejected')">✕ Reject</button>
-                <button class="btn btn-secondary btn-sm">Edit</button>
-              </div>
-            </div>
-            <div style="display:flex;gap:16px;font-size:11.5px;color:var(--ink5);">
-              <span>Field flags: None</span>
-              <span>Validation: Passed</span>
-              <span>Duplicate check: 1 possible match</span>
-            </div>
-          </div>
-          <div class="vq-card">
-            <div class="vq-hd">
-              <div>
-                <div class="vq-title">Rabat · Apartment · DH 11,200/m² <span class="badge badge-review">Needs Review</span></div>
-                <div class="vq-meta">Source: Mubawab.ma · Collected: Mar 2026 · Size: 95 m² · District: Agdal<br>Confidence: High · <a href="#" style="color:var(--blue);text-decoration:none;">View source URL →</a></div>
-              </div>
-              <div class="vq-actions">
-                <button class="btn btn-success btn-sm" onclick="verifyRecord(this,'verified')">✓ Verify</button>
-                <button class="btn btn-danger btn-sm" onclick="verifyRecord(this,'rejected')">✕ Reject</button>
-                <button class="btn btn-secondary btn-sm">Edit</button>
-              </div>
-            </div>
-            <div style="display:flex;gap:16px;font-size:11.5px;color:var(--ink5);">
-              <span>Field flags: Missing source_url</span>
-              <span>Validation: 1 warning</span>
-              <span>Duplicate check: No match</span>
-            </div>
-          </div>
-        </div>
+        <div id="vq-list"><div style="padding:20px;text-align:center;color:var(--ink5);">Loading flagged listings…</div></div>
       </div>
 
       <!-- ══ ACTIVITY LOG ══ -->
@@ -1517,6 +1446,8 @@ function showPg(name,el){
   if(name==='revenue')loadRevenue();
   if(name==='dataset-explorer')loadExplorer('properties',document.querySelector('.de-tab'));
   if(name==='data-health')runHealthScan();
+  if(name==='ingestion')refreshJobs();
+  if(name==='verification')loadFlagged();
   if(name==='activity')renderLog();
 }
 
@@ -1563,27 +1494,21 @@ async function loadDashboard(){
 // ── HEALTH COUNTS ──
 async function loadHealthCounts(){
   if(!sb)return;
-  try{
-    var {count:noDistrict}=await sb.from('properties').select('*',{count:'exact',head:true}).or('submarket.is.null,submarket.eq.');
-    var {count:noPrice}=await sb.from('properties').select('*',{count:'exact',head:true});
-    var nd=noDistrict||0;
-    // Approximate checks
-    setHealthCell('hc-district',nd,200);
-    setHealthCell('hi-district',nd,200);
-    document.getElementById('hc-price').textContent='—';
-    document.getElementById('hc-size').textContent='—';
-    document.getElementById('hc-dupes').textContent='Est.';
-    document.getElementById('hc-old').textContent='—';
-    document.getElementById('hi-price').textContent='—';
-    document.getElementById('hi-size').textContent='—';
-    document.getElementById('hi-dupes').textContent='Est.';
-    document.getElementById('hi-old').textContent='—';
-    document.getElementById('hi-url').textContent='—';
-    document.getElementById('hi-type').textContent='—';
-    document.getElementById('hi-review').textContent='3';
-    document.getElementById('batch-dupe-count').textContent='Run scan to estimate';
-  }catch(e){}
+  var r=await sb.rpc('admin_data_health');
+  if(r.error){ document.getElementById('health-scan-time').textContent='Scan failed: '+r.error.message; return false; }
+  var h=r.data||{}; _HEALTH=h;
+  setHealthCell('hc-district',h.missing_district||0,200); setHealthCell('hi-district',h.missing_district||0,200);
+  setHealthCell('hc-price',h.unpriced||0,200);  setHealthCell('hi-price',h.unpriced||0,200);
+  setHealthCell('hc-size',h.missing_size||0,200); setHealthCell('hi-size',h.missing_size||0,200);
+  setHealthCell('hc-old',h.stale_90d||0,500);  setHealthCell('hi-old',h.stale_90d||0,500);
+  setHealthCell('hi-url',h.missing_url||0,0);   setHealthCell('hi-type',h.missing_type||0,50);
+  setHealthCell('hi-review',h.flagged||0,1000);
+  // Listings are unique by link in the database, so there is nothing to estimate.
+  ['hc-dupes','hi-dupes'].forEach(function(id){var e=document.getElementById(id); if(e) e.textContent='0';});
+  var bd=document.getElementById('batch-dupe-count'); if(bd) bd.textContent='0 (listings are unique by link)';
+  return true;
 }
+var _HEALTH=null;
 function setHealthCell(id,val,warnThreshold){
   var el=document.getElementById(id);
   if(!el)return;
@@ -1599,17 +1524,50 @@ async function runHealthScan(){
   logAction('info','Data health scan completed','data-health','system');
 }
 
-function viewIssue(type){
+var _ISSUE_FILTERS={
+  missing_district:function(q){return q.or('submarket.is.null,submarket.eq.');},
+  missing_price:function(q){return q.is('price',null);},
+  missing_size:function(q){return q.is('size_sqm',null);},
+  stale:function(q){return q.lt('scraped_at',new Date(Date.now()-90*864e5).toISOString());},
+  missing_url:function(q){return q.or('source_url.is.null,source_url.eq.');},
+  missing_type:function(q){return q.is('transaction_type',null);},
+  review:function(q){return q.not('quality_flags','is',null);}
+};
+async function viewIssue(type){
+  var wrap=document.getElementById('issue-records-wrap');
   document.getElementById('issue-view-lbl').textContent='Records with: '+type.replace(/_/g,' ');
-  document.getElementById('issue-records-wrap').innerHTML='<div style="padding:20px;text-align:center;color:var(--ink5);font-size:13px;">Loading records with issue: '+type+'...<br><br><button class="btn btn-secondary btn-xs" onclick="exportIssue(\''+type+'\')">↓ Export Issue CSV</button></div>';
+  var f=_ISSUE_FILTERS[type];
+  if(!f){ wrap.innerHTML='<div style="padding:20px;color:var(--ink5);">No query is defined for this issue.</div>'; return; }
+  wrap.innerHTML='<div style="padding:20px;text-align:center;color:var(--ink5);">Loading…</div>';
+  var r=await f(sb.from('properties').select('country,city,submarket,title,price,size_sqm,source_name,source_url,scraped_at'))
+                .order('scraped_at',{ascending:false,nullsFirst:false}).limit(50);
+  if(r.error){ wrap.innerHTML='<div style="padding:20px;color:var(--red);">Could not load: '+_esc(r.error.message)+'</div>'; return; }
+  var rows=r.data||[];
+  wrap.innerHTML=rows.length?('<table class="dt"><thead><tr><th>Country</th><th>City</th><th>District</th><th>Title</th><th>Price</th><th>m²</th><th>Source</th><th>Seen</th></tr></thead><tbody>'
+    +rows.map(function(x){return '<tr><td>'+_esc(x.country)+'</td><td>'+_esc(x.city)+'</td><td>'+_esc(x.submarket||'—')+'</td><td title="'+_esc(x.title)+'">'+_esc((x.title||'').slice(0,50))+'</td><td>'+_esc(x.price==null?'—':x.price)+'</td><td>'+_esc(x.size_sqm==null?'—':x.size_sqm)+'</td><td>'+_esc(x.source_name)+'</td><td>'+_esc((x.scraped_at||'').slice(0,10))+'</td></tr>';}).join('')
+    +'</tbody></table><div style="padding:8px;font-size:11px;color:var(--ink5);">Latest 50 · <a href="#" onclick="exportIssue(\''+type+'\');return false;">export all (up to 20,000)</a></div>')
+    :'<div style="padding:20px;color:var(--ink5);">No records have this issue.</div>';
 }
-function exportIssue(type){
-  logAction('info','Issue export: '+type,'data-health');
-  alert('Exporting records with issue: '+type+'. In production this would export a CSV of matching records from the raw data layer.');
+async function exportIssue(type){
+  var f=_ISSUE_FILTERS[type]; if(!f) return;
+  var rows=[],from=0,bsz=1000;
+  while(rows.length<20000){
+    var r=await f(sb.from('properties').select('*')).order('id').range(from,from+bsz-1);
+    if(r.error){alert('Export failed: '+r.error.message);return;}
+    rows=rows.concat(r.data||[]); if(!r.data||r.data.length<bsz)break; from+=bsz;
+  }
+  if(!rows.length){alert('No records have this issue.');return;}
+  var ws=XLSX.utils.json_to_sheet(rows.map(function(x){var o={};Object.keys(x).forEach(function(k){o[k]=(x[k]&&typeof x[k]==='object')?JSON.stringify(x[k]):x[k];});return o;}));
+  var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,type.slice(0,30));
+  XLSX.writeFile(wb,'ironwood_issue_'+type+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  logAction('info','Issue export: '+type+' ('+rows.length+' rows)','data-health');
 }
-function exportHealthReport(){
+async function exportHealthReport(){
+  if(!_HEALTH && !(await loadHealthCounts())) return;
+  var ws=XLSX.utils.json_to_sheet(Object.keys(_HEALTH).map(function(k){return {measure:k,value:_HEALTH[k]};}));
+  var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Data health');
+  XLSX.writeFile(wb,'ironwood_data_health_'+new Date().toISOString().slice(0,10)+'.xlsx');
   logAction('info','Health report exported','data-health');
-  alert('Health report export: in production this downloads a full data quality report as Excel.');
 }
 
 // ── SOURCES ──
@@ -1618,16 +1576,33 @@ function toggleAddSource(){
   f.style.display=f.style.display==='none'?'block':'none';
 }
 function addSource(){
-  var name=document.getElementById('ns-name').value.trim();
-  if(!name){alert('Source name is required');return;}
-  logAction('success','Source registered: '+name,'sources');
-  toggleAddSource();
-  alert('Source "'+name+'" registered. In production this writes to a source_registry table in Supabase.');
+  // Portals are defined in the scraper catalogue (scraper-factory targets.py)
+  // and switched on by a probe; there is no source registry to write to here.
+  openModal('Not available here',
+    'Sources are added in the scraper catalogue and switched on by a probe (targets.py --probe --apply). Nothing was registered.',function(){});
 }
 
 // ── JOBS ──
-function refreshJobs(){
-  logAction('info','Ingestion jobs refreshed','ingestion');
+async function refreshJobs(){
+  var list=document.getElementById('jobs-list'); if(!list||!sb) return;
+  list.innerHTML='<div style="padding:16px;color:var(--ink5);">Loading runs…</div>';
+  var r=await sb.rpc('admin_pipeline_runs',{p_limit:20});
+  if(r.error){ list.innerHTML='<div style="padding:16px;color:var(--red);">Could not load runs: '+_esc(r.error.message)+'</div>'; return; }
+  var runs=r.data||[];
+  if(!runs.length){ list.innerHTML='<div style="padding:16px;color:var(--ink5);">No pipeline runs recorded yet.</div>'; return; }
+  var cls={complete:'status-success',partial:'status-pending',failed:'status-error',running:'status-pending'};
+  list.innerHTML=runs.map(function(x){
+    var t=x.targets||{};
+    return '<div class="job-row">'
+      +'<div><div class="job-name">Run '+_esc(x.run_id)+'<span>'+_esc((x.scope||[]).join(', '))+' · '+_esc(x.trigger||'')+(x.published?' · published':'')+'</span></div></div>'
+      +'<div><span class="status '+(cls[x.status]||'status-pending')+'">'+_esc(x.status)+'</span></div>'
+      +'<div class="mono" style="font-size:11px;color:var(--ink4);">'+_esc((x.started_at||'').replace('T',' ').slice(0,16))+'</div>'
+      +'<div class="mono" style="font-size:12px;color:var(--ink3);" title="collected / saved">'+Number(t.collected||0).toLocaleString()+' / '+Number(t.saved||0).toLocaleString()+'</div>'
+      +'<div class="mono" style="font-size:12px;color:'+((t.failed||t.rejected)?'var(--red)':'var(--green)')+';" title="failed targets · rejected rows">'+Number(t.failed||0)+' · '+Number(t.rejected||0)+'</div>'
+      +'<div class="mono" style="font-size:11px;color:var(--ink4);">'+Number(t.complete||0)+'✓ '+Number(t.partial||0)+'◐ '+Number(t.budget_limited||0)+'⏸ '+Number(t.empty||0)+'∅</div>'
+      +'</div>';
+  }).join('');
+  logAction('info','Ingestion runs refreshed ('+runs.length+')','ingestion');
 }
 
 // ── ACTIVITY LOG ──
@@ -1658,83 +1633,128 @@ function exportLog(){
 }
 
 // ── DATASET EXPLORER ──
+// Filters, counts and pages run in the database. It used to fetch the first
+// 200 rows of the table and filter those in the browser, so a search could
+// only ever find something among whichever 200 rows came back first, and the
+// count shown was the count of that slice, not of the table.
+var _EX_SEARCHABLE={properties:['title','city','submarket','source_url','source_name']};
+function _exFilters(){
+  return {
+    city:(document.getElementById('ex-city')?.value||'').trim(),
+    asset:document.getElementById('ex-asset')?.value||'',
+    // PostgREST's or=() syntax is built from these, so its punctuation goes
+    search:(document.getElementById('ex-search')?.value||'').trim().replace(/[,()*%\\]/g,' ').slice(0,80)
+  };
+}
+function _exQuery(table,f,withCount){
+  var q=sb.from(table).select('*',withCount?{count:'exact'}:undefined);
+  if(table==='properties'){
+    if(f.city) q=q.ilike('city',f.city);
+    if(f.asset) q=q.eq('asset_class',f.asset);
+    if(f.search){ var s=f.search.replace(/\s+/g,' ');
+      q=q.or(_EX_SEARCHABLE.properties.map(function(c){return c+'.ilike.*'+s+'*';}).join(',')); }
+    q=q.order('scraped_at',{ascending:false,nullsFirst:false});
+  }
+  return q;
+}
 async function loadExplorer(table,el){
   if(el){document.querySelectorAll('.de-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');}
   EXPLORER_DATA.table=table;EXPLORER_DATA.page=0;
+  await fetchExplorerPage();
+}
+var _exSeq=0;
+async function fetchExplorerPage(){
+  var body=document.getElementById('explorer-body');
   if(!sb){renderExplorer([]);return;}
-  document.getElementById('explorer-body').innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--ink5);">Loading...</td></tr>';
-  try{
-    var {data,error}=await sb.from(table).select('*').limit(200);
-    EXPLORER_DATA.rows=data||[];EXPLORER_DATA.filtered=data||[];
-    renderExplorer(EXPLORER_DATA.filtered);
-  }catch(e){renderExplorer([]);}
+  var seq=++_exSeq, f=_exFilters(), ps=EXPLORER_DATA.pageSize, from=EXPLORER_DATA.page*ps;
+  body.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--ink5);">Loading...</td></tr>';
+  var r=await _exQuery(EXPLORER_DATA.table,f,true).range(from,from+ps-1);
+  if(seq!==_exSeq) return;             // a newer filter or page has been asked for
+  if(r.error){
+    body.innerHTML='<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--red);">Could not load: '+_esc(r.error.message)+'</td></tr>';
+    document.getElementById('ex-count').textContent='load failed';
+    return;
+  }
+  EXPLORER_DATA.rows=r.data||[];
+  EXPLORER_DATA.total=r.count==null?EXPLORER_DATA.rows.length:r.count;
+  renderExplorer(EXPLORER_DATA.rows);
 }
-function applyExplorerFilters(){
-  var city=document.getElementById('ex-city')?.value||'';
-  var asset=document.getElementById('ex-asset')?.value||'';
-  var search=document.getElementById('ex-search')?.value?.toLowerCase()||'';
-  EXPLORER_DATA.filtered=EXPLORER_DATA.rows.filter(r=>{
-    if(city&&r.city!==city)return false;
-    if(asset&&r.asset_class!==asset&&r.property_type!==asset)return false;
-    if(search){var s=JSON.stringify(r).toLowerCase();if(!s.includes(search))return false;}
-    return true;
-  });
-  EXPLORER_DATA.page=0;renderExplorer(EXPLORER_DATA.filtered);
-}
+var _exTimer=null;
+function _explorerSearchSoon(){ clearTimeout(_exTimer); _exTimer=setTimeout(applyExplorerFilters,350); }
+function applyExplorerFilters(){ EXPLORER_DATA.page=0; fetchExplorerPage(); }
 function renderExplorer(rows){
-  var start=EXPLORER_DATA.page*EXPLORER_DATA.pageSize;
-  var page=rows.slice(start,start+EXPLORER_DATA.pageSize);
+  var total=EXPLORER_DATA.total||0, start=EXPLORER_DATA.page*EXPLORER_DATA.pageSize;
   if(!rows.length){
     document.getElementById('explorer-head').innerHTML='';
-    document.getElementById('explorer-body').innerHTML='<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--ink5);">No records found</td></tr>';
+    document.getElementById('explorer-body').innerHTML='<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--ink5);">No records match</td></tr>';
     document.getElementById('ex-count').textContent='0 records';
+    document.getElementById('ex-page').textContent='';
     return;
   }
   var cols=Object.keys(rows[0]).slice(0,10);
-  document.getElementById('explorer-head').innerHTML=cols.map(c=>'<th>'+c+'</th>').join('');
-  document.getElementById('explorer-body').innerHTML=page.map(r=>'<tr>'+cols.map(c=>'<td title="'+(r[c]||'')+'">'+(String(r[c]||'').slice(0,40)||'<span style="color:var(--ink5)">—</span>')+'</td>').join('')+'</tr>').join('');
-  document.getElementById('ex-count').textContent=rows.length.toLocaleString()+' records · Showing '+(start+1)+'-'+Math.min(start+EXPLORER_DATA.pageSize,rows.length);
-  document.getElementById('ex-page').textContent='Page '+(EXPLORER_DATA.page+1)+' / '+Math.ceil(rows.length/EXPLORER_DATA.pageSize);
+  // Every value is text: listing titles and URLs come from third-party sites.
+  document.getElementById('explorer-head').innerHTML=cols.map(c=>'<th>'+_esc(c)+'</th>').join('');
+  document.getElementById('explorer-body').innerHTML=rows.map(r=>'<tr>'+cols.map(function(c){
+      var v=r[c]; v=(v===null||v===undefined)?'':(typeof v==='object'?JSON.stringify(v):String(v));
+      return '<td title="'+_esc(v.slice(0,300))+'">'+(v?_esc(v.slice(0,40)):'<span style="color:var(--ink5)">—</span>')+'</td>';
+    }).join('')+'</tr>').join('');
+  document.getElementById('ex-count').textContent=total.toLocaleString()+' records · showing '+(start+1)+'–'+(start+rows.length);
+  document.getElementById('ex-page').textContent='Page '+(EXPLORER_DATA.page+1)+' / '+Math.max(1,Math.ceil(total/EXPLORER_DATA.pageSize));
 }
 function explorerPage(dir){
-  var maxPage=Math.ceil(EXPLORER_DATA.filtered.length/EXPLORER_DATA.pageSize)-1;
-  EXPLORER_DATA.page=Math.max(0,Math.min(maxPage,EXPLORER_DATA.page+dir));
-  renderExplorer(EXPLORER_DATA.filtered);
+  var maxPage=Math.max(0,Math.ceil((EXPLORER_DATA.total||0)/EXPLORER_DATA.pageSize)-1);
+  var next=Math.max(0,Math.min(maxPage,EXPLORER_DATA.page+dir));
+  if(next===EXPLORER_DATA.page) return;
+  EXPLORER_DATA.page=next; fetchExplorerPage();
 }
-function exportExplorer(fmt){
-  var rows=EXPLORER_DATA.filtered;
+// Export the whole filtered set, fetched from the database a page at a time
+// (capped, so a click cannot pull the entire table into the browser).
+var EXPORT_CAP=20000;
+async function exportExplorer(fmt){
+  var f=_exFilters(), t=EXPLORER_DATA.table, rows=[], from=0, bsz=1000;
+  while(rows.length<EXPORT_CAP){
+    var r=await _exQuery(t,f,false).range(from,from+bsz-1);
+    if(r.error){alert('Export failed: '+r.error.message);return;}
+    rows=rows.concat(r.data||[]); if(!r.data||r.data.length<bsz)break; from+=bsz;
+  }
   if(!rows.length){alert('No data to export');return;}
-  var ws=XLSX.utils.json_to_sheet(rows);
+  var ws=XLSX.utils.json_to_sheet(rows.map(function(x){var o={};Object.keys(x).forEach(function(k){o[k]=(x[k]&&typeof x[k]==='object')?JSON.stringify(x[k]):x[k];});return o;}));
   var wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,EXPLORER_DATA.table);
-  var fname='ironwood_'+EXPLORER_DATA.table+'_'+new Date().toISOString().slice(0,10)+(fmt==='xlsx'?'.xlsx':'.csv');
+  XLSX.utils.book_append_sheet(wb,ws,t);
+  var fname='ironwood_'+t+'_'+new Date().toISOString().slice(0,10)+(fmt==='xlsx'?'.xlsx':'.csv');
   if(fmt==='xlsx'){XLSX.writeFile(wb,fname);}
   else{var csv=XLSX.utils.sheet_to_csv(ws);var a=document.createElement('a');a.href='data:text/csv,'+encodeURIComponent(csv);a.download=fname;a.click();}
-  logAction('info','Dataset exported: '+EXPLORER_DATA.table,'dataset-explorer');
+  logAction('info','Dataset exported: '+t+' ('+rows.length+(rows.length>=EXPORT_CAP?', capped':'')+' rows)','dataset-explorer');
 }
 
 // ── VERIFICATION ──
-function verifyRecord(btn,status){
-  var card=btn.closest('.vq-card');
-  card.style.opacity='.4';
-  setTimeout(()=>card.remove(),300);
-  var count=document.querySelectorAll('.vq-card').length-1;
-  document.getElementById('badge-vq').textContent=Math.max(0,count);
-  logAction(status==='verified'?'success':'warning','Record '+status,'verification');
+// There is no manual verify/reject workflow in the database, so the page does
+// not pretend to have one: it lists what the collection contract flagged.
+async function loadFlagged(){
+  var list=document.getElementById('vq-list'); if(!list||!sb) return;
+  var r=await sb.from('properties').select('country,city,title,source_name,source_url,quality_flags,scraped_at',{count:'exact'})
+    .not('quality_flags','is',null).order('scraped_at',{ascending:false,nullsFirst:false}).limit(30);
+  if(r.error){ list.innerHTML='<div style="padding:20px;color:var(--red);">Could not load: '+_esc(r.error.message)+'</div>'; return; }
+  var c=document.getElementById('vq-count'); if(c) c.textContent=(r.count||0).toLocaleString()+' flagged listings · latest 30 shown';
+  var b=document.getElementById('badge-vq'); if(b) b.textContent=r.count||0;
+  list.innerHTML=(r.data||[]).map(function(x){
+    var flags=(x.quality_flags||[]).map(function(f){return '<li><b>'+_esc(f.field)+'</b>: '+_esc(f.issue)+(f.evidence?' <span style="color:var(--ink5)">'+_esc(JSON.stringify(f.evidence).slice(0,160))+'</span>':'')+'</li>';}).join('');
+    var url=/^https?:\/\//.test(x.source_url||'')?x.source_url:'';
+    return '<div class="vq-card"><div class="vq-hd"><div><div class="vq-title">'+_esc(x.country)+' · '+_esc(x.city)+' · '+_esc((x.title||'').slice(0,80))+'</div>'
+      +'<div class="vq-meta">Source: '+_esc(x.source_name)+' · seen '+_esc((x.scraped_at||'').slice(0,10))
+      +(url?' · <a href="'+_esc(url)+'" target="_blank" rel="noopener noreferrer" style="color:var(--blue);text-decoration:none;">listing →</a>':'')+'</div></div></div>'
+      +'<ul style="margin:8px 0 0 16px;font-size:12px;color:var(--ink3);">'+flags+'</ul></div>';
+  }).join('')||'<div style="padding:20px;color:var(--ink5);">Nothing is flagged.</div>';
 }
+function verifyRecord(){ loadFlagged(); }
 
 // ── BATCH OPS ──
 function confirmBatch(action){
-  var msgs={
-    update_district:'This will update the district for all matching records in Casablanca where district is empty. Continue?',
-    update_asset:'This will replace all instances of the specified asset class value with the new standardised value. Continue?',
-    delete_dupes:'This will permanently delete all detected duplicate records. This cannot be undone. Are you sure?',
-    bulk_verify:'This will set verification status for all records in the selected city. Continue?'
-  };
-  openModal('Confirm Batch Operation',msgs[action]||'Proceed with this batch operation?',()=>{
-    logAction('warning','Batch operation: '+action,'batch');
-    alert('Batch operation "'+action+'" would execute here. In production, this runs an SQL update against the raw data layer and logs the action.');
-  });
+  // These edits were never implemented; the old dialog asked for confirmation
+  // and then only showed "would execute here". Stored listings change through
+  // the checked import (Upload) or the weekly pipeline.
+  openModal('Not available',
+    'Batch edits are not implemented. Stored listings change through the checked import on the Upload page or through the weekly pipeline. Nothing was changed.',function(){});
 }
 
 // ── MODAL ──
@@ -1759,6 +1779,7 @@ function processFile(file,name){
       var ws=wb.Sheets[wb.SheetNames[0]];
       var data=XLSX.utils.sheet_to_json(ws,{defval:''});
       parsed[name]=data;
+      parsed[name+'_file']=file.name;
       showPreview(name,data);
       showValidationPreview(name,data);
     }catch(err){alert('Error reading file: '+err.message);}
@@ -1768,8 +1789,10 @@ function processFile(file,name){
 function showPreview(name,data){
   if(!data.length){alert('No data found');return;}
   var cols=Object.keys(data[0]);
-  var html='<table class="dt"><thead><tr>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+
-    data.slice(0,5).map(r=>'<tr>'+cols.map(c=>'<td>'+(r[c]||'')+'</td>').join('')+'</tr>').join('')+
+  // A spreadsheet cell is text, never markup: a title like <img onerror=...>
+  // in an imported file must display as those characters.
+  var html='<table class="dt"><thead><tr>'+cols.map(c=>'<th>'+_esc(c)+'</th>').join('')+'</tr></thead><tbody>'+
+    data.slice(0,5).map(r=>'<tr>'+cols.map(c=>'<td>'+_esc(r[c]||'')+'</td>').join('')+'</tr>').join('')+
     '</tbody></table>';
   var dzMap={properties:'p',prices:'pr',averages:'av'};
   document.getElementById('pt-'+name).innerHTML=html;
@@ -1798,15 +1821,14 @@ function showValidationPreview(name,data){
   vp.style.display='block';
 }
 function exportValidationReport(name){
-  logAction('info','Validation report exported: '+name,'upload');
-  alert('Validation report for '+name+' would download as Excel with flagged rows highlighted.');
+  alert('Validation now runs on the server: press "Upload to Database" to stage the file and see every row with a problem before anything is applied.');
 }
 
 // ── UPLOAD MODE UI ──
 function getUploadMode(name){
   var radios=document.querySelectorAll('input[name="umode-'+name+'"]');
   for(var r of radios){if(r.checked)return r.value;}
-  return 'append';
+  return 'upsert';
 }
 function updateModeUI(name){
   var mode=getUploadMode(name);
@@ -1821,143 +1843,117 @@ function updateModeUI(name){
 }
 
 // ── UPLOAD ──
-var COL_MAP={area:'size_sqm',location:'submarket',asset_type:'asset_class',site_name:'source_name',link:'source_url'};
-
-// Exact columns that exist in the 'properties' table schema.
-// Any column in your file NOT in this list will be silently dropped before insert.
-// Add more columns here if you extend the schema in Supabase.
-var VALID_COLUMNS_PROPERTIES=new Set([
-  'id','created_at','country','city','submarket','district',
-  'asset_class','transaction_type','price_raw','price_usd',
-  'price_local','currency','size_sqm','price_per_sqm',
-  'bedrooms','bathrooms','floors','year_built',
-  'latitude','longitude','title','description',
-  'source_name','source_url','listing_id','scraped_at',
-  'status','data_quality_score','verified','notes'
-]);
-// For other tables, we let all columns through (they match the schema already).
-var VALID_COLUMNS_BY_TABLE={'properties':VALID_COLUMNS_PROPERTIES};
-
-var _currentUploadTable='properties'; // updated in executeUpload
-function remapRow(row){
-  var c={};
-  var validSet=VALID_COLUMNS_BY_TABLE[_currentUploadTable]||null;
-  Object.keys(row).forEach(function(k){
-    var v=row[k];
-    if(v===''||v===null||v===undefined)return;
-    var dbk=COL_MAP[k]||k;
-    // Drop columns not in schema
-    if(validSet&&!validSet.has(dbk))return;
-    c[dbk]=v instanceof Date?v.toISOString().split('T')[0]:v;
-  });
-  return c;
+// Listing imports are staged, checked and reconciled on the server
+// (stage_import / preview_import / apply_import). The browser no longer maps
+// columns, deletes rows or inserts them: it used to drop price, listing_type,
+// retrieved_at and unit, lose a "Country" header's value, and run Country
+// Replace as "delete the country, then insert the file" from the page -- which
+// would have destroyed every listing's id, first-seen date and price history.
+// The server matches rows by link, updates in place, adds what is new and
+// retires (never deletes) what the file no longer contains.
+var STAGE_CHUNK=1000;
+function _esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function _countryOf(data){
+  // any header spelling: "country", "Country", " COUNTRY "
+  var seen={};
+  data.forEach(function(r){Object.keys(r).forEach(function(k){
+    if(k.trim().toLowerCase()==='country'){var v=String(r[k]||'').trim(); if(v)seen[v.toLowerCase()]=v;}
+  });});
+  var vals=Object.keys(seen);
+  return {value:vals.length===1?seen[vals[0]]:null, distinct:vals.map(function(k){return seen[k];})};
+}
+function _plainRow(r){
+  var o={}; Object.keys(r).forEach(function(k){var v=r[k]; o[k]=v instanceof Date?v.toISOString().slice(0,10):v;}); return o;
 }
 function cancelUpload(name){_cancelUpload[name]=true;}
 async function doUpload(name,table){
   if(!sb){alert('Not connected. Check Settings.');return;}
   var data=parsed[name];if(!data||!data.length){alert('No data loaded');return;}
-  var mode=getUploadMode(name);
-  if(mode==='replace'){
-    openModal('⚠ Replace All Data','This will permanently delete ALL existing rows in "'+table+'" and replace with your '+data.length.toLocaleString()+' rows. This cannot be undone.',async()=>{
-      await executeUpload(name,table,mode,data,null);
-    });
-    return;
-  }
-  if(mode==='country_replace'){
-    var countryCol=data[0].hasOwnProperty('country')?'country':data[0].hasOwnProperty('Country')?'Country':null;
-    if(!countryCol){alert('Country Replace requires a "country" column in your file. Column not found.');return;}
-    var detectedCountry=String(data[0][countryCol]||'').trim();
-    if(!detectedCountry){alert('The "country" column is empty in the first row. Cannot detect country.');return;}
-    // Detect unknown columns and warn user
-    var validSet=VALID_COLUMNS_BY_TABLE[table]||null;
-    var unknownCols=[];
-    if(validSet){
-      Object.keys(data[0]).forEach(function(k){
-        var mapped=COL_MAP[k]||k;
-        if(!validSet.has(mapped))unknownCols.push(k);
-      });
-    }
-    var colWarning=unknownCols.length?'\n\n⚠ '+unknownCols.length+' column(s) not in schema will be ignored:\n'+unknownCols.join(', '):'';
-    openModal('Country Replace: '+detectedCountry,
-      'This will:\n1. Delete ALL rows where country = "'+detectedCountry+'"\n2. Insert your '+data.length.toLocaleString()+' rows\n\nAll other countries remain untouched.'+colWarning+'\n\nContinue?',
-      async()=>{ await executeUpload(name,table,mode,data,detectedCountry); }
-    );
-    return;
-  }
-  await executeUpload(name,table,mode,data,null);
-}
-async function executeUpload(name,table,mode,data,countryToReplace){
-  _cancelUpload[name]=false;
-  _currentUploadTable=table; // so remapRow knows which schema to apply
-  var btn=document.getElementById('bup-'+name);
-  var prog=document.getElementById('prog-'+name);
-  var pbar=document.getElementById('pb-'+name);
-  var ptxt=document.getElementById('ptxt-'+name);
   var res=document.getElementById('res-'+name);
-  var cancelBtn=document.getElementById('cancel-'+name);
-  btn.disabled=true;
-  prog.style.display='block';res.style.display='none';
-  if(mode==='replace'){
-    ptxt.textContent='Deleting existing data...';
-    var {error:derr}=await sb.from(table).delete().gt('id',0);
-    if(derr){
-      var deleted=0;
-      while(true){
-        if(_cancelUpload[name])break;
-        var {data:ids}=await sb.from(table).select('id').limit(500);
-        if(!ids||!ids.length)break;
-        await sb.from(table).delete().in('id',ids.map(r=>r.id));
-        deleted+=ids.length;
-        ptxt.textContent='Deleting... '+deleted.toLocaleString()+' removed';
-        if(ids.length<500)break;
-      }
-    }
-    ptxt.textContent='Cleared. Uploading...';
-  }
-  if(mode==='country_replace'&&countryToReplace){
-    ptxt.textContent='Deleting '+countryToReplace+' rows...';
-    var {error:cderr}=await sb.from(table).delete().eq('country',countryToReplace);
-    if(cderr){
-      var cdDeleted=0;
-      while(true){
-        if(_cancelUpload[name])break;
-        var {data:cids}=await sb.from(table).select('id').eq('country',countryToReplace).limit(500);
-        if(!cids||!cids.length)break;
-        await sb.from(table).delete().in('id',cids.map(r=>r.id));
-        cdDeleted+=cids.length;
-        ptxt.textContent='Deleting '+countryToReplace+' rows... '+cdDeleted.toLocaleString()+' removed';
-        if(cids.length<500)break;
-      }
-    }
-    ptxt.textContent=countryToReplace+' cleared. Uploading '+data.length.toLocaleString()+' rows...';
-  }
-  var bsz=100,total=data.length,uploaded=0,errors=[];
-  for(var i=0;i<total;i+=bsz){
-    if(_cancelUpload[name]){
-      res.className='result-box err';
-      res.innerHTML='<h4>🛑 Cancelled</h4>'+uploaded.toLocaleString()+' rows uploaded before cancellation.';
-      res.style.display='block';btn.disabled=false;prog.style.display='none';return;
-    }
-    var batch=data.slice(i,i+bsz).map(remapRow);
-    var op=mode==='upsert'?sb.from(table).upsert(batch,{onConflict:'id',ignoreDuplicates:false}):sb.from(table).insert(batch);
-    var {error}=await op;
-    if(error){errors.push('Rows '+(i+1)+'-'+Math.min(i+bsz,total)+': '+error.message);}else{uploaded+=batch.length;}
-    pbar.style.width=Math.min(Math.round(((i+bsz)/total)*100),100)+'%';
-    var modeVerb=mode==='country_replace'?('Uploading '+countryToReplace):mode==='replace'?'Replacing':mode==='upsert'?'Upserting':'Uploading';
-    ptxt.textContent=modeVerb+'... '+Math.min(i+bsz,total).toLocaleString()+' / '+total.toLocaleString();
-  }
-  btn.disabled=false;cancelBtn.style.display='none';prog.style.display='none';
-  var modeLabel=mode==='country_replace'?'replaced ('+countryToReplace+')':mode==='replace'?'replaced':mode==='upsert'?'upserted':'added';
-  if(!errors.length){
-    res.className='result-box ok';
-    res.innerHTML='<h4>✓ Complete</h4>'+uploaded.toLocaleString()+' rows '+modeLabel+' in '+table+'.'+(mode==='country_replace'?'<br><span style="font-size:11px;color:var(--green);">All other countries untouched.</span>':'');
-    logAction('success',uploaded.toLocaleString()+' rows '+modeLabel+' in '+table,'upload');
-  }else{
+  if(table!=='properties'){
     res.className='result-box err';
-    res.innerHTML='<h4>⚠ Finished with errors</h4>'+uploaded.toLocaleString()+' rows '+modeLabel+'.<ul>'+errors.slice(0,8).map(e=>'<li>'+e+'</li>').join('')+(errors.length>8?'<li>...and '+(errors.length-8)+' more</li>':'')+'</ul>';
-    logAction('error',errors.length+' errors during upload to '+table,'upload');
+    res.innerHTML='<h4>Not available</h4>Imports into '+_esc(table)+' are not accepted from the admin page. Listing files go through the checked listing import above.';
+    res.style.display='block'; return;
   }
-  res.style.display='block';loadDashboard();
+  var mode=getUploadMode(name);
+  var country=null;
+  if(mode==='country_replace'){
+    var c=_countryOf(data);
+    if(!c.value){
+      alert(c.distinct.length>1?('Country Replace needs one country per file; this file has '+c.distinct.length+': '+c.distinct.slice(0,5).join(', '))
+                               :'Country Replace needs a country column with a value.');
+      return;
+    }
+    country=c.value;
+  }
+  await stageAndPreview(name,mode,country,data);
+}
+async function stageAndPreview(name,mode,country,data){
+  _cancelUpload[name]=false;
+  var btn=document.getElementById('bup-'+name), prog=document.getElementById('prog-'+name);
+  var pbar=document.getElementById('pb-'+name), ptxt=document.getElementById('ptxt-'+name), res=document.getElementById('res-'+name);
+  btn.disabled=true; prog.style.display='block'; res.style.display='none';
+  var batch=null;
+  try{
+    for(var i=0;i<data.length;i+=STAGE_CHUNK){
+      if(_cancelUpload[name]){ if(batch) await sb.rpc('discard_import',{p_batch:batch}); throw new Error('cancelled before anything was applied'); }
+      var chunk=data.slice(i,i+STAGE_CHUNK).map(_plainRow);
+      var r=await sb.rpc('stage_import',{p_batch:batch,p_mode:mode,p_country:country,
+        p_file:(parsed[name+'_file']||'upload'),p_rows:chunk,p_offset:i});
+      if(r.error) throw new Error(r.error.message);
+      batch=r.data.batch;
+      pbar.style.width=Math.min(100,Math.round((i+chunk.length)/data.length*100))+'%';
+      ptxt.textContent='Checking on the server… '+(i+chunk.length).toLocaleString()+' / '+data.length.toLocaleString();
+    }
+    var pv=await sb.rpc('preview_import',{p_batch:batch});
+    if(pv.error) throw new Error(pv.error.message);
+    var p=pv.data;
+    prog.style.display='none';
+    var probs=(p.problems||[]).map(function(x){return '<li>Row '+_esc(x.row)+': '+x.problems.map(_esc).join('; ')+'</li>';}).join('');
+    res.className='result-box '+(p.valid?'ok':'err');
+    res.innerHTML='<h4>Checked — nothing has been changed yet</h4>'
+      +_esc(p.rows)+' rows · '+_esc(p.valid)+' valid · '+_esc(p.invalid)+' with problems'
+      +(p.duplicate_links?' · '+_esc(p.duplicate_links)+' repeat a link':'')
+      +(p.wrong_country?' · '+_esc(p.wrong_country)+' not '+_esc(country):'')
+      +'<br>Applying would update <strong>'+_esc(p.will_update)+'</strong>, add <strong>'+_esc(p.will_insert)+'</strong>'
+      +(mode==='country_replace'?' and retire <strong>'+_esc(p.will_retire)+'</strong> '+_esc(country)+' listings the file does not contain':'')+'.'
+      +(probs?'<ul>'+probs+'</ul>':'')
+      +'<div style="margin-top:10px;display:flex;gap:8px;">'
+      +(p.valid?'<button class="btn btn-primary btn-sm" id="apply-'+name+'">Apply</button>':'')
+      +'<button class="btn btn-secondary btn-sm" id="discard-'+name+'">Discard</button></div>';
+    res.style.display='block';
+    var ap=document.getElementById('apply-'+name), ds=document.getElementById('discard-'+name);
+    if(ap) ap.onclick=function(){ applyStaged(name,batch,mode,country,p); };
+    if(ds) ds.onclick=async function(){ await sb.rpc('discard_import',{p_batch:batch}); res.innerHTML='<h4>Discarded</h4>Nothing was changed.'; };
+    logAction('info','Import staged: '+p.rows+' rows ('+mode+(country?' '+country:'')+')','upload');
+  }catch(e){
+    prog.style.display='none';
+    res.className='result-box err';
+    res.innerHTML='<h4>Not imported</h4>'+_esc(e.message||e)+'<br>Nothing in the database was changed.';
+    res.style.display='block';
+    logAction('error','Import staging failed: '+(e.message||e),'upload');
+  }finally{ btn.disabled=false; }
+}
+function applyStaged(name,batch,mode,country,p){
+  var msg='Update '+p.will_update+', add '+p.will_insert
+    +(mode==='country_replace'?(' and retire '+p.will_retire+' '+country+' listings'):'')
+    +'. This runs as one transaction: either all of it happens or none of it does.';
+  openModal('Apply import',msg,async function(){
+    var res=document.getElementById('res-'+name);
+    var r=await sb.rpc('apply_import',{p_batch:batch});
+    if(r.error){
+      res.className='result-box err';
+      res.innerHTML='<h4>Not applied</h4>'+_esc(r.error.message)+'<br>The transaction was rolled back; nothing changed.';
+      logAction('error','Import apply failed: '+r.error.message,'upload');
+      return;
+    }
+    var a=r.data;
+    res.className='result-box ok';
+    res.innerHTML='<h4>✓ Applied</h4>'+_esc(a.updated)+' updated · '+_esc(a.inserted)+' added'
+      +(mode==='country_replace'?' · '+_esc(a.retired)+' retired':'')+' · '+_esc(a.skipped_rows)+' rows skipped';
+    logAction('success','Import applied: '+JSON.stringify(a),'upload');
+    loadDashboard();
+  });
 }
 
 // ── DOWNLOAD ──
@@ -2035,12 +2031,30 @@ async function manualInsert(type){
     if(!row.country||!row.city||!row.asset_class||!row.quarter||!row.year){alert('Fill required fields (★)');return;}
   }
   Object.keys(row).forEach(k=>{if(row[k]===null||row[k]==='')delete row[k];});
-  var {error}=await sb.from(table).insert(row);
-  if(!error){
-    var s=document.getElementById('es-'+type);s.style.display='block';setTimeout(()=>s.style.display='none',3000);
-    logAction('success','Manual entry added to '+table,'manual');
-    loadDashboard();
-  }else{alert('Error: '+error.message);}
+  if(table!=='properties'){
+    // Only listings have a checked write path; the browser cannot write these
+    // tables (row level security), so say so instead of failing obscurely.
+    alert('Manual entries into '+table+' are not accepted. Nothing was saved.');
+    return;
+  }
+  // One listing through the same checked import as a file: validated on the
+  // server, matched by link, history kept.
+  row.link=row.source_url; delete row.source_url;
+  if(row.property_name){ row.title=row.property_name; delete row.property_name; }
+  var st=await sb.rpc('stage_import',{p_batch:null,p_mode:'upsert',p_country:row.country,p_file:'manual entry',p_rows:[row],p_offset:0});
+  if(st.error){alert('Not saved: '+st.error.message);return;}
+  var pv=await sb.rpc('preview_import',{p_batch:st.data.batch});
+  if(pv.error){alert('Not saved: '+pv.error.message);return;}
+  if(!pv.data.valid){
+    await sb.rpc('discard_import',{p_batch:st.data.batch});
+    alert('Not saved: '+((pv.data.problems||[])[0]||{problems:['invalid row']}).problems.join('; '));
+    return;
+  }
+  var ap=await sb.rpc('apply_import',{p_batch:st.data.batch});
+  if(ap.error){alert('Not saved: '+ap.error.message);return;}
+  var s=document.getElementById('es-'+type);s.style.display='block';setTimeout(()=>s.style.display='none',3000);
+  logAction('success','Manual listing '+(ap.data.updated?'updated':'added')+' via the checked import','manual');
+  loadDashboard();
 }
 
 // ── ADMIN USERS ──
@@ -2053,26 +2067,20 @@ async function loadAdminUsers(){
   tbody.innerHTML='<tr><td>'+email+'</td><td><span class="badge badge-admin">Admin</span></td><td>'+created+'</td><td>—</td><td><span class="status status-success">Active</span></td></tr>';
 }
 async function addAdmin(){
-  if(!sb){alert('Not connected');return;}
-  var email=document.getElementById('new-admin-email').value.trim();
-  var pw=document.getElementById('new-admin-pw').value;
-  var role=document.getElementById('new-admin-role').value;
-  var errBox=document.getElementById('err-admin');errBox.style.display='none';
-  if(!email||!pw){alert('Fill in both fields');return;}
-  if(pw.length<8){alert('Password must be 8+ characters');return;}
-  var {error}=await sb.auth.signUp({email,password:pw});
-  if(error){errBox.innerHTML='Error: '+error.message;errBox.style.display='block';}
-  else{document.getElementById('es-admin').style.display='block';setTimeout(()=>document.getElementById('es-admin').style.display='none',3000);logAction('info','Admin user created: '+email+' ('+role+')','users');}
+  // Public sign-up is disabled, and a sign-up never made anyone an admin: the
+  // old form announced "Admin user created" either way. Admin rights live in
+  // profiles.is_admin, which only the server can write.
+  openModal('Not available here',
+    'Create the user in Supabase (Authentication → Users → Add user), then set is_admin = true on their row in public.profiles. Nothing was created.',
+    function(){});
 }
 
 // ── API MGMT ──
 function generateApiKey(){
-  var key='iw_'+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
-  var list=document.getElementById('api-keys-list');
-  var row=document.createElement('div');row.className='api-row';
-  row.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--ink5);width:80px;text-transform:uppercase;letter-spacing:.06em;">New</div><div class="api-key-val">${key}</div><div class="api-meta">Created: ${new Date().toLocaleDateString()} &nbsp;|&nbsp; Usage: 0 req/day &nbsp;|&nbsp; Rate limit: 1,000/day</div><span class="status status-success" style="flex-shrink:0;">Active</span><button class="btn btn-danger btn-xs" onclick="this.closest('.api-row').remove()">Revoke</button>`;
-  list.appendChild(row);
-  logAction('info','API key generated','api');
+  // There is no API-key store or gateway behind this page; the old button
+  // made a random string in the browser and listed it as "Active".
+  openModal('Not available',
+    'Programmatic API access is not live yet, so no key can be issued. Nothing was generated.',function(){});
 }
 
 // ── SETTINGS ──

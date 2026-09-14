@@ -4,7 +4,8 @@
   "private": true,
   "description": "Ironwood Intelligence static site + terminal (Railway)",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test tests/stripe-webhook.test.js"
   },
   "engines": {
     "node": ">=18"

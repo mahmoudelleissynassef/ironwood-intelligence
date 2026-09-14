@@ -68,13 +68,13 @@ function serveFile(req, res, filePath) {
 // builds, so everything committed was reachable — CLAUDE.md included, which
 // lists the admin account, infrastructure URLs, sheet and credential IDs.
 const BLOCKED_FILES = new Set([
-  '/server.js', '/package.json', '/package-lock.json',
+  '/server.js', '/stripe-webhook.js', '/package.json', '/package-lock.json',
   '/railway.json', '/vercel.json', '/.railwayignore', '/.gitignore',
 ]);
 const BLOCKED_EXTS = new Set([
   '.md', '.sql', '.py', '.toml', '.lock', '.env', '.yml', '.yaml', '.ini', '.cfg',
 ]);
-const BLOCKED_DIRS = ['/email-templates/', '/.git/', '/.claude/', '/api/', '/scraper-factory/', '/design-v2/'];
+const BLOCKED_DIRS = ['/email-templates/', '/.git/', '/.claude/', '/api/', '/scraper-factory/', '/design-v2/', '/tests/'];
 
 function isBlocked(pathname) {
   const lower = pathname.toLowerCase();
@@ -93,6 +93,15 @@ function resolveSafe(urlPath) {
   return resolved;
 }
 
+// The one dynamic route: Stripe's webhook. Everything else under /api/ stays
+// refused (isBlocked), which is also why this endpoint returned 404 until now.
+const stripe = require('./stripe-webhook');
+const stripeWebhook = stripe.makeHandler({
+  secret: process.env.STRIPE_WEBHOOK_SECRET || '',
+  db: process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY
+    ? stripe.makeDb(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY) : null,
+});
+
 const server = http.createServer((req, res) => {
   let pathname;
   try {
@@ -101,6 +110,13 @@ const server = http.createServer((req, res) => {
     return send(res, 400, 'Bad request', { 'Content-Type': 'text/plain' });
   }
   if (pathname.includes('\0')) return send(res, 400, 'Bad request', { 'Content-Type': 'text/plain' });
+
+  if (pathname === '/api/stripe-webhook') {
+    return stripeWebhook(req, res).catch((e) => {
+      console.error('stripe-webhook:', e);
+      if (!res.headersSent) send(res, 500, '{"error":"handler error"}', { 'Content-Type': 'application/json' });
+    });
+  }
 
   const host = (req.headers.host || '').toLowerCase();
 
