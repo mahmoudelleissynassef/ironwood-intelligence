@@ -2278,6 +2278,7 @@ async function loadMarketNews(country){
     var res=await sb.from('market_news')
       .select('title,url,source,category,is_pipeline,published_at,summary')
       .eq('country',country).order('published_at',{ascending:false,nullsFirst:false}).limit(40);
+    if(res&&res.error) throw res.error;   // a failed read is not "no news"
     var rows=(res&&res.data)||[];
     // pipeline panel: pipeline items first, then the rest
     var ranked=rows.slice().sort(function(a,b){return (b.is_pipeline?1:0)-(a.is_pipeline?1:0);});
@@ -2299,7 +2300,14 @@ async function loadMarketSignals(country){
   if(!sb) return;
   var setT=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
   try{
+    var g=_viewGen;
     var res=await sb.rpc('market_signals',{p_country:country});
+    if(_stale(g)||country!==ACTIVE_COUNTRY) return;
+    if(res&&res.error){
+      // Say the signals failed to load; a dash would read as "no signal".
+      ['sig-ios','sig-yield','sig-liquidity','sig-momentum'].forEach(function(id){ setT(id,'Load failed'); });
+      return;
+    }
     var s=res&&res.data?res.data:null;
     if(!s){ return; }
     setT('sig-ios', s.ios_score!=null?s.ios_score:'—');
@@ -2363,6 +2371,12 @@ function _errorState(what,err,retryJs){
     +(retryJs?'<button class="btn btn-ghost" style="margin-top:14px;" onclick="'+retryJs+'">Try again</button>':'')
     +'<div style="margin-top:12px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink5);">This is a loading failure, not an empty market</div>'
     +'</div></div>';
+}
+// A query builder or promise -> {ok, data, error}, like _rpc() for table reads.
+async function _q(pr){
+  try{ var r=await pr; if(r&&r.error) return {ok:false,error:r.error.message||String(r.error)};
+       return {ok:true,data:r?r.data:null}; }
+  catch(e){ return {ok:false,error:(e&&e.message)||String(e)}; }
 }
 function _dataBanner(msg,retry){
   var b=document.getElementById('iw-data-banner');
@@ -2433,7 +2447,9 @@ async function renderCountries(){
 async function renderSignalsPages(country){
   if(!sb) return;
   var lbl=COUNTRIES[country]?COUNTRIES[country].label:country;
-  var s=null; try{ var r=await sb.rpc('market_signals',{p_country:country}); s=r&&r.data?r.data:null; }catch(e){}
+  var sg=await _rpc('market_signals',{p_country:country});
+  if(!sg.ok){ _dataBanner('Market signals for '+lbl+' could not be loaded ('+sg.error+').', function(){ renderSignalsPages(country); }); return; }
+  var s=sg.data||null;
   var liq=document.getElementById('pg-liquidity-index');
   if(liq){
     var body = (!s||s.liquidity_score==null) ? _emptyState('No liquidity signal for '+lbl+' yet — needs listing data.') :
@@ -3014,8 +3030,11 @@ async function renderResearchPanel(country){
   var slot=document.getElementById('mk-research'); if(!slot||!sb) return;
   var c=COUNTRIES[country], lbl=c?c.label:country;
   var rows=[], area=[];
-  try{ var r=await sb.from('market_research_stats').select('*').eq('country',country); rows=(r&&r.data)||[]; }catch(e){}
-  try{ var a=await sb.rpc('listed_area',{p_country:country}); area=(a&&a.data)||[]; }catch(e){}
+  var g=_viewGen;
+  var rr=await Promise.all([_q(sb.from('market_research_stats').select('*').eq('country',country)),_rpc('listed_area',{p_country:country})]);
+  if(_stale(g)) return;
+  if(!rr[0].ok||!rr[1].ok){ slot.innerHTML=_errorState('Research figures for '+lbl,(rr[0].error||rr[1].error),"renderResearchPanel(_B2C)"); return; }
+  rows=rr[0].data||[]; area=rr[1].data||[];
   var pubs={}; rows.forEach(function(x){pubs[x.publisher]=1;});
   var method='<div class="method-note"><strong style="color:var(--ink2);">Methodology.</strong> Every figure is quoted verbatim from a published report ('
     +(Object.keys(pubs).join(', ')||'sourcing in progress')+'). Where several editions cover the same metric, the chart plots the most recent edition per year and the tooltip names it — figures are <strong style="color:var(--ink2);">never blended across publishers</strong>. Units are stored as published; the supply chart converts floor areas to m² and states so. Sources are re-checked and extended automatically every two months. The full audit trail below lists every figure with its quote.</div>';
@@ -3133,7 +3152,11 @@ async function renderResearchPanel(country){
 async function renderPipelineRegister(country){
   var slot=document.getElementById('pipe-register'); if(!slot||!sb) return;
   var c=COUNTRIES[country], lbl=c?c.label:country, rows=[];
-  try{ var r=await sb.from('pipeline_projects').select('*').eq('country',country).order('quantum_value',{ascending:false,nullsFirst:false}).limit(80); rows=(r&&r.data)||[]; }catch(e){}
+  var g=_viewGen;
+  var pr0=await _q(sb.from('pipeline_projects').select('*').eq('country',country).order('quantum_value',{ascending:false,nullsFirst:false}).limit(80));
+  if(_stale(g)) return;
+  if(!pr0.ok){ slot.innerHTML=_errorState('The development pipeline for '+lbl,pr0.error,"renderPipelineRegister(_B2C)"); return; }
+  rows=pr0.data||[];
   if(!rows.length){
     slot.innerHTML='<div class="panel"><div class="panel-head"><div><div class="panel-title">Project register — '+lbl+'</div>'
       +'<div class="panel-sub">Structured projects extracted from the observed news pipeline</div></div></div>'
@@ -3220,7 +3243,9 @@ async function selectMarket(sub){
   var body=document.getElementById('pr-body'); if(!body) return;
   var nf=function(v){return Number(v||0).toLocaleString('en-US');};
   var cur=ctx.cur, fmt=function(v,o){return money(v,cur,o);};
-  var p=null; try{ var pr=await sb.rpc('district_profile',{p_country:ctx.country,p_submarket:sub,p_tt:ctx.type||'sale'}); p=pr&&pr.data?pr.data:null; }catch(e){}
+  var dp=await _rpc('district_profile',{p_country:ctx.country,p_submarket:sub,p_tt:ctx.type||'sale'});
+  if(!dp.ok){ body.innerHTML=_errorState('The profile of '+sub,dp.error,null); return; }
+  var p=dp.data||null;
   if(!p){ body.innerHTML='<div class="empty-trend" style="height:160px;">Profile unavailable for '+sub+'.</div>'; return; }
   var rank=rows.indexOf(r)+1, tot=rows.reduce(function(a,x){return a+x.n;},0);
   var mix=(p.mix||[]).slice(0,4), mixTot=(p.mix||[]).reduce(function(a,x){return a+Number(x.n);},0)||1;
@@ -3835,7 +3860,9 @@ async function renderInfra(country){
     var rx=/(road|rail|metro|port|airport|bridge|highway|dam|power plant|grid|water|transit|tram|expressway|interchange|infrastructure)/i;
     items=((res&&res.data)||[]).filter(function(n){ return n.category==='infrastructure'||rx.test((n.title||'')+' '+(n.summary||'')); });
   }catch(e){}
-  try{ var pr=await sb.from('pipeline_projects').select('*').eq('country',country).eq('asset_class','infrastructure'); proj=(pr&&pr.data)||[]; }catch(e){}
+  var ip=await _q(sb.from('pipeline_projects').select('*').eq('country',country).eq('asset_class','infrastructure'));
+  if(!ip.ok){ el.innerHTML=V2HEAD(country,'Infrastructure',[],null)+_errorState('Infrastructure projects',ip.error,"renderInfra(_B2C)"); return; }
+  proj=ip.data||[];
   // segment news by infrastructure type
   var SEGS=[['Rail & transit',/rail|metro|tram|transit|monorail/i],['Roads & bridges',/road|highway|bridge|expressway|interchange/i],
             ['Ports',/port(?!folio)|harbour|harbor/i],['Airports',/airport/i],['Energy',/power|grid|energy|solar|wind|lng|gas/i],['Water',/water|dam|desalin/i]];
@@ -3889,8 +3916,11 @@ async function renderHeat(country,K){
   var c=COUNTRIES[country];
   if(!c||c.status!=='live'){ el.innerHTML=V2HEAD(country,'Heatmaps',[],null)+_emptyState('Heatmaps activate once '+(c?c.label:country)+' has listing data.'); return; }
   var f=_curFilters(), cur=c.currency; await _fx();
-  var rows=[];
-  try{ var r=await sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days}); rows=(r&&r.data)||[]; }catch(e){}
+  var g=_viewGen;
+  var hr=await _rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days});
+  if(_stale(g)) return;
+  if(!hr.ok){ el.innerHTML=V2HEAD(country,'Heatmaps',[],null)+_errorState('District prices for '+c.label,hr.error,"renderHeat(_B2C,_B2K)"); return; }
+  var rows=hr.data||[];
   rows=rows.filter(function(x){return x.median_ppsqm!=null;}).map(function(x){return {sub:x.submarket,city:x.city,med:Number(x.median_ppsqm),n:Number(x.listings||0)};})
       .sort(function(a,b){return b.med-a.med;}).slice(0,60);
   var ttl=rows.reduce(function(a,r){return a+r.n;},0);
@@ -3975,7 +4005,11 @@ function exportAgg(kind){
 async function renderReports(country){
   var el=document.getElementById('pg-market-reports'); if(!el||!sb) return;
   var c=COUNTRIES[country], lbl=c?c.label:country, rows=[];
-  try{ var r=await sb.from('market_reports').select('period,title,summary,pdf_url').eq('country',country).order('period',{ascending:false}).limit(12); rows=(r&&r.data)||[]; }catch(e){}
+  var g=_viewGen;
+  var rp=await _q(sb.from('market_reports').select('period,title,summary,pdf_url').eq('country',country).order('period',{ascending:false}).limit(12));
+  if(_stale(g)) return;
+  if(!rp.ok){ el.innerHTML=V2HEAD(country,'Market Reports',[],null)+_errorState('Reports for '+lbl,rp.error,"renderReports(_B2C)"); return; }
+  rows=rp.data||[];
   el.innerHTML=V2HEAD(country,'Market Reports',['Monthly institutional PDF reports · macro + asking-price landscape + pipeline + research layer'],null)
    +(rows.length?rows.map(function(x){ return '<div class="panel"><div class="panel-head"><div><div class="panel-title">'+(x.title||lbl+' Market Report')+'</div>'
       +'<div class="panel-sub num">'+(x.period||'')+'</div></div>'
@@ -4350,7 +4384,9 @@ async function loadLiveKPIs(country){
 async function renderMacroExtras(country){
   var slot=document.getElementById('macro-extra'); if(!slot||!sb) return;
   var c=COUNTRIES[country], lbl=c?c.label:country, rows=[];
-  try{ var r=await sb.from('macro_stats').select('*').eq('country',country); rows=(r&&r.data)||[]; }catch(e){}
+  var ms=await _q(sb.from('macro_stats').select('*').eq('country',country));
+  if(!ms.ok){ slot.innerHTML=_errorState('Cited macro figures for '+lbl,ms.error,"renderMacroExtras(ACTIVE_COUNTRY)"); return; }
+  rows=ms.data||[];
   var note='<div class="method-note">Beyond-World-Bank figures are quoted from national tourism authorities, the World Economic Forum and UN trade data, each badge naming its publisher and year. This layer is re-checked and extended automatically every two months.</div>';
   if(!rows.length){
     slot.innerHTML='<div class="panel"><div class="panel-head"><div><div class="panel-title">Tourism source markets, competitiveness &amp; trade</div>'
