@@ -2399,8 +2399,10 @@ async function loadFreshness(country){
   var s=(r.data||[]).filter(function(x){return (x.country||'').toLowerCase()===country.toLowerCase();})[0];
   if(!s||!s.last_published_at){ el.innerHTML='<div class="live-dot" style="background:var(--ink5)"></div>'+_newsEsc(country)+' · not yet published'; return; }
   var d=new Date(s.last_published_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  // 'capped': the targets stopped at their configured page allowance -- the
+  // run executed as configured, but it is not the whole market.
   var note=s.stale?' · last run '+_newsEsc(s.last_run_status||'failed')+', showing previous figures'
-          :(s.coverage==='partial'?' · partial coverage':'');
+          :(s.coverage==='partial'?' · partial coverage':(s.coverage==='capped'?' · coverage capped at the page allowance':''));
   el.innerHTML='<div class="live-dot"'+(s.stale?' style="background:var(--amber)"':'')+'></div>'
     +_newsEsc(country)+' · published '+d+note;
   el.title='Figures published '+new Date(s.last_published_at).toISOString()+'; coverage '+(s.coverage||'—')

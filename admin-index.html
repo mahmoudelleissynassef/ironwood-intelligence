@@ -1591,6 +1591,10 @@ async function refreshJobs(){
   var runs=r.data||[];
   if(!runs.length){ list.innerHTML='<div style="padding:16px;color:var(--ink5);">No pipeline runs recorded yet.</div>'; return; }
   var cls={complete:'status-success',partial:'status-pending',failed:'status-error',running:'status-pending'};
+  // targets that did not deliver: never started, interrupted, outcome not recorded
+  function lost(t){ var n=Number(t.missing||0)+Number(t.interrupted||0)+Number(t.unrecorded||0)+Number(t.pending||0);
+    return n?' · <span style="color:var(--red);" title="missing '+Number(t.missing||0)+' · interrupted '+Number(t.interrupted||0)
+      +' · unrecorded '+Number(t.unrecorded||0)+' · still pending '+Number(t.pending||0)+'">'+n+' did not finish</span>':''; }
   list.innerHTML=runs.map(function(x){
     var t=x.targets||{};
     return '<div class="job-row">'
@@ -1599,7 +1603,7 @@ async function refreshJobs(){
       +'<div class="mono" style="font-size:11px;color:var(--ink4);">'+_esc((x.started_at||'').replace('T',' ').slice(0,16))+'</div>'
       +'<div class="mono" style="font-size:12px;color:var(--ink3);" title="collected / saved">'+Number(t.collected||0).toLocaleString()+' / '+Number(t.saved||0).toLocaleString()+'</div>'
       +'<div class="mono" style="font-size:12px;color:'+((t.failed||t.rejected)?'var(--red)':'var(--green)')+';" title="failed targets · rejected rows">'+Number(t.failed||0)+' · '+Number(t.rejected||0)+'</div>'
-      +'<div class="mono" style="font-size:11px;color:var(--ink4);">'+Number(t.complete||0)+'✓ '+Number(t.partial||0)+'◐ '+Number(t.budget_limited||0)+'⏸ '+Number(t.empty||0)+'∅</div>'
+      +'<div class="mono" style="font-size:11px;color:var(--ink4);" title="complete · partial · capped at the page allowance · confirmed empty">'+Number(t.complete||0)+'✓ '+Number(t.partial||0)+'◐ '+Number(t.budget_limited||0)+'⏸ '+Number(t.empty||0)+'∅'+lost(t)+'</div>'
       +'</div>';
   }).join('');
   logAction('info','Ingestion runs refreshed ('+runs.length+')','ingestion');
