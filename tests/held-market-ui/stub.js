@@ -61,7 +61,7 @@
   function fecho(a) { a = a || {}; return '[f=' + (a.p_asset || '-') + '/' + (a.p_type || '-') + '/' + (a.p_days == null ? 'all' : a.p_days) + ']'; }
   function gecho(a) { a = a || {}; return '[g=' + (a.p_asset || '-') + '/' + (a.p_type || '-') + ']'; }
 
-  var LISTING_RPC = ['market_kpis', 'market_signals', 'market_filtered', 'districts_filtered', 'district_profile',
+  var LISTING_RPC = ['market_kpis', 'market_signals', 'market_filtered', 'districts_filtered', 'district_profile', 'district_profile_filtered',
     'market_by_bedroom', 'market_dom', 'market_dom_summary', 'listed_area'];
   var LISTING_TABLE = ['properties', 'market_averages', 'market_reports'];
 
@@ -204,7 +204,7 @@
       if (name === 'market_signals') return ok(signals(c));
       if (name === 'districts_filtered') return ok(districts(c, args));
       if (name === 'market_filtered') return ok(filtered(c));
-      if (name === 'district_profile') return ok(profile(c, args));
+      if (name === 'district_profile' || name === 'district_profile_filtered') return ok(profile(c, args));
       if (name === 'market_by_bedroom') return ok(bedrooms(c));
       if (name === 'market_dom') return ok(dom(c, args));
       if (name === 'market_dom_summary') { var m = MK[c]; return ok(m ? [{ n_delisted: 51, median_dom_days: D5(m) }] : []); }

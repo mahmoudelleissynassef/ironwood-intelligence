@@ -3466,8 +3466,8 @@ async function renderOverview(country){
   var medN=median(pts.map(function(p){return p.n;}))||0, medU=median(pts.map(function(p){return p.med;}))||0;
   // The rows and their context belong to THIS draw: a profile answering later
   // can tell whether the table it was clicked in is still the table on screen.
-  window._mkRows=df; window._mkCtx={country:country,cur:cur,type:f.type,rid:t.id,mkt:_EP.mkt};
-  if(!window._mkSel||!df.some(function(r){return r.sub===window._mkSel;})) window._mkSel=(df[0]&&df[0].sub);
+  window._mkRows=df; window._mkCtx={country:country,cur:cur,type:f.type,asset:f.asset,days:f.days,rid:t.id,mkt:_EP.mkt};
+  if(!window._mkSel||!df.some(function(r){return _marketKey(r.city,r.sub)===window._mkSel;})) window._mkSel=(df[0]&&_marketKey(df[0].city,df[0].sub));
   var labelSet={}; pts.slice(0,5).forEach(function(p){labelSet[p.city]=1;});
   pts.slice().sort(function(a,b){return b.med-a.med;}).slice(0,2).forEach(function(p){labelSet[p.city]=1;});
   var circles=pts.map(function(p){
@@ -3480,8 +3480,8 @@ async function renderOverview(country){
   function quadCell(tag,arr,hl){ return '<div class="quad-cell'+(hl?' hl':'')+'"><div class="quad-tag">'+tag+'</div><div class="quad-count num">'+arr.length+' markets</div><div class="quad-names">'+(arr.slice(0,3).join(' · ')||'—')+'</div></div>'; }
 
   var lead=df.slice(0,12), maxLead=lead.length?lead[0].n:1;
-  var rows=lead.map(function(r,i){ var sel=r.sub===window._mkSel;
-    return '<tr class="rowsel'+(sel?' selected':'')+'" data-sub="'+r.sub.replace(/"/g,'&quot;')+'" onclick="selectMarket(this.getAttribute(\'data-sub\'))">'
+  var rows=lead.map(function(r,i){ var sel=_marketKey(r.city,r.sub)===window._mkSel;
+    return '<tr class="rowsel'+(sel?' selected':'')+'" data-sub="'+_newsEsc(r.sub)+'" data-city="'+_newsEsc(r.city)+'" onclick="selectMarket(this.getAttribute(\'data-sub\'),this.getAttribute(\'data-city\'))">'
       +'<td><div class="mkt-cell"><span class="mkt-rank num">'+(i+1)+'</span><div><div class="mkt-name">'+_newsEsc(r.sub)+'</div><div class="mkt-cat">'+(r.city||lbl)+'</div></div></div></td>'
       +'<td class="num">'+nf(r.n)+'</td>'
       +'<td><div class="share-cell"><div class="share-track"><div class="share-fill" style="width:'+(r.n/maxLead*100).toFixed(1)+'%"></div></div><span class="num">'+(dfTotal?(r.n/dfTotal*100).toFixed(1):'0')+'%</span></div></td>'
@@ -3558,7 +3558,8 @@ async function renderOverview(country){
    +'<span style="max-width:860px">All indicators derive from observed property listings collected from public sources, cleaned, deduplicated and standardised by Ironwood. Asking prices are not transaction prices. Coverage: '+lbl+' · '+df.length+' markets · '+Object.keys(cities).length+' cities.</span>'
    +'<span class="num" style="white-space:nowrap">© 2026 Ironwood Intelligence</span></div>';
 
-  if(window._mkSel) selectMarket(window._mkSel);
+  var selectedMarket=df.find(function(r){return _marketKey(r.city,r.sub)===window._mkSel;});
+  if(selectedMarket) selectMarket(selectedMarket.sub,selectedMarket.city);
   renderMkMap(country,df,f,cur);
   renderResearchPanel(country);
 }
@@ -3586,7 +3587,7 @@ function renderMkMap(country,df,f,cur){
     m.bindPopup('<div style="font-family:IBM Plex Mono,monospace;min-width:150px;"><b style="font-size:12.5px;">'+_newsEsc(d.sub)+'</b> <span style="color:#6E685C;font-size:10px;">'+_newsEsc(d.city||'')+'</span>'
         +'<div style="font-size:11.5px;margin-top:3px;">Median '+tt+': <b>'+(d.med!=null?money(d.med,cur)+'/m²'+(tt==='rent'?'/mo':''):'—')+'</b></div>'
         +'<div style="font-size:10.5px;color:#6E685C;">'+Number(d.n||0).toLocaleString('en-US')+' listings</div></div>');
-    m.on('click',function(){ selectMarket(d.sub); });
+    m.on('click',function(){ selectMarket(d.sub,d.city); });
     m.addTo(distLayer); });
   var DZ=10;
   function sync(){ var z=map.getZoom();
@@ -3819,8 +3820,9 @@ async function renderPipelineRegister(country){
    +'<tbody>'+body+'</tbody></table></div></div>';
 }
 function openCity(c){ _cityActive=c; nav('cities'); }
+function _marketKey(city,sub){ return JSON.stringify([city||'',sub||'']); }
 var _prMap=null;
-async function selectMarket(sub){
+async function selectMarket(sub,city){
   var ctx=window._mkCtx||{}, rows=window._mkRows||[];
   if(!ctx.country) return;
   // The profile belongs to one market, one table and one click: the table it
@@ -3830,17 +3832,19 @@ async function selectMarket(sub){
   if(!_fresh(t,mine)) return;
   await _fx();
   if(!_fresh(t,mine)) return;
-  var r=rows.filter(function(x){return x.sub===sub;})[0]; if(!r) return;
-  window._mkSel=sub;
-  document.querySelectorAll('#pg-markets tr.rowsel').forEach(function(tr){ tr.classList.toggle('selected', tr.getAttribute('data-sub')===sub); });
+  var matches=rows.filter(function(x){return x.sub===sub&&(city==null||x.city===city);});
+  if(matches.length!==1) return; // A district name alone may identify several cities.
+  var r=matches[0], key=_marketKey(r.city,sub);
+  window._mkSel=key;
+  document.querySelectorAll('#pg-markets tr.rowsel').forEach(function(tr){ tr.classList.toggle('selected', _marketKey(tr.getAttribute('data-city'),tr.getAttribute('data-sub'))===key); });
   var body=document.getElementById('pr-body'); if(!body) return;
   var nf=function(v){return Number(v||0).toLocaleString('en-US');};
   var cur=ctx.cur, fmt=function(v,o){return money(v,cur,o);};
   // Held since the page was drawn: the whole Markets page is withheld, not just this profile.
   var heldHere=function(note,since){ _heldPage('pg-markets',ctx.country,'Markets',note,since); };
   if(_isHeld(ctx.country)){ heldHere(); return; }
-  var dp=await _rpc('district_profile',{p_country:ctx.country,p_submarket:sub,p_tt:ctx.type||'sale'});
-  if(!_fresh(t,function(){ return mine()&&window._mkSel===sub; })) return;
+  var dp=await _rpc('district_profile_filtered',{p_country:ctx.country,p_submarket:sub,p_tt:ctx.type||'sale',p_city:r.city,p_asset:ctx.asset||'all',p_days:ctx.days==null?null:ctx.days});
+  if(!_fresh(t,function(){ return mine()&&window._mkSel===key; })) return;
   if(dp.held||_isHeld(ctx.country)){ heldHere(dp.note,dp.since); return; }
   if(!dp.ok){ body.innerHTML=_errorState('The profile of '+sub,dp.error,null); return; }
   var p=dp.data||null;
@@ -3871,13 +3875,14 @@ async function selectMarket(sub){
   }
   var lead=mix.length?mix[0].ac+'-led':'Mixed';
   body.innerHTML=
-    '<div class="pr-head"><div><div class="pr-title">'+sub+'</div>'
+    '<div class="pr-head"><div><div class="pr-title">'+_newsEsc(sub)+'</div>'
+    +'<div class="mkt-cat">'+_newsEsc(r.city)+' · '+_newsEsc(ctx.asset||'all')+' · '+(ctx.days?ctx.days+' days':'all dates')+'</div>'
     +'<span class="pr-tier">'+lead+' · Rank #'+rank+' by inventory</span></div></div>'
     +(p.coords?'<div class="pr-map"><div class="lmap" id="pr-map"></div></div>':'')
     +'<div class="pr-kpis">'
-    +'<div class="pr-kpi"><div class="pk-label">Observed listings</div><div class="pk-value num">'+nf(p.count)+'</div><div class="pk-n">'+(tot?(r.n/tot*100).toFixed(1):0)+'% of filtered inventory</div></div>'
+    +'<div class="pr-kpi"><div class="pk-label">Eligible listings</div><div class="pk-value num">'+nf(p.count)+'</div><div class="pk-n">'+(tot?(r.n/tot*100).toFixed(1):0)+'% of filtered priced inventory</div></div>'
     +'<div class="pr-kpi"><div class="pk-label">Median asking /m²</div><div class="pk-value num">'+fmt(p.p50)+'</div><div class="pk-n">n = '+nf(p.priced)+' priced · '+(ctx.type||'sale')+'</div></div>'
-    +'<div class="pr-kpi"><div class="pk-label">Sale / rent split</div><div class="pk-value num">'+nf(p.sale_count)+' <span class="unit">/ '+nf(p.rent_count)+'</span></div><div class="pk-n">observed listings</div></div>'
+    +'<div class="pr-kpi"><div class="pk-label">Sale / rent split</div><div class="pk-value num">'+nf(p.sale_count)+' <span class="unit">/ '+nf(p.rent_count)+'</span></div><div class="pk-n">within selected filters</div></div>'
     +'<div class="pr-kpi"><div class="pk-label">Typical size</div><div class="pk-value num">'+(p.size_med?Math.round(p.size_med)+' m²':'—')+'</div><div class="pk-n">'+(p.size_n?'median of '+nf(p.size_n)+' sized listings':'no size data')+'</div></div></div>'
     +band
     +'<div class="pr-sec">Property type mix <span style="float:right;letter-spacing:0;text-transform:none;font-weight:400">n = '+nf(mixTot)+'</span></div>'
@@ -3888,7 +3893,7 @@ async function selectMarket(sub){
   if(p.coords&&window.L){
     if(_prMap){try{_prMap.remove();}catch(e){}_prMap=null;}
     setTimeout(function(){ var me=document.getElementById('pr-map');
-      if(!me||!_fresh(t,function(){ return mine()&&window._mkSel===sub; })) return;
+      if(!me||!_fresh(t,function(){ return mine()&&window._mkSel===key; })) return;
       var map=L.map(me,{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false}).setView([p.coords.lat,p.coords.lng],13);
       _prMap=map;
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18}).addTo(map);

@@ -17,6 +17,7 @@ const tokens = between('var _EP=', '// A retry button');
 const crossMarket = between('async function _renderCrossMarket(){', 'function renderXmMap(');
 const signals = between('async function loadMarketSignals(country){', '// ══════════════════════════════════════════════════════════════');
 const mapSource = between('async function renderMap(country,K){', 'function _bars(');
+const profileSource = between('function _marketKey(city,sub){', 'async function loadBatch2(country){');
 const escape = value => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 function deferred() { let resolve, reject; const promise = new Promise((a, b) => { resolve = a; reject = b; }); return { promise, resolve, reject }; }
 function context(extra = {}) {
@@ -151,4 +152,32 @@ test('map requests and timers stay attached to their own instance across a newer
   // A subsequent render retires the second map before its resize timer fires.
   maps[1].remove(); e.c._liveMap = null; timers.forEach(fn => fn());
   assert.equal(maps[1].resized, 0);
+});
+
+test('district profiles preserve city/class/date scope and reject stale same-name city responses', async () => {
+  const e = context(), calls = [], answers = [];
+  e.node('pr-body');
+  e.c.document.querySelectorAll = () => [];
+  e.c._SLOT['pg-markets'] = 77;
+  Object.assign(e.c, { window: { _mkCtx: { country: 'Morocco', cur: 'MAD', type: 'sale', asset: 'Apartments', days: 30, rid: 77 },
+    _mkRows: [{ city: 'Fez', sub: 'Central', n: 10 }, { city: 'Tangier', sub: 'Central', n: 20 }] },
+    _fx: async () => ({}), money: v => String(v), _errorState: (title, err) => err,
+    _heldPage: () => { e.node('pr-body').innerHTML = 'Held'; },
+    _rpc(name, args) { calls.push([name, args]); const d = deferred(); answers.push(d); return d.promise; }
+  });
+  vm.runInContext(profileSource, e.c);
+  await e.c.selectMarket('Central');
+  assert.equal(calls.length, 0, 'an ambiguous district name never silently selects the first city');
+  const older = e.c.selectMarket('Central', 'Fez'); await new Promise(setImmediate);
+  const newer = e.c.selectMarket('Central', 'Tangier'); await new Promise(setImmediate);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[0])), ['district_profile_filtered', {
+    p_country: 'Morocco', p_submarket: 'Central', p_tt: 'sale', p_city: 'Fez', p_asset: 'Apartments', p_days: 30
+  }]);
+  assert.equal(calls[1][1].p_city, 'Tangier');
+  answers[1].resolve({ ok: false, error: 'Tangier response' }); await newer;
+  answers[0].resolve({ ok: false, error: 'Stale Fez response' }); await older;
+  assert.equal(e.node('pr-body').innerHTML, 'Tangier response');
+  e.held.add('Morocco'); await e.c.selectMarket('Central', 'Tangier');
+  assert.equal(calls.length, 2, 'held market makes no profile request');
+  assert.equal(e.node('pr-body').innerHTML, 'Held');
 });
