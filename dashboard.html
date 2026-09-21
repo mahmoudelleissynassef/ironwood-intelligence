@@ -2125,7 +2125,17 @@ function switchCountry(name){
   iwTrack('market_switch',{to:name});
   if(!COUNTRIES[name]) return;
   ACTIVE_COUNTRY=name;
-  _bumpView();          // every request still in flight for the last market is now stale
+  /* Every request still in flight belongs to the market that was selected a
+     moment ago: retire them all, and drop every cache they would have written
+     into, before a single pixel of the new market is drawn. Nothing here
+     depends on an answer, so the previous market's figures cannot survive the
+     switch even for a frame. */
+  _EP.mkt++;
+  _clearB2(); _clearKpiCache();
+  window._mkRows=null; window._mkCtx=null; window._mkSel=null;
+  window._newsRanked=null; window._newsRows=null;
+  _cityActive=null;
+  var _ob=document.getElementById('iw-data-banner'); if(_ob) _ob.remove();   // it named the old market
   var c=COUNTRIES[name];
   // For pending markets, show KPIs from COUNTRIES config (dummy data)
   // and still allow macro data to load
@@ -2156,6 +2166,9 @@ function switchCountry(name){
   if(liveEl){ liveEl.innerHTML='<div class="live-dot"></div>'+name+' · Loading…'; liveEl.removeAttribute('title'); }
   // Publication on hold: say so at once; the listing loaders below skip their requests.
   if(_isHeld(name)) _renderHeldKpis(name);
+  // Every market page goes to its loading state (or the hold) right now, so no
+  // page can sit under this market's name showing the last one's figures.
+  _paintMarketPages(name);
 
   // Update city page placeholder
   if(typeof updateCitiesPage==='function') updateCitiesPage(c);  // TODO: not yet implemented — guard against ReferenceError
@@ -2193,9 +2206,13 @@ function money(v,cur,o){ o=o||{}; if(v==null||isNaN(Number(v))) return '\u2014';
   if(_ccyMode==='usd'&&cur!=='USD'){ var r=_fxCache&&_fxCache[cur]; if(r){ var u=v/r;
       return '$'+(o.dec!=null?u.toFixed(o.dec):Math.round(u).toLocaleString('en-US')); } }
   return _lsym(cur)+(o.dec!=null?v.toFixed(o.dec):Math.round(v).toLocaleString('en-US')); }
-function setCcy(m){ _ccyMode=m; _bumpView(); try{localStorage.setItem('iw_ccy',m);}catch(e){}
+function setCcy(m){ _ccyMode=m; _EP.ccy++; try{localStorage.setItem('iw_ccy',m);}catch(e){}
   document.querySelectorAll('#ccy-toggle button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-c')===m);});
-  if(_B2C){ loadBatch2(_B2C); } else { applyFilters(); } }
+  // Redraw in the chosen currency for the market on screen -- never for _B2C,
+  // which may still name the market that was selected before the last switch.
+  if(_ctyAns) _paintCountries(_ctyAns);   // one currency across the whole registry
+  if(_b2Ready(ACTIVE_COUNTRY)){ loadBatch2(ACTIVE_COUNTRY); }
+  else { _redrawKpiTables(); _renderActivePage(); } }
 function _syncCcyUI(cur){ var b=document.getElementById('ccy-local-lbl'); if(b) b.textContent=cur||'Local';
   document.querySelectorAll('#ccy-toggle button').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-c')===_ccyMode);});
   var fp=document.getElementById('fx-note');
@@ -2279,12 +2296,14 @@ function renderNews(el, rows, showBadge){
 }
 async function loadMarketNews(country){
   if(!sb) return;
+  var t=_tok('market-news',country,'M');
   var pipeEl=document.getElementById('pipeline-news-list');
   var ovEl=document.getElementById('overview-news-list');
   try{
     var res=await sb.from('market_news')
       .select('title,url,source,category,is_pipeline,published_at,summary')
       .eq('country',country).order('published_at',{ascending:false,nullsFirst:false}).limit(40);
+    if(!_fresh(t)) return;            // these panels belong to another market now
     if(res&&res.error) throw res.error;   // a failed read is not "no news"
     var rows=(res&&res.data)||[];
     // pipeline panel: pipeline items first, then the rest
@@ -2295,6 +2314,7 @@ async function loadMarketNews(country){
     var sub=document.getElementById('news-pipe-sub');
     if(sub) sub.textContent=(COUNTRIES[country]?COUNTRIES[country].label:country)+' · '+rows.length+' items';
   }catch(e){
+    if(!_fresh(t)) return;
     if(pipeEl) pipeEl.innerHTML='<div style="padding:18px;color:var(--ink5);font-size:12px;">News feed unavailable right now.</div>';
   }
 }
@@ -2306,20 +2326,27 @@ async function loadMarketNews(country){
 async function loadMarketSignals(country){
   if(!sb) return;
   var setT=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  var t=_tok('signal-cards',country,'M');
+  if(!_fresh(t)) return;
   if(_isHeld(country)){ _heldSignals(country); return; }   // no request: it would only be refused
+  function failed(){
+    ['sig-ios','sig-yield','sig-liquidity','sig-momentum','sig-supply'].forEach(function(id){ setT(id,'Load failed'); });
+    setT('sig-momentum-sub','');
+    var sub=document.getElementById('signals-sub');
+    if(sub) sub.innerHTML=_newsEsc(_cLabel(country))+' · signals unavailable · <button class="panel-link" onclick="loadMarketSignals(ACTIVE_COUNTRY)">Retry</button>';
+  }
   try{
-    var g=_viewGen;
     var res=await sb.rpc('market_signals',{p_country:country});
     if(_heldRes(res)) _markHeldRes(country,res);
-    if(_stale(g)||country!==ACTIVE_COUNTRY) return;
-    if(_heldRes(res)){ _heldSignals(country); return; }
+    if(!_fresh(t)) return;
+    if(_heldRes(res)||_isHeld(country)){ _heldSignals(country); return; }   // held while in flight
     if(res&&res.error){
       // Say the signals failed to load; a dash would read as "no signal".
-      ['sig-ios','sig-yield','sig-liquidity','sig-momentum'].forEach(function(id){ setT(id,'Load failed'); });
+      failed();
       return;
     }
     var s=res&&res.data?res.data:null;
-    if(!s){ return; }
+    if(!s){ failed(); return; }
     setT('sig-ios', s.ios_score!=null?s.ios_score:'—');
     setT('sig-yield', s.gross_yield_pct!=null?s.gross_yield_pct+'%':'—');
     setT('sig-liquidity', s.liquidity_score!=null?s.liquidity_score:'—');
@@ -2331,7 +2358,7 @@ async function loadMarketSignals(country){
     var sub=document.getElementById('signals-sub');
     if(sub){ sub.innerHTML=(COUNTRIES[country]?COUNTRIES[country].label:country)+' · as of '+(s.as_of||'—')+' · '+(s.snapshots||0)+' weekly snapshot(s) · <span class="ds-tag ds-model">Modeled</span>';
       sub.removeAttribute('title'); }   // drop a held market's hold tooltip
-  }catch(e){}
+  }catch(e){ if(_freshLive(t)) failed(); }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2360,12 +2387,124 @@ function _emptyState(msg){
    Every data panel used to catch its request's error and render "no data" —
    so an outage, an expired session and a genuinely empty market looked the
    same. _rpc() keeps the difference; _errorState() says the load failed and
-   offers a retry. _viewGen is bumped whenever the market, filters or currency
-   change; a render that started under an older generation discards its answer
-   instead of painting last market's figures over this one's. */
-var _viewGen=0;
-function _bumpView(){ return ++_viewGen; }
-function _stale(g){ return g!==_viewGen; }
+   offers a retry.
+
+   ── ONE GUARD FOR EVERY ASYNCHRONOUS ANSWER ──
+   An answer is drawn only if the market, page, filter state and currency it
+   was requested for are still the ones on screen. A single counter could not
+   express that: it was bumped by market, filter AND currency changes alike, so
+   a filter click threw away the market loader's answer (and nothing re-ran it)
+   while a market switch left a page renderer free to paint the previous
+   market's figures under the new market's name.
+
+   So each trigger owns its own counter, and every request carries a token:
+     mkt  — bumped by switchCountry and by a hold change on the selected market
+     flt  — bumped by the asset / type / period controls
+     ccy  — bumped by the currency toggle
+     slot — one counter per container: the newest call for a container wins,
+            and a child render (a market profile, the research panel) also
+            checks the page render that created its container
+   _fresh(t) is called after EVERY await, before any DOM, cache, map, chart or
+   banner write. _freshLive(t) adds the hold re-check: a market put on hold
+   while a request was in flight never gets its figures drawn. */
+var _EP={mkt:0,flt:0,ccy:0,xm:0,cty:0,hold:0,st:0,stApplied:0};
+var _SLOT={};
+var _termReady=false;          // boot has read the holds; pages may render
+function _bumpSlot(s){ return (_SLOT[s]=(_SLOT[s]||0)+1); }
+function _tok(slot,market,deps,parent){
+  var t={slot:slot||null,market:market,deps:deps||'M',mkt:_EP.mkt,flt:_EP.flt,ccy:_EP.ccy};
+  if(parent){ t.parent=parent; t.pid=_SLOT[parent]||0; }
+  if(slot) t.id=_bumpSlot(slot);
+  return t;
+}
+function _fresh(t,sel){
+  if(!t) return false;
+  if(t.mkt!==_EP.mkt||t.market!==ACTIVE_COUNTRY) return false;
+  if(t.deps.indexOf('F')>-1&&t.flt!==_EP.flt) return false;
+  if(t.deps.indexOf('C')>-1&&t.ccy!==_EP.ccy) return false;
+  if(t.slot&&_SLOT[t.slot]!==t.id) return false;
+  if(t.parent&&_SLOT[t.parent]!==t.pid) return false;
+  return sel?!!sel():true;
+}
+// Listing-derived answer: also refused once the market is on hold, however
+// late the hold became known.
+function _freshLive(t,sel){ return _fresh(t,sel)&&!_isHeld(t.market); }
+// A retry button always retries the market on screen now, never the one that
+// was selected when the button was drawn.
+function _retryActive(fn){ return function(){ fn(ACTIVE_COUNTRY); }; }
+function _loadingState(country){
+  return '<div class="panel" data-iw-loading="1"><div class="panel-body" style="padding:40px 32px;text-align:center;">'
+    +'<div style="font-size:13px;color:var(--ink4);">Loading '+_newsEsc(_cLabel(country))+' figures…</div>'
+    +'<div style="margin-top:12px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink5);">'
+    +'No other market’s figures are shown while this loads</div></div></div>';
+}
+// Every market-scoped page, by container id and title. On a market switch each
+// one is emptied at once: a page must never sit under the new market's name
+// showing the previous market's figures while the new ones load.
+var _MKT_PAGES=[['pg-markets','Markets'],['pg-cities','Cities'],['pg-districts','Districts'],
+  ['pg-by-bedroom','By Bedroom'],['pg-days-on-market','Days on Market'],['pg-map-view','Market Map'],
+  ['pg-heatmaps','Heatmaps'],['pg-data-explorer','Data Explorer'],['pg-exports','Exports'],
+  ['pg-insights','Insights'],['pg-market-reports','Market Reports'],['pg-infrastructure','Infrastructure']];
+// The listing-derived views. A hold on the selected market withdraws all of
+// them at once, and supersedes anything still in flight for them.
+var _LISTING_SLOTS=['pg-markets','pg-cities','pg-districts','pg-by-bedroom','pg-days-on-market',
+  'pg-map-view','pg-heatmaps','pg-data-explorer','pg-exports','pg-insights','pg-market-reports',
+  'pg-markets/profile','pg-markets/research','pg-cities/profile','signals'];
+function _killMap(m){ try{ if(m) m.remove(); }catch(e){} }
+// The maps live inside market pages; when those are emptied the map objects go
+// with them, so a continuation that still holds one can tell it is obsolete.
+function _dropMarketMaps(){
+  _killMap(_liveMap); _liveMap=null; _killMap(_mkMap); _mkMap=null;
+  _killMap(_prMap); _prMap=null; _killMap(_cityMap); _cityMap=null;
+}
+function _clearKpiTables(country){
+  var it=document.getElementById('indicators-table');
+  if(it) it.innerHTML='<tbody><tr><td style="padding:16px;color:var(--ink5);">Loading '+_newsEsc(_cLabel(country))+' indicators…</td></tr></tbody>';
+  var yt=document.getElementById('yield-table');
+  if(yt) yt.innerHTML='<tbody><tr><td style="padding:16px;color:var(--ink5);">Loading '+_newsEsc(_cLabel(country))+' yields…</td></tr></tbody>';
+}
+function _paintMarketPages(country){
+  var held=_isHeld(country);
+  _MKT_PAGES.forEach(function(p){
+    var el=document.getElementById(p[0]); if(!el) return;
+    _bumpSlot(p[0]);
+    el.innerHTML=V2HEAD(country,p[1],[],null)+(held?_heldState(country):_loadingState(country));
+  });
+  _bumpSlot('pg-markets/profile'); _bumpSlot('pg-markets/research'); _bumpSlot('pg-cities/profile');
+  _bumpSlot('signals');
+  var liq=document.getElementById('pg-liquidity-index');
+  if(liq) liq.innerHTML='<div class="eyebrow">Analytics</div><div class="pg-title">Liquidity Index</div>'+(held?_heldState(country):_loadingState(country));
+  var inv=document.getElementById('pg-investment-radar');
+  if(inv) inv.innerHTML='<div class="eyebrow">Analytics</div><div class="pg-title">Investment Radar</div>'+(held?_heldState(country):_loadingState(country));
+  var ph=document.getElementById('pipe-head');
+  if(ph) ph.innerHTML=V2HEAD(country,'Development Pipeline',['Observed development &amp; construction news','Refreshed Mon &amp; Thu'],null);
+  var pr=document.getElementById('pipe-register');
+  if(pr){ _bumpSlot('pipe-register'); pr.innerHTML=held?_heldState(country):_loadingState(country); }
+  ['pipeline-news-list','overview-news-list','infra-news-list'].forEach(function(id){
+    var n=document.getElementById(id); if(n) n.innerHTML='<div style="padding:18px;color:var(--ink5);font-size:12px;">Loading news…</div>'; });
+  var mr=document.getElementById('macro-root');
+  if(mr){ _bumpSlot('macro-root'); mr.innerHTML=V2HEAD(country,'Macro Indicators',[],null)+_loadingState(country); }
+  _clearKpiTables(country);
+  _dropMarketMaps();
+}
+// The page the visitor is looking at, redrawn for the market and filters that
+// are current now. Pages that need the market summary wait for it; loadBatch2
+// draws them the moment it lands.
+function _renderMarketPage(id){
+  if(!_termReady) return;
+  var A=ACTIVE_COUNTRY, ready=_b2Ready(A), K=_kOf(A);
+  if(id==='map-view'){ if(ready) renderMap(A,K); }
+  else if(id==='cities'){ if(ready) renderCitiesPage(A); }
+  else if(id==='markets'){ if(ready) renderOverview(A); }
+  else if(id==='districts'){ if(ready) renderDistrictsPage(A); }
+  else if(id==='heatmaps'){ if(ready) renderHeat(A,K); }
+  else if(id==='data-explorer'){ if(ready) renderExplorer(A,K); }
+  else if(id==='by-bedroom'){ renderByBedroomPage(A); }
+  else if(id==='days-on-market'){ renderDaysOnMarketPage(A); }
+  else if(id==='macro-indicators'){ loadMacroData(A); }
+}
+function _activePageId(){ return (((document.querySelector('.pg.active')||{}).id)||'').replace(/^pg-/,''); }
+function _renderActivePage(){ _renderMarketPage(_activePageId()); }
 /* ── PUBLICATION HOLDS ──
    A market's publication can be put on hold while its listing data is
    corrected and re-verified. The database is the authority: data_status()
@@ -2381,32 +2520,46 @@ var _HELD={};                 // normalised country -> {country, since, note}
 var _HELD_SENTENCE='No figures are shown for this market until a corrected dataset is approved.';
 var _holdsBooted=false;       // dropdown built; hold changes may repaint from here on
 var _xmBusy=false, _xmDone=false, _xmAgain=false;   // cross-market render state
-var _ctyGen=0, _ctyDone=false;                       // Coverage Registry: newest render paints
+var _ctyDone=false;                                  // Coverage Registry: newest render paints (_EP.cty)
 function _normCountry(s){ return String(s==null?'':s).toLowerCase().replace(/[\s'’]/g,''); }
 function _holdSig(){ return Object.keys(_HELD).sort().join('|'); }
 function _heldErr(e){ return !!e&&(e.code==='PT423'||e.message==='market_held'); }
 // A supabase-js response refused because the market is held.
 function _heldRes(r){ return !!r&&!!r.error&&(_heldErr(r.error)||r.status===423); }
 function _heldSinceFromHint(h){ var m=/held since (\d{4}-\d{2}-\d{2})/.exec(String(h||'')); return m?m[1]:null; }
-function _setHolds(rows){
-  var prev=_HELD, next={};
-  // A malformed status answer must not break boot: it names no holds.
-  (Array.isArray(rows)?rows:[]).forEach(function(x){
-    if(x&&x.held===true) next[_normCountry(x.country)]={country:x.country,since:x.held_since||null,note:x.held_note||''}; });
-  _HELD=next;
-  var changed=Object.keys(prev).filter(function(k){return !next[k];})
-    .concat(Object.keys(next).filter(function(k){return !prev[k];}));
-  if(changed.length) _holdsChanged(changed);
-}
-// A request was refused with PT423: the market is held even if data_status
-// did not say so when it was last read. from: 'xm' / 'cty' when the
-// cross-market overview / Coverage Registry found it (it repaints itself).
+/* The two directions are not symmetrical, and must not be.
+   HELD is applied from ANY answer, however old: a refusal is proof that the
+   market is held, and drawing its figures is the failure we are preventing.
+   RELEASED is applied only from the newest data_status read that has landed,
+   and never to a hold recorded after that read was sent — otherwise a status
+   read that left before the hold existed would "release" it on arrival and put
+   the withheld figures back on screen. */
 function _markHeld(country,note,since,from){
   var k=_normCountry(country); if(!k) return;
   var had=!!_HELD[k], h=_HELD[k]||{country:country,since:null,note:''};
   if(note) h.note=note; if(since&&!h.since) h.since=since;
+  h.epoch=++_EP.hold;            // when this hold was last asserted
   _HELD[k]=h;
   if(!had) _holdsChanged([k],from);
+}
+// Read data_status and reconcile the registry. from: 'xm'/'cty' is never used
+// here; a status read belongs to no view.
+function _readStatus(){
+  var seq=++_EP.st, ep=_EP.hold;
+  return _rpc('data_status',{}).then(function(r){
+    try{
+      if(!r||!r.ok||!Array.isArray(r.data)) return r;
+      var listed={};
+      r.data.forEach(function(x){ if(x&&x.held===true){ listed[_normCountry(x.country)]=1; _markHeld(x.country,x.held_note,x.held_since); } });
+      if(seq>_EP.stApplied){
+        _EP.stApplied=seq;
+        var rel=Object.keys(_HELD).filter(function(k){ return !listed[k]&&_HELD[k].epoch<=ep; });
+        rel.forEach(function(k){ delete _HELD[k]; });
+        if(rel.length) _holdsChanged(rel);
+      }
+    }catch(e){ console.warn('holds',e); }
+    return r;
+  }).catch(function(e){ return {ok:false,error:String(e)}; });
 }
 function _markHeldRes(country,r,from){ _markHeld(country,r.error.details,_heldSinceFromHint(r.error.hint),from); }
 function _isHeld(country){ return !!_HELD[_normCountry(country)]; }
@@ -2440,6 +2593,7 @@ function _heldState(country,note,since){
 }
 function _heldPage(elId,country,page,note,since){
   var el=document.getElementById(elId); if(!el) return;
+  _bumpSlot(elId);   // the hold is the newest word on this container
   el.innerHTML=V2HEAD(country,page,[],null)+_heldState(country,note,since);
 }
 function _syncMktLabel(){
@@ -2456,8 +2610,14 @@ function _holdsChanged(keys,from){
   if(!_holdsBooted) return;
   try{ buildCountryDropdown(); _syncMktLabel(); }catch(e){}
   (keys||[]).forEach(function(k){ try{ _repaintForHold(k); }catch(e){ console.warn('hold repaint',e); } });
+  // The Coverage Registry and the cross-market overview build their rows at
+  // paint time, so a draw already in flight will apply the change itself; the
+  // counters stop an older draw from painting over a newer one.
+  // (renderCountries takes the next registry counter itself; bumping it here
+  // would silence a first draw that is still running and repaint nothing.)
   if(from!=='cty'&&_ctyDone) _swallow(renderCountries());
   if(from!=='xm'){
+    _EP.xm++;
     if(_xmBusy) _xmAgain=true;
     else if(_xmDone) renderCrossMarket();
   }
@@ -2469,29 +2629,39 @@ function _holdsChanged(keys,from){
 // dropped. None of these renderers sends a request for a held market.
 // Released: the market is loaded again as on a market switch.
 function _repaintForHold(k){
-  var A=ACTIVE_COUNTRY, B=_B2C;
-  var isA=_normCountry(A)===k, isB=!!B&&_normCountry(B)===k;
-  if(!isA&&!isB) return;
-  if(!_isHeld(isA?A:B)){
-    if(isA){ loadLiveKPIs(A); loadMarketSignals(A); loadHonestLayer(A); }
+  var A=ACTIVE_COUNTRY;
+  // Whoever owns cached figures for this market loses them, selected or not.
+  if(_B2C&&_normCountry(_B2C)===k) _B2K=null;
+  if(window._kpiOwner&&_normCountry(window._kpiOwner.market)===k) _clearKpiCache();
+  if(window._mkCtx&&_normCountry(window._mkCtx.country)===k){ window._mkRows=null; window._mkCtx=null; window._mkSel=null; }
+  for(var ck in COUNTRIES){ if(_normCountry(ck)===k&&COUNTRIES[ck]) COUNTRIES[ck].cityData={}; }
+  if(_normCountry(A)!==k) return;
+  if(!_isHeld(A)){
+    // Released: load the market again, exactly as a market switch does. The
+    // epoch bump retires everything that was requested while it was held.
+    _EP.mkt++; _clearB2(); _clearKpiCache();
+    window._mkRows=null; window._mkCtx=null; window._mkSel=null; _cityActive=null;
+    _paintMarketPages(A);
+    loadLiveKPIs(A); loadMarketSignals(A); loadHonestLayer(A);
     return;
   }
-  if(isA){ _renderHeldListingViews(A); _heldSignals(A); _swallow(renderSignalsPages(A)); }
-  if(isB){
-    _B2K=null;
-    _swallow(renderOverview(B)); _swallow(renderMap(B,null)); _swallow(renderHeat(B,null));
-    _swallow(renderCitiesPage(B)); _swallow(renderDistrictsPage(B)); _swallow(renderByBedroomPage(B));
-    _swallow(renderDaysOnMarketPage(B)); _swallow(renderExplorer(B,null));
-    renderExportsPage(B,null); renderInsights(B,null);
-  }
+  // Newly held: every listing view is withdrawn at once and every listing
+  // render still in flight for this market is retired (the non-listing
+  // loaders -- news, pipeline register, infrastructure -- are left to finish).
+  _LISTING_SLOTS.forEach(function(s){ _bumpSlot(s); });
+  _setB2(A,null);
+  _renderHeldListingViews(A); _heldSignals(A); _swallow(renderSignalsPages(A));
+  _dropMarketMaps();
+  [['pg-markets','Markets'],['pg-cities','Cities'],['pg-districts','Districts'],['pg-by-bedroom','By Bedroom'],
+   ['pg-days-on-market','Days on Market'],['pg-map-view','Market Map'],['pg-heatmaps','Heatmaps'],
+   ['pg-data-explorer','Data Explorer'],['pg-exports','Exports'],['pg-insights','Insights'],
+   ['pg-market-reports','Market Reports']].forEach(function(p){ _heldPage(p[0],A,p[1]); });
 }
 // Boot: read the holds before the first market render. A slow status read
 // does not hold the terminal up; its answer is applied whenever it lands.
 // Nothing about the hold read may reject: boot treats a rejection as an auth failure.
 function loadHolds(timeoutMs){
-  var p=_rpc('data_status',{}).then(function(r){
-    try{ if(r&&r.ok) _setHolds(r.data); }catch(e){ console.warn('holds',e); }
-    return r; }).catch(function(e){ return {ok:false,error:String(e)}; });
+  var p=_readStatus();
   if(!timeoutMs) return p;
   return Promise.race([p,new Promise(function(res){ setTimeout(function(){ res({ok:false,error:'timeout'}); },timeoutMs); })]);
 }
@@ -2525,7 +2695,7 @@ function _renderHeldListingViews(country){
   var db=document.getElementById('district-full-body'); if(db) db.innerHTML=row(11);
   var tb=document.querySelector('#trend-table tbody'); if(tb) tb.innerHTML=row(6);
   // The top-bar filters re-render these tables from the cached rows: none for a held market.
-  window._kpiInd=null; window._kpiYld=null;
+  _clearKpiCache();
   if(c) c.cityData={};
 }
 function _heldSignals(country){
@@ -2547,7 +2717,10 @@ async function _rpc(name,args){
     if(r&&r.error) return {ok:false,error:r.error.message||String(r.error)};
     return {ok:true,data:r?r.data:null};
   }catch(e){
-    if(_heldErr(e)) return {ok:false,held:true,error:e.details||e.message,note:e.details||'',since:_heldSinceFromHint(e.hint)};
+    if(_heldErr(e)){
+      if(args&&args.p_country) _markHeld(args.p_country,e.details,_heldSinceFromHint(e.hint));
+      return {ok:false,held:true,error:e.details||e.message,note:e.details||'',since:_heldSinceFromHint(e.hint)};
+    }
     return {ok:false,error:(e&&e.message)||String(e)}; }
 }
 function _errorState(what,err,retryJs){
@@ -2560,13 +2733,21 @@ function _errorState(what,err,retryJs){
     +'</div></div>';
 }
 // A query builder or promise -> {ok, data, error}, like _rpc() for table reads.
-async function _q(pr){
+// `country` lets a refused table read record the hold, the way _rpc does with
+// p_country -- a refusal the registry never heard about was the reason some
+// views kept asking for a held market.
+async function _q(pr,country){
   try{ var r=await pr;
-       if(_heldRes(r)) return {ok:false,held:true,error:r.error.details||r.error.message||'market_held',note:r.error.details||'',since:_heldSinceFromHint(r.error.hint)};
+       if(_heldRes(r)){
+         var since=_heldSinceFromHint(r.error.hint);
+         if(country) _markHeld(country,r.error.details,since);
+         return {ok:false,held:true,error:r.error.details||r.error.message||'market_held',note:r.error.details||'',since:since}; }
        if(r&&r.error) return {ok:false,error:r.error.message||String(r.error)};
        return {ok:true,data:r?r.data:null}; }
   catch(e){
-    if(_heldErr(e)) return {ok:false,held:true,error:e.details||e.message,note:e.details||'',since:_heldSinceFromHint(e.hint)};
+    if(_heldErr(e)){
+      if(country) _markHeld(country,e.details,_heldSinceFromHint(e.hint));
+      return {ok:false,held:true,error:e.details||e.message,note:e.details||'',since:_heldSinceFromHint(e.hint)}; }
     return {ok:false,error:(e&&e.message)||String(e)}; }
 }
 function _dataBanner(msg,retry){
@@ -2584,13 +2765,15 @@ function _dataBanner(msg,retry){
    dashboard, and whether publication is on hold (data_status, fed by the
    weekly run's publication record). Every read refreshes the hold registry. */
 async function loadFreshness(country){
-  var g=_viewGen, el=document.querySelector('.sb-live'); if(!el) return;
-  var r=await _rpc('data_status',{});
-  if(r.ok) _setHolds(r.data);
-  if(_stale(g)||country!==ACTIVE_COUNTRY) return;
+  var t=_tok(null,country,'M'), el=document.querySelector('.sb-live'); if(!el) return;
+  // The registry is reconciled by _readStatus (held from any answer, released
+  // only from the newest read); the line below is written only if this market
+  // is still the one on screen.
+  var r=await _readStatus();
+  if(!_fresh(t)) return;
   var s=r.ok?(Array.isArray(r.data)?r.data:[]).filter(function(x){return x&&_normCountry(x.country)===_normCountry(country);})[0]:null;
   // On hold: never "published <date>" -- the published figures are withheld.
-  if((s&&s.held===true)||(!r.ok&&_isHeld(country))){
+  if((s&&s.held===true)||_isHeld(country)){
     if(s) _markHeld(country,s.held_note,s.held_since);
     el.innerHTML='<div class="live-dot" style="background:var(--amber)"></div>'+_newsEsc(country)+' · unavailable: publication on hold';
     el.title=_heldTitle(country);
@@ -2629,30 +2812,46 @@ function stripMicroLabels(){
   document.querySelectorAll('.export-row span, .conf').forEach(function(e){
     if(/DEMO DATA|Not investment advice|indicative|Asking price indicators|Listings-derived|Estimates only|Size estimates/i.test(e.textContent||'')) e.remove(); });
 }
+/* The registry keeps the ANSWERS and builds its rows when it paints, so a
+   market put on hold (or a currency chosen) while the loop was running is
+   applied to every row, not just the ones that had not been built yet. */
+var _ctyAns=null;
 async function renderCountries(){
   var el=document.getElementById('pg-countries'); if(!el||!sb) return;
-  var gen=++_ctyGen;   // a hold change may start a newer render: only the newest paints
-  var rows='', heldKs=[];
-  // A held market is listed, explicitly on hold, with no figures -- never dropped.
+  var gen=++_EP.cty;   // a hold change may start a newer render: only the newest paints
+  var ans={};
+  for(var k in COUNTRIES){ var c=COUNTRIES[k];
+    if(!c||c.status!=='live') continue;
+    if(_isHeld(k)) continue;   // no request for a held market
+    try{ var r=await sb.rpc('market_kpis',{p_country:k});
+      if(_heldRes(r)) _markHeldRes(k,r,'cty');   // held: no row figures, whenever we learn it
+      else ans[k]=(r&&r.data)||null;             // asked and answered (null = nothing to show)
+    }catch(e){ ans[k]=null; }
+  }
+  if(gen!==_EP.cty) return;
+  _ctyAns=ans;
+  _paintCountries(ans);
+}
+// Draw the table from the stored answers, deciding hold and currency now.
+function _paintCountries(ans){
+  var el=document.getElementById('pg-countries'); if(!el) return;
+  var rows='', heldKs=[], missing=false;
   function heldRow(k,c){ heldKs.push(k);
     return '<tr title="'+_newsEsc(_heldTitle(k))+'"><td class="dt-city">'+c.flag+' '+c.label+'</td><td>'+c.region+'</td><td><span class="sig sig-warn">◐ On hold</span></td>'
       +'<td class="mono dt-muted">Unavailable</td><td class="mono dt-muted">Unavailable</td><td class="mono dt-muted">Unavailable</td></tr>'; }
   for(var k in COUNTRIES){ var c=COUNTRIES[k];
-    if(_isHeld(k)){ rows+=heldRow(k,c); continue; }   // no request for a held market
+    // A held market is listed, explicitly on hold, with no figures -- never dropped.
+    if(_isHeld(k)){ rows+=heldRow(k,c); continue; }
     if(c.status==='live'){
-      var med='—', cnt='—', held=false;
-      try{ var r=await sb.rpc('market_kpis',{p_country:k});
-        if(_heldRes(r)){ held=true; _markHeldRes(k,r,'cty'); }
-        var d=!held&&r&&r.data?r.data:null;
-        if(d){ cnt=Number(d.total_count||d.dedup_count||0).toLocaleString();
-          med=d.median_sale?(money(d.median_sale,c.currency)+'/m²'):'—'; } }catch(e){}
-      if(held){ rows+=heldRow(k,c); continue; }
+      var d=ans[k]||null, med='—', cnt='—';
+      if(!(k in ans)) missing=true;   // skipped as held, released since: ask again
+      if(d){ cnt=Number(d.total_count||d.dedup_count||0).toLocaleString();
+        med=d.median_sale?(money(d.median_sale,c.currency)+'/m²'):'—'; }
       rows+='<tr><td class="dt-city">'+c.flag+' '+c.label+'</td><td>'+c.region+'</td><td><span class="sig sig-up">● Live</span></td><td class="mono">'+(c.cities?c.cities.length:'—')+'</td><td class="mono">'+cnt+'</td><td class="mono">'+med+'</td></tr>';
     } else {
       rows+='<tr><td class="dt-city">'+c.flag+' '+c.label+'</td><td>'+c.region+'</td><td><span class="sig sig-neutral">○ Coming soon</span></td><td class="mono dt-muted">—</td><td class="mono dt-muted">—</td><td class="mono dt-muted">—</td></tr>';
     }
   }
-  if(gen!==_ctyGen) return;
   _ctyDone=true;
   var heldNote=heldKs.length?'<div class="panel-body" style="border-top:1px solid var(--border);font-size:11.5px;line-height:1.65;color:var(--ink3);">'
     +heldKs.map(function(k){ var st=_heldSinceTxt((_heldInfo(k)||{}).since);
@@ -2662,6 +2861,8 @@ async function renderCountries(){
     +'<div class="pg-sub">Live markets have active data collection from listing portals. Others activate as reliable sources come online.</div>'
     +'<div class="panel"><div class="panel-hd"><div class="panel-title">Coverage Registry</div></div>'
     +'<table class="dt"><thead><tr><th>Country</th><th>Region</th><th>Status</th><th>Cities</th><th>Listings</th><th>Median Sale</th></tr></thead><tbody>'+rows+'</tbody></table>'+heldNote+'</div>';
+  // A market released while the loop skipped it has no figures yet: read it.
+  if(missing&&_ctyAns===ans) _swallow(renderCountries());
 }
 async function renderSignalsPages(country){
   if(!sb) return;
@@ -2675,10 +2876,13 @@ async function renderSignalsPages(country){
     if(l) l.innerHTML=liqHead+_heldState(country,note,since);
     if(v) v.innerHTML=invHead+_heldState(country,note,since);
   }
+  var t=_tok('signals',country,'M');
+  if(!_fresh(t)) return;
   if(_isHeld(country)){ held(); return; }   // no request for a held market
   var sg=await _rpc('market_signals',{p_country:country});
-  if(sg.held){ if(country===ACTIVE_COUNTRY) held(sg.note,sg.since); return; }
-  if(!sg.ok){ _dataBanner('Market signals for '+lbl+' could not be loaded ('+sg.error+').', function(){ renderSignalsPages(country); }); return; }
+  if(!_fresh(t)) return;
+  if(sg.held||_isHeld(country)){ held(sg.note,sg.since); return; }
+  if(!sg.ok){ _dataBanner('Market signals for '+lbl+' could not be loaded ('+sg.error+').', _retryActive(renderSignalsPages)); return; }
   var s=sg.data||null;
   var liq=document.getElementById('pg-liquidity-index');
   if(liq){
@@ -2751,7 +2955,17 @@ function loadHonestLayer(country){
 // Data Explorer + Exports (aggregate), Reports + Insights. All market-scoped.
 // ══════════════════════════════════════════════════════════════
 function _cur(c){ return c==='MAD'?'MAD ':c==='NGN'?'₦':(c+' '); }
-var _B2K=null,_B2C=null,_B2S='';
+/* The market summary and the market it belongs to are one value: _B2C names
+   the owner, _B2M the market epoch it was read under. Every reader goes
+   through _kOf(country), which hands back the summary only if it really is
+   that market's, read for the selection now on screen, and not withheld. */
+var _B2K=null,_B2C=null,_B2S='',_B2M=-1;
+function _setB2(c,K){ _B2C=c; _B2K=K; _B2M=_EP.mkt; }
+function _clearB2(){ _B2C=null; _B2K=null; _B2M=-1; }
+function _b2Ready(c){ return !!c&&_B2C===c&&_B2M===_EP.mkt; }
+function _kOf(c){ return (_b2Ready(c)&&!_isHeld(c))?_B2K:null; }
+function _clearKpiCache(){ window._kpiInd=null; window._kpiYld=null; window._kpiS=null;
+  window._kpiNow=null; window._kpiCur=null; window._kpiOwner=null; }
 function _newsHtml(items){
   return '<div style="border-top:1px solid var(--border);">'+items.map(function(x){
     var d=x.published_at?new Date(x.published_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
@@ -2809,6 +3023,32 @@ async function _fx(){ if(_fxCache&&Object.keys(_fxCache).length) return _fxCache
 function _usd(v,cur,fx){ var r=fx[cur]; return (r&&v)?v/r:null; }
 function _nextMon(){ var d=new Date(); var add=((8-d.getDay())%7)||7; d.setDate(d.getDate()+add); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
 function _statCell(l,v,c){ return '<div style="background:var(--surface);padding:13px 16px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink4);margin-bottom:5px;">'+l+'</div><div style="font-size:12px;color:'+c+';font-weight:600;">'+v+'</div></div>'; }
+// Both coverage counts belong to one server-side, deduplicated active population.
+// Older caches did not state that population. They cannot supply a percentage:
+// raw_count is before deduplication, and market_signals is a separate read.
+var CITY_PRICE_MIN_N=10;
+function _countValue(v){
+  if(v==null||v===''||typeof v==='boolean') return null;
+  var n=Number(v); return Number.isSafeInteger(n)&&n>=0?n:null;
+}
+function _coverageOf(K){
+  var c=K&&K.coverage;
+  var total=c?_countValue(c.total_count):null, priced=c?_countValue(c.priced_count):null;
+  if(total==null||priced==null||priced>total) return null;
+  return {total:total,priced:priced,pct:total?Math.round(priced/total*100):null};
+}
+function _validatedCities(K){
+  // Geography is validated and canonicalised before aggregation in the database.
+  // Do not turn advert fragments into places or pool medians in the browser.
+  return ((K&&K.cities)||[]).filter(function(c){
+    return c.geography_valid===true&&typeof c.city==='string'&&c.city.trim().length>0;
+  });
+}
+function _cityPriceSample(c,type){
+  var n=_countValue(c&&c[type+'_count']), med=c&&c[type+'_median'];
+  med=med==null?null:Number(med);
+  return c&&c.geography_valid===true&&n!=null&&n>=CITY_PRICE_MIN_N&&Number.isFinite(med)&&med>0?{n:n,median:med}:null;
+}
 // One cross-market render at a time; a hold change during a render asks for another.
 async function renderCrossMarket(){
   if(!document.getElementById('pg-market-terminal')||!sb) return;
@@ -2820,53 +3060,73 @@ async function renderCrossMarket(){
 }
 async function _renderCrossMarket(){
   var el=document.getElementById('pg-market-terminal'); if(!el||!sb) return;
+  var gen=_EP.xm;   // a hold change asks for a fresh draw; this one stops writing
   var lives=Object.keys(COUNTRIES).filter(function(k){return COUNTRIES[k].status==='live';});
-  // Held markets: no request (it would only be refused), no figure in any total,
-  // chart or map below -- and named on the page as unavailable.
   var skipped={}, hit423={};
-  lives.forEach(function(k){ if(_isHeld(k)) skipped[k]=1; });
   var fx=await _fx();
+  if(gen!==_EP.xm) return;
+  // Held markets: no request (it would only be refused), no figure in any total,
+  // chart or map below -- and named on the page as unavailable. Decided here,
+  // after the FX wait, so a hold learned during it is still honoured.
+  lives.forEach(function(k){ if(_isHeld(k)) skipped[k]=1; });
   var xmRpc=function(name,k){
     return sb.rpc(name,{p_country:k}).then(function(r){
       if(_heldRes(r)){ hit423[k]=1; _markHeldRes(k,r,'xm'); return null; }
-      return r&&r.data; }).catch(function(){return null;}); };
+      return r&&!r.error?r.data:null; }).catch(function(){return null;}); };
   var data=await Promise.all(lives.filter(function(k){return !skipped[k];}).map(function(k){
-    return Promise.all([xmRpc('market_kpis',k),xmRpc('market_signals',k)])
-      .then(function(a){return {k:k,c:COUNTRIES[k],kpi:a[0]||{},sig:a[1]||{}};}); }));
+    return xmRpc('market_kpis',k).then(function(K){return {k:k,c:COUNTRIES[k],kpi:K};}); }));
+  if(gen!==_EP.xm) return;
   var heldKs=lives.filter(function(k){return skipped[k]||hit423[k]||_isHeld(k);});
   data=data.filter(function(d){return heldKs.indexOf(d.k)<0;});
-  data=data.filter(function(d){return d.kpi&&(d.kpi.total_count||d.sig.total_listings);});
+  var failedKs=data.filter(function(d){return !d.kpi;}).map(function(d){return d.k;});
+  data=data.filter(function(d){return !!d.kpi;});
   var COL=['#C9A96A','#55A899','#6E8FBF','#8E99A9','#B87E76','#62708A','#D8A94E','#63B98B'];
   var nf=function(v){return Number(v||0).toLocaleString('en-US');};
   var kf=function(v){v=Number(v||0);return v>=1000?(Math.round(v/100)/10)+'k':''+v;};
   var usd0=function(v){return v==null?'—':'$'+Math.round(v).toLocaleString('en-US');};
 
-  // ---- aggregates (all real) ----
-  var totalListings=0, totalPriced=0, totalDedup=0, cityset={}, distCount=0;
+  var totalListings=0, totalPriced=0, coverageKnown=true, cityset={}, distCount=0;
   var cityRows=[], rentRows=[], purposeByCity={}, mix={};
+  var cityCount=0, comp=0;
+  // ---- aggregates (all real) ---- computed after the last hold re-check below,
+  // so nothing a held market returned can reach a total, a chart or the map.
+  function _xmAggregate(){
   data.forEach(function(d,i){ d.color=COL[i%COL.length]; d.cur=d.c.currency;
-    d.listings=Number(d.sig.total_listings||d.kpi.total_count||0); totalListings+=d.listings;
-    d.priced=Number(d.kpi.raw_count||d.kpi.dedup_count||0); totalPriced+=d.priced;
-    totalDedup+=Number(d.kpi.dedup_count||d.kpi.raw_count||0);
+    d.coverage=_coverageOf(d.kpi);
+    d.listings=d.coverage?d.coverage.total:(_countValue(d.kpi.total_count)||0); totalListings+=d.listings;
+    d.priced=d.coverage?d.coverage.priced:null;
+    if(d.coverage) totalPriced+=d.priced; else coverageKnown=false;
     distCount+=(d.kpi.districts||[]).length;
-    (d.kpi.cities||[]).forEach(function(c){ cityset[d.k+'|'+c.city]=1;
-      var su=_usd(c.sale_median,d.cur,fx), ru=_usd(c.rent_median,d.cur,fx);
-      if(su) cityRows.push({city:c.city,country:d.c.label,usd:su,n:Number(c.listings||0)});
-      if(ru) rentRows.push({city:c.city,country:d.c.label,usd:ru,n:Number(c.listings||0)}); });
+    d.cities=_validatedCities(d.kpi);
+    d.cities.forEach(function(c){ cityset[d.k+'|'+c.city]=1;
+      var sale=_cityPriceSample(c,'sale'), rent=_cityPriceSample(c,'rent');
+      var su=sale?_usd(sale.median,d.cur,fx):null, ru=rent?_usd(rent.median,d.cur,fx):null;
+      if(su) cityRows.push({city:c.city,country:d.c.label,usd:su,n:sale.n});
+      if(ru) rentRows.push({city:c.city,country:d.c.label,usd:ru,n:rent.n}); });
     (d.kpi.city_class||[]).forEach(function(x){ var n=Number(x.count||0);
       var acl=(x.ac||'other'); acl=acl.charAt(0).toUpperCase()+acl.slice(1);
       mix[acl]=(mix[acl]||0)+n;
-      var key=x.city+'|'+d.c.label; purposeByCity[key]=purposeByCity[key]||{city:x.city,sale:0,rent:0};
-      purposeByCity[key][x.tt==='rent'?'rent':'sale']+=n; }); });
-  var cityCount=Object.keys(cityset).length;
-  var comp=totalListings?Math.round(totalPriced/totalListings*100):0;
+      if(d.cities.some(function(c){return c.city===x.city;})){
+        var key=x.city+'|'+d.c.label; purposeByCity[key]=purposeByCity[key]||{city:x.city,sale:0,rent:0};
+        purposeByCity[key][x.tt==='rent'?'rent':'sale']+=n; } }); });
+  cityCount=Object.keys(cityset).length;
+  comp=coverageKnown&&totalListings?Math.round(totalPriced/totalListings*100):null;
+  }
   var refresh='—';
   try{ var lr=await sb.from('properties').select('scraped_at').order('scraped_at',{ascending:false,nullsFirst:false}).limit(1);
        if(lr&&lr.data&&lr.data[0]&&lr.data[0].scraped_at) refresh=new Date(lr.data[0].scraped_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }catch(e){}
+  if(gen!==_EP.xm) return;
   var snapInfo=null;
   try{ var sr=await sb.from('market_snapshots').select('snapshot_date').order('snapshot_date',{ascending:true}).limit(1);
+       if(gen!==_EP.xm) return;
        var sr2=await sb.from('market_snapshots').select('snapshot_date').order('snapshot_date',{ascending:false}).limit(1);
        if(sr&&sr.data&&sr.data.length) snapInfo={first:sr.data[0].snapshot_date,last:sr2.data[0].snapshot_date}; }catch(e){}
+  if(gen!==_EP.xm) return;
+  // Last word on holds before anything is drawn: a market held while those
+  // reads were out is dropped from every total, chart, table and map here.
+  heldKs=lives.filter(function(k){return skipped[k]||hit423[k]||_isHeld(k);});
+  data=data.filter(function(d){return heldKs.indexOf(d.k)<0;});
+  _xmAggregate();
   var snapDates=snapInfo&&snapInfo.first!==snapInfo.last?2:(snapInfo?1:0);
   var ALL_SOURCES=[{name:'Mubawab',country:'Morocco',domain:'mubawab.ma'},
                {name:'Mubawab Tunisie',country:'Tunisia',domain:'mubawab.tn'},
@@ -2961,12 +3221,13 @@ async function _renderCrossMarket(){
   var rentBars=topRent.map(function(r){
     return '<div class="bed-row"><div class="bed-name">'+_newsEsc(r.city)+'</div>'
       +'<div class="bed-track"><div class="bed-fill" style="width:'+(r.usd/maxRent*100).toFixed(1)+'%"></div></div>'
-      +'<div class="bed-val num">$'+r.usd.toFixed(1)+'<span class="hbar-n">/m²/mo</span></div></div>';}).join('');
+      +'<div class="bed-val num">$'+r.usd.toFixed(1)+'<span class="hbar-n">/m²/mo · n='+nf(r.n)+'</span></div></div>';}).join('');
 
   // ---- city leaderboard ----
-  var lead=[]; data.forEach(function(d){ (d.kpi.cities||[]).forEach(function(c){
+  var lead=[]; data.forEach(function(d){ d.cities.forEach(function(c){
     var mkts=(d.kpi.districts||[]).filter(function(x){return x.city===c.city;}).length;
-    lead.push({city:c.city,country:d.c.label,n:Number(c.listings||0),mkts:mkts,usd:_usd(c.sale_median,d.cur,fx)}); }); });
+    var sale=_cityPriceSample(c,'sale');
+    if(sale) lead.push({city:c.city,country:d.c.label,n:Number(c.listings||0),saleN:sale.n,mkts:mkts,usd:_usd(sale.median,d.cur,fx)}); }); });
   lead.sort(function(a,b){return b.n-a.n;});
   var lead8=lead.slice(0,8), maxLead=lead8.length?lead8[0].n:1;
   var leadRows=lead8.map(function(r,i){
@@ -2974,7 +3235,7 @@ async function _renderCrossMarket(){
       +'<td class="num">'+nf(r.n)+'</td>'
       +'<td><div class="share-cell"><div class="share-track"><div class="share-fill" style="width:'+(r.n/maxLead*100).toFixed(1)+'%"></div></div><span class="num">'+(totalListings?(r.n/totalListings*100).toFixed(1):'0')+'%</span></div></td>'
       +'<td class="num">'+(r.mkts||'—')+'</td>'
-      +'<td class="num">'+usd0(r.usd)+'</td>'
+      +'<td class="num">'+usd0(r.usd)+'<span class="hbar-n">sale n='+nf(r.saleN)+'</span></td>'
       +'<td>'+flat('—')+'</td></tr>';}).join('');
 
   // ---- source network ----
@@ -2992,9 +3253,10 @@ async function _renderCrossMarket(){
         +'<td><span class="status-dot2" style="background:var(--amber)"></span><span class="status-lbl2">Publication on hold</span></td></tr>';}).join('');
 
   // ---- coverage ----
-  var covRows=byCty.map(function(d){ var p=d.listings?Math.round(d.priced/d.listings*100):0;
-    return '<div class="cov-row"><div class="cov-top"><span class="c-name">'+d.c.label+' · price per m² computable</span><span class="c-val num">'+p+'%</span></div>'
-      +'<div class="cov-track"><div class="cov-fill'+(p>=70?' bronze':'')+'" style="width:'+p+'%"></div></div></div>';}).join('')
+  var covRows=byCty.map(function(d){ var p=d.coverage?d.coverage.pct:null;
+    var note=d.coverage?nf(d.coverage.priced)+' of '+nf(d.coverage.total)+' deduplicated active listings':'Comparable counts unavailable';
+    return '<div class="cov-row" title="'+_newsEsc(note)+'"><div class="cov-top"><span class="c-name">'+d.c.label+' · usable price per m²</span><span class="c-val num">'+(p==null?'Unavailable':p+'%')+'</span></div>'
+      +'<div class="cov-track">'+(p==null?'':'<div class="cov-fill'+(p>=70?' bronze':'')+'" style="width:'+p+'%"></div>')+'</div></div>';}).join('')
     +heldKs.map(function(k){
       return '<div class="cov-row" title="'+_newsEsc(_heldTitle(k))+'"><div class="cov-top"><span class="c-name">'+_newsEsc(COUNTRIES[k].label)+' · publication on hold</span>'
         +'<span class="c-val" style="color:var(--amber);">Unavailable</span></div><div class="cov-track"></div></div>';}).join('');
@@ -3009,7 +3271,9 @@ async function _renderCrossMarket(){
     +' excluded from every total, chart, table and map on this page. '
     +(heldKs.length>1?'No figures are shown for these markets until a corrected dataset is approved.':_HELD_SENTENCE)+'</div>'
     +'</div></div>'):'';
-  var dups=Math.max(0,totalPriced-totalDedup);
+  var compText=comp==null?'Unavailable':comp+'<span class="unit">%</span>';
+  var coverageNote=coverageKnown?nf(totalPriced)+' of '+nf(totalListings)+' deduplicated active listings':'Comparable counts are unavailable for one or more markets';
+  var failedPanel=failedKs.length?'<div class="panel"><div class="panel-body2">Summary unavailable for '+_newsEsc(failedKs.map(function(k){return COUNTRIES[k].label;}).join(', '))+'. Totals and charts below exclude these markets. <button class="panel-link" onclick="renderCrossMarket()">Retry</button></div></div>':'';
 
   // ---- trend (honest: needs 2+ weekly snapshots) ----
   var trendBody;
@@ -3031,7 +3295,7 @@ async function _renderCrossMarket(){
     +'<span>All price figures are <strong style="color:var(--ink)">asking prices in USD</strong></span>'
     +'<span class="basis-chip">'+db+'Based on '+nf(totalListings)+' observed listings</span></div></div>'
     +'<button class="btn btn-ghost" onclick="nav(\'market-reports\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Market reports</button></div>'
-   +heldPanel
+   +heldPanel+failedPanel
 
    +'<section class="kpis">'
     +KPI(icoList,'Observed listings',nf(totalListings),flat('baseline')+'<span>trend from '+_nextMon()+'</span>','Active records, deduplicated')
@@ -3040,15 +3304,15 @@ async function _renderCrossMarket(){
     +KPI(icoCity,'Cities covered',''+cityCount,flat('stable')+'<span>this period</span>','Metro areas with active collection')
     +KPI(icoPin,'Markets tracked',nf(distCount),flat('growing')+'<span>district level</span>','Neighbourhoods &amp; submarkets, standardised')
     +KPI(icoAct,'Active sources',''+SOURCES.length,flat('active')+'<span>last run '+refresh+'</span>','Listing portals monitored weekly')
-    +KPI(icoShield,'Data completeness',comp+'<span class="unit">%</span>',flat('baseline')+'<span>critical fields</span>','Listings with computable price per m²')
+    +KPI(icoShield,'Price coverage',compText,flat('same population')+'<span>usable price per m²</span>',coverageNote)
    +'</section>'
 
    +'<section class="grid g-main">'
     +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Median asking price per m² by city</div>'
-    +'<div class="panel-sub">Top '+topCities.length+' of '+cityCount+' cities · USD per m² · for sale</div></div>'
+    +'<div class="panel-sub">Top '+topCities.length+' of '+cityRows.length+' eligible cities · USD per m² · for sale · minimum '+CITY_PRICE_MIN_N+' observations</div></div>'
     +'<div class="panel-actions"><span class="n-tag num">n = '+nf(hbarN)+'</span><button class="panel-link" onclick="nav(\'cities\')">All cities'+chev+'</button></div></div>'
-    +'<div class="panel-body2">'+(hbars||'<div class="empty-trend" style="height:120px;">No priced cities yet.</div>')
-    +'<div class="axis-note"><span>Medians of observed asking prices per city · converted at live interbank FX</span><span class="num" style="white-space:nowrap">Spread: '+spread+'</span></div></div></div>'
+    +'<div class="panel-body2">'+(hbars||'<div class="empty-trend" style="height:120px;">No verified cities meet the sale-price sample requirement.</div>')
+    +'<div class="axis-note"><span>n = eligible sale listings used in each median. Unverified places and smaller or unknown samples are excluded. Converted at live interbank FX.</span><span class="num" style="white-space:nowrap">Spread: '+spread+'</span></div></div></div>'
     +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Map Explorer — Africa</div>'
     +'<div class="panel-sub">Observed listing inventory · dot size = listings</div></div>'
     +'<div class="panel-actions"><button class="panel-link" onclick="nav(\'map-view\')">Open full map'+chev+'</button></div></div>'
@@ -3077,8 +3341,8 @@ async function _renderCrossMarket(){
     +'<div class="stk-legend"><span><span class="ldot" style="background:var(--gold)"></span> For sale</span>'
     +'<span><span class="ldot" style="background:var(--teal)"></span> For rent (monthly)</span></div></div></div>'
     +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Median asking rent by city</div>'
-    +'<div class="panel-sub">USD per m² per month · residential rent</div></div><span class="n-tag num">n = '+nf(topRent.reduce(function(a,r){return a+r.n;},0))+'</span></div>'
-    +'<div class="panel-body2"><div class="bed-rows">'+(rentBars||'<div class="empty-trend" style="height:120px;">No rent-priced cities yet.</div>')+'</div>'
+    +'<div class="panel-sub">USD per m² per month · minimum '+CITY_PRICE_MIN_N+' eligible rent observations · verified cities</div></div><span class="n-tag num">n = '+nf(topRent.reduce(function(a,r){return a+r.n;},0))+'</span></div>'
+    +'<div class="panel-body2"><div class="bed-rows">'+(rentBars||'<div class="empty-trend" style="height:120px;">No verified cities meet the rent-price sample requirement.</div>')+'</div>'
     +'<div class="axis-note" style="margin-top:14px"><span>Cities with computable rent per m²</span>'
     +'<span class="num" style="color:var(--ink)">'+(topRent.length?topRent[0].city+' · $'+topRent[0].usd.toFixed(1)+'/m²':'—')+'</span></div></div></div>'
    +'</section>'
@@ -3091,10 +3355,10 @@ async function _renderCrossMarket(){
     +'<span class="cm"><span class="cm-line t"></span> New per period</span></div>'+trendBody
     +'<div class="axis-note"><span>Inventory reflects collected listings, not total market supply</span><span class="num">'+nf(totalListings)+' current</span></div></div></div>'
     +'<div class="panel"><div class="panel-head"><div><div class="panel-title">City leaderboard</div>'
-    +'<div class="panel-sub">Ranked by observed inventory · medians are for sale, USD</div></div>'
+    +'<div class="panel-sub">Verified cities ranked by eligible priced listings · sale medians require at least '+CITY_PRICE_MIN_N+' observations · USD</div></div>'
     +'<div class="panel-actions"><button class="panel-link" onclick="nav(\'cities\')">All '+cityCount+' cities'+chev+'</button></div></div>'
-    +'<div class="panel-body2" style="padding-top:8px"><table class="xmt"><thead><tr><th>City</th><th>Listings</th><th>Share</th><th>Markets</th><th>Median $/m²</th><th>Δ wk</th></tr></thead>'
-    +'<tbody>'+leadRows+'</tbody></table></div></div>'
+    +'<div class="panel-body2" style="padding-top:8px"><table class="xmt"><thead><tr><th>City</th><th>Eligible priced listings</th><th>Share of inventory</th><th>Markets</th><th>Median $/m²</th><th>Δ wk</th></tr></thead>'
+    +'<tbody>'+(leadRows||'<tr><td colspan="6">No verified cities meet the sale-price sample requirement.</td></tr>')+'</tbody></table></div></div>'
    +'</section>'
 
    +'<section class="grid g-bottom">'
@@ -3105,11 +3369,11 @@ async function _renderCrossMarket(){
     +'<tbody>'+srcRows+'</tbody></table>'
     +'<div class="axis-note" style="margin-top:6px"><span>'+SOURCES.length+' proxy-free sources live · 15+ additional portals onboard as markets unblock</span></div></div></div>'
     +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Data coverage — all markets</div>'
-    +'<div class="panel-sub">Field completeness of the current collection</div></div></div>'
+    +'<div class="panel-sub">Usable price per m² within the same deduplicated active listing population</div></div></div>'
     +'<div class="panel-body2"><div class="cov-rows">'+covRows+'</div>'
     +'<div class="cov-meta">'
     +'<div class="cov-stat"><div class="cs-label">Records held</div><div class="cs-value num">'+nf(totalListings)+'</div></div>'
-    +'<div class="cov-stat"><div class="cs-label">Priced per m²</div><div class="cs-value num">'+nf(totalPriced)+' ('+comp+'%)</div></div>'
+    +'<div class="cov-stat"><div class="cs-label">Usable price per m²</div><div class="cs-value num">'+(comp==null?'Unavailable':nf(totalPriced)+' ('+comp+'%)')+'</div></div>'
     +'<div class="cov-stat"><div class="cs-label">Sources monitored</div><div class="cs-value num">'+SOURCES.length+' portals</div></div>'
     +'<div class="cov-stat"><div class="cs-label">Update cadence</div><div class="cs-value">Weekly</div></div></div>'
     +'<div class="method-note">Ironwood indicators are based on <strong style="color:var(--ink2)">observed property listing data</strong> and should not be interpreted as verified transaction prices. Local-currency asking prices are converted to USD at live interbank rates.</div></div></div>'
@@ -3123,17 +3387,20 @@ async function _renderCrossMarket(){
 }
 function renderXmMap(data,heldKs){ var el=document.getElementById('xm-map'); if(!el||!window.L) return;
   if(_xmMap){try{_xmMap.remove();}catch(e){}_xmMap=null;}
-  _xmMap=L.map('xm-map',{zoomControl:false,attributionControl:false,scrollWheelZoom:false}).setView([6,16],3);
-  L.control.zoom({position:'topright'}).addTo(_xmMap);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(_xmMap);
+  // Hold the instance locally: a later draw replaces the global, and this
+  // one's timer must not resize somebody else's map.
+  var map=L.map('xm-map',{zoomControl:false,attributionControl:false,scrollWheelZoom:false}).setView([6,16],3);
+  _xmMap=map;
+  L.control.zoom({position:'topright'}).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(map);
   data.forEach(function(d){ var v=COUNTRY_VIEW[d.k]; if(!v)return;
-    L.circleMarker(v[0],{radius:Math.min(22,Math.max(8,Math.sqrt(d.listings/200))),fillColor:'#DAC28C',color:'rgba(20,19,15,.85)',weight:1.5,fillOpacity:.85}).addTo(_xmMap)
+    L.circleMarker(v[0],{radius:Math.min(22,Math.max(8,Math.sqrt(d.listings/200))),fillColor:'#DAC28C',color:'rgba(20,19,15,.85)',weight:1.5,fillOpacity:.85}).addTo(map)
       .bindTooltip(d.c.label+' · '+d.listings.toLocaleString()+' listings',{direction:'top',className:'xm-tip'}); });
   // Held markets: an empty ring sized to nothing, labelled as on hold.
   (heldKs||[]).forEach(function(k){ var v=COUNTRY_VIEW[k]; if(!v)return;
-    L.circleMarker(v[0],{radius:7,color:'#D8A94E',weight:1.5,dashArray:'3 3',fillOpacity:0}).addTo(_xmMap)
+    L.circleMarker(v[0],{radius:7,color:'#D8A94E',weight:1.5,dashArray:'3 3',fillOpacity:0}).addTo(map)
       .bindTooltip(_newsEsc(COUNTRIES[k].label)+' · unavailable: publication on hold',{direction:'top',className:'xm-tip'}); });
-  setTimeout(function(){if(_xmMap)_xmMap.invalidateSize();},250);
+  setTimeout(function(){ if(_xmMap===map) map.invalidateSize(); },250);
 }
 
 var _ovMap=null, _ovCharts={};
@@ -3147,22 +3414,25 @@ function _kcard(label,val,sub){
 async function renderOverview(country){
   var el=document.getElementById('pg-markets'); if(!el) return;
   var c=COUNTRIES[country], lbl=c?c.label:country;
+  var t=_tok('pg-markets',country,'MFC');
+  if(!_fresh(t)) return;
   if(_isHeld(country)){ el.innerHTML=V2HEAD(country,'Markets',[],null)+_heldState(country); return; }
   if(!c||c.status!=='live'){
     el.innerHTML=V2HEAD(country,'Markets',[],null)+_emptyState('Coverage activates once '+lbl+' has listing data.'); return; }
-  var f=_curFilters(), cur=c.currency, g=_viewGen, fx=await _fx();
+  var f=_curFilters(), cur=c.currency, fx=await _fx();
+  if(!_freshLive(t)) return;   // held or superseded during the FX read: ask for nothing
   var res=await Promise.all([
     _rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days}),
     _rpc('market_filtered',{p_country:country,p_asset:f.asset,p_days:f.days}),
     _rpc('market_signals',{p_country:country})]);
-  if(_stale(g)) return;
+  if(!_fresh(t)) return;
   var hr=res.filter(function(x){return x.held;})[0];
-  if(hr){ el.innerHTML=V2HEAD(country,'Markets',[],null)+_heldState(country,hr.note,hr.since); return; }
+  if(hr||_isHeld(country)){ el.innerHTML=V2HEAD(country,'Markets',[],null)+_heldState(country,hr&&hr.note,hr&&hr.since); return; }
   // The market figures are the page; if they failed, say so instead of
   // drawing an empty market. Signals are an add-on and may be missing.
   if(!res[0].ok||!res[1].ok){
     el.innerHTML=V2HEAD(country,'Markets',[],null)
-      +_errorState('Market figures for '+lbl,(res[0].error||res[1].error),"renderOverview(_B2C)");
+      +_errorState('Market figures for '+lbl,(res[0].error||res[1].error),"renderOverview(ACTIVE_COUNTRY)");
     return;
   }
   var df=res[0].data||[], mf=res[1].data||{}, sig=(res[2].ok&&res[2].data)||{};
@@ -3194,7 +3464,9 @@ async function renderOverview(country){
   var Y=function(u){return B1-((u-loU)/(hiU-loU))*(B1-T1);};
   function median(arr){ if(!arr.length)return null; var a=arr.slice().sort(function(x,y){return x-y;}); var m=Math.floor(a.length/2); return a.length%2?a[m]:(a[m-1]+a[m])/2; }
   var medN=median(pts.map(function(p){return p.n;}))||0, medU=median(pts.map(function(p){return p.med;}))||0;
-  window._mkRows=df; window._mkCtx={country:country,cur:cur,type:f.type};
+  // The rows and their context belong to THIS draw: a profile answering later
+  // can tell whether the table it was clicked in is still the table on screen.
+  window._mkRows=df; window._mkCtx={country:country,cur:cur,type:f.type,rid:t.id,mkt:_EP.mkt};
   if(!window._mkSel||!df.some(function(r){return r.sub===window._mkSel;})) window._mkSel=(df[0]&&df[0].sub);
   var labelSet={}; pts.slice(0,5).forEach(function(p){labelSet[p.city]=1;});
   pts.slice().sort(function(a,b){return b.med-a.med;}).slice(0,2).forEach(function(p){labelSet[p.city]=1;});
@@ -3295,11 +3567,13 @@ function renderMkMap(country,df,f,cur){
   var el=document.getElementById('mk-map'); if(!el||!window.L) return;
   if(_mkMap){try{_mkMap.remove();}catch(e){}_mkMap=null;}
   var view=COUNTRY_VIEW[country]||[[0,20],5];
-  _mkMap=L.map('mk-map',{zoomControl:true,attributionControl:false,zoomSnap:.5,scrollWheelZoom:false});
-  _mkMap.setView(view[0],view[1],{animate:false});
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,className:'sat-dim'}).addTo(_mkMap);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:18,opacity:.85}).addTo(_mkMap);
-  var tt=f.type==='rent'?'rent':'sale', K=_B2K||{};
+  var map=L.map('mk-map',{zoomControl:true,attributionControl:false,zoomSnap:.5,scrollWheelZoom:false});
+  _mkMap=map;
+  map.setView(view[0],view[1],{animate:false});
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,className:'sat-dim'}).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:18,opacity:.85}).addTo(map);
+  // The city bubbles come from the market summary OF THIS MARKET, or not at all.
+  var tt=f.type==='rent'?'rent':'sale', K=_kOf(country)||{};
   var cityLayer=L.layerGroup(), distLayer=L.layerGroup();
   (K.cities||[]).forEach(function(ct){ var xy=CITY_COORDS[ct.city]; if(!xy) return;
     var med=_cityMed(K,ct.city,f.asset,tt), n=_cityCnt(K,ct.city,f.asset);
@@ -3315,11 +3589,11 @@ function renderMkMap(country,df,f,cur){
     m.on('click',function(){ selectMarket(d.sub); });
     m.addTo(distLayer); });
   var DZ=10;
-  function sync(){ var z=_mkMap.getZoom();
-    if(z>=DZ&&distLayer.getLayers().length>0){ if(_mkMap.hasLayer(cityLayer))_mkMap.removeLayer(cityLayer); if(!_mkMap.hasLayer(distLayer))_mkMap.addLayer(distLayer); }
-    else{ if(_mkMap.hasLayer(distLayer))_mkMap.removeLayer(distLayer); if(!_mkMap.hasLayer(cityLayer))_mkMap.addLayer(cityLayer); } }
-  _mkMap.on('zoomend',sync); sync();
-  setTimeout(function(){ if(_mkMap){ _mkMap.invalidateSize(); _mkMap.setView(view[0],view[1],{animate:false}); } },220);
+  function sync(){ var z=map.getZoom();
+    if(z>=DZ&&distLayer.getLayers().length>0){ if(map.hasLayer(cityLayer))map.removeLayer(cityLayer); if(!map.hasLayer(distLayer))map.addLayer(distLayer); }
+    else{ if(map.hasLayer(distLayer))map.removeLayer(distLayer); if(!map.hasLayer(cityLayer))map.addLayer(cityLayer); } }
+  map.on('zoomend',sync); sync();
+  setTimeout(function(){ if(_mkMap===map){ map.invalidateSize(); map.setView(view[0],view[1],{animate:false}); } },220);
 }
 var _rsCharts={};
 function _rsD(id){ if(_rsCharts[id]){try{_rsCharts[id].destroy();}catch(e){}delete _rsCharts[id];} }
@@ -3330,14 +3604,17 @@ async function renderResearchPanel(country){
   var slot=document.getElementById('mk-research'); if(!slot||!sb) return;
   var c=COUNTRIES[country], lbl=c?c.label:country;
   var rows=[], area=[];
-  var g=_viewGen;
+  // Child of the Markets page: if that page is redrawn, this panel's container
+  // is gone and its answer belongs to nothing.
+  var t=_tok('pg-markets/research',country,'M','pg-markets');
+  if(!_fresh(t)) return;
   // Published research figures are not listing-derived and still load for a
   // held market; listed_area is, so it is not requested for one.
-  var rr=await Promise.all([_q(sb.from('market_research_stats').select('*').eq('country',country)),
+  var rr=await Promise.all([_q(sb.from('market_research_stats').select('*').eq('country',country),country),
     _isHeld(country)?Promise.resolve({ok:false,held:true,data:null}):_rpc('listed_area',{p_country:country})]);
-  if(_stale(g)) return;
+  if(!_fresh(t)) return;
   if(rr[0].held){ slot.innerHTML=_heldState(country,rr[0].note,rr[0].since); return; }
-  if(!rr[0].ok||(!rr[1].ok&&!rr[1].held)){ slot.innerHTML=_errorState('Research figures for '+lbl,(rr[0].error||rr[1].error),"renderResearchPanel(_B2C)"); return; }
+  if(!rr[0].ok||(!rr[1].ok&&!rr[1].held)){ slot.innerHTML=_errorState('Research figures for '+lbl,(rr[0].error||rr[1].error),"renderResearchPanel(ACTIVE_COUNTRY)"); return; }
   rows=rr[0].data||[]; area=rr[1].data||[];
   var pubs={}; rows.forEach(function(x){pubs[x.publisher]=1;});
   var method='<div class="method-note"><strong style="color:var(--ink2);">Methodology.</strong> Every figure is quoted verbatim from a published report ('
@@ -3424,9 +3701,11 @@ async function renderResearchPanel(country){
    +'<div style="overflow-x:auto;"><table class="xmt" style="margin-top:8px;"><thead><tr><th style="text-align:left;">Metric</th><th style="text-align:left;">Market</th><th style="text-align:left;">Asset</th><th>Value</th><th style="text-align:left;">As of</th><th style="text-align:left;">Source</th><th style="text-align:left;">Quote</th></tr></thead><tbody>'
    +audit+'</tbody></table></div></details>'+method+'</div></div></section>';
 
-  if(window.Chart){
-    if(cityList.length){ _rsD('rs-supply');
-      _rsCharts['rs-supply']=new Chart(document.getElementById('rs-supply'),{type:'bar',
+  // Charts go on THIS panel's canvases (looked up inside the slot), and only
+  // while the slot is still the one on the page.
+  if(window.Chart&&_fresh(t)&&slot.isConnected){
+    if(cityList.length&&slot.querySelector('#rs-supply')){ _rsD('rs-supply');
+      _rsCharts['rs-supply']=new Chart(slot.querySelector('#rs-supply'),{type:'bar',
         data:{labels:cityList,datasets:supDs},
         options:{responsive:true,maintainAspectRatio:false,
           plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:10},color:'#A8A08F',boxWidth:10,padding:10}},
@@ -3436,13 +3715,13 @@ async function renderResearchPanel(country){
             y:{stacked:true,grid:{color:'rgba(228,221,207,.07)'},ticks:{font:{family:'IBM Plex Mono',size:10},color:'#6E685C',
               callback:function(v){return v>=1e6?(v/1e6)+'M':(v/1e3)+'k';}},title:{display:true,text:'m²',color:'#6E685C',font:{size:9}}}}}});
     }
-    if(Object.keys(occSeries).length){ _rsD('rs-occ');
+    if(Object.keys(occSeries).length&&slot.querySelector('#rs-occ')){ _rsD('rs-occ');
       var OC={'Offices':'#C9A96A','Retail':'#55A899','Hospitality':'#B87E76','Industrial':'#8E99A9','Residential':'#6E8FBF'};
       var ds=Object.keys(occSeries).map(function(k,i){ var base=k.replace(' — vacancy','');
         return {label:k, data:occSeries[k], parsing:false,
           borderColor:OC[base]||'#D8A94E', backgroundColor:OC[base]||'#D8A94E',
           borderWidth:2, pointRadius:4, tension:.25, borderDash:/vacancy/.test(k)?[5,4]:[], fill:false}; });
-      _rsCharts['rs-occ']=new Chart(document.getElementById('rs-occ'),{type:'line',
+      _rsCharts['rs-occ']=new Chart(slot.querySelector('#rs-occ'),{type:'line',
         data:{datasets:ds},
         options:{responsive:true,maintainAspectRatio:false,
           interaction:{mode:'nearest',intersect:false},
@@ -3456,11 +3735,12 @@ async function renderResearchPanel(country){
 async function renderPipelineRegister(country){
   var slot=document.getElementById('pipe-register'); if(!slot||!sb) return;
   var c=COUNTRIES[country], lbl=c?c.label:country, rows=[];
-  var g=_viewGen;
-  var pr0=await _q(sb.from('pipeline_projects').select('*').eq('country',country).order('quantum_value',{ascending:false,nullsFirst:false}).limit(80));
-  if(_stale(g)) return;
+  var t=_tok('pipe-register',country,'M');
+  if(!_fresh(t)) return;
+  var pr0=await _q(sb.from('pipeline_projects').select('*').eq('country',country).order('quantum_value',{ascending:false,nullsFirst:false}).limit(80),country);
+  if(!_fresh(t)) return;
   if(pr0.held){ slot.innerHTML=_heldState(country,pr0.note,pr0.since); return; }
-  if(!pr0.ok){ slot.innerHTML=_errorState('The development pipeline for '+lbl,pr0.error,"renderPipelineRegister(_B2C)"); return; }
+  if(!pr0.ok){ slot.innerHTML=_errorState('The development pipeline for '+lbl,pr0.error,"renderPipelineRegister(ACTIVE_COUNTRY)"); return; }
   rows=pr0.data||[];
   if(!rows.length){
     slot.innerHTML='<div class="panel"><div class="panel-head"><div><div class="panel-title">Project register — '+lbl+'</div>'
@@ -3541,7 +3821,15 @@ async function renderPipelineRegister(country){
 function openCity(c){ _cityActive=c; nav('cities'); }
 var _prMap=null;
 async function selectMarket(sub){
-  var ctx=window._mkCtx||{}, rows=window._mkRows||[]; await _fx();
+  var ctx=window._mkCtx||{}, rows=window._mkRows||[];
+  if(!ctx.country) return;
+  // The profile belongs to one market, one table and one click: the table it
+  // was clicked in must still be on the page when the answer lands.
+  var t=_tok('pg-markets/profile',ctx.country,'MFC');
+  var mine=function(){ return window._mkCtx===ctx&&_SLOT['pg-markets']===ctx.rid; };
+  if(!_fresh(t,mine)) return;
+  await _fx();
+  if(!_fresh(t,mine)) return;
   var r=rows.filter(function(x){return x.sub===sub;})[0]; if(!r) return;
   window._mkSel=sub;
   document.querySelectorAll('#pg-markets tr.rowsel').forEach(function(tr){ tr.classList.toggle('selected', tr.getAttribute('data-sub')===sub); });
@@ -3549,11 +3837,11 @@ async function selectMarket(sub){
   var nf=function(v){return Number(v||0).toLocaleString('en-US');};
   var cur=ctx.cur, fmt=function(v,o){return money(v,cur,o);};
   // Held since the page was drawn: the whole Markets page is withheld, not just this profile.
-  var heldHere=function(note,since){ if(ctx.country===_B2C) _heldPage('pg-markets',ctx.country,'Markets',note,since);
-    else body.innerHTML=_heldState(ctx.country,note,since); };
+  var heldHere=function(note,since){ _heldPage('pg-markets',ctx.country,'Markets',note,since); };
   if(_isHeld(ctx.country)){ heldHere(); return; }
   var dp=await _rpc('district_profile',{p_country:ctx.country,p_submarket:sub,p_tt:ctx.type||'sale'});
-  if(dp.held){ heldHere(dp.note,dp.since); return; }
+  if(!_fresh(t,function(){ return mine()&&window._mkSel===sub; })) return;
+  if(dp.held||_isHeld(ctx.country)){ heldHere(dp.note,dp.since); return; }
   if(!dp.ok){ body.innerHTML=_errorState('The profile of '+sub,dp.error,null); return; }
   var p=dp.data||null;
   if(!p){ body.innerHTML='<div class="empty-trend" style="height:160px;">Profile unavailable for '+sub+'.</div>'; return; }
@@ -3599,21 +3887,24 @@ async function selectMarket(sub){
     +'<div class="axis-note" style="margin-top:14px"><span>Weekly change, median /m²</span><span class="delta flat">— from '+_nextMon()+'</span></div>';
   if(p.coords&&window.L){
     if(_prMap){try{_prMap.remove();}catch(e){}_prMap=null;}
-    setTimeout(function(){ var me=document.getElementById('pr-map'); if(!me) return;
-      _prMap=L.map('pr-map',{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false}).setView([p.coords.lat,p.coords.lng],13);
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18}).addTo(_prMap);
-      L.circleMarker([p.coords.lat,p.coords.lng],{radius:7,fillColor:'#DAC28C',color:'rgba(20,19,15,.9)',weight:2,fillOpacity:1}).addTo(_prMap);
-      setTimeout(function(){if(_prMap)_prMap.invalidateSize();},150); },0);
+    setTimeout(function(){ var me=document.getElementById('pr-map');
+      if(!me||!_fresh(t,function(){ return mine()&&window._mkSel===sub; })) return;
+      var map=L.map(me,{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false}).setView([p.coords.lat,p.coords.lng],13);
+      _prMap=map;
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18}).addTo(map);
+      L.circleMarker([p.coords.lat,p.coords.lng],{radius:7,fillColor:'#DAC28C',color:'rgba(20,19,15,.9)',weight:2,fillOpacity:1}).addTo(map);
+      setTimeout(function(){ if(_prMap===map) map.invalidateSize(); },150); },0);
   }
 }
 
 async function loadBatch2(country){
   if(!sb) return;
-  var g=_viewGen;
+  var t=_tok('b2',country,'M');
+  if(!_fresh(t)) return;
   var c=COUNTRIES[country]; var live=c&&c.status==='live';
   await _fx();
-  if(_stale(g)) return;   // a later market/currency choice owns the shared state now
-  _B2C=country; _B2S=c?_cur(c.currency):'';
+  if(!_fresh(t)) return;   // a later market choice owns the shared state now
+  _B2S=c?_cur(c.currency):'';
   _syncCcyUI(c?c.currency:'');
   var ph=document.getElementById('pipe-head');
   if(ph) ph.innerHTML=V2HEAD(country,'Development Pipeline',['Observed development &amp; construction news','Refreshed Mon &amp; Thu'],null);
@@ -3622,11 +3913,15 @@ async function loadBatch2(country){
   // Held: no market summary is requested; every listing view below renders the hold.
   if(live&&!_isHeld(country)){
     var kr=await _rpc('market_kpis',{p_country:country});
-    if(_stale(g)) return;
-    if(kr.ok) K=kr.data;
-    else if(!kr.held) _dataBanner('Market summary for '+country+' could not be loaded ('+kr.error+').', function(){ loadBatch2(country); });
+    if(!_fresh(t)) return;
+    if(kr.ok&&!_isHeld(country)) K=kr.data;
+    else if(!kr.ok&&!kr.held&&!_isHeld(country)) _dataBanner('Market summary for '+_cLabel(country)+' could not be loaded ('+kr.error+').', _retryActive(loadBatch2));
   }
-  _B2K=K;
+  /* The market and its summary are published together. They used to be set one
+     request apart, so a switch in between left the new market's name sitting
+     over the old market's figures -- on the map, the cities, the explorer and
+     every CSV export. */
+  _setB2(country,K);
   renderOverview(country);
   renderInfra(country);
   renderHeat(country,K);
@@ -3637,7 +3932,13 @@ async function loadBatch2(country){
   renderExportsPage(country,K);
   renderReports(country);
   renderInsights(country,K);
-  try{ applyFilters(true); }catch(e){}
+  // By Bedroom and Days on Market are drawn on demand; if one of them is the
+  // page on screen it is drawn here too, so a deep link to it does not sit on
+  // "activates once this market has listing data" for ever.
+  var ap=_activePageId();
+  if(ap==='by-bedroom') renderByBedroomPage(country);
+  else if(ap==='days-on-market') renderDaysOnMarketPage(country);
+  try{ _redrawKpiTables(); }catch(e){}
 }
 var CITY_COORDS={
   Casablanca:[33.5731,-7.5898],Rabat:[33.9716,-6.8498],Marrakech:[31.6295,-7.9811],Agadir:[30.4278,-9.5981],Tangier:[35.7595,-5.8340],Tangiers:[35.7595,-5.8340],Fez:[34.0333,-5.0003],
@@ -3679,10 +3980,13 @@ function _cityCnt(K,city,asset){
 async function renderMap(country,K){
   var el=document.getElementById('pg-map-view'); if(!el) return;
   var c=COUNTRIES[country];
+  var t=_tok('pg-map-view',country,'MFC');
+  if(!_fresh(t)) return;
   if(_isHeld(country)){ if(_liveMap){try{_liveMap.remove();}catch(e){}_liveMap=null;}
     el.innerHTML=V2HEAD(country,'Market Map',[],null)+_heldState(country); return; }
   if(!c||c.status!=='live'||!K||!K.cities){ el.innerHTML=V2HEAD(country,'Market Map',[],null)+_emptyState('The market map activates once '+(c?c.label:country)+' has listing data.'); return; }
   var f=_curFilters(), cur=c.currency, tt=f.type==='rent'?'rent':'sale'; await _fx();
+  if(!_freshLive(t)) return;
   var lbl=c.label;
   el.innerHTML=V2HEAD(country,'Market Map',
     [(f.asset==='all'?'All classes':f.asset)+' · For '+tt,'Bubbles: cities · zoom in for districts','Asking '+_ccyName(cur)+' per m²'],null)
@@ -3692,9 +3996,12 @@ async function renderMap(country,K){
   if(_liveMap){try{_liveMap.remove();}catch(e){}_liveMap=null;}
   if(!window.L) return;
   var view=COUNTRY_VIEW[country]||[[0,20],4];
-  _liveMap=L.map('map-live',{zoomControl:true,attributionControl:false,zoomSnap:.5});
-  _liveMap.setView(view[0],view[1],{animate:false});
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(_liveMap);
+  // This render's own map. A newer render replaces the global; everything
+  // below then knows it is drawing into a map nobody is looking at.
+  var map=L.map('map-live',{zoomControl:true,attributionControl:false,zoomSnap:.5});
+  _liveMap=map;
+  map.setView(view[0],view[1],{animate:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(map);
   var pop=function(t,med,n,unit){ return '<div style="font-family:IBM Plex Mono,monospace;min-width:150px;"><b style="font-size:12.5px;">'+t+'</b>'
     +'<div style="font-size:11.5px;margin-top:3px;">Median '+tt+': <b>'+(med!=null?money(med,cur)+'/m²'+(unit||''):'—')+'</b></div>'
     +'<div style="font-size:10.5px;color:#6E685C;">'+Number(n||0).toLocaleString('en-US')+' listings</div></div>'; };
@@ -3703,25 +4010,30 @@ async function renderMap(country,K){
     var med=_cityMed(K,ct.city,f.asset,tt), n=_cityCnt(K,ct.city,f.asset);
     L.circleMarker(xy,{radius:Math.min(26,Math.max(8,Math.sqrt((n||1))/4)),fillColor:'#DAC28C',color:'rgba(20,19,15,.85)',weight:1.5,fillOpacity:.8})
       .bindPopup(pop(ct.city,med,n,tt==='rent'?'/mo':'')).addTo(cityLayer); });
-  var mapHeld=null;
+  var mapHeld=null, drows=[];
   try{
     var dr=await sb.rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days});
     if(_heldRes(dr)){ mapHeld=dr.error; _markHeldRes(country,dr); }
-    ((dr&&dr.data)||[]).forEach(function(d){ if(d.lat==null) return;
-      L.circleMarker([d.lat,d.lng],{radius:Math.min(15,Math.max(5,Math.sqrt((d.listings||1))/3)),fillColor:'#C9A96A',color:'rgba(20,19,15,.85)',weight:1,fillOpacity:.75})
-        .bindPopup(pop(d.submarket+' · '+(d.city||''),d.median_ppsqm,d.listings,tt==='rent'?'/mo':'')).addTo(districtLayer); });
+    else drows=(dr&&dr.data)||[];
   }catch(e){}
+  // Nothing is added to this map unless it is still the map on the page, drawn
+  // for the market and the filters in force now.
+  if(!_fresh(t)||_liveMap!==map) return;
   // Held since the summary was read: withdraw the whole map, city bubbles included.
-  if(mapHeld){ if(country!==_B2C) return;
-    if(_liveMap){try{_liveMap.remove();}catch(e){}_liveMap=null;}
-    el.innerHTML=V2HEAD(country,'Market Map',[],null)+_heldState(country,mapHeld.details,_heldSinceFromHint(mapHeld.hint));
+  if(mapHeld||_isHeld(country)){
+    try{ map.remove(); }catch(e){}
+    if(_liveMap===map) _liveMap=null;
+    el.innerHTML=V2HEAD(country,'Market Map',[],null)+_heldState(country,mapHeld&&mapHeld.details,mapHeld?_heldSinceFromHint(mapHeld.hint):null);
     return; }
+  drows.forEach(function(d){ if(d.lat==null) return;
+    L.circleMarker([d.lat,d.lng],{radius:Math.min(15,Math.max(5,Math.sqrt((d.listings||1))/3)),fillColor:'#C9A96A',color:'rgba(20,19,15,.85)',weight:1,fillOpacity:.75})
+      .bindPopup(pop(d.submarket+' · '+(d.city||''),d.median_ppsqm,d.listings,tt==='rent'?'/mo':'')).addTo(districtLayer); });
   var DZOOM=9;
-  function syncLayers(){ var z=_liveMap.getZoom();
-    if(z>=DZOOM&&districtLayer.getLayers().length>0){ if(_liveMap.hasLayer(cityLayer))_liveMap.removeLayer(cityLayer); if(!_liveMap.hasLayer(districtLayer))_liveMap.addLayer(districtLayer); }
-    else{ if(_liveMap.hasLayer(districtLayer))_liveMap.removeLayer(districtLayer); if(!_liveMap.hasLayer(cityLayer))_liveMap.addLayer(cityLayer); } }
-  _liveMap.on('zoomend',syncLayers); syncLayers();
-  setTimeout(function(){ if(_liveMap){ _liveMap.invalidateSize(); _liveMap.setView(view[0],view[1],{animate:false}); } },220);
+  function syncLayers(){ var z=map.getZoom();
+    if(z>=DZOOM&&districtLayer.getLayers().length>0){ if(map.hasLayer(cityLayer))map.removeLayer(cityLayer); if(!map.hasLayer(districtLayer))map.addLayer(districtLayer); }
+    else{ if(map.hasLayer(districtLayer))map.removeLayer(districtLayer); if(!map.hasLayer(cityLayer))map.addLayer(cityLayer); } }
+  map.on('zoomend',syncLayers); syncLayers();
+  setTimeout(function(){ if(_liveMap===map){ map.invalidateSize(); map.setView(view[0],view[1],{animate:false}); } },220);
 }
 function _bars(rows,cur){
   if(!rows||!rows.length) return '<div style="padding:14px;color:var(--ink5);font-size:12px;">No district data under current filters.</div>';
@@ -3731,13 +4043,16 @@ function _bars(rows,cur){
       +'<div class="hbar-track" style="height:13px;"><div class="hbar-fill" style="width:'+(r.v/mx*100).toFixed(1)+'%"></div></div>'
       +'<div class="hbar-val num" style="font-size:11px;">'+money(r.v,cur)+'<span class="hbar-n">n='+Number(r.n||0).toLocaleString('en-US')+'</span></div></div>'; }).join('');
 }
-function selectCity(nm){ _cityActive=nm; renderCitiesPage(_B2C); }
+function selectCity(nm){ _cityActive=nm; renderCitiesPage(ACTIVE_COUNTRY); }
 async function renderCitiesPage(country){
   var el=document.getElementById('pg-cities'); if(!el) return;
-  var c=COUNTRIES[country], K=_B2K;
+  var c=COUNTRIES[country], K=_kOf(country);
+  var t=_tok('pg-cities',country,'MFC');
+  if(!_fresh(t)) return;
   if(_isHeld(country)){ el.innerHTML=V2HEAD(country,'Cities',[],null)+_heldState(country); return; }
   if(!c||c.status!=='live'||!K||!K.cities||!K.cities.length){ el.innerHTML=V2HEAD(country,'Cities',[],null)+_emptyState('City analytics activate once '+(c?c.label:country)+' has listing data.'); return; }
-  var cities=K.cities.slice().sort(function(a,b){return (b.listings||0)-(a.listings||0);});
+  var cities=_validatedCities(K).sort(function(a,b){return (b.listings||0)-(a.listings||0);});
+  if(!cities.length){ el.innerHTML=V2HEAD(country,'Cities',[],null)+_emptyState('Verified city aggregates are not available for this market yet.'); return; }
   if(!_cityActive||!cities.some(function(x){return x.city===_cityActive;})) _cityActive=cities[0].city;
   // City names come from listings; they are text, never markup.
   var chips=cities.map(function(x){ var th=cityImg(x.city,true);
@@ -3752,18 +4067,23 @@ async function renderCitiesPage(country){
 var _cityMap=null;
 async function renderCityProfile(country,city){
   var slot=document.getElementById('city-profile-live'); if(!slot||!city) return;
-  if(_isHeld(country)){ if(country===_B2C) _heldPage('pg-cities',country,'Cities'); return; }
-  var c=COUNTRIES[country], K=_B2K; if(!c||!K) return;
-  var f=_curFilters(), cur=c.currency, tt=f.type==='rent'?'rent':'sale', g=_viewGen; await _fx();
+  // Child of the Cities page, and of one city card: both have to still hold.
+  var t=_tok('pg-cities/profile',country,'MFC','pg-cities');
+  var mine=function(){ return _cityActive===city; };
+  if(!_fresh(t,mine)) return;
+  if(_isHeld(country)){ _heldPage('pg-cities',country,'Cities'); return; }
+  var c=COUNTRIES[country], K=_kOf(country); if(!c||!K) return;
+  var f=_curFilters(), cur=c.currency, tt=f.type==='rent'?'rent':'sale'; await _fx();
+  if(!_freshLive(t,mine)) return;
   // One scope for the whole profile: the medians, the counts and the district
   // bars below all come from the same filters (class, date window). The
   // header figures used to be all-time market_kpis numbers sitting over
   // date-windowed district bars, so "last 30 days" changed half the page.
   var mf=await _rpc('market_filtered',{p_country:country,p_asset:f.asset,p_days:f.days});
-  if(_stale(g)||_cityActive!==city) return;
+  if(!_fresh(t,mine)) return;
   // Held since the city cards were drawn: withdraw the whole Cities page.
-  if(mf.held){ _heldPage('pg-cities',country,'Cities',mf.note,mf.since); return; }
-  if(!mf.ok){ slot.innerHTML=_errorState(city+' figures',mf.error,"renderCityProfile(_B2C,_cityActive)"); return; }
+  if(mf.held||_isHeld(country)){ _heldPage('pg-cities',country,'Cities',mf.note,mf.since); return; }
+  if(!mf.ok){ slot.innerHTML=_errorState(city+' figures',mf.error,"renderCityProfile(ACTIVE_COUNTRY,_cityActive)"); return; }
   function _pick(tt2){ var s=(mf.data&&mf.data[tt2]&&mf.data[tt2].cities)||[];
     return s.filter(function(x){return x.city===city;})[0]||null; }
   var sRow=_pick('sale'), rRow=_pick('rent');
@@ -3798,27 +4118,28 @@ async function renderCityProfile(country,city){
   var acHtml=acRows.map(function(r){ return '<tr'+((r.ac||'').toLowerCase()===f.asset?' class="selected"':'')+'><td style="text-align:left;padding-left:8px;" class="mkt-name">'+_newsEsc(_cap(r.ac))+'</td>'
       +'<td class="num">'+Number(r.count||0).toLocaleString('en-US')+'</td>'
       +'<td class="num">'+(r.med!=null?money(Number(r.med),cur):'—')+'</td></tr>'; }).join('');
-  var acs=document.getElementById('city-ac-slot');
+  var acs=slot.querySelector('#city-ac-slot');
   if(acs) acs.innerHTML='<table class="xmt"><thead><tr><th style="text-align:left;">Class</th><th>Listings</th><th>Median /m²</th></tr></thead><tbody>'
     +(acHtml||'<tr><td colspan="3" style="text-align:left;color:var(--ink5);">No class data for '+cityH+'.</td></tr>')+'</tbody></table>';
   try{
     var drr=await _rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days});
-    if(_stale(g)||_cityActive!==city) return;
-    if(drr.held){ _heldPage('pg-cities',country,'Cities',drr.note,drr.since); return; }
-    if(!drr.ok){ var dsx=document.getElementById('city-dist-slot'); if(dsx) dsx.innerHTML=_errorState('Districts in '+city,drr.error,"renderCityProfile(_B2C,_cityActive)"); return; }
+    if(!_fresh(t,mine)) return;
+    if(drr.held||_isHeld(country)){ _heldPage('pg-cities',country,'Cities',drr.note,drr.since); return; }
+    if(!drr.ok){ var dsx=document.getElementById('city-dist-slot'); if(dsx) dsx.innerHTML=_errorState('Districts in '+city,drr.error,"renderCityProfile(ACTIVE_COUNTRY,_cityActive)"); return; }
     var all=(drr.data||[]).filter(function(d){return d.city===city&&d.median_ppsqm!=null;})
       .map(function(d){return {k:d.submarket,v:Number(d.median_ppsqm),n:Number(d.listings||0),lat:d.lat,lng:d.lng};})
       .sort(function(a,b){return b.v-a.v;});
-    var ds=document.getElementById('city-dist-slot'); if(ds) ds.innerHTML=_bars(all.slice(0,12),cur);
+    var ds=slot.querySelector('#city-dist-slot'); if(ds) ds.innerHTML=_bars(all.slice(0,12),cur);
     // district price map
-    var me=document.getElementById('city-map');
+    var me=slot.querySelector('#city-map');
     if(me&&window.L){
       if(_cityMap){try{_cityMap.remove();}catch(e){}_cityMap=null;}
       var ctr=CITY_COORDS[city]||(all.filter(function(d){return d.lat!=null;})[0]?[all.filter(function(d){return d.lat!=null;})[0].lat,all.filter(function(d){return d.lat!=null;})[0].lng]:null);
       if(ctr){
-        _cityMap=L.map('city-map',{zoomControl:true,attributionControl:false,scrollWheelZoom:false,zoomSnap:.5});
-        _cityMap.setView(ctr,11.5,{animate:false});
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(_cityMap);
+        var cmap=L.map(me,{zoomControl:true,attributionControl:false,scrollWheelZoom:false,zoomSnap:.5});
+        _cityMap=cmap;
+        cmap.setView(ctr,11.5,{animate:false});
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(cmap);
         var geo=all.filter(function(d){return d.lat!=null;});
         var meds=geo.map(function(d){return d.v;}).sort(function(a,b){return a-b;});
         function shade(v){ if(!meds.length) return '#C9A96A';
@@ -3830,9 +4151,9 @@ async function renderCityProfile(country,city){
           L.circleMarker([d.lat,d.lng],{radius:Math.min(15,Math.max(5,Math.sqrt(d.n)/2)),fillColor:shade(d.v),color:'rgba(20,19,15,.85)',weight:1,fillOpacity:.88})
             .bindPopup('<div style="font-family:IBM Plex Mono,monospace;min-width:140px;"><b style="font-size:12px;">'+_newsEsc(d.k)+'</b>'
               +'<div style="font-size:11px;margin-top:2px;">Median: <b>'+money(d.v,cur)+'/m²'+(tt==='rent'?'/mo':'')+'</b></div>'
-              +'<div style="font-size:10px;color:#6E685C;">'+d.n.toLocaleString('en-US')+' listings</div></div>').addTo(_cityMap);
+              +'<div style="font-size:10px;color:#6E685C;">'+d.n.toLocaleString('en-US')+' listings</div></div>').addTo(cmap);
         });
-        setTimeout(function(){ if(_cityMap){ _cityMap.invalidateSize(); _cityMap.setView(ctr,11.5,{animate:false}); } },220);
+        setTimeout(function(){ if(_cityMap===cmap){ cmap.invalidateSize(); cmap.setView(ctr,11.5,{animate:false}); } },220);
       }
     }
   }catch(e){}
@@ -3878,23 +4199,25 @@ function _domBand(d){
 async function renderDaysOnMarketPage(country){
   var el=document.getElementById('pg-days-on-market'); if(!el) return;
   var c=COUNTRIES[country];
+  var t=_tok('pg-days-on-market',country,'MF');
+  if(!_fresh(t)) return;
   if(_isHeld(country)){ el.innerHTML=V2HEAD(country,'Days on Market',[],null)+_heldState(country); return; }
   if(!c||c.status!=='live'){
     el.innerHTML=V2HEAD(country,'Days on Market',[],null)
       +_emptyState('Days on market activates once '+(c?c.label:country)+' has listing data.');
     return;
   }
-  var f=_curFilters(), g=_viewGen;
+  var f=_curFilters();
   el.innerHTML=V2HEAD(country,'Days on Market',['Loading…'],null);
 
   var args={p_country:country,p_asset:f.asset,p_type:f.type,p_min_n:15};
   var res=await Promise.all([_rpc('market_dom',args),_rpc('market_dom_summary',args)]);
-  if(_stale(g)) return;
+  if(!_fresh(t)) return;
   var dh=res[0].held?res[0]:(res[1].held?res[1]:null);
-  if(dh){ el.innerHTML=V2HEAD(country,'Days on Market',[],null)+_heldState(country,dh.note,dh.since); return; }
+  if(dh||_isHeld(country)){ el.innerHTML=V2HEAD(country,'Days on Market',[],null)+_heldState(country,dh&&dh.note,dh&&dh.since); return; }
   if(!res[0].ok||!res[1].ok){
     el.innerHTML=V2HEAD(country,'Days on Market',[(f.asset==='all'?'All classes':f.asset)+' · For '+f.type],null)
-      +_errorState('Days on market for '+(c?c.label:country),(res[0].error||res[1].error),"renderDaysOnMarketPage(_B2C)");
+      +_errorState('Days on market for '+(c?c.label:country),(res[0].error||res[1].error),"renderDaysOnMarketPage(ACTIVE_COUNTRY)");
     return;
   }
   var rows=res[0].data||[];
@@ -4005,24 +4328,26 @@ async function renderDaysOnMarketPage(country){
 async function renderByBedroomPage(country){
   var el=document.getElementById('pg-by-bedroom'); if(!el) return;
   var c=COUNTRIES[country];
+  var t=_tok('pg-by-bedroom',country,'MFC');
+  if(!_fresh(t)) return;
   if(_isHeld(country)){ el.innerHTML=V2HEAD(country,'By Bedroom',[],null)+_heldState(country); return; }
   if(!c||c.status!=='live'){
     el.innerHTML=V2HEAD(country,'By Bedroom',[],null)
       +_emptyState('Bedroom analytics activate once '+(c?c.label:country)+' has listing data.');
     return;
   }
-  var f=_curFilters(), cur=c.currency, g=_viewGen; await _fx();
-  if(_stale(g)) return;
+  var f=_curFilters(), cur=c.currency; await _fx();
+  if(!_freshLive(t)) return;
   el.innerHTML=V2HEAD(country,'By Bedroom',['Loading…'],null);
 
   // p_days: the date window applies here as on every other filtered view (the
   // request used to leave it out, so a 30-day view showed all-time bedrooms).
   var res=await _rpc('market_by_bedroom',{p_country:country,p_asset:f.asset,p_type:f.type,p_min_n:8,p_days:f.days});
-  if(_stale(g)) return;
-  if(res.held){ el.innerHTML=V2HEAD(country,'By Bedroom',[],null)+_heldState(country,res.note,res.since); return; }
+  if(!_fresh(t)) return;
+  if(res.held||_isHeld(country)){ el.innerHTML=V2HEAD(country,'By Bedroom',[],null)+_heldState(country,res.note,res.since); return; }
   if(!res.ok){
     el.innerHTML=V2HEAD(country,'By Bedroom',[(f.asset==='all'?'All classes':f.asset)+' · For '+f.type],null)
-      +_errorState('Bedroom figures for '+c.label,res.error,"renderByBedroomPage(_B2C)");
+      +_errorState('Bedroom figures for '+c.label,res.error,"renderByBedroomPage(ACTIVE_COUNTRY)");
     return;
   }
   var rows=res.data||[];
@@ -4134,14 +4459,17 @@ async function renderByBedroomPage(country){
 async function renderDistrictsPage(country){
   var el=document.getElementById('pg-districts'); if(!el) return;
   var c=COUNTRIES[country];
+  var t=_tok('pg-districts',country,'MFC');
+  if(!_fresh(t)) return;
   if(_isHeld(country)){ el.innerHTML=V2HEAD(country,'Districts',[],null)+_heldState(country); return; }
   if(!c||c.status!=='live'){ el.innerHTML=V2HEAD(country,'Districts',[],null)+_emptyState('District analytics activate once '+(c?c.label:country)+' has listing data.'); return; }
-  var f=_curFilters(), cur=c.currency, g=_viewGen; await _fx();
+  var f=_curFilters(), cur=c.currency; await _fx();
+  if(!_freshLive(t)) return;
   var dres=await _rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days});
-  if(_stale(g)) return;
-  if(dres.held){ el.innerHTML=V2HEAD(country,'Districts',[],null)+_heldState(country,dres.note,dres.since); return; }
+  if(!_fresh(t)) return;
+  if(dres.held||_isHeld(country)){ el.innerHTML=V2HEAD(country,'Districts',[],null)+_heldState(country,dres.note,dres.since); return; }
   if(!dres.ok){ el.innerHTML=V2HEAD(country,'Districts',[(f.asset==='all'?'All classes':f.asset)+' · For '+f.type],null)
-      +_errorState('Districts for '+c.label,dres.error,"renderDistrictsPage(_B2C)"); return; }
+      +_errorState('Districts for '+c.label,dres.error,"renderDistrictsPage(ACTIVE_COUNTRY)"); return; }
   var rows=dres.data||[];
   if(!rows.length){ el.innerHTML=V2HEAD(country,'Districts',[(f.asset==='all'?'All classes':f.asset)+' · For '+f.type],null)
       +_emptyState('No district has five or more priced listings for '+c.label+' under these filters.'); return; }
@@ -4186,15 +4514,19 @@ function blankHardcoded(){
 async function renderInfra(country){
   var el=document.getElementById('pg-infrastructure'); if(!el||!sb) return;
   var lbl=COUNTRIES[country]?COUNTRIES[country].label:country, items=[], proj=[];
+  var t=_tok('pg-infrastructure',country,'M');
+  if(!_fresh(t)) return;
   try{
     var res=await sb.from('market_news').select('title,url,source,summary,published_at,category,is_pipeline')
       .eq('country',country).order('published_at',{ascending:false,nullsFirst:false}).limit(80);
+    if(!_fresh(t)) return;
     var rx=/(road|rail|metro|port|airport|bridge|highway|dam|power plant|grid|water|transit|tram|expressway|interchange|infrastructure)/i;
     items=((res&&res.data)||[]).filter(function(n){ return n.category==='infrastructure'||rx.test((n.title||'')+' '+(n.summary||'')); });
-  }catch(e){}
-  var ip=await _q(sb.from('pipeline_projects').select('*').eq('country',country).eq('asset_class','infrastructure'));
+  }catch(e){ if(!_fresh(t)) return; }
+  var ip=await _q(sb.from('pipeline_projects').select('*').eq('country',country).eq('asset_class','infrastructure'),country);
+  if(!_fresh(t)) return;
   if(ip.held){ el.innerHTML=V2HEAD(country,'Infrastructure',[],null)+_heldState(country,ip.note,ip.since); return; }
-  if(!ip.ok){ el.innerHTML=V2HEAD(country,'Infrastructure',[],null)+_errorState('Infrastructure projects',ip.error,"renderInfra(_B2C)"); return; }
+  if(!ip.ok){ el.innerHTML=V2HEAD(country,'Infrastructure',[],null)+_errorState('Infrastructure projects',ip.error,"renderInfra(ACTIVE_COUNTRY)"); return; }
   proj=ip.data||[];
   // segment news by infrastructure type
   var SEGS=[['Rail & transit',/rail|metro|tram|transit|monorail/i],['Roads & bridges',/road|highway|bridge|expressway|interchange/i],
@@ -4229,8 +4561,8 @@ async function renderInfra(country){
    +'<div class="panel-sub">Filtered from the observed market-news pipeline</div></div>'
    +'<span class="n-tag num">'+items.length+' items</span></div>'
    +'<div id="infra-news-list"></div></div>';
-  renderNews(document.getElementById('infra-news-list'), items, false);
-  if(!items.length){ var l=document.getElementById('infra-news-list'); if(l) l.innerHTML='<div style="padding:18px;color:var(--ink5);font-size:12px;">No infrastructure-tagged items for '+lbl+' yet.</div>'; }
+  renderNews(el.querySelector('#infra-news-list'), items, false);
+  if(!items.length){ var l=el.querySelector('#infra-news-list'); if(l) l.innerHTML='<div style="padding:18px;color:var(--ink5);font-size:12px;">No infrastructure-tagged items for '+lbl+' yet.</div>'; }
 }
 function _heatGrid(rows,cur){
   if(!rows||!rows.length) return _emptyState('No priced districts under the current filters.');
@@ -4247,14 +4579,18 @@ function _heatGrid(rows,cur){
 async function renderHeat(country,K){
   var el=document.getElementById('pg-heatmaps'); if(!el) return;
   var c=COUNTRIES[country];
+  // The token is taken BEFORE the FX wait: a switch during it used to go
+  // unnoticed, because the generation was read after the wait.
+  var t=_tok('pg-heatmaps',country,'MFC');
+  if(!_fresh(t)) return;
   if(_isHeld(country)){ el.innerHTML=V2HEAD(country,'Heatmaps',[],null)+_heldState(country); return; }
   if(!c||c.status!=='live'){ el.innerHTML=V2HEAD(country,'Heatmaps',[],null)+_emptyState('Heatmaps activate once '+(c?c.label:country)+' has listing data.'); return; }
   var f=_curFilters(), cur=c.currency; await _fx();
-  var g=_viewGen;
+  if(!_freshLive(t)) return;
   var hr=await _rpc('districts_filtered',{p_country:country,p_asset:f.asset,p_type:f.type,p_days:f.days});
-  if(_stale(g)) return;
-  if(hr.held){ el.innerHTML=V2HEAD(country,'Heatmaps',[],null)+_heldState(country,hr.note,hr.since); return; }
-  if(!hr.ok){ el.innerHTML=V2HEAD(country,'Heatmaps',[],null)+_errorState('District prices for '+c.label,hr.error,"renderHeat(_B2C,_B2K)"); return; }
+  if(!_fresh(t)) return;
+  if(hr.held||_isHeld(country)){ el.innerHTML=V2HEAD(country,'Heatmaps',[],null)+_heldState(country,hr.note,hr.since); return; }
+  if(!hr.ok){ el.innerHTML=V2HEAD(country,'Heatmaps',[],null)+_errorState('District prices for '+c.label,hr.error,"renderHeat(ACTIVE_COUNTRY,_kOf(ACTIVE_COUNTRY))"); return; }
   var rows=hr.data||[];
   rows=rows.filter(function(x){return x.median_ppsqm!=null;}).map(function(x){return {sub:x.submarket,city:x.city,med:Number(x.median_ppsqm),n:Number(x.listings||0)};})
       .sort(function(a,b){return b.med-a.med;}).slice(0,60);
@@ -4290,24 +4626,28 @@ function _aggTables(K,cur,f){
     return {ac:k,n:byAc[k].n,med:m.length?(m.length%2?m[(m.length-1)/2]:(m[m.length/2-1]+m[m.length/2])/2):null}; })
     .sort(function(a,b){return b.n-a.n;});
   var t2='<table class="xmt"><thead><tr><th style="text-align:left;">Asset class</th><th>Listings</th><th>Median /m² ('+tt+')</th></tr></thead><tbody>'
-    +acRows.map(function(r){ return '<tr><td style="text-align:left;padding-left:8px;" class="mkt-name">'+_cap(r.ac)+'</td>'
+    +acRows.map(function(r){ return '<tr><td style="text-align:left;padding-left:8px;" class="mkt-name">'+_newsEsc(_cap(r.ac))+'</td>'
       +'<td class="num">'+r.n.toLocaleString('en-US')+'</td><td class="num">'+(r.med!=null?money(r.med,cur):'—')+'</td></tr>'; }).join('')+'</tbody></table>';
   return {city:t1, ac:t2};
 }
 async function renderExplorer(country,K){
   var el=document.getElementById('pg-data-explorer'); if(!el) return;
   var c=COUNTRIES[country];
+  var tk=_tok('pg-data-explorer',country,'MFC');
+  if(!_fresh(tk)) return;
   if(_isHeld(country)){ el.innerHTML=V2HEAD(country,'Data Explorer',[],null)+_heldState(country); return; }
   if(!c||!K){ el.innerHTML=V2HEAD(country,'Data Explorer',[],null)+_emptyState('No data for '+(c?c.label:country)+' yet.'); return; }
   var f=_curFilters(), cur=c.currency; await _fx();
+  if(!_freshLive(tk)) return;
   var t=_aggTables(K,cur,f);
-  var tot=Number((_B2K&&_B2K.total_count)||0);
+  // The basis is this market's own summary, not whatever _B2K happens to hold.
+  var tot=Number((K&&K.total_count)||0);
   el.innerHTML=V2HEAD(country,'Data Explorer',
     [(f.asset==='all'?'All classes':f.asset)+' · medians for '+f.type,'Aggregates in '+_ccyName(cur)],tot)
    +'<div class="grid g-split">'
    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">By city</div>'
    +'<div class="panel-sub">Observed listings &amp; median asking prices</div></div></div>'
-   +'<div class="panel-body2" style="padding-top:8px;">'+_newsEsc(t.city)+'</div></div>'
+   +'<div class="panel-body2" style="padding-top:8px;">'+t.city+'</div></div>'
    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">By asset class</div>'
    +'<div class="panel-sub">Median of city medians · for '+f.type+'</div></div></div>'
    +'<div class="panel-body2" style="padding-top:8px;">'+t.ac+'</div></div></div>';
@@ -4315,6 +4655,8 @@ async function renderExplorer(country,K){
 function renderExportsPage(country,K){
   var el=document.getElementById('pg-exports'); if(!el) return;
   var c=COUNTRIES[country], lbl=c?c.label:country;
+  if(country!==ACTIVE_COUNTRY) return;
+  _bumpSlot('pg-exports');
   if(_isHeld(country)){ el.innerHTML=V2HEAD(country,'Exports',[],null)+_heldState(country); return; }
   el.innerHTML=V2HEAD(country,'Exports',['Client-side CSV exports of live aggregates'],null)
    +(K?('<div class="grid" style="grid-template-columns:repeat(3,1fr);">'
@@ -4326,9 +4668,12 @@ function renderExportsPage(country,K){
     +'</div>'):_emptyState('No data to export for '+lbl+' yet.'));
 }
 function exportAgg(kind){
-  var K=_B2K, cty=_B2C;
+  // Export the market on screen, from a summary that is demonstrably its own:
+  // the pair used to be read separately, so a CSV could carry one market's
+  // figures under another's file name.
+  var cty=ACTIVE_COUNTRY, K=_kOf(cty);
   // A Download button drawn before a hold must not hand out the held market's figures.
-  if(cty&&_isHeld(cty)){ _B2K=null; renderExportsPage(cty,null); return; }
+  if(_isHeld(cty)){ _B2K=null; renderExportsPage(cty,null); return; }
   if(!K) return;
   var cur=(COUNTRIES[cty]&&COUNTRIES[cty].currency)||'';
   var rows=[];
@@ -4345,14 +4690,19 @@ function exportAgg(kind){
 async function renderReports(country){
   var el=document.getElementById('pg-market-reports'); if(!el||!sb) return;
   var c=COUNTRIES[country], lbl=c?c.label:country, rows=[];
-  var g=_viewGen;
-  var rp=await _q(sb.from('market_reports').select('period,title,summary,pdf_url').eq('country',country).order('period',{ascending:false}).limit(12));
-  if(_stale(g)) return;
+  var t=_tok('pg-market-reports',country,'M');
+  if(!_fresh(t)) return;
+  // Reports are written from the withheld figures, so a held market's reports
+  // are withheld too: the page says so instead of asking for them.
+  if(_isHeld(country)){ el.innerHTML=V2HEAD(country,'Market Reports',[],null)+_heldState(country); return; }
+  var rp=await _q(sb.from('market_reports').select('period,title,summary,pdf_url').eq('country',country).order('period',{ascending:false}).limit(12),country);
+  if(!_fresh(t)) return;
   if(rp.held){ el.innerHTML=V2HEAD(country,'Market Reports',[],null)+_heldState(country,rp.note,rp.since); return; }
-  if(!rp.ok){ el.innerHTML=V2HEAD(country,'Market Reports',[],null)+_errorState('Reports for '+lbl,rp.error,"renderReports(_B2C)"); return; }
+  if(!rp.ok){ el.innerHTML=V2HEAD(country,'Market Reports',[],null)+_errorState('Reports for '+lbl,rp.error,"renderReports(ACTIVE_COUNTRY)"); return; }
   rows=rp.data||[];
-  // The database withholds a held market's reports; "none published yet" would be untrue.
-  if(!rows.length&&_isHeld(country)){ el.innerHTML=V2HEAD(country,'Market Reports',[],null)+_heldState(country); return; }
+  // Reports are drawn from the withheld figures: on hold, the page says so --
+  // and "none published yet" would be untrue as well.
+  if(_isHeld(country)){ el.innerHTML=V2HEAD(country,'Market Reports',[],null)+_heldState(country); return; }
   el.innerHTML=V2HEAD(country,'Market Reports',['Monthly institutional PDF reports · macro + asking-price landscape + pipeline + research layer'],null)
    +(rows.length?rows.map(function(x){ return '<div class="panel"><div class="panel-head"><div><div class="panel-title">'+(x.title||lbl+' Market Report')+'</div>'
       +'<div class="panel-sub num">'+(x.period||'')+'</div></div>'
@@ -4363,6 +4713,8 @@ async function renderReports(country){
 function renderInsights(country,K){
   var el=document.getElementById('pg-insights'); if(!el) return;
   var c=COUNTRIES[country], lbl=c?c.label:country;
+  if(country!==ACTIVE_COUNTRY) return;
+  _bumpSlot('pg-insights');
   if(_isHeld(country)){ el.innerHTML=V2HEAD(country,'Insights',[],null)+_heldState(country); return; }
   if(!c||c.status!=='live'||!K||!K.cities||!K.cities.length){ el.innerHTML=V2HEAD(country,'Insights',[],null)+_emptyState('Insights activate once '+lbl+' has listing data.'); return; }
   var cur=c.currency;
@@ -4385,6 +4737,8 @@ async function loadLiveKPIs(country){
   if(!sb){ console.warn('loadLiveKPIs: no supabase client'); return; }
   var c=COUNTRIES[country];
   if(!c){ console.warn('loadLiveKPIs: unknown country', country); return; }
+  var t=_tok('kpi-cards',country,'M');
+  if(!_fresh(t)) return;
   // Publication on hold: nothing below is requested (market_kpis would be
   // refused and the listing sample withheld); every view it fills says so.
   if(_isHeld(country)){ _renderHeldListingViews(country); return; }
@@ -4409,15 +4763,14 @@ async function loadLiveKPIs(country){
   safeSet('kpi-prime-rent-chg','');
   safeSet('kpi-liquidity-chg','');
 
-  var g=_viewGen;
   try {
     // ── Server-side aggregation via RPC (was: paginate 100k+ rows to the browser) ──
     var rpc = await sb.rpc('market_kpis', { p_country: country });
     if(_heldRes(rpc)) _markHeldRes(country,rpc);
     // Switched market while this was in flight: its figures belong to the old one.
-    if(_stale(g) || country!==ACTIVE_COUNTRY) return;
+    if(!_fresh(t)) return;
     // Put on hold after the registry was read: a hold, not a load failure.
-    if(_heldRes(rpc)){ _renderHeldListingViews(country); return; }
+    if(_heldRes(rpc)||_isHeld(country)){ _renderHeldListingViews(country); return; }
     if(rpc.error){ console.error('market_kpis RPC error:', rpc.error); throw rpc.error; }
     var K = rpc.data || {};
     var totalCount = Number(K.total_count) || 0;
@@ -4471,9 +4824,10 @@ async function loadLiveKPIs(country){
     // ── City data ──
     var CITY_COLORS=['#C9A96A','#55A899','#6E8FBF','#8E99A9','#B87E76','#62708A','#D8A94E','#63B98B'];
     var cityData={};
-    (K.cities||[]).forEach(function(r,i){
-      var mSale=r.sale_median!=null?Math.round(Number(r.sale_median)):0;
-      var mRent=r.rent_median!=null?Number(r.rent_median):null;
+    _validatedCities(K).forEach(function(r,i){
+      var sale=_cityPriceSample(r,'sale'), rent=_cityPriceSample(r,'rent');
+      var mSale=sale?Math.round(sale.median):0;
+      var mRent=rent?rent.median:null;
       var yld=(mSale&&mRent)?(Math.round(mRent*12/mSale*1000)/10):null;
       cityData[r.city]={
         price:mSale,
@@ -4533,6 +4887,11 @@ async function loadLiveKPIs(country){
         });
       }
     }catch(e){ console.warn('sample listings fetch failed',e); }
+    // Nothing below this line may run for a market that is no longer selected,
+    // or that was put on hold while the sample was in flight: every write from
+    // here on is a figure (KPI cards, city data, indicator and yield tables).
+    if(!_fresh(t)) return;
+    if(_isHeld(country)){ _renderHeldListingViews(country); return; }
 
     // ── UPDATE: COUNTRIES object ──
     var sortedCityData={};
@@ -4645,9 +5004,15 @@ async function loadLiveKPIs(country){
       }
     }
 
-    // store the per-market rows for the top-bar Asset/Type filter, then apply selection
+    // store the per-market rows for the top-bar Asset/Type filter, then apply
+    // selection. The rows carry their owner: the filter redraw formats them in
+    // the currency of the market they came from, and refuses to draw them at
+    // all once another market is selected.
     window._kpiInd=indicatorRows; window._kpiYld=yieldRows; window._kpiS=S; window._kpiNow=nowStr; window._kpiCur=c.currency;
-    applyFilters();
+    window._kpiOwner={market:country,mkt:_EP.mkt};
+    // No filter bump here: this is an answer arriving, not a filter choice, and
+    // bumping it used to throw away every market render still in flight.
+    _redrawKpiTables(); _renderActivePage();
 
     // ── UPDATE: Listings Page ──
     var listBody=document.querySelector('#listings-table tbody');
@@ -4719,7 +5084,7 @@ async function loadLiveKPIs(country){
     buildCharts();
 
   } catch(err){
-    if(_stale(g)) return;
+    if(!_fresh(t)) return;
     if(_heldErr(err)||_isHeld(country)){ _renderHeldListingViews(country); return; }
     console.error('loadLiveKPIs EXCEPTION:', err);
     // A failed load says so, everywhere a figure would be -- never "No data",
@@ -4727,15 +5092,18 @@ async function loadLiveKPIs(country){
     ['kpi-median-price','kpi-active-listings','kpi-price-growth','kpi-yield','kpi-liquidity','kpi-prime-rent']
       .forEach(function(id){ safeSet(id,'Load failed'); });
     safeSet('kpi-listings-chg','Could not load '+country+' figures');
-    _dataBanner('Market figures for '+country+' could not be loaded ('+((err&&err.message)||err)+').',
-                function(){ loadLiveKPIs(country); });
+    _dataBanner('Market figures for '+_cLabel(country)+' could not be loaded ('+((err&&err.message)||err)+').',
+                _retryActive(loadLiveKPIs));
   }
 }
 
 async function renderMacroExtras(country){
   var slot=document.getElementById('macro-extra'); if(!slot||!sb) return;
   var c=COUNTRIES[country], lbl=c?c.label:country, rows=[];
-  var ms=await _q(sb.from('macro_stats').select('*').eq('country',country));
+  var t=_tok('macro-extra',country,'M','macro-root');
+  if(!_fresh(t)) return;
+  var ms=await _q(sb.from('macro_stats').select('*').eq('country',country),country);
+  if(!_fresh(t)) return;
   if(ms.held){ slot.innerHTML=_heldState(country,ms.note,ms.since); return; }
   if(!ms.ok){ slot.innerHTML=_errorState('Cited macro figures for '+lbl,ms.error,"renderMacroExtras(ACTIVE_COUNTRY)"); return; }
   rows=ms.data||[];
@@ -4787,12 +5155,12 @@ async function renderMacroExtras(country){
    +((!exp.length&&!imp.length)?'<div style="font-size:11px;color:var(--ink4);">Being sourced.</div>':'')
    +'</div></div></div>'
    +'</section>'+note;
-  if(Object.keys(series).length&&window.Chart){
+  if(Object.keys(series).length&&window.Chart&&_fresh(t)&&slot.querySelector('#mx-origins')){
     _rsD('mx-origins');
     var COLS=['#C9A96A','#55A899','#6E8FBF','#B87E76','#8E99A9','#D8A94E','#63B98B'];
     var ds=Object.keys(series).map(function(k,i){ return {label:k,data:series[k],parsing:false,
       borderColor:COLS[i%COLS.length],backgroundColor:COLS[i%COLS.length],borderWidth:2,pointRadius:3.5,tension:.25,fill:false}; });
-    _rsCharts['mx-origins']=new Chart(document.getElementById('mx-origins'),{type:'line',
+    _rsCharts['mx-origins']=new Chart(slot.querySelector('#mx-origins'),{type:'line',
       data:{datasets:ds},
       options:{responsive:true,maintainAspectRatio:false,
         interaction:{mode:'nearest',intersect:false},
@@ -4807,6 +5175,8 @@ async function renderMacroExtras(country){
 async function loadMacroData(country){
   var root=document.getElementById('macro-root'); if(!root) return;
   var c=COUNTRIES[country]; var wb=c?c.wbCode:null; var lbl=c?c.label:country;
+  var t=_tok('macro-root',country,'M');
+  if(!_fresh(t)) return;
   if(!wb){ root.innerHTML=V2HEAD(country,'Macro Indicators',[],null)+_emptyState('No macro source mapped for '+lbl+'.'); return; }
   if(window._macroCharts){ Object.keys(_macroCharts).forEach(function(k){try{_macroCharts[k].destroy();}catch(e){}}); }
   window._macroCharts={};
@@ -4851,25 +5221,30 @@ async function loadMacroData(country){
           .map(function(p){return {x:+p.date,y:+p.value};})
           .sort(function(a,b){return a.x-b.x;})
           .filter(function(p){return p.x>=2000;});
-        var el=document.getElementById('mcl-'+i); if(!el) return;
+        // The cards belong to the market this call was made for; a switch in
+        // the meantime gives them to another market's request.
+        if(!_fresh(t)) return;
+        var el=root.querySelector('#mcl-'+i); if(!el) return;
         if(!pts.length){ el.innerHTML='<span style="color:var(--ink5);">not published for '+lbl+'</span>'; return; }
         var last=pts[pts.length-1];
         el.innerHTML='<span class="yr">'+last.x+' —</span>'+fmtV(last.y,x[2],x[3]);
-        var cv=document.getElementById('mcc-'+i); if(!cv||!window.Chart) return;
+        var cv=root.querySelector('#mcc-'+i); if(!cv||!window.Chart) return;
         _macroCharts[i]=new Chart(cv,{type:'line',data:{datasets:[{data:pts,parsing:false,
           borderColor:'#C9A96A',borderWidth:1.6,pointRadius:0,pointHoverRadius:3,tension:.3,fill:{target:'origin',above:'rgba(201,169,106,.07)'}}]},
           options:{responsive:true,maintainAspectRatio:false,
             interaction:{mode:'nearest',intersect:false},
             plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.raw.x+': '+fmtV(ctx.raw.y,x[2],x[3]);}}}},
             scales:{x:{type:'linear',display:false},y:{display:false}}}});
-      }).catch(function(){ var el=document.getElementById('mcl-'+i); if(el) el.innerHTML='<span style="color:var(--ink5);">unavailable</span>'; });
+      }).catch(function(){ if(!_fresh(t)) return;
+        var el=root.querySelector('#mcl-'+i); if(el) el.innerHTML='<span style="color:var(--ink5);">unavailable</span>'; });
   });
   renderMacroExtras(country);
   try{
     var res=await sb.from('market_news').select('title,url,source,summary,published_at,category,is_pipeline')
       .eq('country',country).eq('category','macro').order('published_at',{ascending:false,nullsFirst:false}).limit(20);
+    if(!_fresh(t)) return;
     var rows=(res&&res.data)||[];
-    var ml=document.getElementById('macro-news-list');
+    var ml=root.querySelector('#macro-news-list');
     if(ml){ if(rows.length) renderNews(ml, rows, false);
       else ml.innerHTML='<div style="padding:18px;color:var(--ink5);font-size:12px;">No macro-tagged news for '+lbl+' yet — the feed refreshes Monday &amp; Thursday.</div>'; }
   }catch(e){}
@@ -5076,6 +5451,7 @@ async function boot(){
     buildCountryDropdown();
     _syncMktLabel();
     _holdsBooted=true;
+    _termReady=true;         // pages may draw now, and only for ACTIVE_COUNTRY
     loadProgress(50,'Loading market data...');
     /* From here on a failure is a DATA failure, never an auth one: the visitor
        is signed in, so it is reported where the data would be, with a retry. */
@@ -5092,6 +5468,9 @@ async function boot(){
     loadHonestLayer(ACTIVE_COUNTRY);
     loadFreshness(ACTIVE_COUNTRY);
     renderCrossMarket();
+    // A deep link to the Macro page used to load it before the session was
+    // confirmed, from _routeInit; it is loaded here instead, once.
+    if(_activePageId()==='macro-indicators') loadMacroData(ACTIVE_COUNTRY);
     loadProgress(90,'Ready.');
     setTimeout(hideLoader,300);
     buildCharts();
@@ -5133,25 +5512,26 @@ function nav(id, fromRoute){
   var NOFILTER={'pipeline':1,'infrastructure':1,'macro-indicators':1,'market-reports':1,'api-access':1,'insights':1,'exports':1};
   document.body.classList.toggle('no-filters', !!NOFILTER[id]);
   if(!fromRoute) _routePush(id);
-  if(id==='map-view'&&_B2C){ renderMap(_B2C,_B2K); }
-  if(id==='cities'&&_B2C&&_cityActive){ renderCityProfile(_B2C,_cityActive); }
+  /* Every page is drawn for the market on screen NOW -- never for _B2C, which
+     names the market whose summary was loaded last and can still be the
+     previous one for as long as the new one takes to answer. A page whose
+     figures are not in yet keeps its loading state; loadBatch2 draws it the
+     moment they are. */
+  _renderMarketPage(id);
   if(id==='market-terminal'){ setTimeout(function(){ if(_xmMap)_xmMap.invalidateSize(); },150); }
-  if(id==='markets'&&_B2C){ renderOverview(_B2C); setTimeout(function(){ if(_prMap)_prMap.invalidateSize(); if(_mkMap)_mkMap.invalidateSize(); },160); }
-  if(id==='macro-indicators'){ loadMacroData(ACTIVE_COUNTRY); }
-  if(id==='districts'&&_B2C){ renderDistrictsPage(_B2C); }
-  if(id==='by-bedroom'&&_B2C){ renderByBedroomPage(_B2C); }
-  if(id==='days-on-market'&&_B2C){ renderDaysOnMarketPage(_B2C); }
-  if(id==='heatmaps'&&_B2C){ renderHeat(_B2C,_B2K); }
+  if(id==='markets'){ setTimeout(function(){ if(_prMap)_prMap.invalidateSize(); if(_mkMap)_mkMap.invalidateSize(); },160); }
 }
 
 // ── LOAD LISTINGS ──
 async function loadListings(){
   try{
     if(!sb) throw new Error('no sb');
-    if(_isHeld(ACTIVE_COUNTRY)) return;   // listing-derived; the database withholds a held market's rows
-    const{data,error}=await sb.from('market_averages').select('*').eq('country',ACTIVE_COUNTRY).order('city').limit(200);
+    var country=ACTIVE_COUNTRY, t=_tok(null,country,'M');
+    if(_isHeld(country)) return;   // listing-derived; the database withholds a held market's rows
+    const{data,error}=await sb.from('market_averages').select('*').eq('country',country).order('city').limit(200);
+    if(!_freshLive(t)) return;
     if(error||!data||data.length===0) throw new Error('no data');
-    document.getElementById('listings-sub').textContent=`${ACTIVE_COUNTRY} · ${data.length} records loaded from Supabase · Listings-derived`;
+    document.getElementById('listings-sub').textContent=`${country} · ${data.length} records loaded from Supabase · Listings-derived`;
   }catch(e){
     console.warn('Listings fallback:',e);
   }
@@ -5368,11 +5748,23 @@ function exportTable(id,fmt='csv'){
 function _cap(s){ return s?s.charAt(0).toUpperCase()+s.slice(1):s; }
 // Top-bar Asset + Type filter — re-renders the Key Indicators and Yield tables
 // for the SELECTED MARKET only (no cross-market). Uses data cached by loadLiveKPIs.
+/* Two jobs, kept apart. A filter CHOICE supersedes the renders in flight and
+   redraws the page; an ANSWER arriving (loadLiveKPIs, loadBatch2) only
+   repaints these two tables. They used to be one function, so every answer
+   bumped the filter counter and threw away the market loaders it was racing. */
 function applyFilters(skipPage){
-  if(!skipPage) _bumpView();   // a filter change supersedes renders already in flight
+  if(!skipPage) _EP.flt++;   // a filter change supersedes renders already in flight
+  _redrawKpiTables();
+  if(!skipPage) _renderActivePage();
+}
+function _redrawKpiTables(){
   var asset=_assetFilter||'apartments';
   var type=_typeFilter||'sale';
-  var cur=(COUNTRIES[_B2C||ACTIVE_COUNTRY]||{}).currency||window._kpiCur||'';
+  // The cached rows belong to one market: draw them only for that market, and
+  // only in the currency they were read in.
+  var own=window._kpiOwner;
+  if(!own||own.market!==ACTIVE_COUNTRY||own.mkt!==_EP.mkt||_isHeld(own.market)) return;
+  var cur=window._kpiCur||(COUNTRIES[ACTIVE_COUNTRY]||{}).currency||'';
   var it=document.getElementById('indicators-table');
   if(it&&window._kpiInd){
     var rows=window._kpiInd.filter(function(r){
@@ -5394,16 +5786,6 @@ function applyFilters(skipPage){
           +'<td class="mono">'+money(r.mR,cur)+'/mo</td><td class="mono" style="color:'+col+';font-weight:600;">'+r.y+'%</td></tr>'; }).join('')
       ||'<tr><td colspan="5" style="color:var(--ink5);">No rows match.</td></tr>')+'</tbody>';
   }
-  if(skipPage) return;
-  var _ap=(document.querySelector('.pg.active')||{}).id||'';
-  if(_ap==='pg-cities'){ renderCitiesPage(_B2C); }
-  else if(_ap==='pg-map-view'){ renderMap(_B2C,_B2K); }
-  else if(_ap==='pg-markets'){ renderOverview(_B2C); }
-  else if(_ap==='pg-districts'){ renderDistrictsPage(_B2C); }
-  else if(_ap==='pg-by-bedroom'){ renderByBedroomPage(_B2C); }
-  else if(_ap==='pg-days-on-market'){ renderDaysOnMarketPage(_B2C); }
-  else if(_ap==='pg-heatmaps'){ renderHeat(_B2C,_B2K); }
-  else if(_ap==='pg-data-explorer'){ renderExplorer(_B2C,_B2K); }
 }
 
 // ── REPORTS ──

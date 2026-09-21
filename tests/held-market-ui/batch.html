@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Held-market UI — seed batch</title>
+<style>
+ body{font:13px/1.5 ui-monospace,monospace;background:#0A0D12;color:#F3EEE4;margin:0;padding:14px;}
+ #log{white-space:pre-wrap;}
+ .p{color:#63B98B;} .f{color:#D07A6A;}
+ iframe{width:1280px;height:820px;border:1px solid #333;opacity:.35;}
+</style>
+</head>
+<body>
+<div id="log">starting…</div>
+<iframe id="frame"></iframe>
+<script>
+/* Runs ?test=rapid over a range of seeds, one page at a time, and collects the
+   results into window.__batchResult so a single read gets the whole run.
+   /batch?from=1&to=30&steps=40[&lat=700][&gap=60] */
+(function(){
+  var qs=new URLSearchParams(location.search);
+  var from=parseInt(qs.get('from')||'1',10), to=parseInt(qs.get('to')||'5',10);
+  var steps=parseInt(qs.get('steps')||'40',10);
+  var lat=qs.get('lat'), gap=qs.get('gap');
+  var MODE=qs.get('mode')||'rapid';
+  var CASES=['deeplink','lateboot','status-order','old-retry','hold-mid-load','loader-order','registry-currency'];
+  var results=[], log=document.getElementById('log'), frame=document.getElementById('frame');
+  window.__batchResult={done:false,from:from,to:to,steps:steps,mode:MODE,results:results};
+  function line(s,cls){ var d=document.createElement('div'); if(cls)d.className=cls; d.textContent=s; log.appendChild(d); }
+  function one(seed,cb){
+    var url;
+    if(MODE==='scenarios'){
+      var c=CASES[seed-1];
+      url=(c==='deeplink'?'/dashboard/bedrooms':'/dashboard')+'?test=scenarios&case='+c+'&lat='+(lat||'200');
+    } else {
+      url='/dashboard?test=rapid&seed='+seed+'&steps='+steps+(lat?('&lat='+lat):'')+(gap?('&gap='+gap):'');
+    }
+    var done=false, t0=Date.now();
+    frame.src=url;
+    var iv=setInterval(function(){
+      var r=null;
+      try{ r=frame.contentWindow&&frame.contentWindow.__testResult; }catch(e){}
+      if(r&&!done){ done=true; clearInterval(iv); cb(r); }
+      else if(!done&&Date.now()-t0>200000){ done=true; clearInterval(iv); cb({seed:seed,steps:steps,pass:false,failures:[{kind:'harness',msg:'no result within 200 s'}],requests:0}); }
+    },200);
+  }
+  var seed=from;
+  (function next(){
+    if(seed>to){ window.__batchResult.done=true;
+      var np=results.filter(function(r){return r.pass;}).length;
+      line('DONE '+np+'/'+results.length+' seeds passed'); frame.src='about:blank'; return; }
+    one(seed,function(r){
+      r.name=(MODE==='scenarios')?CASES[seed-1]:('seed '+seed);
+      results.push(r);
+      line(r.name+': '+(r.pass?'PASS':'FAIL')+' · '+r.requests+' requests'+(r.pass?'':' · '+r.failures.map(function(f){return f.kind;}).join(',')), r.pass?'p':'f');
+      seed++; setTimeout(next,150);
+    });
+  })();
+})();
+</script>
+</body>
+</html>
