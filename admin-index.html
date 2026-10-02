@@ -388,7 +388,7 @@ table.dt tr:last-child td{border-bottom:none;}
         <div class="sb-lbl">Data Quality</div>
         <div class="sb-item" onclick="showPg('dataset-explorer',this)"><span class="sb-icon">≡</span>Dataset Explorer</div>
         <div class="sb-item" onclick="showPg('validation',this)"><span class="sb-icon">✓</span>Data Validation</div>
-        <div class="sb-item" onclick="showPg('verification',this)"><span class="sb-icon">◎</span>Verification Queue <span class="sb-badge" id="badge-vq">3</span></div>
+        <div class="sb-item" onclick="showPg('verification',this)"><span class="sb-icon">◎</span>Verification Queue <span class="sb-badge" id="badge-vq" hidden></span></div>
       </div>
       <div class="sb-section">
         <div class="sb-lbl">Operations</div>
@@ -495,7 +495,7 @@ table.dt tr:last-child td{border-bottom:none;}
             <div class="issue-row"><div class="issue-icon crit">⊞</div><div><div class="issue-name">Duplicate Records</div><div class="issue-sub">Estimated duplicates based on city + price + size matching</div></div><div class="issue-count crit" id="hi-dupes">—</div><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-xs" onclick="showPg('batch',null)">Deduplicate</button></div></div>
             <div class="issue-row"><div class="issue-icon warn">⊙</div><div><div class="issue-name">Listings &gt; 90 Days Old</div><div class="issue-sub">Listings that may be stale and should be re-verified</div></div><div class="issue-count warn" id="hi-old">—</div><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-xs" onclick="viewIssue('stale')">View</button><button class="btn btn-secondary btn-xs" onclick="exportIssue('stale')">Export</button></div></div>
             <div class="issue-row"><div class="issue-icon warn">?</div><div><div class="issue-name">Invalid Property Type</div><div class="issue-sub">Values not matching approved asset class taxonomy</div></div><div class="issue-count warn" id="hi-type">—</div><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-xs" onclick="viewIssue('invalid_type')">View</button></div></div>
-            <div class="issue-row"><div class="issue-icon ok">✓</div><div><div class="issue-name">Records in Review Queue</div><div class="issue-sub">Records flagged for manual verification</div></div><div class="issue-count ok" id="hi-review">3</div><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-xs" onclick="showPg('verification',null)">Review</button></div></div>
+            <div class="issue-row"><div class="issue-icon ok">✓</div><div><div class="issue-name">Records in Review Queue</div><div class="issue-sub">Records flagged for manual verification</div></div><div class="issue-count ok" id="hi-review">—</div><div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-xs" onclick="showPg('verification',null)">Review</button></div></div>
           </div>
         </div>
 
@@ -537,18 +537,10 @@ table.dt tr:last-child td{border-bottom:none;}
             <div style="flex:1;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Source</div>
             <div style="width:100px;text-align:right;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Listings</div>
             <div style="width:130px;text-align:right;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Last Ingestion</div>
-            <div style="width:80px;text-align:right;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Success</div>
-            <div style="width:60px;"></div>
+            <div style="width:80px;text-align:right;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Active</div>
           </div>
           <div id="sources-list">
-            <div class="source-row">
-              <div class="source-icon">🌐</div>
-              <div class="source-name"><strong>Mubawab.ma</strong><span>mubawab.ma · Listing Portal · Morocco · Weekly</span></div>
-              <div style="width:100px;text-align:right;"><div class="source-stat-val" id="src-mubawab-count">—</div><div class="source-stat-lbl">listings</div></div>
-              <div style="width:130px;text-align:right;"><div class="source-stat-val" style="font-size:11px;" id="src-mubawab-last">—</div><div class="source-stat-lbl">last run</div></div>
-              <div style="width:80px;text-align:right;"><div class="source-stat-val" style="color:var(--green);">98%</div><div class="source-stat-lbl">success</div></div>
-              <div style="width:60px;text-align:right;"><button class="btn btn-secondary btn-xs">Edit</button></div>
-            </div>
+            <div class="source-row"><div class="source-name"><span>Loading sources…</span></div></div>
           </div>
         </div>
 
@@ -698,30 +690,7 @@ table.dt tr:last-child td{border-bottom:none;}
             <span style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);">Action</span>
           </div>
           <div id="sync-registry">
-            <div style="display:grid;grid-template-columns:1fr 80px 100px 120px 80px 80px;align-items:center;padding:11px 16px;border-bottom:1px solid var(--bg);">
-              <div><strong style="font-size:13px;color:var(--ink);">🇲🇦 Morocco</strong><div style="font-size:10px;color:var(--ink5);">Morocco.xlsx · Auto-sync active</div></div>
-              <div style="font-family:monospace;font-size:12px;color:var(--ink3);" id="sync-morocco-cities">—</div>
-              <div style="font-family:monospace;font-size:12px;color:var(--ink3);" id="sync-morocco-count">—</div>
-              <div style="font-size:11px;color:var(--ink5);" id="sync-morocco-last">—</div>
-              <div><span class="status status-success">Active</span></div>
-              <div><button class="btn btn-secondary btn-xs" onclick="triggerCountryUpload('Morocco')">Sync</button></div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 80px 100px 120px 80px 80px;align-items:center;padding:11px 16px;border-bottom:1px solid var(--bg);opacity:.5;">
-              <div><strong style="font-size:13px;color:var(--ink);">🇳🇬 Nigeria</strong><div style="font-size:10px;color:var(--ink5);">Nigeria.xlsx · Not yet configured</div></div>
-              <div style="font-family:monospace;font-size:12px;color:var(--ink5);">—</div>
-              <div style="font-family:monospace;font-size:12px;color:var(--ink5);">—</div>
-              <div style="font-size:11px;color:var(--ink5);">—</div>
-              <div><span class="status status-pending">Pending</span></div>
-              <div><button class="btn btn-secondary btn-xs" disabled>—</button></div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 80px 100px 120px 80px 80px;align-items:center;padding:11px 16px;opacity:.5;">
-              <div><strong style="font-size:13px;color:var(--ink);">🇸🇳 Senegal</strong><div style="font-size:10px;color:var(--ink5);">Senegal.xlsx · Not yet configured</div></div>
-              <div style="font-family:monospace;font-size:12px;color:var(--ink5);">—</div>
-              <div style="font-family:monospace;font-size:12px;color:var(--ink5);">—</div>
-              <div style="font-size:11px;color:var(--ink5);">—</div>
-              <div><span class="status status-pending">Pending</span></div>
-              <div><button class="btn btn-secondary btn-xs" disabled>—</button></div>
-            </div>
+            <div style="padding:14px 16px;color:var(--ink5);font-size:12px;">Loading countries…</div>
           </div>
         </div>
 
@@ -1371,11 +1340,7 @@ var SB_KEY=localStorage.getItem('iw_key')||'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 var sb=null;
 var parsed={properties:[],prices:[],averages:[]};
 var _cancelUpload={};
-var ACTIVITY_LOG=[
-  {time:'03:14',type:'success',text:'12,806 listings imported from Excel upload',user:'mahmoud.nassef@heirstoneconsulting.com',dataset:'properties'},
-  {time:'03:02',text:'Admin panel accessed',type:'info',user:'mahmoud.nassef@heirstoneconsulting.com',dataset:'—'},
-  {time:'02:40',text:'Data health scan completed — 0 critical issues',type:'success',user:'system',dataset:'properties'},
-];
+var ACTIVITY_LOG=[];
 var EXPLORER_DATA={table:'properties',rows:[],page:0,pageSize:50,filtered:[]};
 
 var TEMPLATES={
@@ -1398,8 +1363,18 @@ initSB();
 window.addEventListener('load',async function(){
   if(!sb)return;
   var {data}=await sb.auth.getSession();
-  if(data?.session?.user){enterApp(data.session.user.email);}
+  if(data?.session?.user && await requireAdmin()){enterApp(data.session.user.email);}
 });
+
+// Only accounts with profiles.is_admin may see the console. The database also
+// enforces this on every admin RPC; this check keeps non-admins out of the shell.
+async function requireAdmin(){
+  var r=await sb.rpc('is_admin');
+  if(!r.error && r.data===true) return true;
+  await sb.auth.signOut();
+  showLoginErr(r.error?'Could not confirm admin access. Try again.':'This account does not have admin access.');
+  return false;
+}
 
 // ── AUTH ──
 async function doLogin(){
@@ -1412,6 +1387,7 @@ async function doLogin(){
   btn.disabled=true;btn.textContent='Signing in...';err.style.display='none';
   var {data,error}=await sb.auth.signInWithPassword({email,password:pw});
   if(error){showLoginErr('Incorrect email or password.');btn.disabled=false;btn.textContent='Sign In';return;}
+  if(!(await requireAdmin())){btn.disabled=false;btn.textContent='Sign In';return;}
   logAction('info','Admin login','auth',email);
   enterApp(email);
 }
@@ -1449,6 +1425,8 @@ function showPg(name,el){
   if(name==='ingestion')refreshJobs();
   if(name==='verification')loadFlagged();
   if(name==='activity')renderLog();
+  if(name==='sources')loadSources();
+  if(name==='drive-sync')refreshSyncStatus();
 }
 
 // ── TABS ──
@@ -1464,27 +1442,24 @@ async function loadDashboard(){
   if(!sb){document.getElementById('conn-status').innerHTML='<span class="conn-err">⚠ Not connected — go to Settings</span>';return;}
   document.getElementById('dash-refresh').textContent=new Date().toLocaleTimeString();
   try{
-    var {count:lCount}=await sb.from('properties').select('*',{count:'exact',head:true});
-    document.getElementById('st-listings').textContent=(lCount||0).toLocaleString();
-    var {data:cd}=await sb.from('properties').select('city');
-    var cities=[...new Set((cd||[]).map(r=>r.city).filter(Boolean))];
-    document.getElementById('st-cities').textContent=cities.length;
-    document.getElementById('st-countries').textContent=[...new Set((cd||[]).map(r=>'Morocco'))].length;
-    var {count:pCount}=await sb.from('price_records').select('*',{count:'exact',head:true});
-    document.getElementById('st-prices').textContent=(pCount||0).toLocaleString();
-    // Today / This week (estimated)
-    document.getElementById('st-today').textContent='0';
-    document.getElementById('st-week').textContent=(lCount||0).toLocaleString();
-    document.getElementById('st-lastrun').textContent='Mar 2026';
-    document.getElementById('st-lastrun-sub').textContent='Mubawab Morocco';
-    document.getElementById('src-mubawab-count').textContent=(lCount||0).toLocaleString();
-    document.getElementById('src-mubawab-last').textContent='Mar 2026';
+    var r=await sb.rpc('admin_overview');
+    if(r.error) throw r.error;
+    var o=r.data||{};
+    var n=function(v){return (v||0).toLocaleString();};
+    document.getElementById('st-listings').textContent=n(o.total);
+    document.getElementById('st-today').textContent=n(o.added_today);
+    document.getElementById('st-week').textContent=n(o.added_7d);
+    document.getElementById('st-cities').textContent=n(o.cities);
+    document.getElementById('st-countries').textContent=n(o.countries);
+    document.getElementById('st-sources').textContent=n(o.sources);
+    document.getElementById('st-prices').textContent=n(o.price_records);
+    var lr=o.last_run;
+    document.getElementById('st-lastrun').textContent=lr&&lr.started_at?new Date(lr.started_at).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):'—';
+    document.getElementById('st-lastrun-sub').textContent=lr?((lr.status||'')+(lr.scope&&lr.scope.length?' · '+lr.scope.join(', '):'')):'no run recorded';
+    setVqBadge(o.flagged);
     document.getElementById('conn-status').innerHTML='<span class="conn-ok">✓ Connected to Supabase</span>';
-    // Health quick counts
     await loadHealthCounts();
-    // Jobs
-    document.getElementById('job-mubawab-rec').textContent=(lCount||0).toLocaleString();
-    document.getElementById('job-mubawab-time').textContent='Mar 2026';
+    loadSources();
   }catch(e){
     document.getElementById('conn-status').innerHTML='<span class="conn-err">✕ Connection error — check Settings</span>';
   }
@@ -1509,6 +1484,53 @@ async function loadHealthCounts(){
   return true;
 }
 var _HEALTH=null;
+// Drive Sync: per-country status from the live table. "Replace" opens the
+// Upload Manager in Country Replace mode (the checked stage → preview → apply path).
+async function refreshSyncStatus(){
+  var box=document.getElementById('sync-registry'); if(!box||!sb)return;
+  box.innerHTML='<div style="padding:14px 16px;color:var(--ink5);font-size:12px;">Loading countries…</div>';
+  var r=await sb.rpc('admin_country_summary');
+  if(r.error){box.innerHTML='<div style="padding:14px 16px;color:var(--red);font-size:12px;">Could not load countries: '+_esc(r.error.message)+'</div>';return;}
+  var rows=r.data||[];
+  if(!rows.length){box.innerHTML='<div style="padding:14px 16px;color:var(--ink5);font-size:12px;">No countries ingested yet.</div>';return;}
+  var cell='font-family:monospace;font-size:12px;color:var(--ink3);';
+  box.innerHTML=rows.map(function(c){
+    var last=c.last_scraped?new Date(c.last_scraped).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):'—';
+    var stale=c.last_scraped&&(Date.now()-new Date(c.last_scraped))>30*864e5;
+    return '<div style="display:grid;grid-template-columns:1fr 80px 100px 120px 80px 80px;align-items:center;padding:11px 16px;border-bottom:1px solid var(--bg);">'
+      +'<div><strong style="font-size:13px;color:var(--ink);">'+_esc(c.country)+'</strong><div style="font-size:10px;color:var(--ink5);">'+Number(c.active).toLocaleString()+' active</div></div>'
+      +'<div style="'+cell+'">'+Number(c.cities).toLocaleString()+'</div>'
+      +'<div style="'+cell+'">'+Number(c.listings).toLocaleString()+'</div>'
+      +'<div style="font-size:11px;color:var(--ink5);">'+last+'</div>'
+      +'<div><span class="status '+(stale?'status-pending">Stale':'status-success">Current')+'</span></div>'
+      +'<div><button class="btn btn-secondary btn-xs" data-country="'+_esc(c.country)+'" onclick="triggerCountryUpload(this.dataset.country)">Replace</button></div></div>';
+  }).join('');
+}
+function triggerCountryUpload(country){
+  showPg('upload',null);
+  var radio=document.querySelector('input[name="umode-properties"][value="country_replace"]');
+  if(radio){radio.checked=true; if(typeof updateModeUI==='function')updateModeUI('properties');}
+  openModal('Replace '+country+' listings','Upload the '+country+' file below. Country Replace only touches '+country+' rows, and you review the preview before anything is applied.',function(){});
+}
+
+function setVqBadge(v){var b=document.getElementById('badge-vq'); if(!b)return; b.textContent=(v||0).toLocaleString(); b.hidden=!v;}
+
+// Sources: one row per source_name actually present in properties.
+async function loadSources(){
+  var box=document.getElementById('sources-list'); if(!box||!sb)return;
+  var r=await sb.rpc('admin_sources');
+  if(r.error){box.innerHTML='<div class="source-row"><div class="source-name"><span>Could not load sources: '+_esc(r.error.message)+'</span></div></div>';return;}
+  var rows=r.data||[];
+  if(!rows.length){box.innerHTML='<div class="source-row"><div class="source-name"><span>No listings ingested yet.</span></div></div>';return;}
+  box.innerHTML=rows.map(function(s){
+    var last=s.last_scraped?new Date(s.last_scraped).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):'—';
+    return '<div class="source-row"><div class="source-icon">🌐</div>'
+      +'<div class="source-name"><strong>'+_esc(s.source_name||'(no source name)')+'</strong><span>'+s.countries+' countr'+(s.countries==1?'y':'ies')+'</span></div>'
+      +'<div style="width:100px;text-align:right;"><div class="source-stat-val">'+Number(s.listings).toLocaleString()+'</div><div class="source-stat-lbl">listings</div></div>'
+      +'<div style="width:130px;text-align:right;"><div class="source-stat-val" style="font-size:11px;">'+last+'</div><div class="source-stat-lbl">last scraped</div></div>'
+      +'<div style="width:80px;text-align:right;"><div class="source-stat-val">'+Number(s.active).toLocaleString()+'</div><div class="source-stat-lbl">active</div></div></div>';
+  }).join('');
+}
 function setHealthCell(id,val,warnThreshold){
   var el=document.getElementById(id);
   if(!el)return;
@@ -1521,7 +1543,6 @@ async function runHealthScan(){
   document.getElementById('health-scan-time').textContent='Scanning...';
   await loadHealthCounts();
   document.getElementById('health-scan-time').textContent='Last scan: '+new Date().toLocaleTimeString()+' · '+new Date().toLocaleDateString();
-  logAction('info','Data health scan completed','data-health','system');
 }
 
 var _ISSUE_FILTERS={
@@ -1606,28 +1627,36 @@ async function refreshJobs(){
       +'<div class="mono" style="font-size:11px;color:var(--ink4);" title="complete · partial · capped at the page allowance · confirmed empty">'+Number(t.complete||0)+'✓ '+Number(t.partial||0)+'◐ '+Number(t.budget_limited||0)+'⏸ '+Number(t.empty||0)+'∅'+lost(t)+'</div>'
       +'</div>';
   }).join('');
-  logAction('info','Ingestion runs refreshed ('+runs.length+')','ingestion');
 }
 
 // ── ACTIVITY LOG ──
-function logAction(type,text,dataset,user){
-  var now=new Date();
-  var entry={time:now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0'),type:type,text:text,dataset:dataset||'—',user:user||'admin'};
-  ACTIVITY_LOG.unshift(entry);
-  if(ACTIVITY_LOG.length>200)ACTIVITY_LOG=ACTIVITY_LOG.slice(0,200);
+// Stored in public.admin_activity (append-only; the actor comes from the session).
+async function logAction(type,text,dataset){
+  if(!sb)return;
+  var r=await sb.rpc('admin_log_activity',{p_type:type,p_text:String(text),p_dataset:dataset||null});
+  if(r.error)console.warn('activity log write failed:',r.error.message);
 }
-function renderLog(target){
-  var filter=document.getElementById('log-filter-type')?.value||'';
-  var entries=ACTIVITY_LOG.filter(e=>!filter||e.type===filter||e.dataset===filter||e.text.toLowerCase().includes(filter));
-  var html=entries.map(e=>`
-    <div class="log-entry">
-      <div class="log-time">${e.time}</div>
-      <div class="log-dot ${e.type}"></div>
-      <div class="log-text">${e.text}<span class="log-dataset">${e.dataset}</span><div class="log-user">${e.user||''}</div></div>
-    </div>`).join('');
-  if(!html)html='<div style="padding:20px;text-align:center;color:var(--ink5);">No log entries</div>';
-  if(target==='dash'){document.getElementById('dash-activity').innerHTML=html.split('log-entry').slice(0,5).join('log-entry');}
-  else if(document.getElementById('activity-log-list')){document.getElementById('activity-log-list').innerHTML=html;}
+async function fetchLog(limit){
+  var r=await sb.from('admin_activity').select('created_at,actor_email,type,text,dataset').order('created_at',{ascending:false}).limit(limit||200);
+  if(r.error)throw r.error;
+  ACTIVITY_LOG=(r.data||[]).map(function(e){return {when:e.created_at,type:e.type,text:e.text,dataset:e.dataset||'—',user:e.actor_email||''};});
+  return ACTIVITY_LOG;
+}
+async function renderLog(target){
+  var box=target==='dash'?document.getElementById('dash-activity'):document.getElementById('activity-log-list');
+  if(!box||!sb)return;
+  var entries;
+  try{entries=await fetchLog(target==='dash'?5:200);}
+  catch(e){box.innerHTML='<div style="padding:20px;text-align:center;color:var(--red);">Could not load the activity log: '+_esc(e.message||e)+'</div>';return;}
+  var filter=target==='dash'?'':(document.getElementById('log-filter-type')?.value||'');
+  entries=entries.filter(e=>!filter||e.type===filter||e.dataset===filter||e.text.toLowerCase().includes(filter));
+  var html=entries.map(function(e){
+    var d=new Date(e.when);
+    var t=d.toLocaleDateString(undefined,{day:'numeric',month:'short'})+' '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+    return '<div class="log-entry"><div class="log-time">'+_esc(t)+'</div><div class="log-dot '+_esc(e.type)+'"></div>'
+      +'<div class="log-text">'+_esc(e.text)+'<span class="log-dataset">'+_esc(e.dataset)+'</span><div class="log-user">'+_esc(e.user)+'</div></div></div>';
+  }).join('');
+  box.innerHTML=html||'<div style="padding:20px;text-align:center;color:var(--ink5);">No activity recorded yet.</div>';
 }
 function exportLog(){
   var ws=XLSX.utils.json_to_sheet(ACTIVITY_LOG);
@@ -1820,7 +1849,7 @@ function showValidationPreview(name,data){
   var valid=data.length-missing.length;
   document.getElementById('vp-'+pfx+'-total').textContent=data.length.toLocaleString();
   document.getElementById('vp-'+pfx+'-valid').textContent=valid.toLocaleString();
-  document.getElementById('vp-'+pfx+'-dupes').textContent=dupes.length.toLocaleString();
+  var dupEl=document.getElementById('vp-'+pfx+'-dupes'); if(dupEl) dupEl.textContent=dupes.length.toLocaleString();
   document.getElementById('vp-'+pfx+'-missing').textContent=missing.length.toLocaleString();
   vp.style.display='block';
 }

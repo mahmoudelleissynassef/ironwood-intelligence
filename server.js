@@ -74,11 +74,15 @@ const BLOCKED_FILES = new Set([
 const BLOCKED_EXTS = new Set([
   '.md', '.sql', '.py', '.toml', '.lock', '.env', '.yml', '.yaml', '.ini', '.cfg',
 ]);
-const BLOCKED_DIRS = ['/email-templates/', '/.git/', '/.claude/', '/api/', '/scraper-factory/', '/design-v2/', '/tests/'];
+// Legacy admin builds: /admin-upload wrote straight to Supabase with no login,
+// and the older console copy faked actions client-side. /admin (admin-index.html)
+// replaces both.
+const BLOCKED_PAGES = new Set(['/admin-upload', '/admin-upload.html']);
+const BLOCKED_DIRS = ['/email-templates/', '/.git/', '/.claude/', '/api/', '/scraper-factory/', '/design-v2/', '/tests/', '/ironwood-admin/'];
 
 function isBlocked(pathname) {
   const lower = pathname.toLowerCase();
-  if (BLOCKED_FILES.has(lower)) return true;
+  if (BLOCKED_FILES.has(lower) || BLOCKED_PAGES.has(lower)) return true;
   if (BLOCKED_EXTS.has(path.extname(lower))) return true;
   if (BLOCKED_DIRS.some((d) => lower.startsWith(d))) return true;
   // Any dotfile or dot-directory.
