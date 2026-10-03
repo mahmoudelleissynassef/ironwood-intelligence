@@ -765,6 +765,9 @@ table.xmt{width:100%;border-collapse:collapse;}
 .mk-map-frame{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#100F0B;height:640px;}
 .mk-map-frame .lmap{position:absolute;inset:0;z-index:1;}
 .sat-dim{filter:saturate(.78) brightness(.72) contrast(1.05);}
+.dark-base{filter:brightness(.62) contrast(1.08);}
+.leaflet-container .leaflet-control-attribution{background:rgba(10,13,18,.62);color:var(--ink5);font-size:9px;line-height:1.4;padding:1px 6px;}
+.leaflet-container .leaflet-control-attribution a{color:inherit;}
 .leaflet-container{background:#14130F;}
 .mk-map-note{position:absolute;left:10px;bottom:10px;z-index:500;background:rgba(20,19,15,.86);border:1px solid rgba(201,169,106,.3);color:var(--ink2);padding:5px 10px;border-radius:7px;font-size:10px;}
 .pp-badge{display:inline-flex;font-size:9px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;padding:1.5px 7px;border-radius:20px;background:var(--surface3);color:var(--ink3);}
@@ -3385,14 +3388,29 @@ async function _renderCrossMarket(){
 
   renderXmMap(data,heldKs);
 }
+// Dark basemap: Esri's keyless Dark Gray Canvas. CARTO's basemaps began answering
+// every tile request with an "API KEY REQUIRED" image (3 Oct 2026). The canvas has
+// native tiles to zoom 16; Leaflet scales them past that.
+var ESRI_ATTR='Tiles © Esri — Esri, HERE, Garmin, © OpenStreetMap contributors';
+var ESRI_IMAGERY_ATTR='Imagery © Esri, Maxar, Earthstar Geographics';
+function _darkLabels(m,opacity){
+  return L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+    {maxNativeZoom:16,maxZoom:18,opacity:opacity==null?1:opacity}).addTo(m);
+}
+function _darkBase(m){
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    {maxNativeZoom:16,maxZoom:18,className:'dark-base',attribution:ESRI_ATTR}).addTo(m);
+  return _darkLabels(m);
+}
+
 function renderXmMap(data,heldKs){ var el=document.getElementById('xm-map'); if(!el||!window.L) return;
   if(_xmMap){try{_xmMap.remove();}catch(e){}_xmMap=null;}
   // Hold the instance locally: a later draw replaces the global, and this
   // one's timer must not resize somebody else's map.
-  var map=L.map('xm-map',{zoomControl:false,attributionControl:false,scrollWheelZoom:false}).setView([6,16],3);
+  var map=L.map('xm-map',{zoomControl:false,attributionControl:true,scrollWheelZoom:false}).setView([6,16],3);
   _xmMap=map;
   L.control.zoom({position:'topright'}).addTo(map);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(map);
+  _darkBase(map);
   data.forEach(function(d){ var v=COUNTRY_VIEW[d.k]; if(!v)return;
     L.circleMarker(v[0],{radius:Math.min(22,Math.max(8,Math.sqrt(d.listings/200))),fillColor:'#DAC28C',color:'rgba(20,19,15,.85)',weight:1.5,fillOpacity:.85}).addTo(map)
       .bindTooltip(d.c.label+' · '+d.listings.toLocaleString()+' listings',{direction:'top',className:'xm-tip'}); });
@@ -3568,11 +3586,11 @@ function renderMkMap(country,df,f,cur){
   var el=document.getElementById('mk-map'); if(!el||!window.L) return;
   if(_mkMap){try{_mkMap.remove();}catch(e){}_mkMap=null;}
   var view=COUNTRY_VIEW[country]||[[0,20],5];
-  var map=L.map('mk-map',{zoomControl:true,attributionControl:false,zoomSnap:.5,scrollWheelZoom:false});
+  var map=L.map('mk-map',{zoomControl:true,attributionControl:true,zoomSnap:.5,scrollWheelZoom:false});
   _mkMap=map;
   map.setView(view[0],view[1],{animate:false});
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,className:'sat-dim'}).addTo(map);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:18,opacity:.85}).addTo(map);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,className:'sat-dim',attribution:ESRI_IMAGERY_ATTR}).addTo(map);
+  _darkLabels(map,.85);
   // The city bubbles come from the market summary OF THIS MARKET, or not at all.
   var tt=f.type==='rent'?'rent':'sale', K=_kOf(country)||{};
   var cityLayer=L.layerGroup(), distLayer=L.layerGroup();
@@ -4003,10 +4021,10 @@ async function renderMap(country,K){
   var view=COUNTRY_VIEW[country]||[[0,20],4];
   // This render's own map. A newer render replaces the global; everything
   // below then knows it is drawing into a map nobody is looking at.
-  var map=L.map('map-live',{zoomControl:true,attributionControl:false,zoomSnap:.5});
+  var map=L.map('map-live',{zoomControl:true,attributionControl:true,zoomSnap:.5});
   _liveMap=map;
   map.setView(view[0],view[1],{animate:false});
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(map);
+  _darkBase(map);
   var pop=function(t,med,n,unit){ return '<div style="font-family:IBM Plex Mono,monospace;min-width:150px;"><b style="font-size:12.5px;">'+t+'</b>'
     +'<div style="font-size:11.5px;margin-top:3px;">Median '+tt+': <b>'+(med!=null?money(med,cur)+'/m²'+(unit||''):'—')+'</b></div>'
     +'<div style="font-size:10.5px;color:#6E685C;">'+Number(n||0).toLocaleString('en-US')+' listings</div></div>'; };
@@ -4141,10 +4159,10 @@ async function renderCityProfile(country,city){
       if(_cityMap){try{_cityMap.remove();}catch(e){}_cityMap=null;}
       var ctr=CITY_COORDS[city]||(all.filter(function(d){return d.lat!=null;})[0]?[all.filter(function(d){return d.lat!=null;})[0].lat,all.filter(function(d){return d.lat!=null;})[0].lng]:null);
       if(ctr){
-        var cmap=L.map(me,{zoomControl:true,attributionControl:false,scrollWheelZoom:false,zoomSnap:.5});
+        var cmap=L.map(me,{zoomControl:true,attributionControl:true,scrollWheelZoom:false,zoomSnap:.5});
         _cityMap=cmap;
         cmap.setView(ctr,11.5,{animate:false});
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(cmap);
+        _darkBase(cmap);
         var geo=all.filter(function(d){return d.lat!=null;});
         var meds=geo.map(function(d){return d.v;}).sort(function(a,b){return a-b;});
         function shade(v){ if(!meds.length) return '#C9A96A';
@@ -5711,7 +5729,7 @@ function initMap(){
   const el=document.getElementById('map-container');
   if(!el) return;
   _map=L.map('map-container',{zoomControl:true}).setView([32,-5],5.4);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap · © CARTO',maxZoom:18}).addTo(_map);
+  _darkBase(_map);
   const cities=[
     {name:'Casablanca',lat:33.5731,lng:-7.5898,price:'18,420',chg:'+6.2%',listings:4218,liq:7.0},
     {name:'Marrakech',lat:31.6295,lng:-7.9811,price:'17,800',chg:'+8.4%',listings:2847,liq:6.8},

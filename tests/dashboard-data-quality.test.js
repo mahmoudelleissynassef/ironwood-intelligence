@@ -14,7 +14,8 @@ function between(start, end) {
 }
 const quality = between('var CITY_PRICE_MIN_N=', '// One cross-market render');
 const tokens = between('var _EP=', '// A retry button');
-const crossMarket = between('async function _renderCrossMarket(){', 'function renderXmMap(');
+const crossMarket = between('async function _renderCrossMarket(){', '// Dark basemap: Esri');
+const darkBase = between('// Dark basemap: Esri', 'function renderXmMap(');
 const signals = between('async function loadMarketSignals(country){', '// ══════════════════════════════════════════════════════════════');
 const mapSource = between('async function renderMap(country,K){', 'function _bars(');
 const profileSource = between('function _marketKey(city,sub){', 'async function loadBatch2(country){');
@@ -143,7 +144,7 @@ test('map requests and timers stay attached to their own instance across a newer
     window: { L }, L, _liveMap: null, _curFilters: () => ({ asset: 'all', type: 'sale', days: null }), _fx: async () => ({}),
     V2HEAD: () => '', _ccyName: x => x, COUNTRY_VIEW: { Morocco: [[31, -7], 5] }, CITY_COORDS: {},
     setTimeout: fn => { timers.push(fn); }, sb: { rpc() { const d = deferred(); answers.push(d); return d.promise; } } });
-  vm.runInContext(mapSource, e.c);
+  vm.runInContext(darkBase + mapSource, e.c);
   const first = e.c.renderMap('Morocco', { cities: [] }); await new Promise(setImmediate);
   const second = e.c.renderMap('Morocco', { cities: [] }); await new Promise(setImmediate);
   answers[1].resolve({ data: [] }); await second;
