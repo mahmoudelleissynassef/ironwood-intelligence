@@ -78,7 +78,7 @@ Ironwood Intelligence is a B2B SaaS platform — "the CoStar of Africa" — that
 | Repo | Purpose | Local clone |
 |------|---------|-------------|
 | mahmoudelleissynassef/ironwood-intelligence | Main — dashboard.html, landing (index.html), admin-*.html, Vercel config | C:\Dev\Ironwood Intelligence |
-| mahmoudelleissynassef/ironwood-admin | Admin panel (private) — single index.html | C:\Dev\ironwood-admin |
+| mahmoudelleissynassef/ironwood-admin | RETIRED 3 Oct 2026 (archived on GitHub). The admin console is admin-index.html in this repo, served at /admin | — (old clones in C:\Dev\_retired\2026-10-03) |
 | mahmoudelleissynassef/scraper-factory | Scraper backend + PARSER FACTORY (main.py dispatcher, parsers/, promote.py) | C:\Dev\scraper-factory |
 
 Note: an older local copy lived at C:\Users\mahmo\OneDrive - Heirstone Consulting\Documents\07_Ironwood Intelligence\Scripts Ironwood Intelligence — C:\Dev is now the working set (all three repos cloned there).

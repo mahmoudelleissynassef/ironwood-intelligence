@@ -5,9 +5,9 @@
     {
       "source": "/(.*)",
       "has": [{ "type": "host", "value": "admin.ironwoodintelligence.com" }],
-      "destination": "/admin"
+      "destination": "/admin-index"
     },
-    { "source": "/admin/:path*",    "destination": "/admin" },
+    { "source": "/admin/:path*",    "destination": "/admin-index" },
     { "source": "/dashboard/:page", "destination": "/dashboard" },
     { "source": "/en",              "destination": "/" },
     { "source": "/en/:path*",       "destination": "/" },
