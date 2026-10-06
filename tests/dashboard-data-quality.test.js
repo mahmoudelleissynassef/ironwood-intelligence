@@ -201,6 +201,18 @@ const DAY = 86400000, T = d => Date.parse(d + 'T00:00:00Z');
 // Values built inside the vm context carry its own Array prototype: compare plain copies.
 const same = (a, b, msg) => assert.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)), msg);
 
+test('trend series: a snapshot repeating the previous week is dropped, a real change is kept', () => {
+  const { c } = trendsEnv();
+  const rows = [snap('2026-08-10', 'Rabat', 'sale', 13000, 900), snap('2026-08-10', 'Casablanca', 'sale', 15000, 2000),
+    snap('2026-08-17', 'Rabat', 'sale', 13000, 900), snap('2026-08-17', 'Casablanca', 'sale', 15000, 2000),
+    snap('2026-08-24', 'Casablanca', 'sale', 15000, 2000), snap('2026-08-24', 'Rabat', 'sale', 13000, 900),
+    snap('2026-09-09', 'Rabat', 'sale', 13100, 950), snap('2026-09-09', 'Casablanca', 'sale', 15000, 2000)];
+  const out = c._snapDedupe(rows);
+  same([...new Set(out.map(r => r.snapshot_date))], ['2026-08-10', '2026-09-09']);
+  same([...out.repeats], ['2026-08-17', '2026-08-24']);
+  same(c._snapDedupe([]).length, 0);
+});
+
 test('trend series: dates ascend whatever the row order; cities ranked by latest listing count; roll-ups and other types ignored', () => {
   const { c } = trendsEnv();
   const rows = [snap('2026-09-21', 'Rabat', 'sale', 13000, 900), snap('2026-07-13', 'Casablanca', 'sale', 15900, 2100),

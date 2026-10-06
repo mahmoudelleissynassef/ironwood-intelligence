@@ -4027,6 +4027,25 @@ var SNAP_METHOD_CHANGES=[{d:'2026-09-21',label:'Parser fix'},{d:'2026-10-04',lab
 function _snapT(d){ var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(d==null?'':d)); return m?Date.UTC(+m[1],+m[2]-1,+m[3]):null; }
 function _snapTT(x){ return String(x==null?'':x).toLowerCase().replace(/[^a-z]/g,''); }
 function _snapNum(v){ if(v==null||v==='') return null; var n=Number(v); return isFinite(n)?n:null; }
+// A weekly snapshot identical to the previous one (every city's median and
+// listing count unchanged) carries no new observation: Morocco's 17 and 24 Aug
+// 2026 snapshots repeat 10 Aug byte for byte. Such dates are dropped, so the
+// chart shows a gap rather than a flat line nobody observed.
+function _snapDedupe(rows){
+  var by={}, dates=[];
+  (rows||[]).forEach(function(r){ var d=String(r.snapshot_date||'').slice(0,10); if(!d) return;
+    if(!by[d]){ by[d]=[]; dates.push(d); } by[d].push(r); });
+  dates.sort();
+  var keep={}, prev=null, dropped=[];
+  dates.forEach(function(d){
+    var fp=by[d].map(function(r){ return [r.city,_snapTT(r.transaction_type),_snapNum(r.median_ppsqm),_snapNum(r.listing_count)].join('|'); }).sort().join(',');
+    if(fp===prev) dropped.push(d); else keep[d]=true;
+    prev=fp;
+  });
+  var out=(rows||[]).filter(function(r){ return keep[String(r.snapshot_date||'').slice(0,10)]; });
+  out.repeats=dropped;
+  return out;
+}
 // rows -> {dates, cities:[{city, points:[{d,t,v,n,st,rep}], latestN}], dropped, noUsd, shown, usdFrom}
 // o: {tt:'sale'|'rent', usd:bool, minN, top, city}
 //   st: 'ok' | 'small' (n < minN, value withheld) | 'nousd' (no stored FX) | 'missing'
@@ -4141,6 +4160,7 @@ async function _snapLoad(country,asset){
     rows=rows.concat(d);
     if(d.length<PAGE) break;
   }
+  rows=_snapDedupe(rows);
   if(mkt===_EP.mkt&&!_isHeld(country)) _SNAP[key]={mkt:mkt,rows:rows};
   return {ok:true,data:rows};
 }
@@ -4224,7 +4244,8 @@ function _snapNotes(S,cur,extra){
   var li=['Asking prices from listings, not transaction prices. Each point is the median of one weekly snapshot.',
     'Points backed by fewer than '+S.minN+' listings are hidden (minimum sample)'
       +(S.dropped?': '+S.dropped+' hidden in this view':'')+'. A hidden point or a missing week breaks the line; the time axis keeps real gaps.',
-    'Collection-method changes can shift levels: parser fixes on 21 Sep and 4 Oct 2026 (dashed markers).'];
+    'Collection-method changes can shift levels: parser fixes on 21 Sep and 4 Oct 2026 (dashed markers).',
+    'A weekly snapshot identical to the previous one carries no new observation and is not plotted.'];
   if(S.usd){
     li.push(S.noUsd
       ?'USD uses the exchange rate stored with each snapshot'+(S.usdFrom?' (recorded from '+_snapDate(S.usdFrom)+')':'')
