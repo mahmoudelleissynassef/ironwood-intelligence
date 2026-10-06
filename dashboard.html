@@ -1417,7 +1417,7 @@ body.no-period #period-toggle{display:none!important;}
       <!-- Drawn by renderTrendsPage() from the weekly market_snapshots history. -->
       <div class="eyebrow">Market Intelligence</div>
       <div class="pg-title">Price Trends</div>
-      <div class="pg-sub">Median asking prices and listing supply over time, from weekly snapshots.</div>
+      <div class="pg-sub">Median asking prices over time, and the listings behind them, from weekly snapshots.</div>
     </div>
 
     <!-- ══════════════════════════════════════════════
@@ -4309,10 +4309,10 @@ async function renderTrendsPage(country){
    +'<div class="panel-sub">'+_snapEsc(A)+' · '+(rent?'for rent':'for sale')+' · '+_snapEsc(unit)+' · '+label+'</div></div>'
    +'<button class="pa-btn" onclick="exportTable(\'trend-table\')">↓ CSV</button></div>'
    +'<div class="panel-body2">'+chart+_snapNotes(S,cur)+'</div></div></div>'
-   +'<div class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">Listing supply over time</div>'
-   +'<div class="panel-sub">'+_snapEsc(A)+' · listings counted in each weekly snapshot, all cities · for sale and for rent</div></div></div>'
+   +'<div class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">Listings collected over time</div>'
+   +'<div class="panel-sub">'+_snapEsc(A)+' · every listing collected so far, counted at each weekly snapshot, all cities · for sale and for rent</div></div></div>'
    +'<div class="panel-body2">'+(sup.dates.length?'<div style="height:190px;position:relative;"><canvas id="trends-supply-chart" role="img" aria-label="Listings per weekly snapshot, sale and rent"></canvas></div>':_snapEmpty('No supply counts for this selection.'))
-   +'<ul class="snap-notes"><li>Occupancy isn’t directly observed; rental supply is shown as an indicator.</li>'
+   +'<ul class="snap-notes"><li>These counts are cumulative: a listing stays counted after it leaves the portal (retirement is not tracked yet), so the line shows our growing coverage, not market supply or occupancy. Published occupancy and vacancy rates, where available, are on the market’s research panel.</li>'
    +'<li>Counts move with Ironwood’s collection coverage (portals added, parser fixes) as well as with the market.</li></ul></div></div></div>'
    +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Trend Data Table</div>'
    +'<div class="panel-sub">'+_snapEsc(A)+' · '+(rent?'for rent':'for sale')+' · median '+_snapEsc(unit)+' and listings (n) per weekly snapshot, newest first</div></div></div>'

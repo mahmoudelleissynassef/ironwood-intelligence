@@ -321,7 +321,7 @@ test('trends page: an answer for a market no longer on screen is never drawn, an
   const html = node('pg-price-trends').innerHTML;
   assert.match(html, /Tunis/); assert.doesNotMatch(html, /Casablanca|Morocco/);
   assert.match(html, /Median asking price per m/); assert.match(html, /id="trend-table"/);
-  assert.match(html, /Occupancy isn’t directly observed/);
+  assert.match(html, /not market supply or occupancy/);
   env.held.add('Tunisia'); c._EP.mkt++;
   await c.renderTrendsPage('Tunisia');
   assert.equal(queries.length, 2, 'no snapshot request for a held market');
