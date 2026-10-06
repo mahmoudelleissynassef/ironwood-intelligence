@@ -65,7 +65,7 @@ node server.js --port 8942 --page /tmp/old-dashboard.html
 seed: switch market (Morocco, Kenya, Tunisia, and the held Ethiopia), navigate
 any market page (overview, markets, cities, districts, by bedroom, days on
 market, map, heatmaps, data explorer, exports, insights, liquidity index,
-investment radar, market reports), change the asset / type / period filter,
+investment radar, market reports, price trends), change the asset / type / period filter,
 toggle the currency, re-read `data_status`. Two actions are scripted: Kenya is
 put on hold about a third of the way in, and released about two thirds in
 (a release only reaches the page through a status read, so one follows).
@@ -139,7 +139,13 @@ filters that have since changed is visible in the DOM as well.
   (`window.__stub.pending`), and records any listing request sent for a market
   the page already knew was held (`window.__stub.violations`);
 - exposes `window.__stub.hold(country)` / `.release(country)` for mid-run changes;
-- stubs the FX and World Bank `fetch` calls, so no run depends on the network.
+- stubs the FX and World Bank `fetch` calls, so no run depends on the network;
+- answers `market_snapshots` (the Price Trends page and the city Price Trend
+  panel) with a weekly history: sentinel figures under `?test=rapid|scenarios`,
+  and otherwise a realistic series for Morocco, Tunisia, Kenya and Egypt on the
+  real snapshot calendar (two missing weeks, the Wednesday 9 Sep snapshot,
+  carried-forward August weeks, USD only from 9 Sep, small-sample cities).
+  `http://127.0.0.1:<port>/dashboard/trends` shows it.
 
 ## Notes
 

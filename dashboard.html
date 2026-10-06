@@ -785,6 +785,11 @@ table.xmt{width:100%;border-collapse:collapse;}
 .a-chip.on{background:var(--gold-pale);color:var(--gold2);border-color:rgba(201,169,106,.4);font-weight:600;}
 .fx-pill{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;color:var(--ink4);background:var(--surface);border:1px solid var(--border);padding:5.5px 10px;border-radius:20px;white-space:nowrap;font-variant-numeric:tabular-nums;}
 body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-toggle,body.no-filters #period-toggle,body.no-filters #fx-note{display:none!important;}
+body.no-period #period-toggle{display:none!important;}
+.snap-notes{margin:12px 0 0;padding-left:16px;font-size:11px;line-height:1.65;color:var(--ink4);}
+.snap-notes li{margin:1px 0;}
+.snap-details{margin-top:12px;border-top:1px solid var(--hairline);padding-top:10px;}
+.snap-details summary{cursor:pointer;font-size:11.5px;color:var(--ink3);margin-bottom:8px;}
 .rs-chart{height:230px;position:relative;}
 .rs-audit summary{cursor:pointer;font-size:11px;color:var(--ink4);padding:8px 0;list-style:none;}
 .rs-audit summary:hover{color:var(--gold2);}
@@ -925,6 +930,7 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
     <div class="ni" onclick="nav('districts')"><span class="ni-icon" data-icon="map"></span>Districts</div>
     <div class="ni" onclick="nav('by-bedroom')"><span class="ni-icon" data-icon="layers"></span>By Bedroom</div>
     <div class="ni" onclick="nav('days-on-market')"><span class="ni-icon" data-icon="activity"></span>Days on Market</div>
+    <div class="ni" onclick="nav('price-trends')"><span class="ni-icon" data-icon="trend"></span>Price Trends</div>
   </div>
 
   <div class="sb-section">
@@ -1154,168 +1160,9 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
          CITIES
     ══════════════════════════════════════════════ -->
     <div class="pg" id="pg-cities">
+      <!-- Drawn by renderCitiesPage() / renderCityProfile(). -->
       <div class="eyebrow">Markets</div>
       <div class="pg-title">Cities</div>
-      <div class="pg-sub">Full city market profiles for all covered markets. Select a city to view its complete intelligence dossier. All indicators are listings-derived unless otherwise noted.</div>
-
-      <!-- City selector tabs -->
-      <div id="city-tabs-bar" style="display:flex;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px;">
-        <button class="city-tab active-tab" onclick="switchCity(this,'casablanca')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:var(--ink);color:var(--bg);border:none;cursor:pointer;">Casablanca</button>
-        <button class="city-tab" onclick="switchCity(this,'marrakech')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:var(--surface);color:var(--ink3);border:none;cursor:pointer;">Marrakech</button>
-        <button class="city-tab" onclick="switchCity(this,'rabat')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:var(--surface);color:var(--ink3);border:none;cursor:pointer;">Rabat</button>
-        <button class="city-tab" onclick="switchCity(this,'tangiers')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:var(--surface);color:var(--ink3);border:none;cursor:pointer;">Tangiers</button>
-        <button class="city-tab" onclick="switchCity(this,'fez')" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:var(--surface);color:var(--ink3);border:none;cursor:pointer;">Fez</button>
-      </div>
-
-      <!-- City profile panel — populated dynamically -->
-      <div id="city-profile">
-
-        <!-- Market Overview KPIs -->
-        <div class="kpi-grid" id="city-kpis">
-          <div class="kpi">
-            <div class="kpi-lbl">Median Apt. Price <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
-            <div class="kpi-val" id="c-med-price">DH 18,420</div>
-            <div class="kpi-sub">per m² · Asking price</div>
-            <div class="kpi-chg chg pos" id="c-price-chg">▲ +6.2% 12M</div>
-            <div style="margin-top:6px;"><span class="ds-tag ds-listings">Measured</span></div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-lbl">Prime Rent <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
-            <div class="kpi-val" id="c-prime-rent">DH 142</div>
-            <div class="kpi-sub">per m²/mo · Offices</div>
-            <div class="kpi-chg chg pos" id="c-rent-chg">▲ +4.4% 12M</div>
-            <div style="margin-top:6px;"><span class="ds-tag ds-listings">Measured</span></div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-lbl">Active Listings <span class="conf conf-h"><span class="conf-dot"></span>High</span></div>
-            <div class="kpi-val" id="c-listings">4,218</div>
-            <div class="kpi-sub">verified · all asset classes</div>
-            <div class="kpi-chg" id="c-list-chg" style="color:var(--ink4);">All types</div>
-            <div style="margin-top:6px;"><span class="ds-tag ds-listings">Measured</span></div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-lbl">Yield Estimate <span class="conf conf-e"><span class="conf-dot"></span>Est.</span></div>
-            <div class="kpi-val" id="c-yield">5.8%</div>
-            <div class="kpi-sub">gross · residential</div>
-            <div class="kpi-chg" style="color:var(--ink4);">→ Stable</div>
-            <div style="margin-top:6px;"><span class="ds-tag ds-model">Modeled</span></div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-lbl">Liquidity Score <span class="conf conf-m"><span class="conf-dot"></span>Med.</span></div>
-            <div class="kpi-val" id="c-liq">7.0<span style="font-size:14px;color:var(--ink4);">/10</span></div>
-            <div class="kpi-sub">Ironwood Liquidity Index</div>
-            <div class="kpi-chg" id="c-liq-chg" style="color:var(--green);">→ Liquid</div>
-            <div style="margin-top:6px;"><span class="ds-tag ds-model">Modeled</span></div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-lbl">Pipeline Supply <span class="conf conf-m"><span class="conf-dot"></span>Med.</span></div>
-            <div class="kpi-val" id="c-pipeline">~190k</div>
-            <div class="kpi-sub" id="c-pipe-sub">m² GFA · 14 projects</div>
-            <div class="kpi-chg" id="c-pipe-risk" style="color:var(--red);">⚠ High risk</div>
-            <div style="margin-top:6px;"><span class="ds-tag ds-pipeline">Pipeline data</span></div>
-          </div>
-        </div>
-
-        <div class="two-col">
-          <!-- Price Trends -->
-          <div class="panel">
-            <div class="panel-hd">
-              <div><div class="panel-title">Price Trend</div><div class="panel-sub" id="c-trend-sub">Apartments · Indexed 100 = Q1 2025 · <span class="ds-tag ds-listings">Measured</span></div></div>
-              <button class="pa-btn" onclick="exportTable('city-trend-table')">↓ CSV</button>
-            </div>
-            <div class="panel-body"><div style="height:200px;"><canvas id="city-trend-chart"></canvas></div></div>
-          </div>
-
-          <!-- District Comparison -->
-          <div class="panel">
-            <div class="panel-hd">
-              <div><div class="panel-title">District Comparison</div><div class="panel-sub">Median asking price by sub-market · <span class="ds-tag ds-listings">Measured</span></div></div>
-              <button class="pa-btn" onclick="exportTable('city-district-table')">↓ CSV</button>
-            </div>
-            <div class="panel-body"><div style="height:200px;"><canvas id="city-district-chart"></canvas></div></div>
-          </div>
-        </div>
-
-        <!-- Development Pipeline -->
-        <div class="panel">
-          <div class="panel-hd">
-            <div><div class="panel-title" id="c-pipe-title">Development Pipeline — Casablanca</div><div class="panel-sub">Active tracked projects · <span class="ds-tag ds-pipeline">Pipeline data</span></div></div>
-            <div class="panel-actions">
-              <button class="pa-btn gold" onclick="exportTable('city-pipeline-table','xlsx')">↓ Excel</button>
-            </div>
-          </div>
-          <table class="dt" id="city-pipeline-table">
-            <thead><tr><th>#</th><th>Project</th><th>Developer</th><th>District</th><th>Asset Class</th><th>GFA m²</th><th>Stage</th><th>Delivery</th><th>Risk</th></tr></thead>
-            <tbody id="city-pipe-body">
-              <tr><td class="dt-rank">01</td><td><strong>Marina Business Hub</strong></td><td class="dt-muted">Undisclosed</td><td class="dt-muted">Marina</td><td>Office</td><td class="mono">42,000</td><td><span class="sig sig-warn">Superstructure</span></td><td class="mono">Q3 2027</td><td><span class="sig sig-dn">High</span></td></tr>
-              <tr><td class="dt-rank">02</td><td><strong>Anfa Place Ph.3</strong></td><td class="dt-muted">Addoha</td><td class="dt-muted">Anfa</td><td>Mixed Use</td><td class="mono">38,000</td><td><span class="sig sig-neutral">Foundation</span></td><td class="mono">Q2 2028</td><td><span class="sig sig-warn">Moderate</span></td></tr>
-              <tr><td class="dt-rank">03</td><td><strong>CIL Towers</strong></td><td class="dt-muted">CDG Immobilier</td><td class="dt-muted">CIL</td><td>Residential</td><td class="mono">28,000</td><td><span class="sig sig-up">Topped Out</span></td><td class="mono">Q4 2026</td><td><span class="sig sig-up">Low</span></td></tr>
-            </tbody>
-          </table>
-          <div class="export-row">
-            <button class="exp-btn primary" onclick="exportTable('city-pipeline-table')">↓ CSV</button>
-            <span style="margin-left:auto;font-size:11px;color:var(--ink5);">DEMO DATA · Pipeline data · Estimates only</span>
-          </div>
-        </div>
-
-        <!-- Transaction Evidence + Investment Signals -->
-        <div class="two-col">
-          <div class="panel">
-            <div class="panel-hd">
-              <div><div class="panel-title">Transaction Evidence</div><div class="panel-sub"><span class="ds-tag ds-transaction">Observed transaction</span></div></div>
-              <button class="pa-btn" onclick="exportTable('city-txn-table')">↓ CSV</button>
-            </div>
-            <table class="dt" id="city-txn-table">
-              <thead><tr><th>Date</th><th>Asset</th><th>District</th><th>DH/m²</th><th>Source</th><th>Conf.</th></tr></thead>
-              <tbody id="city-txn-body">
-                <tr><td class="mono dt-muted">Mar 2026</td><td>Office</td><td class="dt-muted">Marina</td><td class="mono">18,200</td><td class="dt-muted">Press</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
-                <tr><td class="mono dt-muted">Jan 2026</td><td>Retail</td><td class="dt-muted">Maarif</td><td class="mono">22,800</td><td class="dt-muted">Broker</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
-                <tr><td class="mono dt-muted">Dec 2025</td><td>Apartment</td><td class="dt-muted">Ain Diab</td><td class="mono">26,400</td><td class="dt-muted">Land Reg.</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="panel">
-            <div class="panel-hd"><div><div class="panel-title">Investment Signals</div><div class="panel-sub"><span class="ds-tag ds-model">Modelled indicators</span></div></div></div>
-            <div class="panel-body">
-              <div class="score-bar-row"><span class="score-bar-label">Price Growth</span><div class="score-bar-track"><div class="score-bar-fill" id="c-sig-pg" style="width:62%;background:var(--blue);"></div></div><span class="score-bar-val" id="c-sig-pg-v">6.2</span></div>
-              <div class="score-bar-row"><span class="score-bar-label">Rent Growth</span><div class="score-bar-track"><div class="score-bar-fill" id="c-sig-rg" style="width:44%;background:var(--gold);"></div></div><span class="score-bar-val" id="c-sig-rg-v">4.4</span></div>
-              <div class="score-bar-row"><span class="score-bar-label">Liquidity</span><div class="score-bar-track"><div class="score-bar-fill" id="c-sig-lq" style="width:70%;background:var(--blue);"></div></div><span class="score-bar-val" id="c-sig-lq-v">7.0</span></div>
-              <div class="score-bar-row"><span class="score-bar-label">Pipeline Risk</span><div class="score-bar-track"><div class="score-bar-fill" id="c-sig-pr" style="width:52%;background:var(--gold);"></div></div><span class="score-bar-val" id="c-sig-pr-v">5.2</span></div>
-              <div class="score-bar-row"><span class="score-bar-label">Yield Est.</span><div class="score-bar-track"><div class="score-bar-fill" id="c-sig-ye" style="width:58%;background:var(--blue);"></div></div><span class="score-bar-val" id="c-sig-ye-v">5.8</span></div>
-              <div class="score-bar-row"><span class="score-bar-label">Pop. Growth</span><div class="score-bar-track"><div class="score-bar-fill" id="c-sig-po" style="width:62%;background:var(--blue);"></div></div><span class="score-bar-val" id="c-sig-po-v">6.2</span></div>
-              <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-                <div style="font-size:11.5px;color:var(--ink4);">IOS Score</div>
-                <div style="display:flex;align-items:center;gap:8px;"><span id="c-ios" style="font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;font-size:22px;">7.7</span><span class="opp-badge opp-strong" id="c-ios-badge">Attractive</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Price trend data table (exportable) -->
-        <div class="panel">
-          <div class="panel-hd">
-            <div><div class="panel-title" id="c-trend-tbl-title">Price Trend Data — Casablanca</div><div class="panel-sub">Quarterly median asking prices · DH/m² · <span class="ds-tag ds-listings">Measured</span></div></div>
-            <button class="pa-btn gold" onclick="exportTable('city-trend-table','xlsx')">↓ Excel</button>
-          </div>
-          <table class="dt" id="city-trend-table">
-            <thead><tr><th>Period</th><th>Apartments</th><th>Offices (Rent /m²/mo)</th><th>Villas</th><th>Retail</th><th>Observations</th></tr></thead>
-            <tbody id="city-trend-body">
-              <tr><td class="mono dt-muted">Q1 2025</td><td class="mono">17,340</td><td class="mono">136</td><td class="mono">23,800</td><td class="mono">21,200</td><td class="mono">3,480</td></tr>
-              <tr><td class="mono dt-muted">Q2 2025</td><td class="mono">17,680</td><td class="mono">138</td><td class="mono">24,100</td><td class="mono">21,800</td><td class="mono">3,612</td></tr>
-              <tr><td class="mono dt-muted">Q3 2025</td><td class="mono">17,920</td><td class="mono">139</td><td class="mono">24,400</td><td class="mono">21,900</td><td class="mono">3,840</td></tr>
-              <tr><td class="mono dt-muted">Q4 2025</td><td class="mono">18,140</td><td class="mono">141</td><td class="mono">24,600</td><td class="mono">22,100</td><td class="mono">4,012</td></tr>
-              <tr><td class="mono dt-muted">Q1 2026</td><td class="mono">18,420</td><td class="mono">142</td><td class="mono">24,800</td><td class="mono">22,400</td><td class="mono">4,218</td></tr>
-            </tbody>
-          </table>
-          <div class="export-row">
-            <button class="exp-btn primary" onclick="exportTable('city-trend-table')">↓ CSV</button>
-            <button class="exp-btn" onclick="exportTable('city-trend-table','xlsx')">↓ Excel</button>
-            <span style="margin-left:auto;font-size:11px;color:var(--ink5);">Asking price indicators only · Listings-derived · DEMO DATA</span>
-          </div>
-        </div>
-
-      </div><!-- /city-profile -->
     </div><!-- /pg-cities -->
 
     <!-- ══════════════════════════════════════════════
@@ -1567,41 +1414,10 @@ body.no-filters #asset-chips,body.no-filters #type-toggle,body.no-filters #ccy-t
          PRICE TRENDS
     ══════════════════════════════════════════════ -->
     <div class="pg" id="pg-price-trends">
-      <div class="eyebrow">Analytics</div>
+      <!-- Drawn by renderTrendsPage() from the weekly market_snapshots history. -->
+      <div class="eyebrow">Market Intelligence</div>
       <div class="pg-title">Price Trends</div>
-      <div class="pg-sub">Derived analytics from the listings database. Trend lines are smoothed medians — not individual transactions.</div>
-      <div class="two-col">
-        <div class="panel">
-          <div class="panel-hd">
-            <div><div class="panel-title">Apartment Price Index</div><div class="panel-sub">Indexed to 100 = Q1 2025 · <span class="ds-tag ds-listings">Measured</span></div></div>
-            <button class="pa-btn" onclick="exportTable('trend-table')">↓ CSV</button>
-          </div>
-          <div class="panel-body"><div style="height:220px;"><canvas id="trends-chart"></canvas></div></div>
-        </div>
-        <div class="panel">
-          <div class="panel-hd">
-            <div><div class="panel-title">12M Growth by City</div><div class="panel-sub">Apartments · asking prices · <span class="ds-tag ds-listings">Measured</span></div></div>
-          </div>
-          <div class="panel-body"><div style="height:220px;"><canvas id="growth-chart"></canvas></div></div>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="panel-hd"><div class="panel-title">Price Trend Data Table</div><div class="panel-sub">Quarterly medians · DH/m² · Apartments</div></div>
-        <table class="dt" id="trend-table">
-          <thead><tr><th>Period</th><th>Casablanca</th><th>Marrakech</th><th>Rabat</th><th>Tangiers</th><th>Fez</th><th>National Avg</th></tr></thead>
-          <tbody>
-            <tr><td class="mono dt-muted">Q1 2025</td><td class="mono">17,340</td><td class="mono">16,420</td><td class="mono">14,820</td><td class="mono">12,640</td><td class="mono">10,620</td><td class="mono">14,368</td></tr>
-            <tr><td class="mono dt-muted">Q2 2025</td><td class="mono">17,680</td><td class="mono">16,890</td><td class="mono">14,980</td><td class="mono">12,710</td><td class="mono">10,540</td><td class="mono">14,560</td></tr>
-            <tr><td class="mono dt-muted">Q3 2025</td><td class="mono">17,920</td><td class="mono">17,200</td><td class="mono">15,020</td><td class="mono">12,760</td><td class="mono">10,480</td><td class="mono">14,676</td></tr>
-            <tr><td class="mono dt-muted">Q4 2025</td><td class="mono">18,140</td><td class="mono">17,510</td><td class="mono">15,100</td><td class="mono">12,790</td><td class="mono">10,430</td><td class="mono">14,794</td></tr>
-            <tr><td class="mono dt-muted">Q1 2026</td><td class="mono">18,420</td><td class="mono">17,800</td><td class="mono">15,200</td><td class="mono">12,800</td><td class="mono">10,400</td><td class="mono">14,924</td></tr>
-          </tbody>
-        </table>
-        <div class="export-row">
-          <button class="exp-btn primary" onclick="exportTable('trend-table')">↓ CSV</button>
-          <span style="margin-left:auto;font-size:11px;color:var(--ink5);">Derived analytics · Listings-derived · Asking prices only</span>
-        </div>
-      </div>
+      <div class="pg-sub">Median asking prices and listing supply over time, from weekly snapshots.</div>
     </div>
 
     <!-- ══════════════════════════════════════════════
@@ -2244,7 +2060,7 @@ function V2HEAD(country,page,ctxBits,basisN,btnHtml){
    listed here reloaded as the Overview. Short slugs are aliases; a page's own
    id always works as its slug too. */
 var ROUTES={'overview':'market-terminal','markets':'markets','cities':'cities','districts':'districts',
-  'bedrooms':'by-bedroom','dom':'days-on-market',
+  'bedrooms':'by-bedroom','dom':'days-on-market','trends':'price-trends',
   'pipeline':'pipeline','infrastructure':'infrastructure','macro':'macro-indicators','map':'map-view',
   'heatmaps':'heatmaps','reports':'market-reports','data':'data-explorer','exports':'exports','api':'api-access'};
 var SLUGS={}; for(var _rk in ROUTES) SLUGS[ROUTES[_rk]]=_rk;
@@ -2377,7 +2193,6 @@ var COMINGSOON={
   'pg-listings':['Listings','Raw individual listing records are not exposed in the client. The market intelligence derived from them is available under Key Indicators, Market Signals, Cities and Districts.'],
   'pg-transactions':['Transactions','Recorded-transaction data needs land-registry / deal feeds we don’t yet license.'],
   'pg-occupiers':['Corporate Occupiers','Corporate-occupier data is not yet sourced for this market.'],
-  'pg-price-trends':['Price Trends','Trend lines need several weekly snapshots. History is captured automatically each Monday — trends appear once enough accrues.'],
   'pg-api-access':['API Access','Programmatic API access is coming soon.']
 };
 function _emptyState(msg){
@@ -2447,12 +2262,13 @@ function _loadingState(country){
 var _MKT_PAGES=[['pg-markets','Markets'],['pg-cities','Cities'],['pg-districts','Districts'],
   ['pg-by-bedroom','By Bedroom'],['pg-days-on-market','Days on Market'],['pg-map-view','Market Map'],
   ['pg-heatmaps','Heatmaps'],['pg-data-explorer','Data Explorer'],['pg-exports','Exports'],
-  ['pg-insights','Insights'],['pg-market-reports','Market Reports'],['pg-infrastructure','Infrastructure']];
+  ['pg-insights','Insights'],['pg-market-reports','Market Reports'],['pg-infrastructure','Infrastructure'],
+  ['pg-price-trends','Price Trends']];
 // The listing-derived views. A hold on the selected market withdraws all of
 // them at once, and supersedes anything still in flight for them.
 var _LISTING_SLOTS=['pg-markets','pg-cities','pg-districts','pg-by-bedroom','pg-days-on-market',
   'pg-map-view','pg-heatmaps','pg-data-explorer','pg-exports','pg-insights','pg-market-reports',
-  'pg-markets/profile','pg-markets/research','pg-cities/profile','signals'];
+  'pg-markets/profile','pg-markets/research','pg-cities/profile','pg-cities/trend','pg-price-trends','signals'];
 function _killMap(m){ try{ if(m) m.remove(); }catch(e){} }
 // The maps live inside market pages; when those are emptied the map objects go
 // with them, so a continuation that still holds one can tell it is obsolete.
@@ -2489,6 +2305,7 @@ function _paintMarketPages(country){
   if(mr){ _bumpSlot('macro-root'); mr.innerHTML=V2HEAD(country,'Macro Indicators',[],null)+_loadingState(country); }
   _clearKpiTables(country);
   _dropMarketMaps();
+  _snapDestroyCharts();   // their canvases went with the pages
 }
 // The page the visitor is looking at, redrawn for the market and filters that
 // are current now. Pages that need the market summary wait for it; loadBatch2
@@ -2504,6 +2321,7 @@ function _renderMarketPage(id){
   else if(id==='data-explorer'){ if(ready) renderExplorer(A,K); }
   else if(id==='by-bedroom'){ renderByBedroomPage(A); }
   else if(id==='days-on-market'){ renderDaysOnMarketPage(A); }
+  else if(id==='price-trends'){ renderTrendsPage(A); }   // weekly snapshots: no market summary needed
   else if(id==='macro-indicators'){ loadMacroData(A); }
 }
 function _activePageId(){ return (((document.querySelector('.pg.active')||{}).id)||'').replace(/^pg-/,''); }
@@ -2638,6 +2456,7 @@ function _repaintForHold(k){
   if(window._kpiOwner&&_normCountry(window._kpiOwner.market)===k) _clearKpiCache();
   if(window._mkCtx&&_normCountry(window._mkCtx.country)===k){ window._mkRows=null; window._mkCtx=null; window._mkSel=null; }
   for(var ck in COUNTRIES){ if(_normCountry(ck)===k&&COUNTRIES[ck]) COUNTRIES[ck].cityData={}; }
+  _snapDrop(k);   // weekly snapshot history read for this market
   if(_normCountry(A)!==k) return;
   if(!_isHeld(A)){
     // Released: load the market again, exactly as a market switch does. The
@@ -2658,7 +2477,8 @@ function _repaintForHold(k){
   [['pg-markets','Markets'],['pg-cities','Cities'],['pg-districts','Districts'],['pg-by-bedroom','By Bedroom'],
    ['pg-days-on-market','Days on Market'],['pg-map-view','Market Map'],['pg-heatmaps','Heatmaps'],
    ['pg-data-explorer','Data Explorer'],['pg-exports','Exports'],['pg-insights','Insights'],
-   ['pg-market-reports','Market Reports']].forEach(function(p){ _heldPage(p[0],A,p[1]); });
+   ['pg-market-reports','Market Reports'],['pg-price-trends','Price Trends']].forEach(function(p){ _heldPage(p[0],A,p[1]); });
+  _snapDestroyCharts();
 }
 // Boot: read the holds before the first market render. A slow status read
 // does not hold the terminal up; its answer is applied whenever it lands.
@@ -3961,6 +3781,7 @@ async function loadBatch2(country){
   var ap=_activePageId();
   if(ap==='by-bedroom') renderByBedroomPage(country);
   else if(ap==='days-on-market') renderDaysOnMarketPage(country);
+  else if(ap==='price-trends') renderTrendsPage(country);
   try{ _redrawKpiTables(); }catch(e){}
 }
 var CITY_COORDS={
@@ -4125,6 +3946,7 @@ async function renderCityProfile(country,city){
     +'<div class="stat-cell"><div class="sc-label">Gross yield</div><div class="sc-value num">'+(yld!=null?yld+'%':'—')+'</div><div class="sc-note">rent×12 ÷ sale price</div></div>'
     +'<div class="stat-cell"><div class="sc-label">Sale / rent split</div><div class="sc-value num">'+saleN.toLocaleString('en-US')+' <span class="unit">/ '+rentN.toLocaleString('en-US')+'</span></div><div class="sc-note">'+f.asset+'</div></div>'
    +'</div>'
+   +_cityTrendPanel(cityH)
    +'<div class="grid g-split">'
     +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Top districts — '+cityH+'</div>'
     +'<div class="panel-sub">Median asking /m² · '+f.asset+' · '+tt+' · '+_ccyName(cur)+'</div></div></div>'
@@ -4136,6 +3958,7 @@ async function renderCityProfile(country,city){
    +'<div class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">By asset class</div>'
    +'<div class="panel-sub">'+cityH+' · for '+tt+' · all dates (weekly market summary)</div></div></div>'
    +'<div class="panel-body2" style="padding-top:8px;" id="city-ac-slot"></div></div></div>';
+  renderCityTrend(country,city);   // its own request and token; not awaited
   var acRows=(K.city_class||[]).filter(function(x){return x.city===city&&x.tt===tt;})
     .sort(function(a,b){return Number(b.count||0)-Number(a.count||0);});
   var acHtml=acRows.map(function(r){ return '<tr'+((r.ac||'').toLowerCase()===f.asset?' class="selected"':'')+'><td style="text-align:left;padding-left:8px;" class="mkt-name">'+_newsEsc(_cap(r.ac))+'</td>'
@@ -4181,6 +4004,365 @@ async function renderCityProfile(country,city){
     }
   }catch(e){}
 }
+/* ── PRICE TRENDS: evolution over time from the weekly market_snapshots ──
+   Every Monday run writes one row per country x city x asset class x sale/rent
+   (median_ppsqm in the local currency, listing_count, and since 9 Sep 2026 the
+   FX rate it used and median_ppsqm_usd). Those rows are the only source here:
+   nothing is interpolated, smoothed or back-filled.
+
+   Rules, all applied by _snapSeries / _snapLine so they can be tested offline:
+   - a median backed by fewer than SNAP_MIN_N listings is not plotted;
+   - the x axis is a real time axis (ms since epoch): an irregular gap stays
+     irregular, and a missing week (longer than SNAP_GAP_DAYS) breaks the line;
+   - USD is the rate stored WITH each snapshot (median_ppsqm_usd), never today's
+     rate applied to old weeks; a snapshot without a stored rate has no USD point;
+   - held markets: RLS hides their rows, and the page knows they are held, so
+     no request is sent and the hold panel is shown instead. */
+var SNAP_MIN_N=10;          // minimum listings behind a plotted median
+var SNAP_GAP_DAYS=10;       // weekly cadence: a longer gap is a missing snapshot
+var SNAP_TOP_CITIES=5;      // cities drawn on the Trends page, by latest listing count
+var SNAP_DAY=86400000;
+// Collection-method changes that can shift a series' level (dashed markers).
+var SNAP_METHOD_CHANGES=[{d:'2026-09-21',label:'Parser fix'},{d:'2026-10-04',label:'Parser fix'}];
+function _snapT(d){ var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(d==null?'':d)); return m?Date.UTC(+m[1],+m[2]-1,+m[3]):null; }
+function _snapTT(x){ return String(x==null?'':x).toLowerCase().replace(/[^a-z]/g,''); }
+function _snapNum(v){ if(v==null||v==='') return null; var n=Number(v); return isFinite(n)?n:null; }
+// rows -> {dates, cities:[{city, points:[{d,t,v,n,st,rep}], latestN}], dropped, noUsd, shown, usdFrom}
+// o: {tt:'sale'|'rent', usd:bool, minN, top, city}
+//   st: 'ok' | 'small' (n < minN, value withheld) | 'nousd' (no stored FX) | 'missing'
+function _snapSeries(rows,o){
+  o=o||{};
+  var tt=o.tt==='rent'?'rent':'sale', minN=o.minN!=null?o.minN:SNAP_MIN_N;
+  var byCity={}, dset={}, usdFrom=null;
+  (rows||[]).forEach(function(r){
+    if(!r||_snapTT(r.transaction_type)!==tt) return;
+    var city=r.city==null?'':String(r.city);
+    if(!city||city==='(all)') return;
+    if(o.city!=null&&city!==o.city) return;
+    var t=_snapT(r.snapshot_date); if(t==null) return;
+    var d=String(r.snapshot_date).slice(0,10);
+    var n=Math.max(0,Math.round(Number(r.listing_count)||0));
+    var m=byCity[city]||(byCity[city]={});
+    if(m[d]&&m[d].n>=n) return;               // one row per city and date: keep the larger sample
+    m[d]={d:d,t:t,n:n,loc:_snapNum(r.median_ppsqm),usd:_snapNum(r.median_ppsqm_usd)};
+    dset[d]=t;
+    if(m[d].usd!=null&&(usdFrom==null||d<usdFrom)) usdFrom=d;
+  });
+  var dates=Object.keys(dset).sort(), last=dates[dates.length-1];
+  var cities=Object.keys(byCity).map(function(city){
+    var m=byCity[city], prev=null;
+    var pts=Object.keys(m).sort().map(function(d){
+      var r=m[d], v=o.usd?r.usd:r.loc, st='ok';
+      if(r.n<minN){ st='small'; v=null; }
+      else if(v==null||!(v>0)){ st=(o.usd&&r.loc!=null)?'nousd':'missing'; v=null; }
+      var p={d:d,t:r.t,v:v,n:r.n,st:st,rep:!!(prev&&prev.loc!=null&&prev.loc===r.loc&&prev.n===r.n)};
+      prev=r; return p;
+    });
+    return {city:city,points:pts,latestN:m[last]?m[last].n:0,
+      peakN:pts.reduce(function(a,p){ return Math.max(a,p.n); },0)};
+  }).sort(function(a,b){ return (b.latestN-a.latestN)||(b.peakN-a.peakN)||(a.city<b.city?-1:a.city>b.city?1:0); });
+  if(o.top){
+    // "Main cities": only places with at least one adequately sampled week
+    // compete for a line (keeps one-listing pseudo-cities such as advert text
+    // out); if none qualifies, the largest are kept so their n can be shown.
+    var elig=cities.filter(function(c){ return c.points.some(function(p){ return p.n>=minN; }); });
+    cities=(elig.length?elig:cities).slice(0,o.top);
+  }
+  var dropped=0, noUsd=0, shown=0;
+  cities.forEach(function(c){ c.points.forEach(function(p){
+    if(p.st==='small') dropped++; else if(p.st==='nousd') noUsd++; else if(p.st==='ok') shown++; }); });
+  return {tt:tt,usd:!!o.usd,minN:minN,dates:dates,cities:cities,dropped:dropped,noUsd:noUsd,shown:shown,usdFrom:usdFrom};
+}
+// Chart.js points for one series on the real time axis. A withheld point and a
+// missing week (a gap longer than the weekly cadence) both break the line.
+function _snapLine(points,gapDays){
+  var gap=(gapDays!=null?gapDays:SNAP_GAP_DAYS)*SNAP_DAY, out=[], lastOk=null;
+  (points||[]).forEach(function(p){
+    if(p.v==null){ out.push({x:p.t,y:null,n:p.n,d:p.d,st:p.st}); lastOk=null; return; }
+    if(lastOk&&p.t-lastOk.t>gap) out.push({x:lastOk.t+SNAP_DAY,y:null,st:'gap'});
+    out.push({x:p.t,y:p.v,n:p.n,d:p.d,st:'ok',rep:!!p.rep});
+    lastOk=p;
+  });
+  return out;
+}
+// Listing supply: listings counted in each snapshot, summed over the city rows
+// (the city rows add up to the country roll-up), for sale and for rent.
+function _snapSupply(rows){
+  var by={sale:{},rent:{}};
+  (rows||[]).forEach(function(r){
+    var tt=_snapTT(r&&r.transaction_type); if(!by[tt]) return;
+    if(!r.city||r.city==='(all)') return;
+    var t=_snapT(r.snapshot_date); if(t==null) return;
+    var d=String(r.snapshot_date).slice(0,10), s=by[tt][d]||(by[tt][d]={d:d,t:t,n:0});
+    s.n+=Math.max(0,Math.round(Number(r.listing_count)||0));
+  });
+  function list(m){ return Object.keys(m).sort().map(function(d){ var s=m[d]; return {d:d,t:s.t,v:s.n,n:s.n,st:'ok',rep:false}; }); }
+  var sale=list(by.sale), rent=list(by.rent), ds={};
+  sale.concat(rent).forEach(function(p){ ds[p.d]=1; });
+  return {dates:Object.keys(ds).sort(),sale:sale,rent:rent};
+}
+function _snapFmt(v,cur,usd){
+  if(v==null||!isFinite(v)) return '—';
+  var a=Math.abs(v), dec=a>=100?0:a>=10?1:2;
+  var s=Number(v).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+  return (usd||cur==='USD')?'$'+s:_lsym(cur)+s;
+}
+function _snapTick(v){ var a=Math.abs(v);
+  if(a>=1e6) return (v/1e6).toLocaleString('en-US',{maximumFractionDigits:2})+'M';
+  if(a>=1e4) return (v/1e3).toLocaleString('en-US',{maximumFractionDigits:1})+'k';
+  return Number(v).toLocaleString('en-US',{maximumFractionDigits:a>=100?0:a>=10?1:2}); }
+function _snapDate(d,withYear){ var t=_snapT(d); if(t==null) return String(d==null?'':d);
+  var o={day:'numeric',month:'short',timeZone:'UTC'}; if(withYear!==false) o.year='numeric';
+  return new Date(t).toLocaleDateString('en-GB',o); }
+// USD is shown from the rate stored with each snapshot; a USD market is its own local.
+function _snapUsd(cur){ return _ccyMode==='usd'&&!!cur&&cur!=='USD'; }
+function _snapAsset(a){ var b=document.querySelector('#asset-chips [data-a="'+String(a||'').replace(/"/g,'')+'"]');
+  return (b&&b.textContent.trim())||_cap(String(a||'')); }
+
+// ── data: one request per market and asset class, cached for the market epoch ──
+var _SNAP={};
+function _snapKey(c,a){ return _normCountry(c)+'|'+String(a||'').toLowerCase(); }
+function _snapHit(c,a){ var h=_SNAP[_snapKey(c,a)]; return !!h&&h.mkt===_EP.mkt; }
+function _snapDrop(k){ for(var key in _SNAP){ if(key.split('|')[0]===k) delete _SNAP[key]; } }
+async function _snapLoad(country,asset){
+  var key=_snapKey(country,asset), hit=_SNAP[key];
+  if(hit&&hit.mkt===_EP.mkt) return {ok:true,data:hit.rows};
+  if(!sb) return {ok:false,error:'not connected'};
+  var mkt=_EP.mkt, rows=[], PAGE=1000;
+  for(var from=0;from<20*PAGE;from+=PAGE){
+    var r=await _q(sb.from('market_snapshots')
+      .select('snapshot_date,city,asset_class,transaction_type,median_ppsqm,listing_count,currency,median_ppsqm_usd')
+      .ilike('country',country).ilike('asset_class',asset)          // ilike, never eq (CLAUDE.md bug #1)
+      .in('transaction_type',['sale','rent']).neq('city','(all)')
+      .order('snapshot_date',{ascending:true}).order('city',{ascending:true})
+      .range(from,from+PAGE-1),country);
+    if(!r.ok) return r;
+    var d=Array.isArray(r.data)?r.data:[];
+    rows=rows.concat(d);
+    if(d.length<PAGE) break;
+  }
+  if(mkt===_EP.mkt&&!_isHeld(country)) _SNAP[key]={mkt:mkt,rows:rows};
+  return {ok:true,data:rows};
+}
+
+// ── charts ──
+var _SNAP_CHARTS={};
+function _snapDestroyCharts(id){
+  Object.keys(_SNAP_CHARTS).forEach(function(k){
+    if(id&&k!==id) return;
+    try{ _SNAP_CHARTS[k].destroy(); }catch(e){}
+    delete _SNAP_CHARTS[k];
+  });
+}
+function _snapCss(name,dflt){ try{ var v=getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v||dflt; }catch(e){ return dflt; } }
+function _snapPalette(){ return [_snapCss('--gold','#C9A96A'),_snapCss('--teal','#55A899'),_snapCss('--blue','#6E8FBF'),
+  _snapCss('--rose','#B87E76'),_snapCss('--sand','#8E99A9')]; }
+// Dashed vertical markers for collection-method changes.
+var _SNAP_MARKS={id:'iwSnapMarks',afterDatasetsDraw:function(chart,args,opts){
+  var xs=chart.scales.x, a=chart.chartArea; if(!xs||!a||!opts||!opts.marks||!opts.marks.length) return;
+  var ctx=chart.ctx; ctx.save();
+  ctx.strokeStyle=opts.color; ctx.fillStyle=opts.color; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  ctx.font='10px '+opts.font; ctx.textBaseline='bottom';
+  var placed=[];   // label boxes already drawn, by row: a label never overlaps another or leaves the plot
+  opts.marks.forEach(function(m){ var t=_snapT(m.d); if(t==null||t<xs.min||t>xs.max) return;
+    var x=Math.round(xs.getPixelForValue(t))+.5;
+    ctx.beginPath(); ctx.moveTo(x,a.top); ctx.lineTo(x,a.bottom); ctx.stroke();
+    var txt=m.label+' '+_snapDate(m.d,false), w=ctx.measureText(txt).width;
+    var l=(x+4+w>a.right)?x-4-w:x+4, row=0;
+    while(placed.some(function(p){ return p.row===row&&l<p.r+6&&l+w>p.l-6; })) row++;
+    placed.push({row:row,l:l,r:l+w});
+    ctx.fillText(txt,l,a.top-2-row*12); });
+  ctx.restore(); }};
+function _snapDs(label,data,color){
+  return {label:label,data:data,borderColor:color,backgroundColor:color,borderWidth:2,tension:0,
+    pointRadius:3,pointHoverRadius:5,pointBorderWidth:0,spanGaps:false,fill:false};   // an isolated week stays visible
+}
+// o: {dates, label(item) -> tooltip line, yTitle, marks}
+function _snapCfg(datasets,o){
+  var mono=_snapCss('--mono','IBM Plex Mono, monospace'), ink=_snapCss('--ink','#F3EEE4'), ink3=_snapCss('--ink3','#A8A08F'),
+      ink4=_snapCss('--ink4','#6E685C'), hair=_snapCss('--hairline','rgba(228,221,207,.10)'), bord=_snapCss('--border2','#3A362C'),
+      surf=_snapCss('--surface2','#22201A'), amber=_snapCss('--amber','#D8A94E');
+  var ts=(o.dates||[]).map(_snapT).filter(function(t){ return t!=null; });
+  var min=ts[0], max=ts[ts.length-1], pad=Math.max(2*SNAP_DAY,(max-min)*0.03);
+  if(min===max) pad=7*SNAP_DAY;
+  return {type:'line',data:{datasets:datasets},plugins:[_SNAP_MARKS],options:{
+    responsive:true,maintainAspectRatio:false,animation:false,spanGaps:false,
+    interaction:{mode:'nearest',axis:'x',intersect:false},
+    layout:{padding:{top:28,right:6}},
+    plugins:{
+      legend:{display:datasets.length>1,position:'bottom',
+        labels:{color:ink3,font:{family:mono,size:11},boxWidth:8,boxHeight:8,padding:12,usePointStyle:true}},
+      tooltip:{backgroundColor:surf,borderColor:bord,borderWidth:1,titleColor:ink,bodyColor:ink3,padding:10,
+        titleFont:{family:mono,size:11,weight:'600'},bodyFont:{family:mono,size:11},
+        filter:function(it){ return !!it.raw&&it.raw.y!=null; },
+        itemSort:function(a,b){ return b.raw.y-a.raw.y; },
+        callbacks:{
+          title:function(items){ var r=items[0]&&items[0].raw; return r?_snapDate(r.d):''; },
+          label:o.label,
+          afterLabel:function(it){ return it.raw&&it.raw.rep?'   same median and count as the previous snapshot':''; }
+        }},
+      iwSnapMarks:{marks:o.marks===false?[]:SNAP_METHOD_CHANGES,color:amber,font:mono}
+    },
+    scales:{
+      x:{type:'linear',min:min-pad,max:max+pad,grid:{color:hair,drawTicks:false},border:{color:bord},
+        afterBuildTicks:function(ax){ ax.ticks=ts.map(function(t){ return {value:t}; }); },
+        ticks:{color:ink4,font:{family:mono,size:10.5},maxRotation:0,autoSkip:true,autoSkipPadding:12,padding:6,
+          callback:function(v){ return _snapDate(new Date(v).toISOString().slice(0,10),false); }}},
+      y:{grace:'8%',grid:{color:hair,drawTicks:false},border:{display:false},
+        title:{display:!!o.yTitle,text:o.yTitle,color:ink4,font:{family:mono,size:10.5}},
+        ticks:{color:ink4,font:{family:mono,size:10.5},padding:6,callback:_snapTick}}
+    }}};
+}
+function _snapChart(id,cfg){
+  _snapDestroyCharts(id);
+  var el=document.getElementById(id); if(!el||!window.Chart) return null;
+  var old=Chart.getChart(el); if(old) old.destroy();
+  var ch=new Chart(el,cfg); _SNAP_CHARTS[id]=ch; return ch;
+}
+function _snapEsc(s){ return _newsEsc(String(s==null?'':s)); }
+function _snapNotes(S,cur,extra){
+  var li=['Asking prices from listings, not transaction prices. Each point is the median of one weekly snapshot.',
+    'Points backed by fewer than '+S.minN+' listings are hidden (minimum sample)'
+      +(S.dropped?': '+S.dropped+' hidden in this view':'')+'. A hidden point or a missing week breaks the line; the time axis keeps real gaps.',
+    'Collection-method changes can shift levels: parser fixes on 21 Sep and 4 Oct 2026 (dashed markers).'];
+  if(S.usd){
+    li.push(S.noUsd
+      ?'USD uses the exchange rate stored with each snapshot'+(S.usdFrom?' (recorded from '+_snapDate(S.usdFrom)+')':'')
+        +'. '+S.noUsd+' earlier weekly value'+(S.noUsd===1?' has':'s have')+' no stored rate and '+(S.noUsd===1?'is':'are')+' shown only in '+_snapEsc(cur)+'.'
+      :'USD uses the exchange rate stored with each snapshot, not today’s rate.');
+  }
+  if(S.dates.length<2) li.push('Only one weekly snapshot so far; a trend needs at least two.');
+  (extra||[]).forEach(function(x){ li.push(x); });
+  return '<ul class="snap-notes">'+li.map(function(x){ return '<li>'+x+'</li>'; }).join('')+'</ul>';
+}
+function _snapCell(p,cur,usd){
+  if(!p) return '<td class="num dt-muted" title="No snapshot row for this date" data-csv="">—</td><td class="num dt-muted" data-csv="">—</td>';
+  var n='<td class="num dt-muted" data-csv="'+p.n+'">'+p.n.toLocaleString('en-US')+'</td>';
+  if(p.st==='ok') return '<td class="num" data-csv="'+p.v+'">'+_snapFmt(p.v,cur,usd)+'</td>'+n;
+  if(p.st==='small') return '<td class="num dt-muted" title="Fewer than '+SNAP_MIN_N+' listings: not shown" data-csv="">n&lt;'+SNAP_MIN_N+'</td>'+n;
+  if(p.st==='nousd') return '<td class="num dt-muted" title="No exchange rate stored with this snapshot" data-csv="">no USD</td>'+n;
+  return '<td class="num dt-muted" data-csv="">—</td>'+n;
+}
+function _snapEmpty(msg){ return '<div style="padding:28px 18px;text-align:center;font-size:12.5px;color:var(--ink4);line-height:1.6;">'+msg+'</div>'; }
+
+// ── Trends page ──
+async function renderTrendsPage(country){
+  var el=document.getElementById('pg-price-trends'); if(!el) return;
+  var c=COUNTRIES[country], lbl=_cLabel(country);
+  var t=_tok('pg-price-trends',country,'MFC');
+  if(!_fresh(t)) return;
+  if(_isHeld(country)){ _snapDestroyCharts('trends-chart'); _snapDestroyCharts('trends-supply-chart');
+    _heldPage('pg-price-trends',country,'Price Trends'); return; }          // no request for a held market
+  if(!c||c.status!=='live'){ el.innerHTML=V2HEAD(country,'Price Trends',[],null)+_emptyState('Price trends activate once '+_snapEsc(lbl)+' has listing data.'); return; }
+  var f=_curFilters(), tt=f.type==='rent'?'rent':'sale', asset=f.asset, cur=c.currency, usd=_snapUsd(cur);
+  if(!_snapHit(country,asset)) el.innerHTML=V2HEAD(country,'Price Trends',[],null)+_loadingState(country);
+  var r=await _snapLoad(country,asset);
+  if(!_fresh(t)) return;                                                    // another market, filter or currency now
+  if(r.held||_isHeld(country)){ _snapDestroyCharts('trends-chart'); _snapDestroyCharts('trends-supply-chart');
+    _heldPage('pg-price-trends',country,'Price Trends',r.note,r.since); return; }
+  if(!r.ok){ el.innerHTML=V2HEAD(country,'Price Trends',[],null)+_errorState('Price trends for '+lbl,r.error,'renderTrendsPage(ACTIVE_COUNTRY)'); return; }
+  var rows=r.data||[], A=_snapAsset(asset), ccy=usd?'USD':(cur||'local'), rent=tt==='rent';
+  var unit=ccy+' per m²'+(rent?' per month':''), u=rent?'/m²/mo':'/m²';
+  var S=_snapSeries(rows,{tt:tt,usd:usd,top:SNAP_TOP_CITIES}), sup=_snapSupply(rows);
+  _snapDestroyCharts('trends-chart'); _snapDestroyCharts('trends-supply-chart');
+  if(!S.cities.length){
+    el.innerHTML=V2HEAD(country,'Price Trends',[A+' · '+(rent?'for rent':'for sale')],null)
+      +_emptyState('No weekly snapshots are recorded yet for '+_snapEsc(A.toLowerCase())+' '+(rent?'to rent':'for sale')+' in '+_snapEsc(lbl)+'. History is captured with each weekly run.');
+    return;
+  }
+  var supL=sup[tt], basis=supL.length?supL[supL.length-1].n:null, lastD=S.dates[S.dates.length-1];
+  var head=V2HEAD(country,'Price Trends',[A+' · '+(rent?'for rent':'for sale'),'Median asking '+_snapEsc(unit),
+    S.dates.length+' weekly snapshot'+(S.dates.length===1?'':'s')+' · latest '+_snapDate(lastD)],basis);
+  var label='top '+S.cities.length+' cit'+(S.cities.length===1?'y':'ies')+' by listings in the latest snapshot';
+  var chart=S.shown
+    ?'<div style="height:300px;position:relative;"><canvas id="trends-chart" role="img" aria-label="Median asking '+_snapEsc(unit)+' by city over time"></canvas></div>'
+    :_snapEmpty('Every weekly median for this selection rests on fewer than '+SNAP_MIN_N+' listings, so none is plotted. The table below lists the sample sizes.');
+  var th='<th>Snapshot</th>'+S.cities.map(function(cy){ var h=_snapEsc(cy.city);
+    return '<th>'+h+' ('+ccy+u+')</th><th>'+h+' n</th>'; }).join('');
+  var tb=S.dates.slice().reverse().map(function(d){
+    return '<tr><td class="mono dt-muted" data-csv="'+d+'">'+_snapDate(d)+'</td>'
+      +S.cities.map(function(cy){ return _snapCell(cy.points.filter(function(p){ return p.d===d; })[0],cur,usd); }).join('')+'</tr>'; }).join('');
+  el.innerHTML=head
+   +'<div class="grid"><div class="panel"><div class="panel-head"><div>'
+   +'<div class="panel-title">Median asking price per m²'+(rent?' (monthly rent)':'')+' — '+_snapEsc(lbl)+'</div>'
+   +'<div class="panel-sub">'+_snapEsc(A)+' · '+(rent?'for rent':'for sale')+' · '+_snapEsc(unit)+' · '+label+'</div></div>'
+   +'<button class="pa-btn" onclick="exportTable(\'trend-table\')">↓ CSV</button></div>'
+   +'<div class="panel-body2">'+chart+_snapNotes(S,cur)+'</div></div></div>'
+   +'<div class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">Listing supply over time</div>'
+   +'<div class="panel-sub">'+_snapEsc(A)+' · listings counted in each weekly snapshot, all cities · for sale and for rent</div></div></div>'
+   +'<div class="panel-body2">'+(sup.dates.length?'<div style="height:190px;position:relative;"><canvas id="trends-supply-chart" role="img" aria-label="Listings per weekly snapshot, sale and rent"></canvas></div>':_snapEmpty('No supply counts for this selection.'))
+   +'<ul class="snap-notes"><li>Occupancy isn’t directly observed; rental supply is shown as an indicator.</li>'
+   +'<li>Counts move with Ironwood’s collection coverage (portals added, parser fixes) as well as with the market.</li></ul></div></div></div>'
+   +'<div class="panel"><div class="panel-head"><div><div class="panel-title">Trend Data Table</div>'
+   +'<div class="panel-sub">'+_snapEsc(A)+' · '+(rent?'for rent':'for sale')+' · median '+_snapEsc(unit)+' and listings (n) per weekly snapshot, newest first</div></div></div>'
+   +'<div class="panel-body2" style="overflow-x:auto;"><table class="xmt" id="trend-table"><thead><tr>'+th+'</tr></thead><tbody>'+tb+'</tbody></table></div>'
+   +'<div class="export-row"><button class="exp-btn primary" onclick="exportTable(\'trend-table\')">↓ CSV</button>'
+   +'<button class="exp-btn" onclick="exportTable(\'trend-table\',\'xlsx\')">↓ Excel</button>'
+   +'<span style="margin-left:auto;font-size:11px;color:var(--ink5);">Weekly snapshots · asking prices · medians · n&lt;'+SNAP_MIN_N+' withheld</span></div></div>';
+  try{
+    var pal=_snapPalette(), fmt=function(v){ return _snapFmt(v,cur,usd); };
+    if(S.shown) _snapChart('trends-chart',_snapCfg(S.cities.map(function(cy,i){ return _snapDs(cy.city,_snapLine(cy.points),pal[i%pal.length]); }),
+      {dates:S.dates,yTitle:unit,label:function(it){ return ' '+it.dataset.label+': '+fmt(it.raw.y)+' '+u+' · n='+Number(it.raw.n).toLocaleString('en-US')+' listings'; }}));
+    if(sup.dates.length) _snapChart('trends-supply-chart',_snapCfg([_snapDs('For sale',_snapLine(sup.sale),pal[0]),_snapDs('For rent',_snapLine(sup.rent),pal[1])],
+      {dates:sup.dates,yTitle:'Listings',label:function(it){ return ' '+it.dataset.label+': '+Number(it.raw.y).toLocaleString('en-US')+' listings'; }}));
+  }catch(e){ console.warn('trend charts',e); }
+}
+
+// ── City page: Price Trend panel ──
+var _cityTrendTT=null;   // the panel's own Sale/Rent choice; null = follow the top bar
+function setCityTrendTT(tt){ _cityTrendTT=tt==='rent'?'rent':'sale'; renderCityTrend(ACTIVE_COUNTRY,_cityActive); }
+function _cityTrendPanel(cityH){
+  return '<div class="grid"><div class="panel"><div class="panel-head"><div><div class="panel-title">Price trend — '+cityH+'</div>'
+    +'<div class="panel-sub" id="city-trend-sub">Weekly snapshots</div></div>'
+    +'<div style="display:flex;gap:8px;align-items:center;"><div class="f-seg" id="city-trend-tt">'
+    +'<button data-t="sale" onclick="setCityTrendTT(\'sale\')">Sale</button><button data-t="rent" onclick="setCityTrendTT(\'rent\')">Rent</button></div>'
+    +'<button class="pa-btn" onclick="exportTable(\'city-trend-table\')">↓ CSV</button></div></div>'
+    +'<div class="panel-body2" id="city-trend-body"><div style="padding:14px;color:var(--ink5);font-size:12px;">Loading weekly snapshots…</div></div></div></div>';
+}
+async function renderCityTrend(country,city){
+  try{
+    var body=document.getElementById('city-trend-body'); if(!body||!city) return;
+    // Child of the city profile that drew the panel, and of one city card.
+    var t=_tok('pg-cities/trend',country,'MFC','pg-cities/profile');
+    var mine=function(){ return _cityActive===city; };
+    if(!_fresh(t,mine)) return;
+    if(_isHeld(country)){ _snapDestroyCharts('city-trend-chart'); _heldPage('pg-cities',country,'Cities'); return; }
+    var c=COUNTRIES[country]; if(!c) return;
+    var f=_curFilters(), asset=f.asset, tt=_cityTrendTT||(f.type==='rent'?'rent':'sale'), cur=c.currency, usd=_snapUsd(cur);
+    var r=await _snapLoad(country,asset);
+    if(!_fresh(t,mine)) return;
+    if(r.held||_isHeld(country)){ _snapDestroyCharts('city-trend-chart'); _heldPage('pg-cities',country,'Cities',r.note,r.since); return; }
+    body=document.getElementById('city-trend-body'); if(!body) return;
+    document.querySelectorAll('#city-trend-tt button').forEach(function(b){ b.classList.toggle('on',b.getAttribute('data-t')===tt); });
+    if(!r.ok){ body.innerHTML=_errorState('Price trend for '+city,r.error,'renderCityTrend(ACTIVE_COUNTRY,_cityActive)'); return; }
+    var A=_snapAsset(asset), ccy=usd?'USD':(cur||'local'), rent=tt==='rent';
+    var unit=ccy+' per m²'+(rent?' per month':''), u=rent?'/m²/mo':'/m²';
+    var SS={sale:_snapSeries(r.data,{tt:'sale',usd:usd,city:city}),rent:_snapSeries(r.data,{tt:'rent',usd:usd,city:city})};
+    var S=SS[tt], cy=S.cities[0]||null;
+    var sub=document.getElementById('city-trend-sub');
+    if(sub) sub.innerHTML=_snapEsc(A)+' · median asking '+_snapEsc(unit)+' · weekly snapshots'
+      +(cy?' · <span class="basis-chip">Based on '+cy.latestN.toLocaleString('en-US')+' listings in the latest snapshot</span>':'');
+    var ds={}; [SS.sale,SS.rent].forEach(function(x){ x.dates.forEach(function(d){ ds[d]=1; }); });
+    var dates=Object.keys(ds).sort().reverse();
+    function pt(X,d){ var q=X.cities[0]; return q?q.points.filter(function(p){ return p.d===d; })[0]:null; }
+    var table='<details class="snap-details"><summary>Weekly values for '+_snapEsc(city)+' (sale and rent, n per week)</summary>'
+      +'<div style="overflow-x:auto;"><table class="xmt" id="city-trend-table"><thead><tr><th>Snapshot</th>'
+      +'<th>Sale ('+ccy+'/m²)</th><th>Sale n</th><th>Rent ('+ccy+'/m²/mo)</th><th>Rent n</th></tr></thead><tbody>'
+      +dates.map(function(d){ return '<tr><td class="mono dt-muted" data-csv="'+d+'">'+_snapDate(d)+'</td>'+_snapCell(pt(SS.sale,d),cur,usd)+_snapCell(pt(SS.rent,d),cur,usd)+'</tr>'; }).join('')
+      +'</tbody></table></div></details>';
+    _snapDestroyCharts('city-trend-chart');
+    var chart=!cy?_snapEmpty('No '+(rent?'rental':'sale')+' snapshots for '+_snapEsc(A.toLowerCase())+' in '+_snapEsc(city)+' yet.')
+      :(!S.shown?_snapEmpty('Every weekly median here rests on fewer than '+SNAP_MIN_N+' listings, so none is plotted.')
+      :'<div style="height:220px;position:relative;"><canvas id="city-trend-chart" role="img" aria-label="'+_snapEsc(city)+' median asking '+_snapEsc(unit)+' over time"></canvas></div>');
+    body.innerHTML=chart+(cy?_snapNotes(S,cur):'')+(dates.length?table:'');
+    if(cy&&S.shown){
+      var pal=_snapPalette(), fmt=function(v){ return _snapFmt(v,cur,usd); };
+      _snapChart('city-trend-chart',_snapCfg([_snapDs(city+(rent?' · rent':' · sale'),_snapLine(cy.points),rent?pal[1]:pal[0])],
+        {dates:S.dates,yTitle:unit,label:function(it){ return ' '+(rent?'Rent':'Sale')+': '+fmt(it.raw.y)+' '+u+' · n='+Number(it.raw.n).toLocaleString('en-US')+' listings'; }}));
+    }
+  }catch(e){ console.warn('city trend',e); }
+}
+
 // ── BY BEDROOM ──
 // Two metrics side by side, because the portals differ in what they publish.
 // Where a source states floor area (Mubawab, Aqarmap, PropertyFinder) both the
@@ -5534,6 +5716,8 @@ function nav(id, fromRoute){
   var bc=document.getElementById('tb-bc'); if(bc)bc.innerHTML=t.length>1?(t[0]+' / <span>'+t[1]+'</span>'):('<span>'+t[0]+'</span>');
   var NOFILTER={'pipeline':1,'infrastructure':1,'macro-indicators':1,'market-reports':1,'api-access':1,'insights':1,'exports':1};
   document.body.classList.toggle('no-filters', !!NOFILTER[id]);
+  // Weekly snapshots are not windowed by listing date: the period control does not apply there.
+  document.body.classList.toggle('no-period', id==='price-trends');
   if(!fromRoute) _routePush(id);
   /* Every page is drawn for the market on screen NOW -- never for _B2C, which
      names the market whose summary was loaded last and can still be the
@@ -5568,102 +5752,14 @@ function destroyChart(id){
   if(existing) existing.destroy();
 }
 function buildCharts(){
-  // NEUTRALISED: every Chart.js canvas (trends/growth/city/liquidity) lived on
-  // pages that are now gated or replaced by live renderers, and the old chart
-  // code synthesised fake quarters ('Q1 25'…) from interpolated growth. Real
-  // time-series charts will be rebuilt from market_snapshots once history exists.
+  // The old body synthesised fake quarters ('Q1 25'…) from interpolated growth
+  // and has been removed. Time series are now drawn from the weekly
+  // market_snapshots history by renderTrendsPage() and renderCityTrend().
   _chartsBuilt=true;
-  return;
-  /* eslint-disable no-unreachable */
-  const c=COUNTRIES[ACTIVE_COUNTRY];
-  const cityData=c?c.cityData:{};
-  const cityNames=Object.keys(cityData);
-  const CHART_DEFAULTS={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'IBM Plex Mono',size:11},color:'#A8A08F',boxWidth:8,padding:10}}},scales:{x:{grid:{display:false},ticks:{font:{family:'IBM Plex Mono',size:11},color:'#A8A08F'}},y:{grid:{color:'rgba(228,221,207,.10)'},ticks:{font:{family:'IBM Plex Mono',size:11},color:'#A8A08F'}}}};
-
-  // ── Price trends (country-specific) ──
-  destroyChart('trends-chart');
-  const tc=document.getElementById('trends-chart');
-  if(tc&&cityNames.length){
-    // Build indexed trend lines from city growth data
-    const datasets=cityNames.slice(0,5).map(name=>{
-      const d=cityData[name];
-      const g=d.growth/100;
-      const pts=[100, 100+g*0.25*100, 100+g*0.5*100, 100+g*0.75*100, 100+g*100].map(v=>Math.round(v*10)/10);
-      return {label:name,data:pts,borderColor:d.color||'#A8A08F',borderWidth:2,tension:.3,pointRadius:0,fill:false};
-    });
-    new Chart(tc,{type:'line',data:{labels:['Q1 25','Q2 25','Q3 25','Q4 25','Q1 26'],datasets},options:{...CHART_DEFAULTS,scales:{...CHART_DEFAULTS.scales,y:{...CHART_DEFAULTS.scales.y,ticks:{...CHART_DEFAULTS.scales.y.ticks,callback:v=>v}}}}});
-  }
-
-  // ── Growth chart (country-specific) ──
-  destroyChart('growth-chart');
-  const gc=document.getElementById('growth-chart');
-  if(gc&&cityNames.length){
-    const sorted=[...cityNames].sort((a,b)=>cityData[b].growth-cityData[a].growth);
-    new Chart(gc,{type:'bar',data:{
-      labels:sorted,
-      datasets:[{label:'12M Growth %',data:sorted.map(n=>cityData[n].growth),backgroundColor:sorted.map(n=>cityData[n].color||'#A8A08F'),borderWidth:0,borderRadius:2}]
-    },options:{...CHART_DEFAULTS,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'IBM Plex Mono',size:11},color:'#A8A08F'}},y:{grid:{color:'rgba(228,221,207,.10)'},ticks:{font:{family:'IBM Plex Mono',size:11},color:'#A8A08F',callback:v=>v+'%'}}}}});
-  }
-
-  // ── City tabs — rebuild for active country ──
-  buildCityTabs();
-
-  // ── Default city charts ──
-  setTimeout(()=>{
-    const firstCity=cityNames[0]||'Casablanca';
-    const fd=cityData[firstCity];
-    if(fd) buildCityTrendChart(firstCity,[fd.price*.94,fd.price*.96,fd.price*.97,fd.price*.99,fd.price].map(v=>Math.round(v)));
-    else buildCityTrendChart('Casablanca',[17340,17680,17920,18140,18420]);
-    buildCityDistrictChart((firstCity||'casablanca').toLowerCase());
-  },200);
-}
-
-function buildCityTabs(){
-  var c=COUNTRIES[ACTIVE_COUNTRY];
-  if(c) renderCityTabs(c);
-}
-
-// Build the Cities-page tabs from live cityData and render the first city's live profile.
-function renderCityTabs(c){
-  var tabBar=document.getElementById('city-tabs-bar');
-  if(!tabBar) return;
-  var cityNames=Object.keys(c.cityData||{});
-  if(!cityNames.length){
-    tabBar.innerHTML='<div style="padding:12px;font-size:12px;color:var(--ink4);">No live city data for '+(c.label||'this market')+' yet.</div>';
-    return;
-  }
-  tabBar.innerHTML=cityNames.map(function(name,i){
-    return '<button class="city-tab'+(i===0?' active-tab':'')+'" data-city="'+encodeURIComponent(name)+'" style="flex:1;padding:10px;font-size:12px;font-weight:600;background:'+(i===0?'var(--ink)':'var(--surface)')+';color:'+(i===0?'#fff':'var(--ink3)')+';border:none;cursor:pointer;">'+name+'</button>';
-  }).join('');
-  var btns=tabBar.querySelectorAll('.city-tab');
-  btns.forEach(function(btn){
-    btn.addEventListener('click',function(){ liveCityProfile(c, decodeURIComponent(btn.getAttribute('data-city')), btn); });
-  });
-  liveCityProfile(c, cityNames[0], btns[0]);
 }
 
 // Called from loadLiveKPIs — populates the Cities page from live aggregates.
 function updateCitiesPage(c){ /* superseded by renderCitiesPage() in the Batch 2 layer */ }
-
-// Fill the city profile's live KPI cards for one city. (Lower panels remain DEMO.)
-function liveCityProfile(c, city, btn){
-  var d=(c.cityData||{})[city]; if(!d) return;
-  if(btn){
-    document.querySelectorAll('#city-tabs-bar .city-tab').forEach(function(t){ t.style.background='var(--surface)'; t.style.color='var(--ink3)'; t.classList.remove('active-tab'); });
-    btn.style.background='var(--ink)'; btn.style.color='#fff'; btn.classList.add('active-tab');
-  }
-  var S=(c.currency==='MAD')?'MAD ':(c.currency==='NGN')?'₦':(c.currency+' ');
-  var set=function(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; };
-  set('c-med-price', d.price?(S+d.price.toLocaleString()):'—');
-  var chg=document.getElementById('c-price-chg');
-  if(chg){ var g=d.growth; if(g>0){ chg.textContent='▲ +'+g+'%'; chg.className='kpi-chg chg pos'; } else if(g<0){ chg.textContent='▼ '+g+'%'; chg.className='kpi-chg chg neg'; } else { chg.textContent='—'; chg.className='kpi-chg chg'; } }
-  set('c-prime-rent', d.rent?(S+d.rent.toLocaleString()):'—');
-  set('c-rent-chg','median rent · per m²/mo');
-  set('c-listings', d.listings?d.listings.toLocaleString():'0');
-  set('c-yield', d.yield?(d.yield+'%'):'—');
-  var liq=document.getElementById('c-liq'); if(liq) liq.innerHTML='—<span style="font-size:14px;color:var(--ink4);">/10</span>';
-  var pt=document.getElementById('c-pipe-title'); if(pt) pt.textContent='Development Pipeline — '+city;
-}
 
 // ── LIQUIDITY GAUGES ──
 function buildLiquidityGauges(){
@@ -5762,9 +5858,14 @@ function closeEvidence(){ document.getElementById('evidence-panel').classList.re
 function exportTable(id,fmt='csv'){
   const tbl=document.getElementById(id);
   if(!tbl){alert('Table not found: '+id);return;}
-  const rows=[...tbl.querySelectorAll('tr')].map(r=>[...r.querySelectorAll('th,td')].map(c=>c.textContent.trim().replace(/[\n\t]+/g,' ')).join(','));
-  const csv=rows.join('\n');
-  const blob=new Blob([csv],{type:'text/csv'});
+  // A cell may carry its raw value in data-csv (an unformatted number, or ''
+  // for a value that is deliberately not shown). Fields are quoted, so a
+  // thousands separator no longer splits one figure into two columns.
+  const field=c=>{ const v=c.hasAttribute('data-csv')?c.getAttribute('data-csv'):c.textContent.trim().replace(/[\n\t]+/g,' ');
+    return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  const rows=[...tbl.querySelectorAll('tr')].map(r=>[...r.querySelectorAll('th,td')].map(field).join(','));
+  const csv='﻿'+rows.join('\r\n');   // BOM: Excel reads the file as UTF-8 (m², em dash)
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download=`ironwood-${id}-${new Date().toISOString().slice(0,10)}.csv`;a.click();
 }
@@ -5844,108 +5945,6 @@ function openReport(id){
   document.getElementById('report-view').classList.add('open');
 }
 function closeReport(){ document.getElementById('report-view').classList.remove('open'); }
-
-// ── CITY SWITCHER ──
-const CITY_DATA={
-  casablanca:{medPrice:'DH 18,420',priceChg:'▲ +6.2% 12M',primeRent:'DH 142',rentChg:'▲ +4.4% 12M',listings:'4,218',listChg:'All types',yield:'5.8%',liq:'7.0',liqChg:'→ Liquid',pipeline:'~190k',pipeSub:'m² GFA · 14 projects',pipeRisk:'⚠ High risk',sig:{pg:62,rg:44,lq:70,pr:52,ye:58,po:62},iosSc:'7.7',iosBadge:'Attractive',iosClass:'opp-strong',
-    trendData:[17340,17680,17920,18140,18420],pipeTitle:'Development Pipeline — Casablanca',trendTitle:'Price Trend Data — Casablanca',
-    pipeRows:`<tr><td class="dt-rank">01</td><td><strong>Marina Business Hub</strong></td><td class="dt-muted">Undisclosed</td><td class="dt-muted">Marina</td><td>Office</td><td class="mono">42,000</td><td><span class="sig sig-warn">Superstructure</span></td><td class="mono">Q3 2027</td><td><span class="sig sig-dn">High</span></td></tr>
-    <tr><td class="dt-rank">02</td><td><strong>Anfa Place Ph.3</strong></td><td class="dt-muted">Addoha</td><td class="dt-muted">Anfa</td><td>Mixed Use</td><td class="mono">38,000</td><td><span class="sig sig-neutral">Foundation</span></td><td class="mono">Q2 2028</td><td><span class="sig sig-warn">Moderate</span></td></tr>
-    <tr><td class="dt-rank">03</td><td><strong>CIL Towers</strong></td><td class="dt-muted">CDG Immobilier</td><td class="dt-muted">CIL</td><td>Residential</td><td class="mono">28,000</td><td><span class="sig sig-up">Topped Out</span></td><td class="mono">Q4 2026</td><td><span class="sig sig-up">Low</span></td></tr>`,
-    txnRows:`<tr><td class="mono dt-muted">Mar 2026</td><td>Office</td><td class="dt-muted">Marina</td><td class="mono">18,200</td><td class="dt-muted">Press</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
-    <tr><td class="mono dt-muted">Jan 2026</td><td>Retail</td><td class="dt-muted">Maarif</td><td class="mono">22,800</td><td class="dt-muted">Broker</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
-    <tr><td class="mono dt-muted">Dec 2025</td><td>Apartment</td><td class="dt-muted">Ain Diab</td><td class="mono">26,400</td><td class="dt-muted">Land Reg.</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>`,
-    trendRows:`<tr><td class="mono dt-muted">Q1 2025</td><td class="mono">17,340</td><td class="mono">136</td><td class="mono">23,800</td><td class="mono">21,200</td><td class="mono">3,480</td></tr>
-    <tr><td class="mono dt-muted">Q2 2025</td><td class="mono">17,680</td><td class="mono">138</td><td class="mono">24,100</td><td class="mono">21,800</td><td class="mono">3,612</td></tr>
-    <tr><td class="mono dt-muted">Q3 2025</td><td class="mono">17,920</td><td class="mono">139</td><td class="mono">24,400</td><td class="mono">21,900</td><td class="mono">3,840</td></tr>
-    <tr><td class="mono dt-muted">Q4 2025</td><td class="mono">18,140</td><td class="mono">141</td><td class="mono">24,600</td><td class="mono">22,100</td><td class="mono">4,012</td></tr>
-    <tr><td class="mono dt-muted">Q1 2026</td><td class="mono">18,420</td><td class="mono">142</td><td class="mono">24,800</td><td class="mono">22,400</td><td class="mono">4,218</td></tr>`},
-  marrakech:{medPrice:'DH 17,800',priceChg:'▲ +8.4% 12M',primeRent:'DH 118',rentChg:'▲ +7.1% 12M',listings:'2,847',listChg:'All types',yield:'6.4%',liq:'6.8',liqChg:'→ Liquid',pipeline:'~85k',pipeSub:'m² GFA · 8 projects',pipeRisk:'⚠ Moderate risk',sig:{pg:84,rg:71,lq:68,pr:62,ye:64,po:75},iosSc:'8.4',iosBadge:'Strong Buy',iosClass:'opp-strong',
-    trendData:[16420,16890,17200,17510,17800],pipeTitle:'Development Pipeline — Marrakech',trendTitle:'Price Trend Data — Marrakech',
-    pipeRows:`<tr><td class="dt-rank">01</td><td><strong>Palmeraie Villas Ph.5</strong></td><td class="dt-muted">Palmeraie Group</td><td class="dt-muted">Palmeraie</td><td>Villas</td><td class="mono">32,000</td><td><span class="sig sig-warn">Superstructure</span></td><td class="mono">Q1 2027</td><td><span class="sig sig-up">Low</span></td></tr>
-    <tr><td class="dt-rank">02</td><td><strong>Hivernage Hotel Dev.</strong></td><td class="dt-muted">Undisclosed</td><td class="dt-muted">Hivernage</td><td>Hotel/Resi</td><td class="mono">18,000</td><td><span class="sig sig-neutral">Foundation</span></td><td class="mono">Q3 2027</td><td><span class="sig sig-up">Low</span></td></tr>`,
-    txnRows:`<tr><td class="mono dt-muted">Feb 2026</td><td>Riad</td><td class="dt-muted">Palmeraie</td><td class="mono">38,500</td><td class="dt-muted">Broker</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>
-    <tr><td class="mono dt-muted">Jan 2026</td><td>Villa</td><td class="dt-muted">Palmeraie</td><td class="mono">28,400</td><td class="dt-muted">Broker</td><td><span class="conf conf-m"><span class="conf-dot"></span>Med.</span></td></tr>`,
-    trendRows:`<tr><td class="mono dt-muted">Q1 2025</td><td class="mono">16,420</td><td class="mono">110</td><td class="mono">26,200</td><td class="mono">—</td><td class="mono">2,482</td></tr>
-    <tr><td class="mono dt-muted">Q2 2025</td><td class="mono">16,890</td><td class="mono">112</td><td class="mono">27,100</td><td class="mono">—</td><td class="mono">2,614</td></tr>
-    <tr><td class="mono dt-muted">Q3 2025</td><td class="mono">17,200</td><td class="mono">114</td><td class="mono">27,800</td><td class="mono">—</td><td class="mono">2,710</td></tr>
-    <tr><td class="mono dt-muted">Q4 2025</td><td class="mono">17,510</td><td class="mono">116</td><td class="mono">28,200</td><td class="mono">—</td><td class="mono">2,780</td></tr>
-    <tr><td class="mono dt-muted">Q1 2026</td><td class="mono">17,800</td><td class="mono">118</td><td class="mono">28,600</td><td class="mono">—</td><td class="mono">2,847</td></tr>`},
-  rabat:{medPrice:'DH 15,200',priceChg:'▲ +2.6% 12M',primeRent:'DH 98',rentChg:'▲ +3.1% 12M',listings:'2,340',listChg:'All types',yield:'5.2%',liq:'6.0',liqChg:'→ Moderate',pipeline:'~42k',pipeSub:'m² GFA · 5 projects',pipeRisk:'→ Low risk',sig:{pg:26,rg:31,lq:60,pr:78,ye:52,po:54},iosSc:'6.1',iosBadge:'Neutral',iosClass:'opp-moderate',trendData:[14820,14980,15020,15100,15200],pipeTitle:'Development Pipeline — Rabat',trendTitle:'Price Trend Data — Rabat',
-    pipeRows:`<tr><td class="dt-rank">01</td><td><strong>Agdal Mixed-Use Tower</strong></td><td class="dt-muted">Immolog</td><td class="dt-muted">Agdal</td><td>Mixed Use</td><td class="mono">24,000</td><td><span class="sig sig-up">Topped Out</span></td><td class="mono">Q3 2026</td><td><span class="sig sig-up">Low</span></td></tr>`,
-    txnRows:`<tr><td class="mono dt-muted">Feb 2026</td><td>Apartment</td><td class="dt-muted">Agdal</td><td class="mono">15,400</td><td class="dt-muted">Land Reg.</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>`,
-    trendRows:`<tr><td class="mono dt-muted">Q1 2025</td><td class="mono">14,820</td><td class="mono">95</td><td class="mono">—</td><td class="mono">—</td><td class="mono">2,104</td></tr>
-    <tr><td class="mono dt-muted">Q1 2026</td><td class="mono">15,200</td><td class="mono">98</td><td class="mono">—</td><td class="mono">—</td><td class="mono">2,340</td></tr>`},
-  tangiers:{medPrice:'DH 12,800',priceChg:'▲ +1.3% 12M',primeRent:'DH 88',rentChg:'▲ +2.8% 12M',listings:'1,509',listChg:'All types',yield:'4.8%',liq:'5.2',liqChg:'→ Moderate',pipeline:'~71k',pipeSub:'m² GFA · 4 projects',pipeRisk:'⚠ Moderate risk',sig:{pg:13,rg:28,lq:52,pr:78,ye:48,po:82},iosSc:'6.8',iosBadge:'Emerging',iosClass:'opp-moderate',trendData:[12640,12710,12760,12790,12800],pipeTitle:'Development Pipeline — Tangiers',trendTitle:'Price Trend Data — Tangiers',
-    pipeRows:`<tr><td class="dt-rank">01</td><td><strong>Tangiers FZ Hub</strong></td><td class="dt-muted">TFZ Authority</td><td class="dt-muted">Free Zone</td><td>Office/Ind.</td><td class="mono">48,000</td><td><span class="sig sig-warn">Superstructure</span></td><td class="mono">Q4 2027</td><td><span class="sig sig-warn">Moderate</span></td></tr>`,
-    txnRows:`<tr><td class="mono dt-muted">Jan 2026</td><td>Land</td><td class="dt-muted">Free Zone</td><td class="mono">840/m²</td><td class="dt-muted">Corp. Ann.</td><td><span class="conf conf-h"><span class="conf-dot"></span>High</span></td></tr>`,
-    trendRows:`<tr><td class="mono dt-muted">Q1 2025</td><td class="mono">12,640</td><td class="mono">86</td><td class="mono">—</td><td class="mono">—</td><td class="mono">1,380</td></tr>
-    <tr><td class="mono dt-muted">Q1 2026</td><td class="mono">12,800</td><td class="mono">88</td><td class="mono">—</td><td class="mono">—</td><td class="mono">1,509</td></tr>`},
-  fez:{medPrice:'DH 10,400',priceChg:'▼ -2.1% 12M',primeRent:'DH 72',rentChg:'▼ -1.4% 12M',listings:'892',listChg:'All types',yield:'4.1%',liq:'3.8',liqChg:'→ Illiquid',pipeline:'~12k',pipeSub:'m² GFA · 2 projects',pipeRisk:'→ Low risk',sig:{pg:-21,rg:-14,lq:38,pr:90,ye:41,po:32},iosSc:'3.4',iosBadge:'Underweight',iosClass:'opp-weak',trendData:[10620,10540,10480,10430,10400],pipeTitle:'Development Pipeline — Fez',trendTitle:'Price Trend Data — Fez',
-    pipeRows:`<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--ink5);">2 minor projects tracked · Low pipeline risk</td></tr>`,
-    txnRows:`<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--ink5);">No recent transactions tracked · Low transaction volume</td></tr>`,
-    trendRows:`<tr><td class="mono dt-muted">Q1 2025</td><td class="mono">10,620</td><td class="mono">74</td><td class="mono">—</td><td class="mono">—</td><td class="mono">980</td></tr>
-    <tr><td class="mono dt-muted">Q1 2026</td><td class="mono">10,400</td><td class="mono">72</td><td class="mono">—</td><td class="mono">—</td><td class="mono">892</td></tr>`},
-};
-
-let _cityChart=null,_cityDistChart=null;
-
-function switchCity(btn,cityId){
-  document.querySelectorAll('.city-tab').forEach(t=>{t.style.background='var(--surface)';t.style.color='var(--ink3)';});
-  btn.style.background='var(--ink)';btn.style.color='#fff';
-  const c=CITY_DATA[cityId];if(!c)return;
-  document.getElementById('c-med-price').textContent=c.medPrice;
-  document.getElementById('c-price-chg').textContent=c.priceChg;
-  document.getElementById('c-prime-rent').textContent=c.primeRent;
-  document.getElementById('c-rent-chg').textContent=c.rentChg;
-  document.getElementById('c-listings').textContent=c.listings;
-  document.getElementById('c-yield').textContent=c.yield;
-  document.getElementById('c-liq').innerHTML=c.liq+'<span style="font-size:14px;color:var(--ink4);">/10</span>';
-  document.getElementById('c-pipeline').textContent=c.pipeline;
-  document.getElementById('c-pipe-sub').textContent=c.pipeSub;
-  document.getElementById('c-pipe-risk').textContent=c.pipeRisk;
-  document.getElementById('c-pipe-title').textContent=c.pipeTitle;
-  document.getElementById('c-trend-tbl-title').textContent=c.trendTitle;
-  document.getElementById('city-pipe-body').innerHTML=c.pipeRows;
-  document.getElementById('city-txn-body').innerHTML=c.txnRows;
-  document.getElementById('city-trend-body').innerHTML=c.trendRows;
-  // Signals
-  ['pg','rg','lq','pr','ye','po'].forEach(k=>{
-    const v=c.sig[k];const abs=Math.abs(v);
-    document.getElementById('c-sig-'+k).style.width=abs+'%';
-    document.getElementById('c-sig-'+k+'-v').textContent=v<0?v:v;
-  });
-  document.getElementById('c-ios').textContent=c.iosSc;
-  document.getElementById('c-ios-badge').textContent=c.iosBadge;
-  document.getElementById('c-ios-badge').className='opp-badge '+c.iosClass;
-  // Rebuild city chart
-  const name=btn.textContent.trim();
-  buildCityTrendChart(name,c.trendData);
-  buildCityDistrictChart(cityId);
-}
-
-function buildCityTrendChart(cityName,data){
-  const ctx=document.getElementById('city-trend-chart');
-  if(!ctx)return;
-  if(_cityChart){_cityChart.destroy();_cityChart=null;}
-  _cityChart=new Chart(ctx,{type:'line',data:{labels:['Q1 25','Q2 25','Q3 25','Q4 25','Q1 26'],datasets:[{label:cityName,data:data,borderColor:'#C9A96A',borderWidth:2,tension:.3,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'IBM Plex Mono',size:11},color:'#A8A08F'}},y:{grid:{color:'rgba(228,221,207,.10)'},ticks:{font:{family:'IBM Plex Mono',size:11},color:'#A8A08F'}}}}});
-}
-
-const CITY_DISTRICTS={
-  casablanca:{labels:['Ain Diab','Anfa/CIL','Maarif','Marina','Sidi Maarouf','Hay Hassani'],data:[26200,24800,20400,19800,16400,12400]},
-  marrakech:{labels:['Palmeraie','Hivernage','Gueliz','Medina','Semlalia'],data:[32800,24400,19200,15800,13400]},
-  rabat:{labels:['Souissi','Agdal','Hay Riad','Hassan','Akkari'],data:[22400,18600,16200,14800,11200]},
-  tangiers:{labels:['Malabata','Centre Ville','Cap Malabata','Tangiers Med'],data:[16200,13400,14800,9800]},
-  fez:{labels:['Saïss','Centre','Ain Kadous','Route Imouzzer'],data:[13200,10400,9800,8600]},
-};
-
-function buildCityDistrictChart(cityId){
-  const ctx=document.getElementById('city-district-chart');
-  if(!ctx)return;
-  if(_cityDistChart){_cityDistChart.destroy();_cityDistChart=null;}
-  const d=CITY_DISTRICTS[cityId]||CITY_DISTRICTS.casablanca;
-  _cityDistChart=new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[{label:'DH/m²',data:d.data,backgroundColor:'#C9A96A',borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(228,221,207,.10)'},ticks:{font:{family:'IBM Plex Mono',size:10},color:'#A8A08F'}},y:{grid:{display:false},ticks:{font:{family:'IBM Plex Mono',size:10},color:'#A8A08F'}}}}});
-}
 
 // ── DISTRICT FILTER ──
 const DISTRICT_DATA={

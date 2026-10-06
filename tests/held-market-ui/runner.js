@@ -34,9 +34,10 @@
   var KEYS = Object.keys(MK);
   var SWITCHABLE = ['Morocco', 'Kenya', 'Tunisia', 'Ethiopia'];
   var PAGES = ['market-terminal', 'markets', 'cities', 'districts', 'by-bedroom', 'days-on-market', 'map-view',
-    'heatmaps', 'data-explorer', 'exports', 'insights', 'liquidity-index', 'investment-radar', 'market-reports'];
+    'heatmaps', 'data-explorer', 'exports', 'insights', 'liquidity-index', 'investment-radar', 'market-reports', 'price-trends'];
   var LISTING_PAGES = ['pg-markets', 'pg-cities', 'pg-districts', 'pg-by-bedroom', 'pg-days-on-market', 'pg-map-view',
-    'pg-heatmaps', 'pg-data-explorer', 'pg-exports', 'pg-insights', 'pg-liquidity-index', 'pg-investment-radar', 'pg-market-reports'];
+    'pg-heatmaps', 'pg-data-explorer', 'pg-exports', 'pg-insights', 'pg-liquidity-index', 'pg-investment-radar', 'pg-market-reports',
+    'pg-price-trends'];
   var CROSS_PAGES = ['pg-market-terminal', 'pg-countries'];
 
   var failures = [], trace = [], seenFail = {};

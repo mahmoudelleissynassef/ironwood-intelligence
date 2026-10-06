@@ -63,7 +63,80 @@
 
   var LISTING_RPC = ['market_kpis', 'market_signals', 'market_filtered', 'districts_filtered', 'district_profile', 'district_profile_filtered',
     'market_by_bedroom', 'market_dom', 'market_dom_summary', 'listed_area'];
-  var LISTING_TABLE = ['properties', 'market_averages', 'market_reports'];
+  var LISTING_TABLE = ['properties', 'market_averages', 'market_reports', 'market_snapshots'];
+
+  // ── weekly market_snapshots history ──────────────────────────────────────
+  // Two flavours. Under the rapid-switch runner (?test=rapid|scenarios) every
+  // value carries the market's sentinel digit run, so a series drawn for the
+  // wrong market -- or for a held one -- is found by the same text search as
+  // every other figure. Otherwise the series is realistic: plausible levels,
+  // slow drift and noise, the real snapshot calendar (two missing weeks, a
+  // Wednesday snapshot on 9 Sep), carried-forward weeks in August, USD only
+  // from 9 Sep (when the snapshot began storing its FX rate), and small
+  // cities whose weekly sample sometimes falls under 10 listings.
+  var SENTINEL = /^(rapid|scenarios)$/.test(qs.get('test') || '');
+  var SNAP_FULL = ['2026-07-13', '2026-07-20', '2026-07-27', '2026-08-03', '2026-08-10', '2026-08-17', '2026-08-24',
+    '2026-09-09', '2026-09-14', '2026-09-21', '2026-10-05'];
+  var SNAP_SHORT = ['2026-09-09', '2026-09-14', '2026-09-21', '2026-10-05'];
+  var SNAP_FX = { MAD: [9.39, 9.40, 9.54, 9.92], TND: [2.93, 2.94, 2.97, 3.02], KES: [129.2, 129.1, 129.3, 129.4], EGP: [48.4, 48.6, 48.9, 49.3] };
+  var SNAPR = {
+    Morocco: { cur: 'MAD', dates: SNAP_FULL, cities: [
+      { c: 'Casablanca', s: 15940, r: 115.4, n: 2158, nr: 2416, d: -0.0035 }, { c: 'Rabat', s: 13850, r: 98.2, n: 1240, nr: 1310, d: 0.0012 },
+      { c: 'Marrakech', s: 12600, r: 92.5, n: 1105, nr: 870, d: 0.0021 }, { c: 'Tangier', s: 10900, r: 78.0, n: 640, nr: 520, d: 0.0008 },
+      { c: 'Agadir', s: 9800, r: 70.4, n: 410, nr: 9, d: -0.001 }, { c: 'Fes', s: 8200, r: 55.1, n: 280, nr: 7, d: 0.0015 }] },
+    Tunisia: { cur: 'TND', dates: SNAP_FULL, cities: [
+      { c: 'Tunis', s: 3150, r: 13.2, n: 1820, nr: 960, d: 0.0018 }, { c: 'Ariana', s: 2950, r: 12.1, n: 990, nr: 610, d: 0.0011 },
+      { c: 'Sousse', s: 2700, r: 11.0, n: 720, nr: 380, d: 0.0024 }, { c: 'Nabeul', s: 2400, r: 10.5, n: 430, nr: 140, d: -0.0006 },
+      { c: 'Sfax', s: 2250, r: 9.4, n: 310, nr: 8, d: 0.0009 }] },
+    Kenya: { cur: 'KES', dates: SNAP_FULL, cities: [
+      { c: 'Nairobi', s: 165000, r: 720, n: 640, nr: 1180, d: 0.0007 }, { c: 'Mombasa', s: 118000, r: 520, n: 120, nr: 210, d: -0.0012 },
+      { c: 'Kiambu', s: 92000, r: 400, n: 60, nr: 11, d: 0.002 }] },
+    Egypt: { cur: 'EGP', dates: SNAP_SHORT, cities: [
+      { c: 'Cairo', s: 52000, r: 310, n: 2900, nr: 1400, d: 0.004 }, { c: 'Giza', s: 47000, r: 280, n: 1500, nr: 700, d: 0.003 },
+      { c: 'Alexandria', s: 38000, r: 230, n: 900, nr: 320, d: 0.002 }] }
+  };
+  var SNAP_ASSET = { apartments: ['Apartments', 1, 1, 1], villas: ['Villas', 1.42, 1.3, 0.22], houses: ['Houses', 0.94, 0.88, 0.35],
+    offices: ['Offices', 1.16, 1.38, 0.18], land: ['Land', 0.28, 0.05, 0.3] };
+  function jit(key) { return (h32(key) % 2001) / 1000 - 1; }   // deterministic, -1..1
+  function snapRows(country, assetPat) {
+    var a = String(assetPat || '').toLowerCase(), out = [];
+    if (SENTINEL) {
+      var m = MK[country]; if (!m) return [];
+      SNAP_FULL.forEach(function (d, i) {
+        var rep = i === 5 || i === 6 ? 4 : i;   // carried-forward August weeks
+        m.cities.forEach(function (c, ci) {
+          ['sale', 'rent'].forEach(function (tt) {
+            var v = tt === 'sale' ? P(m, 50 + rep % 9) : P(m, 10 + rep % 9);
+            var n = ci === 1 && rep % 4 === 1 ? 7 : 40 + rep + ci;
+            out.push({ snapshot_date: d, city: c, asset_class: SNAP_ASSET[a] ? SNAP_ASSET[a][0] : a, transaction_type: tt,
+              median_ppsqm: v, listing_count: n, currency: i >= 7 ? m.cur : null, median_ppsqm_usd: i >= 7 ? v : null });
+          });
+        });
+      });
+      return out;
+    }
+    var S = SNAPR[country], A = SNAP_ASSET[a]; if (!S || !A) return [];
+    S.dates.forEach(function (d, i) {
+      var k = i, fi = SNAP_SHORT.indexOf(d);
+      if (S.dates === SNAP_FULL && (i === 5 || i === 6)) k = 4;   // the run did not refresh: same figures as 10 Aug
+      var dd = S.dates[k];
+      S.cities.forEach(function (c) {
+        ['sale', 'rent'].forEach(function (tt) {
+          var base = (tt === 'sale' ? c.s * A[1] : c.r * A[2]);
+          var shift = dd >= '2026-09-21' ? (tt === 'sale' ? 0.988 : 1.006) : 1;   // parser fix moves the level
+          var v = base * (1 + c.d * k + 0.006 * jit(country + c.c + tt + dd)) * shift;
+          var n0 = tt === 'sale' ? c.n : c.nr;
+          var n = n0 < 20 ? Math.max(3, Math.round(n0 + 4 * jit('n' + country + c.c + tt + dd)))
+            : Math.max(1, Math.round(n0 * A[3] * (1 + 0.031 * k)));
+          var fx = fi > -1 ? SNAP_FX[S.cur][fi] : null;
+          out.push({ snapshot_date: d, city: c.c, asset_class: A[0], transaction_type: tt,
+            median_ppsqm: Math.round(v * 100) / 100, listing_count: n, currency: fx ? S.cur : null,
+            fx_units_per_usd: fx, median_ppsqm_usd: fx ? Math.round(v / fx * 100) / 100 : null });
+        });
+      });
+    });
+    return out;
+  }
 
   var log = [], pending = 0, violations = [], nreq = 0, HIDE = {}, FAILQ = {};
   window.__stub = {
@@ -265,7 +338,15 @@
           price_per_sqm: P(m, 60 + i), scraped_at: '2026-09-15T08:00:00Z' };
       });
     }
-    if (table === 'market_snapshots') return [{ snapshot_date: '2026-09-08' }];
+    if (table === 'market_snapshots') {
+      // the cross-market overview's first/last snapshot date probe
+      if (!c && f.cols === 'snapshot_date') return [{ snapshot_date: '2026-09-08' }];
+      if (!c || HELD[c]) return [];   // RLS hides a held market's rows
+      var sr = snapRows(c, f.asset_ilike).filter(function (r) {
+        return (!f.tts || f.tts.indexOf(r.transaction_type) > -1) && (f.neq_city == null || r.city !== f.neq_city);
+      }).sort(function (a, b) { return a.snapshot_date < b.snapshot_date ? -1 : a.snapshot_date > b.snapshot_date ? 1 : (a.city < b.city ? -1 : 1); });
+      return f.range ? sr.slice(f.range[0], f.range[1] + 1) : sr;
+    }
     if (table === 'usage_events') return [];
     return [];
   }
@@ -279,6 +360,10 @@
         if ((mth === 'eq' || mth === 'ilike') && a === 'country') f.country = b;
         if (mth === 'eq' && a === 'category') f.category = b;
         if (mth === 'eq' && a === 'asset_class') f.asset_class = b;
+        if (mth === 'ilike' && a === 'asset_class') f.asset_ilike = b;
+        if (mth === 'in' && a === 'transaction_type') f.tts = b;
+        if (mth === 'neq' && a === 'city') f.neq_city = b;
+        if (mth === 'range') f.range = [a, b];
         return q;
       };
     });
